@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronIcon } from "./Icons";
 import { JsonLd } from "./JsonLd";
+import { siteOrigin } from "../lib/site-url";
 
 type BreadcrumbItem = {
   label: string;
@@ -8,8 +9,6 @@ type BreadcrumbItem = {
 };
 
 export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
-  const origin = "https://sepiid-beauty-home.svshsayarnia.chatgpt.site";
-
   return (
     <>
       <nav className="sb-breadcrumbs" aria-label="مسیر صفحه">
@@ -30,13 +29,13 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
               "@type": "ListItem",
               position: 1,
               name: "خانه",
-              item: origin,
+              item: siteOrigin,
             },
             ...items.map((item, index) => ({
               "@type": "ListItem",
               position: index + 2,
               name: item.label,
-              ...(item.href ? { item: `${origin}${item.href}` } : {}),
+              ...(item.href ? { item: `${siteOrigin}${item.href}` } : {}),
             })),
           ],
         }}
@@ -44,4 +43,3 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
     </>
   );
 }
-

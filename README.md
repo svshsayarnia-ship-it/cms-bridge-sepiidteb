@@ -1,26 +1,19 @@
 # Sepiid Beauty
 
 A production-ready, RTL beauty catalog, editorial site, and protected
-WooCommerce CMS built with [vinext](https://github.com/cloudflare/vinext). It includes 61 product pages,
-seven specialist categories, two parent catalog groups, sourced editorial
-content, responsive commerce discovery, and trust-policy pages.
+WooCommerce CMS built with Next.js and prepared for GitHub + Vercel. It includes
+premium hover and motion details, responsive commerce discovery, editorial
+content, trust-policy pages, and a server-side product editor.
 
 See [README_FA.md](./README_FA.md) for the Persian project map and editing guide.
 
 ## Prerequisites
 
 - Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
+- npm
 
-## Sites Lifecycle
-
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
+The project is a standard Next.js App Router application. Vercel runs
+`npm ci` followed by `npm run build`.
 
 ## Included Shape
 
@@ -28,12 +21,8 @@ Scripts that need writable project-scoped home, npm, XDG, and temporary paths us
 - `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
 - `app/cms/` provides the protected WooCommerce product editor
 - `app/api/cms/` keeps WooCommerce credentials and write operations server-side
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+- `vercel.json` declares the Next.js framework and build command
+- `scripts/validate-artifact.sh` checks the uploadable project shape and secret hygiene
 
 ## Workspace Auth Headers
 
@@ -106,19 +95,17 @@ identity headers when those variables are present.
 
 ## Diagnostic Commands
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build and validate the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build, validate, and verify the rendered development-preview metadata
-- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+- `npm ci`: install the lockfile exactly
+- `npm run dev`: start local Next.js development
+- `npm run build`: create the production build
+- `npm run start`: serve the production build locally
+- `npm test`: run the production build check
+- `npm run lint`: run ESLint
+- `npm run validate:artifact`: check required files, Vercel settings, and secret hygiene
 
-Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+## Deploy on Vercel
 
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Import the GitHub repository as a new Vercel project. Keep the project root at
+the repository root, leave the output directory at its default, and add the
+variables from `.env.example` in Vercel Environment Variables. Never upload
+`.env`, `.env.local`, or real WooCommerce credentials to GitHub.

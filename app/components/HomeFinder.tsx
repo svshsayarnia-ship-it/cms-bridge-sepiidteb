@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useRef, useState } from "react";
 import { whatsappHref } from "../data";
 import { ArrowIcon } from "./Icons";
@@ -73,6 +74,7 @@ export function HomeFinder() {
                 key={item.title}
               >
                 <span>۰{index + 1}</span>
+                <i style={{ "--progress": `${((index + 1) / paths.length) * 100}%` } as CSSProperties} />
                 {item.title}
                 <ArrowIcon />
               </button>
@@ -87,6 +89,7 @@ export function HomeFinder() {
           tabIndex={0}
         >
           <span className="sb-finder__index">۰{active + 1}</span>
+          <span className="sb-finder__result-icon" aria-hidden="true" />
           <span className="sb-eyebrow">{path.kicker}</span>
           <h3>{path.headline}</h3>
           <p>{path.text}</p>

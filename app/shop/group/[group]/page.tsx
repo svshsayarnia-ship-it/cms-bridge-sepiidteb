@@ -12,6 +12,7 @@ import {
   productHref,
 } from "../../../catalog";
 import { categories, products } from "../../../data";
+import { siteOrigin } from "../../../lib/site-url";
 
 export function generateStaticParams() {
   return catalogGroups.map((group) => ({ group: group.slug }));
@@ -146,7 +147,7 @@ export default async function ProductGroupPage({
               "@type": "ListItem",
               position: index + 1,
               name: product.nameFa,
-              url: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site${productHref(product)}`,
+              url: `${siteOrigin}${productHref(product)}`,
             })),
           },
         }}

@@ -6,6 +6,7 @@ import { JsonLd } from "../components/JsonLd";
 import { ShopCatalog } from "../components/ShopCatalog";
 import { catalogGroups, productHref } from "../catalog";
 import { categories, products } from "../data";
+import { siteOrigin } from "../lib/site-url";
 
 export const metadata: Metadata = {
   title: "فروشگاه محصولات تخصصی زیبایی",
@@ -121,7 +122,7 @@ export default function ShopPage() {
             itemListElement: products.map((product, index) => ({
               "@type": "ListItem",
               position: index + 1,
-              url: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site${productHref(product)}`,
+              url: `${siteOrigin}${productHref(product)}`,
               name: product.nameFa,
             })),
           },

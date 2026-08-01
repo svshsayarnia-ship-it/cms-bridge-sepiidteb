@@ -41,19 +41,22 @@ export default function Home() {
   return (
     <main id="main-content">
       <section className="sb-hero">
+        <span className="sb-premium-ambient sb-premium-ambient--one" />
+        <span className="sb-premium-ambient sb-premium-ambient--two" />
         <div className="sb-shell sb-hero__grid">
           <div className="sb-hero__content">
             <span className="sb-eyebrow">
               <i />
-              فروشگاه تخصصی و مجله تصمیم‌یار زیبایی
+              MEDICAL LUXURY COMMERCE / SEPIID BEAUTY
             </span>
             <h1>
-              محصول را نبینید؛
-              <em>انتخاب را بشناسید.</em>
+              فروشگاه تخصصی زیبایی،
+              <em>با حس یک بوتیک کلینیکال.</em>
             </h1>
             <p>
-              Sepiid Beauty برای خریدهای حرفه‌ای ساخته شده: اطلاعات روشن، بررسی
-              قابل‌پیگیری و پشتیبانی که قبل از پرداخت کنار شماست.
+              نسخه‌ی جدید سپید بیوتی، فروشگاه، مجله و CMS را در یک تجربه‌ی
+              پریمیوم کنار هم می‌گذارد: تصویر، حرکت، راهنمای انتخاب و انتشار
+              محصول از یک مسیر منظم.
             </p>
             <div className="sb-hero__actions">
               <Link className="sb-btn sb-btn--dark" href="/shop">
@@ -72,7 +75,21 @@ export default function Home() {
           </div>
 
           <figure className="sb-hero__media">
-            <div className="sb-hero__photo">
+            <div className="sb-premium-stage" aria-hidden="true">
+              <span className="sb-premium-stage__orbit sb-premium-stage__orbit--one" />
+              <span className="sb-premium-stage__orbit sb-premium-stage__orbit--two" />
+              <span className="sb-premium-stage__disc" />
+              <span className="sb-premium-pack">
+                <i />
+                <b>SEPIID</b>
+                <small>verified aesthetic supply</small>
+              </span>
+              <span className="sb-premium-vial">
+                <i />
+              </span>
+              <span className="sb-premium-syringe" />
+            </div>
+            <div className="sb-hero__photo sb-hero__photo--premium">
               <img
                 src="/images/drive/hero-rejuvenation.webp"
                 alt="تصویر ادیتوریال جوان‌سازی پوست از مجموعه Sepiid Beauty"

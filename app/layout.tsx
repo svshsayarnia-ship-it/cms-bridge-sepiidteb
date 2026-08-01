@@ -5,18 +5,16 @@ import "./globals.css";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
+import { siteOrigin } from "./lib/site-url";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sepiid-beauty-home.svshsayarnia.chatgpt.site"),
+  metadataBase: new URL(siteOrigin),
   title: {
     default: "فروشگاه تخصصی محصولات زیبایی و تزریقی | Sepiid Beauty",
     template: "%s | Sepiid Beauty",
   },
   description:
     "مرجع انتخاب و استعلام فیلر، اسکین‌بوستر، بوتولینوم و کوکتل‌های تخصصی همراه با راهنمای خرید، بررسی اصالت و پشتیبانی انسانی.",
-  other: {
-    "codex-preview": "development",
-  },
   alternates: {
     canonical: "/",
   },
@@ -52,7 +50,7 @@ export default function RootLayout({
             "@type": "OnlineStore",
             name: "Sepiid Beauty",
             alternateName: "سپید بیوتی",
-            url: "https://sepiid-beauty-home.svshsayarnia.chatgpt.site",
+            url: siteOrigin,
             telephone: "+989037251266",
             areaServed: "IR",
             description:
@@ -70,7 +68,7 @@ export default function RootLayout({
             "@context": "https://schema.org",
             "@type": "WebSite",
             name: "Sepiid Beauty",
-            url: "https://sepiid-beauty-home.svshsayarnia.chatgpt.site",
+            url: siteOrigin,
           }}
         />
       </body>

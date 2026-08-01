@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin } from "./lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,8 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap:
-      "https://sepiid-beauty-home.svshsayarnia.chatgpt.site/sitemap.xml",
+    sitemap: `${siteOrigin}/sitemap.xml`,
   };
 }
-

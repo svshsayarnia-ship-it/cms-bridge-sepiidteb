@@ -7,6 +7,7 @@ import { JsonLd } from "../../components/JsonLd";
 import { ShopCatalog } from "../../components/ShopCatalog";
 import { getGroupForCategory, productHref } from "../../catalog";
 import { categories, getCategory, products } from "../../data";
+import { siteOrigin } from "../../lib/site-url";
 
 export function generateStaticParams() {
   return categories.map((category) => ({ category: category.slug }));
@@ -146,7 +147,7 @@ export default async function CategoryPage({
               "@type": "ListItem",
               position: index + 1,
               name: product.nameFa,
-              url: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site${productHref(product)}`,
+              url: `${siteOrigin}${productHref(product)}`,
             })),
           },
         }}

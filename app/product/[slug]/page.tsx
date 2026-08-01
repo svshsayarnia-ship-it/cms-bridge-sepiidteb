@@ -19,6 +19,7 @@ import {
   products,
   whatsappHref,
 } from "../../data";
+import { siteOrigin } from "../../lib/site-url";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -302,8 +303,8 @@ export default async function ProductPage({
           },
           category: product.categoryTitle,
           description: product.summary,
-          image: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site${image}`,
-          url: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site/product/${product.slug}`,
+          image: `${siteOrigin}${image}`,
+          url: `${siteOrigin}/product/${product.slug}`,
           audience: {
             "@type": "Audience",
             audienceType: product.audience,

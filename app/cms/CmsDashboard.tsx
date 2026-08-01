@@ -20,6 +20,10 @@ const STATUS_LABELS: Record<CmsProduct["status"], string> = {
   private: "خصوصی",
 };
 
+function plainText(html: string) {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function blankProduct(): CmsProduct {
   return {
     id: 0,
@@ -167,6 +171,24 @@ export function CmsDashboard({ userName }: { userName: string }) {
     () => new Set(selected?.categories.map((category) => category.id) ?? []),
     [selected],
   );
+
+  const premiumReadiness = useMemo(() => {
+    if (!selected) return [];
+    return [
+      { label: "نام محصول کامل است", ready: selected.name.trim().length >= 3 },
+      {
+        label: "توضیح کوتاه برای کارت محصول آماده است",
+        ready: plainText(selected.shortDescription).length >= 35,
+      },
+      {
+        label: "توضیحات کامل صفحه محصول نوشته شده است",
+        ready: plainText(selected.description).length >= 120,
+      },
+      { label: "حداقل یک دسته‌بندی انتخاب شده", ready: selected.categories.length > 0 },
+      { label: "تصویر اصلی محصول اضافه شده", ready: selected.images.length > 0 },
+      { label: "وضعیت موجودی مشخص است", ready: Boolean(selected.stockStatus) },
+    ];
+  }, [selected]);
 
   function edit(patch: Partial<CmsProduct>) {
     setSelected((current) => (current ? { ...current, ...patch } : current));
@@ -449,6 +471,25 @@ export function CmsDashboard({ userName }: { userName: string }) {
                     {saving ? "در حال ذخیره..." : "ذخیره در وردپرس"}
                   </button>
                 </div>
+              </div>
+
+              <div className="spb-premium-panel">
+                <div>
+                  <span>PREMIUM PUBLISH CHECK</span>
+                  <h3>آماده‌سازی محصول برای نسخه پریمیوم سایت</h3>
+                  <p>
+                    قبل از انتشار، این چک‌لیست کمک می‌کند کارت محصول، صفحه محصول و
+                    خروجی ووکامرس با ظاهر کامل سایت هماهنگ بماند.
+                  </p>
+                </div>
+                <ul>
+                  {premiumReadiness.map((item) => (
+                    <li className={item.ready ? "is-ready" : ""} key={item.label}>
+                      <i />
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className="spb-cms-section">

@@ -8,6 +8,7 @@ import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
 import { articles, getArticle, products } from "../../data";
+import { siteOrigin } from "../../lib/site-url";
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -219,7 +220,7 @@ export default async function ArticlePage({
           "@type": "Article",
           headline: article.title,
           description: article.excerpt,
-          image: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site${image}`,
+          image: `${siteOrigin}${image}`,
           inLanguage: "fa-IR",
           author: {
             "@type": "Organization",
@@ -231,10 +232,9 @@ export default async function ArticlePage({
           },
           datePublished: "2026-07-25",
           dateModified: "2026-07-25",
-          mainEntityOfPage: `https://sepiid-beauty-home.svshsayarnia.chatgpt.site/magazine/${article.slug}`,
+          mainEntityOfPage: `${siteOrigin}/magazine/${article.slug}`,
         }}
       />
     </main>
   );
 }
-
