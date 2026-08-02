@@ -20,6 +20,54 @@ import {
   whatsappHref,
 } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
+import {
+  getProductBySlug as getCmsProductBySlug,
+  WooCommerceError,
+} from "../../lib/woocommerce";
+
+export const dynamic = "force-dynamic";
+
+const priceFormatter = new Intl.NumberFormat("fa-IR");
+
+type ProductPricing = {
+  label: string;
+  note: string;
+};
+
+function formatTomanPrice(value: string) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "";
+  return `${priceFormatter.format(numeric)} تومان`;
+}
+
+async function getLiveProductPricing(slug: string): Promise<ProductPricing | null> {
+  try {
+    const cmsProduct = await getCmsProductBySlug(slug);
+    if (!cmsProduct) return null;
+
+    if (cmsProduct.stockStatus === "outofstock") {
+      return {
+        label: "ناموجود",
+        note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
+      };
+    }
+
+    const salePrice = formatTomanPrice(cmsProduct.salePrice);
+    const regularPrice = formatTomanPrice(cmsProduct.regularPrice || cmsProduct.price);
+    const livePrice = salePrice || regularPrice;
+    if (!livePrice) return null;
+
+    return {
+      label: livePrice,
+      note: salePrice && regularPrice
+        ? `قیمت عادی: ${regularPrice}`
+        : "قیمت از CMS / WooCommerce خوانده شده است.",
+    };
+  } catch (error) {
+    if (error instanceof WooCommerceError) return null;
+    throw error;
+  }
+}
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -63,6 +111,7 @@ export default async function ProductPage({
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const image = product.image;
   const group = getGroupForCategory(product.category);
+  const livePricing = await getLiveProductPricing(product.slug);
   const inquiryLink = whatsappHref(
     `سلام، برای «${product.nameFa}» موجودی، قیمت و مشخصات بسته موجود را استعلام می‌کنم.`,
   );
@@ -155,8 +204,10 @@ export default async function ProductPage({
             <div className="sb-product-summary__order">
               <div>
                 <span>قیمت و موجودی</span>
-                <strong>استعلام همان روز</strong>
-                <small>اطلاعات ساختگی یا قیمت منقضی نمایش داده نمی‌شود.</small>
+                <strong>{livePricing?.label ?? "استعلام همان روز"}</strong>
+                <small>
+                  {livePricing?.note ?? "اطلاعات ساختگی یا قیمت منقضی نمایش داده نمی‌شود."}
+                </small>
               </div>
               <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
                 استعلام موجودی و مشخصات همین بچ
@@ -286,7 +337,7 @@ export default async function ProductPage({
       <div className="sb-product-mobile-cta">
         <div>
           <span>{product.brand}</span>
-          <strong>استعلام روز</strong>
+          <strong>{livePricing?.label ?? "استعلام روز"}</strong>
         </div>
         <Link href={inquiryLink}>استعلام موجودی و مشخصات</Link>
       </div>

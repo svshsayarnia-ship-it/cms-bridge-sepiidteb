@@ -256,6 +256,24 @@ export async function getProduct(id: number): Promise<CmsProduct> {
   return mapProduct(response.data);
 }
 
+export async function getProductBySlug(slug: string): Promise<CmsProduct | null> {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) return null;
+
+  const response = await wooRequest<WooProduct[]>(
+    "products",
+    {},
+    new URLSearchParams({
+      slug: cleanSlug,
+      per_page: "1",
+      status: "any",
+    }),
+  );
+
+  const [product] = response.data;
+  return product ? mapProduct(product) : null;
+}
+
 async function assertUniqueSku(sku: string, currentId?: number) {
   if (!sku.trim()) return;
   const query = new URLSearchParams({ sku: sku.trim(), per_page: "10" });

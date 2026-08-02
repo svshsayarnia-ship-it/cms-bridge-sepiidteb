@@ -190,6 +190,9 @@ export function SiteHeader() {
           </button>
 
           <div className="sb-header__actions">
+            <Link className="sb-header__account" href="/account">
+              ورود / عضویت
+            </Link>
             <Link className="sb-btn sb-btn--ghost sb-header__consult" href={whatsappHref()}>
               مشاوره و استعلام
             </Link>
