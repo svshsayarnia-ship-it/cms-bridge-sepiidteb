@@ -2,9 +2,12 @@ import { cmsApiGuard } from "@/app/lib/cms-auth";
 import { errorResponse, uploadMedia, WooCommerceError } from "@/app/lib/woocommerce";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "fra1";
+export const maxDuration = 120;
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const denied = await cmsApiGuard(request);
@@ -19,8 +22,15 @@ export async function POST(request: Request) {
     if (!ALLOWED_TYPES.has(file.type)) {
       throw new WooCommerceError("فرمت تصویر مجاز نیست.", 415, "invalid_image_type");
     }
-    if (file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
-      throw new WooCommerceError("حجم هر تصویر باید کمتر از ۱۰ مگابایت باشد.", 413, "image_too_large");
+    if (file.size <= 0) {
+      throw new WooCommerceError("فایل تصویر خالی است.", 400, "empty_image");
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new WooCommerceError(
+        "حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.",
+        413,
+        "image_too_large",
+      );
     }
 
     const image = await uploadMedia(file, String(form.get("alt") ?? ""));
