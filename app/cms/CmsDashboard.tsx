@@ -18,6 +18,7 @@ const STATUS_LABELS: Record<CmsProduct["status"], string> = {
   draft: "پیش‌نویس",
   pending: "در انتظار بررسی",
   private: "خصوصی",
+  const CMS_IMAGE_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024;
 };
 
 function plainText(html: string) {
@@ -280,16 +281,24 @@ export function CmsDashboard({ userName }: { userName: string }) {
     });
   }
 
-  async function uploadFiles(files: FileList | null) {
-    if (!selected || !files?.length) return;
-    setUploading(true);
-    setError("");
-    try {
-      const uploaded: CmsImage[] = [];
-      for (const file of Array.from(files)) {
-        const form = new FormData();
-        form.set("file", file);
-        form.set("alt", selected.name);
+async function uploadFiles(files: FileList | null) {
+  if (!selected || !files?.length) return;
+  const selectedFiles = Array.from(files);
+  const oversized = selectedFiles.find((file) => file.size > CMS_IMAGE_UPLOAD_LIMIT_BYTES);
+  if (oversized) {
+    setNotice("");
+    setError("حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.");
+    return;
+  }
+
+  setUploading(true);
+  setError("");
+  try {
+    const uploaded: CmsImage[] = [];
+    for (const file of selectedFiles) {
+      const form = new FormData();
+      form.set("file", file);
+      form.set("alt", selected.name);
         const data = await api<{ image: CmsImage }>("/api/cms/media", {
           method: "POST",
           body: form,
