@@ -45,9 +45,10 @@ type WooCategory = {
 type WooRequestResult<T> = {
   data: T;
   headers: Headers;
-  const DEFAULT_WOO_TIMEOUT_MS = timeoutMs = DEFAULT_WOO_TIMEOUT_MS,;
-const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
 };
+
+const DEFAULT_WOO_TIMEOUT_MS = 20_000;
+const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
 
 export class WooCommerceError extends Error {
   constructor(
@@ -111,7 +112,7 @@ async function wooRequest<T>(
   path: string,
   options: RequestInit = {},
   query?: URLSearchParams,
-  timeoutMs = 20_000,
+  timeoutMs = DEFAULT_WOO_TIMEOUT_MS,
 ): Promise<WooRequestResult<T>> {
   const { consumerKey, consumerSecret } = config();
   const headers = new Headers(options.headers);
