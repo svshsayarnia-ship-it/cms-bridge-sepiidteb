@@ -8011,11 +8011,3 @@ iframe {
 * {
   min-width: 0;
 }
-html,
-body {
-  width: 100vw !important;
-  min-width: 100vw !important;
-  max-width: 100vw !important;
-  margin-inline: 0 !important;
-  overflow-x: hidden !important;
-}
