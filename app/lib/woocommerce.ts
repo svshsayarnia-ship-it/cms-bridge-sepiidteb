@@ -367,7 +367,7 @@ export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
 
 export async function connectionStatus(): Promise<CmsConnectionStatus> {
   const { storeUrl } = config();
-  let productCount: number | null = null;
+  let productCount= 0;
   let connectionProblem: WooCommerceError | null = null;
 
   try {
