@@ -56,7 +56,9 @@ export type CmsProductsResponse = {
 export type CmsConnectionStatus = {
   connected: boolean;
   storeUrl: string;
-  productCount: number;
+  productCount: number | null;
   bridgeVersion: string | null;
   mediaUploadReady: boolean;
+  message?: string;
+  code?: string;
 };
