@@ -45,6 +45,8 @@ type WooCategory = {
 type WooRequestResult<T> = {
   data: T;
   headers: Headers;
+  const DEFAULT_WOO_TIMEOUT_MS = timeoutMs = DEFAULT_WOO_TIMEOUT_MS,;
+const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
 };
 
 export class WooCommerceError extends Error {
@@ -158,8 +160,14 @@ async function wooRequest<T>(
   } catch (error) {
     if (error instanceof WooCommerceError) throw error;
     if (error instanceof Error && error.name === "AbortError") {
-      throw new WooCommerceError("زمان اتصال به وردپرس تمام شد.", 504, "woo_timeout");
-    }
+  throw new WooCommerceError(
+    path === "sepiid-media"
+      ? "آپلود تصویر در وردپرس بیش از حد طول کشید. تصویر را سبک‌تر کن یا دوباره تلاش کن."
+      : "زمان اتصال به وردپرس تمام شد.",
+    504,
+    "woo_timeout",
+  );
+}
     throw new WooCommerceError(
       error instanceof Error ? error.message : "اتصال به وردپرس ناموفق بود.",
       502,
@@ -358,11 +366,17 @@ export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
   const form = new FormData();
   form.set("file", file, file.name);
   form.set("alt", alt);
-  const response = await wooRequest<WooImage>("sepiid-media", {
-    method: "POST",
-    body: form,
-  });
+  const response = await wooRequest<WooImage>(
+    "sepiid-media",
+    {
+      method: "POST",
+      body: form,
+    },
+    undefined,
+    MEDIA_UPLOAD_TIMEOUT_MS,
+  );
   return mapImage(response.data);
+}
 }
 
 export async function connectionStatus(): Promise<CmsConnectionStatus> {
