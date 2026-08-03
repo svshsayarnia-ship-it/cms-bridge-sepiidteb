@@ -18,8 +18,9 @@ const STATUS_LABELS: Record<CmsProduct["status"], string> = {
   draft: "پیش‌نویس",
   pending: "در انتظار بررسی",
   private: "خصوصی",
-  const CMS_IMAGE_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024;
 };
+
+const CMS_IMAGE_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024;
 
 function plainText(html: string) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
