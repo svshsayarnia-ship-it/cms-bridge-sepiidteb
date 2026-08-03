@@ -340,11 +340,17 @@ export function CmsDashboard({ userName }: { userName: string }) {
       <header className="spb-cms-header">
         <div>
           <strong>Sepiid CMS</strong>
-          <span>{connection?.connected ? `متصل به ${connection.storeUrl}` : "بررسی اتصال..."}</span>
+          <span>
+            {connection
+              ? connection.connected
+                ? `متصل به ${connection.storeUrl}`
+                : `عدم اتصال به ${connection.storeUrl}`
+              : "بررسی اتصال..."}
+          </span>
         </div>
         <div className="spb-cms-header__status">
           <span className={connection?.connected ? "is-online" : ""}>
-            {connection?.connected ? "اتصال برقرار" : "در حال اتصال"}
+            {connection?.connected ? "اتصال برقرار" : connection ? "اتصال ناموفق" : "در حال اتصال"}
           </span>
           <small>{userName}</small>
           <form action="/api/cms/logout" method="post">
@@ -355,9 +361,16 @@ export function CmsDashboard({ userName }: { userName: string }) {
         </div>
       </header>
 
+      {connection && !connection.connected && (
+        <div className="spb-cms-alert is-error">
+          اتصال CMS به WooCommerce برقرار نشد: {connection.message || "وردپرس پاسخ نداد."}
+        </div>
+      )}
       {connection && !connection.mediaUploadReady && (
         <div className="spb-cms-warning">
-          ویرایش محصول فعال است؛ برای آپلود مستقیم عکس، افزونه Sepiid Product Bridge نسخه 1.4 یا جدیدتر را نصب کن.
+          {connection.connected
+            ? "ویرایش محصول فعال است؛ برای آپلود مستقیم عکس، افزونه Sepiid Product Bridge نسخه 1.4 یا جدیدتر را نصب کن."
+            : "تا زمانی که اتصال WooCommerce برقرار نشود، آپلود عکس و ذخیره محصول هم ناموفق می‌ماند."}
         </div>
       )}
       {error && <div className="spb-cms-alert is-error">{error}</div>}
