@@ -109,6 +109,7 @@ async function wooRequest<T>(
   path: string,
   options: RequestInit = {},
   query?: URLSearchParams,
+  timeoutMs = 20_000,
 ): Promise<WooRequestResult<T>> {
   const { consumerKey, consumerSecret } = config();
   const headers = new Headers(options.headers);
@@ -124,7 +125,7 @@ async function wooRequest<T>(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(apiUrl(path, query), {
@@ -365,30 +366,56 @@ export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
 }
 
 export async function connectionStatus(): Promise<CmsConnectionStatus> {
-  const products = await wooRequest<WooProduct[]>(
-    "products",
-    {},
-    new URLSearchParams({ per_page: "1", status: "any" }),
-  );
+  const { storeUrl } = config();
+  let productCount: number | null = null;
+  let connectionProblem: WooCommerceError | null = null;
+
+  try {
+    const products = await wooRequest<Array<Pick<WooProduct, "id">>>(
+      "products",
+      {},
+      new URLSearchParams({
+        per_page: "1",
+        status: "any",
+        _fields: "id",
+      }),
+      12_000,
+    );
+    productCount = Number(products.headers.get("x-wp-total") ?? products.data.length);
+  } catch (error) {
+    connectionProblem =
+      error instanceof WooCommerceError
+        ? error
+        : new WooCommerceError("اتصال به WooCommerce ناموفق بود.", 502);
+  }
 
   let bridgeVersion: string | null = null;
   let mediaUploadReady = false;
-  try {
-    const bridge = await wooRequest<{ version: string; media_upload: boolean }>(
-      "sepiid-bridge/health",
-    );
-    bridgeVersion = bridge.data.version;
-    mediaUploadReady = bridge.data.media_upload;
-  } catch (error) {
-    if (!(error instanceof WooCommerceError) || error.status !== 404) throw error;
+  if (!connectionProblem) {
+    try {
+      const bridge = await wooRequest<{ version: string; media_upload: boolean }>(
+        "sepiid-bridge/health",
+        {},
+        undefined,
+        8_000,
+      );
+      bridgeVersion = bridge.data.version;
+      mediaUploadReady = bridge.data.media_upload;
+    } catch (error) {
+      if (!(error instanceof WooCommerceError) || error.status !== 404) {
+        mediaUploadReady = false;
+      }
+    }
   }
 
   return {
-    connected: true,
-    storeUrl: config().storeUrl,
-    productCount: Number(products.headers.get("x-wp-total") ?? products.data.length),
+    connected: !connectionProblem,
+    storeUrl,
+    productCount,
     bridgeVersion,
     mediaUploadReady,
+    message: connectionProblem?.message,
+    code: connectionProblem?.code,
   };
 }
 
