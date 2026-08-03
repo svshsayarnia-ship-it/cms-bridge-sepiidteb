@@ -378,11 +378,10 @@ export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
   );
   return mapImage(response.data);
 }
-}
 
 export async function connectionStatus(): Promise<CmsConnectionStatus> {
   const { storeUrl } = config();
-  let productCount= 0;
+  let productCount: number | null = null ;
   let connectionProblem: WooCommerceError | null = null;
 
   try {
