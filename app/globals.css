@@ -34,22 +34,20 @@
 }
 
 html {
-  overflow-x: clip;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   scroll-behavior: smooth;
   background: var(--sb-bg);
 }
 
 body {
+  max-width: 100%;
   margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   background: var(--sb-bg);
-  color: var(--sb-text);
-  font-family: "Vazirmatn Variable", Vazir, Tahoma, sans-serif;
-  font-size: 16px;
-  font-weight: 430;
-  line-height: 1.85;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
+
 
 body::before {
   position: fixed;
