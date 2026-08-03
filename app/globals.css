@@ -6062,7 +6062,12 @@ contain: paint;
 .sb-hero__orb--two { bottom: 16%; left: 12%; width: 32px; height: 32px; animation: sb-float 7.2s ease-in-out -1.6s infinite; }
 @keyframes sb-float { 50% { transform: translate3d(0, -9px, 0) scale(1.05); } }
 
-.sb-finder__result, .sb-brand-story__panel, .sb-product-authenticity { isolation: isolate; }
+..sb-finder__result,
+.sb-brand-story__panel,
+.sb-product-authenticity {
+  position: relative;
+  isolation: isolate;
+}
 .sb-finder__result::after, .sb-brand-story__panel::after, .sb-product-authenticity::after {
   position: absolute;
   z-index: -1;
