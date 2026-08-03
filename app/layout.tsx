@@ -45,7 +45,7 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SiteFooter />
-        <SmartAssistant />
+       {/* <SmartAssistant /> */}
         <JsonLd
           data={{
             "@context": "https://schema.org",
