@@ -390,9 +390,10 @@ async function uploadFiles(files: FileList | null) {
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(
-          productInput(productWithImages),
-        ),
+       body: JSON.stringify({
+  ...productInput(productWithImages),
+  expectedModifiedGmt: undefined,
+}),
       },
     );
 
