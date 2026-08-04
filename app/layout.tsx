@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/estedad";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
@@ -8,7 +8,12 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
 
-export const metadata: Metadata = {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
   metadataBase: new URL(siteOrigin),
   title: {
     default: "فروشگاه تخصصی محصولات زیبایی و تزریقی | Sepiid Beauty",
