@@ -51,7 +51,29 @@ async function getLiveProductPricing(slug: string): Promise<ProductPricing | nul
         note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
       };
     }
+async function getLiveProductImage(
+  slug: string,
+): Promise<{ src: string; alt: string } | null> {
+  try {
+    const cmsProduct = await getCmsProductBySlug(slug);
+    const image = cmsProduct?.images?.[0];
 
+    if (!image?.src) {
+      return null;
+    }
+
+    return {
+      src: image.src,
+      alt: image.alt || cmsProduct.name,
+    };
+  } catch (error) {
+    if (error instanceof WooCommerceError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
     const salePrice = formatTomanPrice(cmsProduct.salePrice);
     const regularPrice = formatTomanPrice(cmsProduct.regularPrice || cmsProduct.price);
     const livePrice = salePrice || regularPrice;
@@ -109,9 +131,14 @@ export default async function ProductPage({
     .slice(0, 3);
   const article =
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
-  const image = product.image;
   const group = getGroupForCategory(product.category);
-  const livePricing = await getLiveProductPricing(product.slug);
+
+const [livePricing, liveImage] = await Promise.all([
+  getLiveProductPricing(product.slug),
+  getLiveProductImage(product.slug),
+]);
+
+const image = liveImage?.src || product.image;
   const inquiryLink = whatsappHref(
     `سلام، برای «${product.nameFa}» موجودی، قیمت و مشخصات بسته موجود را استعلام می‌کنم.`,
   );
@@ -137,7 +164,11 @@ export default async function ProductPage({
             <div className="sb-product-gallery__main">
               <img
                 src={image}
-                alt={product.imageAlt ?? `تصویر ${product.nameFa}`}
+                alt={
+  liveImage?.alt ||
+  product.imageAlt ||
+  `تصویر ${product.nameFa}`
+}
                 width="1254"
                 height="1254"
                 fetchPriority="high"
@@ -354,7 +385,9 @@ export default async function ProductPage({
           },
           category: product.categoryTitle,
           description: product.summary,
-          image: `${siteOrigin}${image}`,
+          image: image.startsWith("http")
+  ? image
+  : `${siteOrigin}${image}`,
           url: `${siteOrigin}/product/${product.slug}`,
           audience: {
             "@type": "Audience",
