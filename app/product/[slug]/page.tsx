@@ -113,7 +113,7 @@ async function getLiveProductImage(
     throw error;
   }
 }
-}
+
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
