@@ -436,28 +436,7 @@ async function uploadFiles(files: FileList | null) {
   }
 }
 
-  setUploading(true);
-  setError("");
-  try {
-    const uploaded: CmsImage[] = [];
-    for (const file of selectedFiles) {
-      const form = new FormData();
-      form.set("file", file);
-      form.set("alt", selected.name);
-        const data = await api<{ image: CmsImage }>("/api/cms/media", {
-          method: "POST",
-          body: form,
-        });
-        uploaded.push(data.image);
-      }
-      edit({ images: [...selected.images, ...uploaded] });
-      setNotice(`${uploaded.length} تصویر به رسانه وردپرس اضافه شد. برای اتصال به محصول، ذخیره را بزن.`);
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "آپلود تصویر ناموفق بود.");
-    } finally {
-      setUploading(false);
-    }
-  }
+
 
   function addImageUrl() {
     if (!selected || !imageUrl.trim()) return;
