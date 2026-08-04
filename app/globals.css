@@ -7990,29 +7990,4 @@ overflow-x: hidden; padding-block: clamp(86px, 10vw, 145px); background: #171513
     width: 100%;
   }
 }
-html,
-body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden !important;
-  overscroll-behavior-x: none;
-}
 
-main,
-header,
-footer,
-section,
-nav {
-  max-width: 100%;
-}
-
-img,
-video,
-svg,
-iframe {
-  max-width: 100%;
-}
-
-* {
-  min-width: 0;
-}
