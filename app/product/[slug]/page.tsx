@@ -56,7 +56,12 @@ async function getLiveProductImage(
 ): Promise<{ src: string; alt: string } | null> {
   try {
     const cmsProduct = await getCmsProductBySlug(slug);
-    const image = cmsProduct?.images?.[0];
+
+    if (!cmsProduct) {
+      return null;
+    }
+
+    const image = cmsProduct.images?.[0];
 
     if (!image?.src) {
       return null;
@@ -64,7 +69,7 @@ async function getLiveProductImage(
 
     return {
       src: image.src,
-      alt: image.alt || cmsProduct.name,
+      alt: image.alt || cmsProduct.name || "",
     };
   } catch (error) {
     if (error instanceof WooCommerceError) {
@@ -73,7 +78,7 @@ async function getLiveProductImage(
 
     throw error;
   }
-}
+}}
     const salePrice = formatTomanPrice(cmsProduct.salePrice);
     const regularPrice = formatTomanPrice(cmsProduct.regularPrice || cmsProduct.price);
     const livePrice = salePrice || regularPrice;
