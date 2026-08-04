@@ -40,10 +40,15 @@ function formatTomanPrice(value: string) {
   return `${priceFormatter.format(numeric)} تومان`;
 }
 
-async function getLiveProductPricing(slug: string): Promise<ProductPricing | null> {
+async function getLiveProductPricing(
+  slug: string,
+): Promise<ProductPricing | null> {
   try {
     const cmsProduct = await getCmsProductBySlug(slug);
-    if (!cmsProduct) return null;
+
+    if (!cmsProduct) {
+      return null;
+    }
 
     if (cmsProduct.stockStatus === "outofstock") {
       return {
@@ -51,6 +56,35 @@ async function getLiveProductPricing(slug: string): Promise<ProductPricing | nul
         note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
       };
     }
+
+    const salePrice = formatTomanPrice(cmsProduct.salePrice);
+
+    const regularPrice = formatTomanPrice(
+      cmsProduct.regularPrice || cmsProduct.price,
+    );
+
+    const livePrice = salePrice || regularPrice;
+
+    if (!livePrice) {
+      return null;
+    }
+
+    return {
+      label: livePrice,
+      note:
+        salePrice && regularPrice
+          ? `قیمت عادی: ${regularPrice}`
+          : "قیمت از CMS / WooCommerce خوانده شده است.",
+    };
+  } catch (error) {
+    if (error instanceof WooCommerceError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 async function getLiveProductImage(
   slug: string,
 ): Promise<{ src: string; alt: string } | null> {
@@ -78,22 +112,7 @@ async function getLiveProductImage(
 
     throw error;
   }
-}}
-    const salePrice = formatTomanPrice(cmsProduct.salePrice);
-    const regularPrice = formatTomanPrice(cmsProduct.regularPrice || cmsProduct.price);
-    const livePrice = salePrice || regularPrice;
-    if (!livePrice) return null;
-
-    return {
-      label: livePrice,
-      note: salePrice && regularPrice
-        ? `قیمت عادی: ${regularPrice}`
-        : "قیمت از CMS / WooCommerce خوانده شده است.",
-    };
-  } catch (error) {
-    if (error instanceof WooCommerceError) return null;
-    throw error;
-  }
+}
 }
 
 export function generateStaticParams() {
