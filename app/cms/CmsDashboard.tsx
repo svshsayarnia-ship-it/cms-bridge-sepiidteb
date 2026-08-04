@@ -283,14 +283,158 @@ export function CmsDashboard({ userName }: { userName: string }) {
   }
 
 async function uploadFiles(files: FileList | null) {
-  if (!selected || !files?.length) return;
+  if (!selected || !files?.length || uploading || saving) return;
+
   const selectedFiles = Array.from(files);
-  const oversized = selectedFiles.find((file) => file.size > CMS_IMAGE_UPLOAD_LIMIT_BYTES);
+
+  const oversized = selectedFiles.find(
+    (file) => file.size > CMS_IMAGE_UPLOAD_LIMIT_BYTES,
+  );
+
   if (oversized) {
     setNotice("");
-    setError("حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.");
+    setError(
+      "حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.",
+    );
     return;
   }
+
+  setUploading(true);
+  setSaving(true);
+  setError("");
+  setNotice("");
+
+  try {
+    let currentProduct = selected;
+
+    /*
+     * اگر محصول جدید است، ابتدا آن را به‌صورت پیش‌نویس
+     * در WooCommerce ایجاد می‌کنیم تا شناسه محصول داشته باشد.
+     */
+    if (currentProduct.id === 0) {
+      if (!currentProduct.name.trim()) {
+        throw new Error(
+          "قبل از آپلود تصویر، نام محصول را وارد کن.",
+        );
+      }
+
+      const created = await api<{ product: CmsProduct }>(
+        "/api/cms/products",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(
+            productInput({
+              ...currentProduct,
+              status: "draft",
+            }),
+          ),
+        },
+      );
+
+      currentProduct = created.product;
+
+      setProducts((products) => [
+        created.product,
+        ...products.filter(
+          (product) => product.id !== created.product.id,
+        ),
+      ]);
+
+      setTotal((value) => value + 1);
+    }
+
+    /*
+     * تصاویر مستقیماً داخل Media Library وردپرس آپلود می‌شوند.
+     */
+    const uploadedImages: CmsImage[] = [];
+
+    for (const file of selectedFiles) {
+      const form = new FormData();
+
+      form.set("file", file);
+      form.set("alt", currentProduct.name);
+
+      const uploaded = await api<{ image: CmsImage }>(
+        "/api/cms/media",
+        {
+          method: "POST",
+          body: form,
+        },
+      );
+
+      uploadedImages.push(uploaded.image);
+    }
+
+    /*
+     * عکس‌ها به محصول WooCommerce متصل می‌شوند.
+     * اولین عکس آرایه، تصویر اصلی محصول خواهد بود.
+     */
+    const productWithImages: CmsProduct = {
+      ...currentProduct,
+      images: [
+        ...currentProduct.images,
+        ...uploadedImages,
+      ],
+    };
+
+    /*
+     * ذخیره مستقیم تصاویر روی محصول WooCommerce
+     */
+    const saved = await api<{ product: CmsProduct }>(
+      `/api/cms/products/${currentProduct.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(
+          productInput(productWithImages),
+        ),
+      },
+    );
+
+    /*
+     * اطلاعات نهایی از پاسخ WooCommerce در CMS نمایش داده می‌شود.
+     */
+    setSelected(saved.product);
+
+    setProducts((products) => {
+      const exists = products.some(
+        (product) => product.id === saved.product.id,
+      );
+
+      if (!exists) {
+        return [saved.product, ...products];
+      }
+
+      return products.map((product) =>
+        product.id === saved.product.id
+          ? saved.product
+          : product,
+      );
+    });
+
+    setDirty(false);
+
+    setNotice(
+      uploadedImages.length === 1
+        ? "تصویر مستقیماً روی محصول ووکامرس ذخیره شد."
+        : `${uploadedImages.length} تصویر مستقیماً روی محصول ووکامرس ذخیره شدند.`,
+    );
+  } catch (uploadError) {
+    setError(
+      uploadError instanceof Error
+        ? uploadError.message
+        : "آپلود و اتصال تصویر به محصول ناموفق بود.",
+    );
+  } finally {
+    setUploading(false);
+    setSaving(false);
+  }
+}
 
   setUploading(true);
   setError("");
