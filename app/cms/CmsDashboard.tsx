@@ -374,10 +374,10 @@ async function uploadFiles(files: FileList | null) {
      */
     const productWithImages: CmsProduct = {
       ...currentProduct,
-      images: [
-        ...currentProduct.images,
-        ...uploadedImages,
-      ],
+     images: [
+  ...uploadedImages,
+  ...currentProduct.images,
+],
     };
 
     /*
