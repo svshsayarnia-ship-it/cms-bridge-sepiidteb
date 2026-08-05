@@ -255,7 +255,10 @@ const schemaDescription = plainText(
     liveDescription ||
     product.summary,
 );
+const schemaPrice = getSchemaPrice(liveProduct);
 
+const schemaAvailability =
+  getSchemaAvailability(liveProduct);
 const image = liveImage?.src || product.image;
   const inquiryLink = whatsappHref(
     `سلام، برای «${product.nameFa}» موجودی، قیمت و مشخصات بسته موجود را استعلام می‌کنم.`,
@@ -544,7 +547,7 @@ const image = liveImage?.src || product.image;
             name: product.brand,
           },
           category: product.categoryTitle,
-          description: product.summary,
+          description: schemaDescription,
           image: image.startsWith("http")
   ? image
   : `${siteOrigin}${image}`,
@@ -553,6 +556,21 @@ const image = liveImage?.src || product.image;
             "@type": "Audience",
             audienceType: product.audience,
           },
+          sku: liveProduct?.sku || undefined,
+
+...(schemaPrice
+  ? {
+      offers: {
+        "@type": "Offer",
+        url: `${siteOrigin}/product/${product.slug}`,
+        price: schemaPrice,
+        priceCurrency: "IRR",
+        availability: schemaAvailability,
+        itemCondition:
+          "https://schema.org/NewCondition",
+      },
+    }
+  : {}),
         }}
       />
       <JsonLd
