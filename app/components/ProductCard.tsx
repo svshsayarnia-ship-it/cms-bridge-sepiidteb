@@ -8,11 +8,32 @@ import { productHref } from "../catalog";
 import type { Product } from "../data";
 import { ArrowIcon, ShieldIcon } from "./Icons";
 
-type ProductImageResponse = {
-  found?: boolean;
+type LiveProductImage = {
   image?: string | null;
   alt?: string;
 };
+
+type ProductImagesResponse = {
+  images?: Record<string, LiveProductImage>;
+};
+
+let liveImagesPromise: Promise<ProductImagesResponse> | null = null;
+
+function getLiveProductImages(): Promise<ProductImagesResponse> {
+  if (!liveImagesPromise) {
+    liveImagesPromise = fetch("/api/store-product-images")
+      .then(async (response) => {
+        if (!response.ok) {
+          return { images: {} };
+        }
+
+        return (await response.json()) as ProductImagesResponse;
+      })
+      .catch(() => ({ images: {} }));
+  }
+
+  return liveImagesPromise;
+}
 
 export function ProductCard({
   product,
@@ -32,30 +53,18 @@ export function ProductCard({
     let cancelled = false;
 
     async function loadLiveImage() {
-      try {
-        const response = await fetch(
-          `/api/store-product-image?slug=${encodeURIComponent(product.slug)}`,
-          {
-            cache: "no-store",
-          },
-        );
+      const data = await getLiveProductImages();
 
-        if (!response.ok) return;
+      if (cancelled) return;
 
-        const data =
-          (await response.json()) as ProductImageResponse;
+      const liveImage = data.images?.[product.slug];
 
-        if (cancelled) return;
+      if (liveImage?.image) {
+        setImageSrc(liveImage.image);
+      }
 
-        if (data.image) {
-          setImageSrc(data.image);
-        }
-
-        if (data.alt) {
-          setImageAlt(data.alt);
-        }
-      } catch {
-        // اگر وردپرس موقتاً پاسخ نداد، تصویر ثابت قبلی باقی می‌ماند.
+      if (liveImage?.alt) {
+        setImageAlt(liveImage.alt);
       }
     }
 
