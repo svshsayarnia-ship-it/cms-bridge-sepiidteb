@@ -206,23 +206,149 @@ setTotalPages(Math.max(1, productData.totalPages));
     [selected],
   );
 
-  const premiumReadiness = useMemo(() => {
-    if (!selected) return [];
-    return [
-      { label: "نام محصول کامل است", ready: selected.name.trim().length >= 3 },
-      {
-        label: "توضیح کوتاه برای کارت محصول آماده است",
-        ready: plainText(selected.shortDescription).length >= 35,
-      },
-      {
-        label: "توضیحات کامل صفحه محصول نوشته شده است",
-        ready: plainText(selected.description).length >= 120,
-      },
-      { label: "حداقل یک دسته‌بندی انتخاب شده", ready: selected.categories.length > 0 },
-      { label: "تصویر اصلی محصول اضافه شده", ready: selected.images.length > 0 },
-      { label: "وضعیت موجودی مشخص است", ready: Boolean(selected.stockStatus) },
-    ];
-  }, [selected]);
+ const premiumReadiness = useMemo(() => {
+  if (!selected) {
+    return [];
+  }
+
+  const shortDescriptionLength =
+    plainText(
+      selected.shortDescription,
+    ).length;
+
+  const descriptionLength =
+    plainText(
+      selected.description,
+    ).length;
+
+  const seoTitleLength =
+    selected.seoTitle.trim().length;
+
+  const metaDescriptionLength =
+    selected.metaDescription.trim().length;
+
+  const hasValidSourceUrl =
+    !selected.sourceUrl.trim() ||
+    /^https?:\/\/[^\s]+$/i.test(
+      selected.sourceUrl.trim(),
+    );
+
+  const hasValidReviewDate =
+    !selected.reviewedAt.trim() ||
+    !Number.isNaN(
+      new Date(
+        selected.reviewedAt,
+      ).getTime(),
+    );
+
+  return [
+    {
+      label: "نام محصول کامل است",
+      ready:
+        selected.name.trim().length >= 3,
+    },
+    {
+      label: "نامک محصول مشخص است",
+      ready:
+        selected.slug.trim().length >= 3,
+    },
+    {
+      label:
+        "توضیح کوتاه حداقل ۳۵ نویسه دارد",
+      ready:
+        shortDescriptionLength >= 35,
+    },
+    {
+      label:
+        "توضیحات کامل حداقل ۱۲۰ نویسه دارد",
+      ready:
+        descriptionLength >= 120,
+    },
+    {
+      label:
+        "حداقل یک دسته‌بندی انتخاب شده",
+      ready:
+        selected.categories.length > 0,
+    },
+    {
+      label:
+        "تصویر اصلی محصول اضافه شده",
+      ready:
+        selected.images.length > 0,
+    },
+    {
+      label:
+        "متن جایگزین تصویر اصلی ثبت شده",
+      ready: Boolean(
+        selected.images[0]?.alt.trim(),
+      ),
+    },
+    {
+      label:
+        "عنوان سئو بین ۳۰ تا ۶۵ نویسه است",
+      ready:
+        seoTitleLength >= 30 &&
+        seoTitleLength <= 65,
+    },
+    {
+      label:
+        "توضیح متا بین ۹۰ تا ۱۶۰ نویسه است",
+      ready:
+        metaDescriptionLength >= 90 &&
+        metaDescriptionLength <= 160,
+    },
+    {
+      label:
+        "کلمه کلیدی اصلی مشخص است",
+      ready:
+        selected.focusKeyword.trim()
+          .length >= 2,
+    },
+    {
+      label:
+        "نام منبع علمی یا رسمی ثبت شده",
+      ready:
+        selected.sourceName.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "آدرس منبع معتبر است",
+      ready:
+        Boolean(
+          selected.sourceUrl.trim(),
+        ) && hasValidSourceUrl,
+    },
+    {
+      label:
+        "نام بازبین محتوا ثبت شده",
+      ready:
+        selected.reviewerName.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "سمت یا تخصص بازبین ثبت شده",
+      ready:
+        selected.reviewerRole.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "تاریخ بازبینی معتبر است",
+      ready:
+        Boolean(
+          selected.reviewedAt.trim(),
+        ) && hasValidReviewDate,
+    },
+    {
+      label:
+        "وضعیت موجودی مشخص است",
+      ready:
+        Boolean(selected.stockStatus),
+    },
+  ];
+}, [selected]);
 
   function edit(patch: Partial<CmsProduct>) {
     setSelected((current) => (current ? { ...current, ...patch } : current));
