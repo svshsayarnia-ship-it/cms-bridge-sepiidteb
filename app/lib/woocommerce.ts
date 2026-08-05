@@ -345,6 +345,40 @@ function productPayload(input: CmsProductInput) {
     images: input.images.map((image) =>
       image.id > 0 ? { id: image.id } : { src: image.src, alt: image.alt },
     ),
+    meta_data: [
+  {
+    key: "sepiid_seo_title",
+    value: input.seoTitle,
+  },
+  {
+    key: "sepiid_meta_description",
+    value: input.metaDescription,
+  },
+  {
+    key: "sepiid_focus_keyword",
+    value: input.focusKeyword,
+  },
+  {
+    key: "sepiid_source_name",
+    value: input.sourceName,
+  },
+  {
+    key: "sepiid_source_url",
+    value: input.sourceUrl,
+  },
+  {
+    key: "sepiid_reviewer_name",
+    value: input.reviewerName,
+  },
+  {
+    key: "sepiid_reviewer_role",
+    value: input.reviewerRole,
+  },
+  {
+    key: "sepiid_reviewed_at",
+    value: input.reviewedAt,
+  },
+],
   };
 }
 
