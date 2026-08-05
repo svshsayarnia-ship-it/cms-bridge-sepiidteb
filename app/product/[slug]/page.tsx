@@ -19,6 +19,7 @@ import {
   products,
   whatsappHref,
 } from "../../data";
+import type { Product } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import {
@@ -126,6 +127,51 @@ function getLiveProductImage(
   return {
     src: image.src,
     alt: image.alt || cmsProduct.name || "",
+  };
+}
+function buildCmsOnlyProduct(
+  cmsProduct: CmsProduct,
+): Product {
+  const category = cmsProduct.categories?.[0];
+  const image = getLiveProductImage(cmsProduct);
+
+  const summary =
+    plainText(
+      cmsProduct.shortDescription ||
+        cmsProduct.description ||
+        "",
+    ) ||
+    "اطلاعات این محصول از CMS و WooCommerce دریافت شده است.";
+
+  return {
+    slug: cmsProduct.slug,
+    nameFa: cmsProduct.name,
+    nameEn: "",
+    brand: "",
+    category: category?.slug || "products",
+    categoryTitle: category?.name || "محصولات",
+    image:
+      image?.src ||
+      "/images/editorial-detail.webp",
+    imageAlt:
+      image?.alt ||
+      `تصویر ${cmsProduct.name}`,
+    imageVerified: Boolean(image?.src),
+    position: "center",
+    sourceStatus:
+      cmsProduct.sourceName ||
+      "اطلاعات ثبت‌شده در CMS",
+    summary,
+    shortBenefit: summary,
+    audience: "پزشکان و کلینیک‌ها",
+    features: [],
+    specs: cmsProduct.sku
+      ? [["SKU", cmsProduct.sku]]
+      : [],
+    checks: [
+      "نام محصول، بسته‌بندی، تاریخ و بچ‌کد پیش از مصرف بررسی شود.",
+    ],
+    faq: [],
   };
 }
 function getSchemaPrice(
