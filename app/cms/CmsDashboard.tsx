@@ -899,7 +899,7 @@ async function uploadFiles(files: FileList | null) {
               </div>
 
               <div className="spb-cms-section">
-                <div className="spb-cms-section">
+               
   <h3>سئو و اعتبار محتوا</h3>
 
   <div className="spb-form-grid">
@@ -983,11 +983,13 @@ async function uploadFiles(files: FileList | null) {
         value={selected.reviewedAt}
         onChange={(event) =>
           edit({ reviewedAt: event.target.value })
+          <div className="spb-cms-section">
         }
       />
     </label>
   </div>
 </div>
+                <div className="spb-cms-section">
                 <h3>قیمت و موجودی</h3>
                 <div className="spb-form-grid">
                   <label>
