@@ -281,18 +281,35 @@ export default async function ProductPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) notFound();
+ const { slug } = await params;
 
-  const related = products
+const staticProduct = getProduct(slug);
+const cmsProduct = await getLiveProduct(slug);
+
+if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+  notFound();
+}
+
+const liveProduct = isPublicCmsProduct(cmsProduct)
+  ? cmsProduct
+  : null;
+
+const product =
+  staticProduct ||
+  (liveProduct
+    ? buildCmsOnlyProduct(liveProduct)
+    : null);
+
+if (!product) {
+  notFound();
+}
+
+const related = products
     .filter((item) => item.category === product.category && item.slug !== product.slug)
     .slice(0, 3);
   const article =
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const group = getGroupForCategory(product.category);
-
-const liveProduct = await getLiveProduct(product.slug);
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct);
