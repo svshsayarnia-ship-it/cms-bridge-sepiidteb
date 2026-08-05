@@ -977,16 +977,17 @@ async function uploadFiles(files: FileList | null) {
     </label>
 
     <label>
-      <span>تاریخ بررسی</span>
-      <input
-        type="date"
-        value={selected.reviewedAt}
-        onChange={(event) =>
-          edit({ reviewedAt: event.target.value })
-          <div className="spb-cms-section">
-        }
-      />
-    </label>
+  <span>تاریخ بررسی</span>
+  <input
+    type="date"
+    value={selected.reviewedAt}
+    onChange={(event) =>
+      edit({
+        reviewedAt: event.target.value,
+      })
+    }
+  />
+</label>
   </div>
 </div>
                 <div className="spb-cms-section">
