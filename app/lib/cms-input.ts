@@ -180,8 +180,12 @@ export function parseProductInput(value: unknown): CmsProductInput {
     status: oneOf(input.status, STATUSES, "draft"),
     catalogVisibility: oneOf(input.catalogVisibility, VISIBILITIES, "visible"),
     featured: input.featured === true,
-    description: text(input.description),
-    shortDescription: text(input.shortDescription),
+    description: normalizeRichText(
+  input.description,
+),
+shortDescription: normalizeRichText(
+  input.shortDescription,
+),
     seoTitle: text(input.seoTitle).trim(),
 metaDescription: text(input.metaDescription).trim(),
 focusKeyword: text(input.focusKeyword).trim(),
