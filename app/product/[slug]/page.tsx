@@ -133,7 +133,6 @@ function getLiveProductImage(
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
 }
-
 export async function generateMetadata({
   params,
 }: {
@@ -141,17 +140,46 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = getProduct(slug);
-  if (!product) return {};
+
+  if (!product) {
+    return {};
+  }
+
+  const liveProduct = await getLiveProduct(product.slug);
+  const liveImage = getLiveProductImage(liveProduct);
+
+  const title =
+    liveProduct?.seoTitle?.trim() ||
+    liveProduct?.name ||
+    product.nameFa;
+
+  const cmsDescription = plainText(
+    liveProduct?.shortDescription ||
+      liveProduct?.description ||
+      "",
+  );
+
+  const description =
+    liveProduct?.metaDescription?.trim() ||
+    cmsDescription ||
+    `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`;
+
+  const image = liveImage?.src || product.image;
 
   return {
-    title: product.nameFa,
-    description: `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`,
-    alternates: { canonical: `/product/${product.slug}` },
+    title,
+    description,
+
+    alternates: {
+      canonical: `/product/${product.slug}`,
+    },
+
     openGraph: {
       type: "website",
-      title: `${product.nameFa} | Sepiid Beauty`,
-      description: product.summary,
-      images: [product.image],
+      title,
+      description,
+      url: `/product/${product.slug}`,
+      images: [image],
     },
   };
 }
