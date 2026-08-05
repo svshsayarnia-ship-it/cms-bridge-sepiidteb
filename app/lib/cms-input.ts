@@ -4,7 +4,121 @@ import { WooCommerceError } from "./woocommerce";
 const STATUSES = ["draft", "pending", "private", "publish"] as const;
 const VISIBILITIES = ["visible", "catalog", "search", "hidden"] as const;
 const STOCK_STATUSES = ["instock", "outofstock", "onbackorder"] as const;
+const ALLOWED_RICH_TEXT_TAGS = new Set([
+  "p",
+  "br",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "ul",
+  "ol",
+  "li",
+  "h2",
+  "h3",
+  "a",
+]);
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function normalizeRichText(value: unknown): string {
+  let html = text(value)
+    .replace(/\0/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .trim();
+
+  html = html.replace(
+    /<(script|style|iframe|object|embed|form|svg|math)[^>]*>[\s\S]*?<\/\1\s*>/gi,
+    "",
+  );
+
+  html = html.replace(
+    /<(script|style|iframe|object|embed|form|input|button|svg|math|link|meta)[^>]*\/?>/gi,
+    "",
+  );
+
+  html = html.replace(
+    /<([a-z0-9-]+)\b([^>]*)>/gi,
+    (_match, rawTag: string, rawAttributes: string) => {
+      const tag = rawTag.toLowerCase();
+
+      if (!ALLOWED_RICH_TEXT_TAGS.has(tag)) {
+        return "";
+      }
+
+      if (tag === "br") {
+        return "<br>";
+      }
+
+      if (tag !== "a") {
+        return `<${tag}>`;
+      }
+
+      const quotedHref = rawAttributes.match(
+        /\bhref\s*=\s*(["'])(.*?)\1/i,
+      );
+
+      const plainHref = rawAttributes.match(
+        /\bhref\s*=\s*([^\s"'=<>`]+)/i,
+      );
+
+      const href =
+        quotedHref?.[2]?.trim() ||
+        plainHref?.[1]?.trim() ||
+        "";
+
+      const isSafeHref =
+        /^(https?:\/\/|mailto:|tel:|\/|#)/i.test(
+          href,
+        );
+
+      if (!isSafeHref) {
+        return "<a>";
+      }
+
+      return `<a href="${escapeHtmlAttribute(
+        href,
+      )}" rel="noopener noreferrer">`;
+    },
+  );
+
+  html = html.replace(
+    /<\/([a-z0-9-]+)\s*>/gi,
+    (_match, rawTag: string) => {
+      const tag = rawTag.toLowerCase();
+
+      if (
+        !ALLOWED_RICH_TEXT_TAGS.has(tag) ||
+        tag === "br"
+      ) {
+        return "";
+      }
+
+      return `</${tag}>`;
+    },
+  );
+
+  return html
+    .replace(
+      /<p>(?:\s|&nbsp;|<br>)*<\/p>/gi,
+      "",
+    )
+    .replace(
+      /(?:<br>\s*){3,}/gi,
+      "<br><br>",
+    )
+    .replace(
+      /(?:\s*<p>\s*<\/p>\s*)+/gi,
+      "",
+    )
+    .trim();
+}
 function text(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
@@ -66,8 +180,22 @@ export function parseProductInput(value: unknown): CmsProductInput {
     status: oneOf(input.status, STATUSES, "draft"),
     catalogVisibility: oneOf(input.catalogVisibility, VISIBILITIES, "visible"),
     featured: input.featured === true,
-    description: text(input.description),
-    shortDescription: text(input.shortDescription),
+    description: normalizeRichText(
+  input.description,
+),
+shortDescription: normalizeRichText(
+  input.shortDescription,
+),
+    seoTitle: text(input.seoTitle).trim(),
+metaDescription: text(input.metaDescription).trim(),
+focusKeyword: text(input.focusKeyword).trim(),
+
+sourceName: text(input.sourceName).trim(),
+sourceUrl: text(input.sourceUrl).trim(),
+
+reviewerName: text(input.reviewerName).trim(),
+reviewerRole: text(input.reviewerRole).trim(),
+reviewedAt: text(input.reviewedAt).trim(),
     regularPrice: text(input.regularPrice),
     salePrice: text(input.salePrice),
     manageStock: input.manageStock === true,

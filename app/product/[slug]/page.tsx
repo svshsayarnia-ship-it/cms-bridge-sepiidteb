@@ -19,6 +19,7 @@ import {
   products,
   whatsappHref,
 } from "../../data";
+import type { Product } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import {
@@ -29,7 +30,20 @@ import {
 export const dynamic = "force-dynamic";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const reviewDateFormatter =
+  new Intl.DateTimeFormat("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
+function formatReviewDate(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : reviewDateFormatter.format(date);
+}
 type ProductPricing = {
   label: string;
   note: string;
@@ -128,51 +142,208 @@ function getLiveProductImage(
     alt: image.alt || cmsProduct.name || "",
   };
 }
+function isPublicCmsProduct(
+  cmsProduct: CmsProduct | null,
+): cmsProduct is CmsProduct {
+  return Boolean(
+    cmsProduct &&
+      cmsProduct.status === "publish" &&
+      cmsProduct.catalogVisibility !== "hidden",
+  );
+}
+function buildCmsOnlyProduct(
+  cmsProduct: CmsProduct,
+): Product {
+  const category = cmsProduct.categories?.[0];
+  const image = getLiveProductImage(cmsProduct);
 
+  const summary =
+    plainText(
+      cmsProduct.shortDescription ||
+        cmsProduct.description ||
+        "",
+    ) ||
+    "اطلاعات این محصول از CMS و WooCommerce دریافت شده است.";
+
+  return {
+    slug: cmsProduct.slug,
+    nameFa: cmsProduct.name,
+    nameEn: "",
+    brand: "",
+    category: category?.slug || "products",
+    categoryTitle: category?.name || "محصولات",
+    image:
+      image?.src ||
+      "/images/editorial-detail.webp",
+    imageAlt:
+      image?.alt ||
+      `تصویر ${cmsProduct.name}`,
+    imageVerified: Boolean(image?.src),
+    position: "center",
+    sourceStatus:
+      cmsProduct.sourceName ||
+      "اطلاعات ثبت‌شده در CMS",
+    summary,
+    shortBenefit: summary,
+    audience: "پزشکان و کلینیک‌ها",
+    features: [],
+    specs: cmsProduct.sku
+      ? [["SKU", cmsProduct.sku]]
+      : [],
+    checks: [
+      "نام محصول، بسته‌بندی، تاریخ و بچ‌کد پیش از مصرف بررسی شود.",
+    ],
+    faq: [],
+  };
+}
+function getSchemaPrice(
+  cmsProduct: CmsProduct | null,
+): string | null {
+  if (!cmsProduct) {
+    return null;
+  }
+
+  const rawPrice =
+    cmsProduct.salePrice ||
+    cmsProduct.regularPrice ||
+    cmsProduct.price;
+
+  const tomanPrice = Number(rawPrice);
+
+  if (!Number.isFinite(tomanPrice) || tomanPrice <= 0) {
+    return null;
+  }
+
+  return String(Math.round(tomanPrice * 10));
+}
+
+function getSchemaAvailability(
+  cmsProduct: CmsProduct | null,
+): string {
+  if (!cmsProduct) {
+    return "https://schema.org/PreOrder";
+  }
+
+  if (cmsProduct.stockStatus === "outofstock") {
+    return "https://schema.org/OutOfStock";
+  }
+
+  if (cmsProduct.stockStatus === "onbackorder") {
+    return "https://schema.org/BackOrder";
+  }
+
+  return "https://schema.org/InStock";
+}
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
 }
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) return {};
+
+  const staticProduct = getProduct(slug);
+  const cmsProduct = await getLiveProduct(slug);
+
+  if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+    return {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const liveProduct = isPublicCmsProduct(cmsProduct)
+    ? cmsProduct
+    : null;
+
+  const product =
+    staticProduct ||
+    (liveProduct
+      ? buildCmsOnlyProduct(liveProduct)
+      : null);
+
+  if (!product) {
+    return {};
+  }
+
+  const liveImage = getLiveProductImage(liveProduct);
+
+  const title =
+    liveProduct?.seoTitle?.trim() ||
+    liveProduct?.name ||
+    product.nameFa;
+
+  const cmsDescription = plainText(
+    liveProduct?.shortDescription ||
+      liveProduct?.description ||
+      "",
+  );
+
+  const description =
+    liveProduct?.metaDescription?.trim() ||
+    cmsDescription ||
+    `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`;
+
+  const image =
+    liveImage?.src ||
+    product.image;
 
   return {
-    title: product.nameFa,
-    description: `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`,
-    alternates: { canonical: `/product/${product.slug}` },
+    title,
+    description,
+
+    alternates: {
+      canonical: `/product/${product.slug}`,
+    },
+
     openGraph: {
       type: "website",
-      title: `${product.nameFa} | Sepiid Beauty`,
-      description: product.summary,
-      images: [product.image],
+      title,
+      description,
+      url: `/product/${product.slug}`,
+      images: [image],
     },
   };
 }
-
 export default async function ProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) notFound();
+ const { slug } = await params;
 
-  const related = products
+const staticProduct = getProduct(slug);
+const cmsProduct = await getLiveProduct(slug);
+
+if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+  notFound();
+}
+
+const liveProduct = isPublicCmsProduct(cmsProduct)
+  ? cmsProduct
+  : null;
+
+const product =
+  staticProduct ||
+  (liveProduct
+    ? buildCmsOnlyProduct(liveProduct)
+    : null);
+
+if (!product) {
+  notFound();
+}
+
+const related = products
     .filter((item) => item.category === product.category && item.slug !== product.slug)
     .slice(0, 3);
   const article =
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const group = getGroupForCategory(product.category);
-
-const liveProduct = await getLiveProduct(product.slug);
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct);
@@ -190,7 +361,10 @@ const schemaDescription = plainText(
     liveDescription ||
     product.summary,
 );
+const schemaPrice = getSchemaPrice(liveProduct);
 
+const schemaAvailability =
+  getSchemaAvailability(liveProduct);
 const image = liveImage?.src || product.image;
   const inquiryLink = whatsappHref(
     `سلام، برای «${product.nameFa}» موجودی، قیمت و مشخصات بسته موجود را استعلام می‌کنم.`,
@@ -367,14 +541,59 @@ const image = liveImage?.src || product.image;
               همان محصول مرجع نهایی است.
             </p>
           </div>
-          <dl className="sb-spec-table">
-            {product.specs.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
+         <dl className="sb-spec-table">
+  {product.specs.map(([label, value]) => (
+    <div key={label}>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  ))}
+
+  {liveProduct?.sourceName && (
+    <div>
+      <dt>منبع اطلاعات</dt>
+      <dd>
+        {liveProduct.sourceUrl &&
+        /^https?:\/\//i.test(
+          liveProduct.sourceUrl,
+        ) ? (
+          <a
+            href={liveProduct.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {liveProduct.sourceName}
+          </a>
+        ) : (
+          liveProduct.sourceName
+        )}
+      </dd>
+    </div>
+  )}
+
+  {liveProduct?.reviewerName && (
+    <div>
+      <dt>بازبینی محتوا</dt>
+      <dd>
+        {liveProduct.reviewerName}
+        {liveProduct.reviewerRole
+          ? ` — ${liveProduct.reviewerRole}`
+          : ""}
+      </dd>
+    </div>
+  )}
+
+  {liveProduct?.reviewedAt && (
+    <div>
+      <dt>تاریخ آخرین بازبینی</dt>
+      <dd>
+        {formatReviewDate(
+          liveProduct.reviewedAt,
+        )}
+      </dd>
+    </div>
+  )}
+</dl>
         </div>
       </section>
 
@@ -479,7 +698,7 @@ const image = liveImage?.src || product.image;
             name: product.brand,
           },
           category: product.categoryTitle,
-          description: product.summary,
+          description: schemaDescription,
           image: image.startsWith("http")
   ? image
   : `${siteOrigin}${image}`,
@@ -488,6 +707,21 @@ const image = liveImage?.src || product.image;
             "@type": "Audience",
             audienceType: product.audience,
           },
+          sku: liveProduct?.sku || undefined,
+
+...(schemaPrice
+  ? {
+      offers: {
+        "@type": "Offer",
+        url: `${siteOrigin}/product/${product.slug}`,
+        price: schemaPrice,
+        priceCurrency: "IRR",
+        availability: schemaAvailability,
+        itemCondition:
+          "https://schema.org/NewCondition",
+      },
+    }
+  : {}),
         }}
       />
       <JsonLd

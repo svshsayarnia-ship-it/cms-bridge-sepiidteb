@@ -9,7 +9,11 @@ import type {
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
-
+type WooMetaData = {
+  id?: number;
+  key: string;
+  value: unknown;
+};
 type WooProduct = {
   id: number;
   name: string;
@@ -31,6 +35,7 @@ type WooProduct = {
   images: WooImage[];
   permalink: string;
   date_modified_gmt: string;
+  meta_data: WooMetaData[];
 };
 
 type WooCategory = {
@@ -250,7 +255,18 @@ function mapImage(image: WooImage): CmsImage {
     alt: image.alt ?? "",
   };
 }
+function getProductMeta(
+  product: WooProduct,
+  key: string,
+): string {
+  const meta = (product.meta_data ?? []).find(
+    (item) => item.key === key,
+  );
 
+  return typeof meta?.value === "string"
+    ? meta.value
+    : "";
+}
 function mapProduct(product: WooProduct): CmsProduct {
   return {
     id: product.id,
@@ -263,6 +279,40 @@ function mapProduct(product: WooProduct): CmsProduct {
     featured: product.featured,
     description: product.description,
     shortDescription: product.short_description,
+    seoTitle: getProductMeta(
+  product,
+  "sepiid_seo_title",
+),
+metaDescription: getProductMeta(
+  product,
+  "sepiid_meta_description",
+),
+focusKeyword: getProductMeta(
+  product,
+  "sepiid_focus_keyword",
+),
+
+sourceName: getProductMeta(
+  product,
+  "sepiid_source_name",
+),
+sourceUrl: getProductMeta(
+  product,
+  "sepiid_source_url",
+),
+
+reviewerName: getProductMeta(
+  product,
+  "sepiid_reviewer_name",
+),
+reviewerRole: getProductMeta(
+  product,
+  "sepiid_reviewer_role",
+),
+reviewedAt: getProductMeta(
+  product,
+  "sepiid_reviewed_at",
+),
     price: product.price,
     regularPrice: product.regular_price,
     salePrice: product.sale_price,
@@ -295,6 +345,40 @@ function productPayload(input: CmsProductInput) {
     images: input.images.map((image) =>
       image.id > 0 ? { id: image.id } : { src: image.src, alt: image.alt },
     ),
+    meta_data: [
+  {
+    key: "sepiid_seo_title",
+    value: input.seoTitle,
+  },
+  {
+    key: "sepiid_meta_description",
+    value: input.metaDescription,
+  },
+  {
+    key: "sepiid_focus_keyword",
+    value: input.focusKeyword,
+  },
+  {
+    key: "sepiid_source_name",
+    value: input.sourceName,
+  },
+  {
+    key: "sepiid_source_url",
+    value: input.sourceUrl,
+  },
+  {
+    key: "sepiid_reviewer_name",
+    value: input.reviewerName,
+  },
+  {
+    key: "sepiid_reviewer_role",
+    value: input.reviewerRole,
+  },
+  {
+    key: "sepiid_reviewed_at",
+    value: input.reviewedAt,
+  },
+],
   };
 }
 

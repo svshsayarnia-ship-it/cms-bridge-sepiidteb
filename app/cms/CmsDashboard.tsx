@@ -38,6 +38,16 @@ function blankProduct(): CmsProduct {
     featured: false,
     description: "",
     shortDescription: "",
+    seoTitle: "",
+metaDescription: "",
+focusKeyword: "",
+
+sourceName: "",
+sourceUrl: "",
+
+reviewerName: "",
+reviewerRole: "",
+reviewedAt: "",
     price: "",
     regularPrice: "",
     salePrice: "",
@@ -68,6 +78,16 @@ function productInput(product: CmsProduct): CmsProductInput {
     featured: product.featured,
     description: product.description,
     shortDescription: product.shortDescription,
+    seoTitle: product.seoTitle,
+metaDescription: product.metaDescription,
+focusKeyword: product.focusKeyword,
+
+sourceName: product.sourceName,
+sourceUrl: product.sourceUrl,
+
+reviewerName: product.reviewerName,
+reviewerRole: product.reviewerRole,
+reviewedAt: product.reviewedAt,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
     manageStock: product.manageStock,
@@ -186,24 +206,156 @@ setTotalPages(Math.max(1, productData.totalPages));
     [selected],
   );
 
-  const premiumReadiness = useMemo(() => {
-    if (!selected) return [];
-    return [
-      { label: "نام محصول کامل است", ready: selected.name.trim().length >= 3 },
-      {
-        label: "توضیح کوتاه برای کارت محصول آماده است",
-        ready: plainText(selected.shortDescription).length >= 35,
-      },
-      {
-        label: "توضیحات کامل صفحه محصول نوشته شده است",
-        ready: plainText(selected.description).length >= 120,
-      },
-      { label: "حداقل یک دسته‌بندی انتخاب شده", ready: selected.categories.length > 0 },
-      { label: "تصویر اصلی محصول اضافه شده", ready: selected.images.length > 0 },
-      { label: "وضعیت موجودی مشخص است", ready: Boolean(selected.stockStatus) },
-    ];
-  }, [selected]);
+ const premiumReadiness = useMemo(() => {
+  if (!selected) {
+    return [];
+  }
 
+  const shortDescriptionLength =
+    plainText(
+      selected.shortDescription,
+    ).length;
+
+  const descriptionLength =
+    plainText(
+      selected.description,
+    ).length;
+
+  const seoTitleLength =
+    selected.seoTitle.trim().length;
+
+  const metaDescriptionLength =
+    selected.metaDescription.trim().length;
+
+  const hasValidSourceUrl =
+    !selected.sourceUrl.trim() ||
+    /^https?:\/\/[^\s]+$/i.test(
+      selected.sourceUrl.trim(),
+    );
+
+  const hasValidReviewDate =
+    !selected.reviewedAt.trim() ||
+    !Number.isNaN(
+      new Date(
+        selected.reviewedAt,
+      ).getTime(),
+    );
+
+  return [
+    {
+      label: "نام محصول کامل است",
+      ready:
+        selected.name.trim().length >= 3,
+    },
+    {
+      label: "نامک محصول مشخص است",
+      ready:
+        selected.slug.trim().length >= 3,
+    },
+    {
+      label:
+        "توضیح کوتاه حداقل ۳۵ نویسه دارد",
+      ready:
+        shortDescriptionLength >= 35,
+    },
+    {
+      label:
+        "توضیحات کامل حداقل ۱۲۰ نویسه دارد",
+      ready:
+        descriptionLength >= 120,
+    },
+    {
+      label:
+        "حداقل یک دسته‌بندی انتخاب شده",
+      ready:
+        selected.categories.length > 0,
+    },
+    {
+      label:
+        "تصویر اصلی محصول اضافه شده",
+      ready:
+        selected.images.length > 0,
+    },
+    {
+      label:
+        "متن جایگزین تصویر اصلی ثبت شده",
+      ready: Boolean(
+        selected.images[0]?.alt.trim(),
+      ),
+    },
+    {
+      label:
+        "عنوان سئو بین ۳۰ تا ۶۵ نویسه است",
+      ready:
+        seoTitleLength >= 30 &&
+        seoTitleLength <= 65,
+    },
+    {
+      label:
+        "توضیح متا بین ۹۰ تا ۱۶۰ نویسه است",
+      ready:
+        metaDescriptionLength >= 90 &&
+        metaDescriptionLength <= 160,
+    },
+    {
+      label:
+        "کلمه کلیدی اصلی مشخص است",
+      ready:
+        selected.focusKeyword.trim()
+          .length >= 2,
+    },
+    {
+      label:
+        "نام منبع علمی یا رسمی ثبت شده",
+      ready:
+        selected.sourceName.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "آدرس منبع معتبر است",
+      ready:
+        Boolean(
+          selected.sourceUrl.trim(),
+        ) && hasValidSourceUrl,
+    },
+    {
+      label:
+        "نام بازبین محتوا ثبت شده",
+      ready:
+        selected.reviewerName.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "سمت یا تخصص بازبین ثبت شده",
+      ready:
+        selected.reviewerRole.trim()
+          .length >= 3,
+    },
+    {
+      label:
+        "تاریخ بازبینی معتبر است",
+      ready:
+        Boolean(
+          selected.reviewedAt.trim(),
+        ) && hasValidReviewDate,
+    },
+    {
+      label:
+        "وضعیت موجودی مشخص است",
+      ready:
+        Boolean(selected.stockStatus),
+    },
+  ];
+}, [selected]);
+const failedReadinessItems =
+  premiumReadiness.filter(
+    (item) => !item.ready,
+  );
+
+const isPublishReady =
+  failedReadinessItems.length === 0;
   function edit(patch: Partial<CmsProduct>) {
     setSelected((current) => (current ? { ...current, ...patch } : current));
     setDirty(true);
@@ -227,9 +379,37 @@ setTotalPages(Math.max(1, productData.totalPages));
   }
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!selected || saving) return;
-    setSaving(true);
+   event.preventDefault();
+
+if (!selected || saving) {
+  return;
+}
+
+if (
+  selected.status === "publish" &&
+  !isPublishReady
+) {
+  const missingItems =
+    failedReadinessItems
+      .slice(0, 4)
+      .map((item) => item.label)
+      .join("، ");
+
+  setNotice("");
+  setError(
+    `انتشار انجام نشد. ابتدا موارد ناقص را تکمیل کن: ${missingItems}${
+      failedReadinessItems.length > 4
+        ? ` و ${
+            failedReadinessItems.length - 4
+          } مورد دیگر`
+        : ""
+    }. برای ذخیره موقت، وضعیت محصول را روی «پیش‌نویس» قرار بده.`,
+  );
+
+  return;
+}
+
+setSaving(true);
     setError("");
     setNotice("");
 
@@ -719,6 +899,98 @@ async function uploadFiles(files: FileList | null) {
               </div>
 
               <div className="spb-cms-section">
+               
+  <h3>سئو و اعتبار محتوا</h3>
+
+  <div className="spb-form-grid">
+    <label className="is-wide">
+      <span>عنوان سئو</span>
+      <input
+        value={selected.seoTitle}
+        onChange={(event) =>
+          edit({ seoTitle: event.target.value })
+        }
+        placeholder="مثلاً خرید نورامیس دیپ لیدوکائین"
+      />
+    </label>
+
+    <label className="is-wide">
+      <span>توضیحات متا</span>
+      <textarea
+        value={selected.metaDescription}
+        onChange={(event) =>
+          edit({ metaDescription: event.target.value })
+        }
+        placeholder="خلاصه اختصاصی صفحه برای نتایج گوگل"
+      />
+    </label>
+
+    <label>
+      <span>کلمه کلیدی اصلی</span>
+      <input
+        value={selected.focusKeyword}
+        onChange={(event) =>
+          edit({ focusKeyword: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>نام منبع</span>
+      <input
+        value={selected.sourceName}
+        onChange={(event) =>
+          edit({ sourceName: event.target.value })
+        }
+      />
+    </label>
+
+    <label className="is-wide">
+      <span>لینک منبع</span>
+      <input
+        dir="ltr"
+        value={selected.sourceUrl}
+        onChange={(event) =>
+          edit({ sourceUrl: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>نام بازبین</span>
+      <input
+        value={selected.reviewerName}
+        onChange={(event) =>
+          edit({ reviewerName: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>سمت یا تخصص بازبین</span>
+      <input
+        value={selected.reviewerRole}
+        onChange={(event) =>
+          edit({ reviewerRole: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+  <span>تاریخ بررسی</span>
+  <input
+    type="date"
+    value={selected.reviewedAt}
+    onChange={(event) =>
+      edit({
+        reviewedAt: event.target.value,
+      })
+    }
+  />
+</label>
+  </div>
+</div>
+                <div className="spb-cms-section">
                 <h3>قیمت و موجودی</h3>
                 <div className="spb-form-grid">
                   <label>
