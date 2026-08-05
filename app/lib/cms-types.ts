@@ -25,6 +25,16 @@ export type CmsProduct = {
   featured: boolean;
   description: string;
   shortDescription: string;
+  seoTitle: string;
+metaDescription: string;
+focusKeyword: string;
+
+sourceName: string;
+sourceUrl: string;
+
+reviewerName: string;
+reviewerRole: string;
+reviewedAt: string;
   price: string;
   regularPrice: string;
   salePrice: string;
