@@ -349,7 +349,13 @@ setTotalPages(Math.max(1, productData.totalPages));
     },
   ];
 }, [selected]);
+const failedReadinessItems =
+  premiumReadiness.filter(
+    (item) => !item.ready,
+  );
 
+const isPublishReady =
+  failedReadinessItems.length === 0;
   function edit(patch: Partial<CmsProduct>) {
     setSelected((current) => (current ? { ...current, ...patch } : current));
     setDirty(true);
@@ -373,9 +379,37 @@ setTotalPages(Math.max(1, productData.totalPages));
   }
 
   async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!selected || saving) return;
-    setSaving(true);
+   event.preventDefault();
+
+if (!selected || saving) {
+  return;
+}
+
+if (
+  selected.status === "publish" &&
+  !isPublishReady
+) {
+  const missingItems =
+    failedReadinessItems
+      .slice(0, 4)
+      .map((item) => item.label)
+      .join("، ");
+
+  setNotice("");
+  setError(
+    `انتشار انجام نشد. ابتدا موارد ناقص را تکمیل کن: ${missingItems}${
+      failedReadinessItems.length > 4
+        ? ` و ${
+            failedReadinessItems.length - 4
+          } مورد دیگر`
+        : ""
+    }. برای ذخیره موقت، وضعیت محصول را روی «پیش‌نویس» قرار بده.`,
+  );
+
+  return;
+}
+
+setSaving(true);
     setError("");
     setNotice("");
 
