@@ -127,20 +127,32 @@ export function CmsDashboard({ userName }: { userName: string }) {
 
     async function initialize() {
       try {
-        const [categoryData, connectionData, productData] = await Promise.all([
-          api<{ categories: CmsCategory[] }>("/api/cms/categories"),
-          api<CmsConnectionStatus>("/api/cms/health"),
-          api<CmsProductsResponse>(
-            "/api/cms/products?page=1&perPage=30&search=&status=all",
-          ),
-        ]);
-        if (cancelled) return;
-        setCategories(categoryData.categories);
-        setConnection(connectionData);
-        setProducts(productData.products);
-        setPage(productData.page);
-        setTotal(productData.total);
-        setTotalPages(Math.max(1, productData.totalPages));
+       const connectionData = await api<CmsConnectionStatus>(
+  "/api/cms/health",
+);
+
+if (cancelled) return;
+
+setConnection(connectionData);
+
+const categoryData = await api<{
+  categories: CmsCategory[];
+}>("/api/cms/categories");
+
+if (cancelled) return;
+
+setCategories(categoryData.categories);
+
+const productData = await api<CmsProductsResponse>(
+  "/api/cms/products?page=1&perPage=30&search=&status=all",
+);
+
+if (cancelled) return;
+
+setProducts(productData.products);
+setPage(productData.page);
+setTotal(productData.total);
+setTotalPages(Math.max(1, productData.totalPages));
       } catch (initialError) {
         if (!cancelled) {
           setError(
