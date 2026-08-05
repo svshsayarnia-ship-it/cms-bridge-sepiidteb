@@ -38,6 +38,16 @@ function blankProduct(): CmsProduct {
     featured: false,
     description: "",
     shortDescription: "",
+    seoTitle: "",
+metaDescription: "",
+focusKeyword: "",
+
+sourceName: "",
+sourceUrl: "",
+
+reviewerName: "",
+reviewerRole: "",
+reviewedAt: "",
     price: "",
     regularPrice: "",
     salePrice: "",
@@ -68,6 +78,16 @@ function productInput(product: CmsProduct): CmsProductInput {
     featured: product.featured,
     description: product.description,
     shortDescription: product.shortDescription,
+    seoTitle: product.seoTitle,
+metaDescription: product.metaDescription,
+focusKeyword: product.focusKeyword,
+
+sourceName: product.sourceName,
+sourceUrl: product.sourceUrl,
+
+reviewerName: product.reviewerName,
+reviewerRole: product.reviewerRole,
+reviewedAt: product.reviewedAt,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
     manageStock: product.manageStock,
@@ -719,6 +739,95 @@ async function uploadFiles(files: FileList | null) {
               </div>
 
               <div className="spb-cms-section">
+                <div className="spb-cms-section">
+  <h3>سئو و اعتبار محتوا</h3>
+
+  <div className="spb-form-grid">
+    <label className="is-wide">
+      <span>عنوان سئو</span>
+      <input
+        value={selected.seoTitle}
+        onChange={(event) =>
+          edit({ seoTitle: event.target.value })
+        }
+        placeholder="مثلاً خرید نورامیس دیپ لیدوکائین"
+      />
+    </label>
+
+    <label className="is-wide">
+      <span>توضیحات متا</span>
+      <textarea
+        value={selected.metaDescription}
+        onChange={(event) =>
+          edit({ metaDescription: event.target.value })
+        }
+        placeholder="خلاصه اختصاصی صفحه برای نتایج گوگل"
+      />
+    </label>
+
+    <label>
+      <span>کلمه کلیدی اصلی</span>
+      <input
+        value={selected.focusKeyword}
+        onChange={(event) =>
+          edit({ focusKeyword: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>نام منبع</span>
+      <input
+        value={selected.sourceName}
+        onChange={(event) =>
+          edit({ sourceName: event.target.value })
+        }
+      />
+    </label>
+
+    <label className="is-wide">
+      <span>لینک منبع</span>
+      <input
+        dir="ltr"
+        value={selected.sourceUrl}
+        onChange={(event) =>
+          edit({ sourceUrl: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>نام بازبین</span>
+      <input
+        value={selected.reviewerName}
+        onChange={(event) =>
+          edit({ reviewerName: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>سمت یا تخصص بازبین</span>
+      <input
+        value={selected.reviewerRole}
+        onChange={(event) =>
+          edit({ reviewerRole: event.target.value })
+        }
+      />
+    </label>
+
+    <label>
+      <span>تاریخ بررسی</span>
+      <input
+        type="date"
+        value={selected.reviewedAt}
+        onChange={(event) =>
+          edit({ reviewedAt: event.target.value })
+        }
+      />
+    </label>
+  </div>
+</div>
                 <h3>قیمت و موجودی</h3>
                 <div className="spb-form-grid">
                   <label>
