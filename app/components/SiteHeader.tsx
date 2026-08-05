@@ -225,7 +225,17 @@ export function SiteHeader() {
             </button>
           </div>
         )}
-
+{mobileOpen && (
+  <button
+    className="sb-mobile-menu-backdrop"
+    type="button"
+    aria-label="بستن منوی موبایل"
+    onClick={() => {
+      setMobileOpen(false);
+      setCategoriesOpen(false);
+    }}
+  />
+)}
         <div
           id="mobile-navigation"
           className={`sb-header__nav-wrap ${mobileOpen ? "sb-header__nav-wrap--open" : ""}`}
