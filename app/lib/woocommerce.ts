@@ -9,7 +9,11 @@ import type {
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
-
+type WooMetaData = {
+  id?: number;
+  key: string;
+  value: unknown;
+};
 type WooProduct = {
   id: number;
   name: string;
@@ -31,6 +35,7 @@ type WooProduct = {
   images: WooImage[];
   permalink: string;
   date_modified_gmt: string;
+  meta_data: WooMetaData[];
 };
 
 type WooCategory = {
