@@ -129,6 +129,15 @@ function getLiveProductImage(
     alt: image.alt || cmsProduct.name || "",
   };
 }
+function isPublicCmsProduct(
+  cmsProduct: CmsProduct | null,
+): cmsProduct is CmsProduct {
+  return Boolean(
+    cmsProduct &&
+      cmsProduct.status === "publish" &&
+      cmsProduct.catalogVisibility !== "hidden",
+  );
+}
 function buildCmsOnlyProduct(
   cmsProduct: CmsProduct,
 ): Product {
