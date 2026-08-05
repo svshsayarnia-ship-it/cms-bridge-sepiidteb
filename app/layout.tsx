@@ -14,6 +14,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
 };
+export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: {
     default: "فروشگاه تخصصی محصولات زیبایی و تزریقی | Sepiid Beauty",
