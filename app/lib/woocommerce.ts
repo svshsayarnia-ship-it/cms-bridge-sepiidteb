@@ -107,7 +107,11 @@ function apiUrl(path: string, query?: URLSearchParams): URL {
 
   return url;
 }
-
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 async function wooRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -115,68 +119,127 @@ async function wooRequest<T>(
   timeoutMs = DEFAULT_WOO_TIMEOUT_MS,
 ): Promise<WooRequestResult<T>> {
   const { consumerKey, consumerSecret } = config();
+
   const headers = new Headers(options.headers);
   const isFormData = options.body instanceof FormData;
 
   if (!isFormData && options.body && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
+
   headers.set("accept", "application/json");
 
   if ((process.env.WOOCOMMERCE_AUTH_MODE ?? "basic") !== "query") {
-    headers.set("authorization", `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`);
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(apiUrl(path, query), {
-      ...options,
-      headers,
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    const text = await response.text();
-    let data: unknown = null;
-    if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
-    }
-
-    if (!response.ok) {
-      const error = data as { message?: string; code?: string } | null;
-      throw new WooCommerceError(
-        error?.message || `WooCommerce با خطای ${response.status} پاسخ داد.`,
-        response.status,
-        error?.code,
-      );
-    }
-
-    return { data: data as T, headers: response.headers };
-  } catch (error) {
-    if (error instanceof WooCommerceError) throw error;
-    if (error instanceof Error && error.name === "AbortError") {
-  throw new WooCommerceError(
-    path === "sepiid-media"
-      ? "آپلود تصویر در وردپرس بیش از حد طول کشید. تصویر را سبک‌تر کن یا دوباره تلاش کن."
-      : "زمان اتصال به وردپرس تمام شد.",
-    504,
-    "woo_timeout",
-  );
-}
-    throw new WooCommerceError(
-      error instanceof Error ? error.message : "اتصال به وردپرس ناموفق بود.",
-      502,
-      "woo_connection_failed",
+    headers.set(
+      "authorization",
+      `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`,
     );
-  } finally {
-    clearTimeout(timeout);
   }
+
+  const method = (options.method ?? "GET").toUpperCase();
+
+  const canRetry = method === "GET" || method === "HEAD";
+  const maxAttempts = canRetry ? 3 : 1;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const response = await fetch(apiUrl(path, query), {
+        ...options,
+        headers,
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      const text = await response.text();
+
+      let data: unknown = null;
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+      }
+
+      if (!response.ok) {
+        const temporaryStatus = [429, 502, 503, 504].includes(
+          response.status,
+        );
+
+        if (
+          canRetry &&
+          temporaryStatus &&
+          attempt < maxAttempts
+        ) {
+          await wait(400 * attempt);
+          continue;
+        }
+
+        const error = data as {
+          message?: string;
+          code?: string;
+        } | null;
+
+        throw new WooCommerceError(
+          error?.message ||
+            `WooCommerce با خطای ${response.status} پاسخ داد.`,
+          response.status,
+          error?.code,
+        );
+      }
+
+      return {
+        data: data as T,
+        headers: response.headers,
+      };
+    } catch (error) {
+      if (error instanceof WooCommerceError) {
+        throw error;
+      }
+
+      const isTimeout =
+        error instanceof Error &&
+        error.name === "AbortError";
+
+      if (canRetry && attempt < maxAttempts) {
+        await wait(400 * attempt);
+        continue;
+      }
+
+      if (isTimeout) {
+        throw new WooCommerceError(
+          path === "sepiid-media"
+            ? "آپلود تصویر در وردپرس بیش از حد طول کشید."
+            : "زمان اتصال به وردپرس تمام شد.",
+          504,
+          "woo_timeout",
+        );
+      }
+
+      throw new WooCommerceError(
+        error instanceof Error
+          ? error.message
+          : "اتصال به وردپرس ناموفق بود.",
+        502,
+        "woo_connection_failed",
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  throw new WooCommerceError(
+    "اتصال به WooCommerce پس از چند تلاش ناموفق بود.",
+    502,
+    "woo_connection_failed",
+  );
 }
 
 function mapImage(image: WooImage): CmsImage {
