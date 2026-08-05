@@ -39,6 +39,21 @@ export function RichTextEditor({
     <div className="spb-rich-field">
       <span className="spb-field-label">{label}</span>
       <div className="spb-rich-toolbar" role="toolbar" aria-label={`ابزار ${label}`}>
+        <button
+  type="button"
+  title="عنوان سطح دو"
+  onClick={() => command("formatBlock", "h2")}
+>
+  H2
+</button>
+
+<button
+  type="button"
+  title="عنوان سطح سه"
+  onClick={() => command("formatBlock", "h3")}
+>
+  H3
+</button>
         <button type="button" title="پررنگ" onClick={() => command("bold")}>
           <b>B</b>
         </button>
@@ -48,6 +63,13 @@ export function RichTextEditor({
         <button type="button" title="فهرست" onClick={() => command("insertUnorderedList")}>
           List
         </button>
+        <button
+  type="button"
+  title="فهرست شماره‌دار"
+  onClick={() => command("insertOrderedList")}
+>
+  1.
+</button>
         <button type="button" title="لینک" onClick={addLink}>
           Link
         </button>
