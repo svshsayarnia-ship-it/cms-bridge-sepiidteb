@@ -231,13 +231,33 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+
+  const staticProduct = getProduct(slug);
+  const cmsProduct = await getLiveProduct(slug);
+
+  if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+    return {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const liveProduct = isPublicCmsProduct(cmsProduct)
+    ? cmsProduct
+    : null;
+
+  const product =
+    staticProduct ||
+    (liveProduct
+      ? buildCmsOnlyProduct(liveProduct)
+      : null);
 
   if (!product) {
     return {};
   }
 
-  const liveProduct = await getLiveProduct(product.slug);
   const liveImage = getLiveProductImage(liveProduct);
 
   const title =
@@ -256,7 +276,9 @@ export async function generateMetadata({
     cmsDescription ||
     `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`;
 
-  const image = liveImage?.src || product.image;
+  const image =
+    liveImage?.src ||
+    product.image;
 
   return {
     title,
@@ -275,7 +297,6 @@ export async function generateMetadata({
     },
   };
 }
-
 export default async function ProductPage({
   params,
 }: {
