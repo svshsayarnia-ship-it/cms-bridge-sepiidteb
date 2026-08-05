@@ -30,7 +30,20 @@ import {
 export const dynamic = "force-dynamic";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const reviewDateFormatter =
+  new Intl.DateTimeFormat("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
+function formatReviewDate(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : reviewDateFormatter.format(date);
+}
 type ProductPricing = {
   label: string;
   note: string;
@@ -528,14 +541,59 @@ const image = liveImage?.src || product.image;
               همان محصول مرجع نهایی است.
             </p>
           </div>
-          <dl className="sb-spec-table">
-            {product.specs.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
+         <dl className="sb-spec-table">
+  {product.specs.map(([label, value]) => (
+    <div key={label}>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  ))}
+
+  {liveProduct?.sourceName && (
+    <div>
+      <dt>منبع اطلاعات</dt>
+      <dd>
+        {liveProduct.sourceUrl &&
+        /^https?:\/\//i.test(
+          liveProduct.sourceUrl,
+        ) ? (
+          <a
+            href={liveProduct.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {liveProduct.sourceName}
+          </a>
+        ) : (
+          liveProduct.sourceName
+        )}
+      </dd>
+    </div>
+  )}
+
+  {liveProduct?.reviewerName && (
+    <div>
+      <dt>بازبینی محتوا</dt>
+      <dd>
+        {liveProduct.reviewerName}
+        {liveProduct.reviewerRole
+          ? ` — ${liveProduct.reviewerRole}`
+          : ""}
+      </dd>
+    </div>
+  )}
+
+  {liveProduct?.reviewedAt && (
+    <div>
+      <dt>تاریخ آخرین بازبینی</dt>
+      <dd>
+        {formatReviewDate(
+          liveProduct.reviewedAt,
+        )}
+      </dd>
+    </div>
+  )}
+</dl>
         </div>
       </section>
 
