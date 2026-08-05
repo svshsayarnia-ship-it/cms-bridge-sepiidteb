@@ -68,6 +68,16 @@ export function parseProductInput(value: unknown): CmsProductInput {
     featured: input.featured === true,
     description: text(input.description),
     shortDescription: text(input.shortDescription),
+    seoTitle: text(input.seoTitle).trim(),
+metaDescription: text(input.metaDescription).trim(),
+focusKeyword: text(input.focusKeyword).trim(),
+
+sourceName: text(input.sourceName).trim(),
+sourceUrl: text(input.sourceUrl).trim(),
+
+reviewerName: text(input.reviewerName).trim(),
+reviewerRole: text(input.reviewerRole).trim(),
+reviewedAt: text(input.reviewedAt).trim(),
     regularPrice: text(input.regularPrice),
     salePrice: text(input.salePrice),
     manageStock: input.manageStock === true,
