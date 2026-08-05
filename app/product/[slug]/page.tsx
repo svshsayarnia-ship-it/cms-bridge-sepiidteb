@@ -128,7 +128,44 @@ function getLiveProductImage(
     alt: image.alt || cmsProduct.name || "",
   };
 }
+function getSchemaPrice(
+  cmsProduct: CmsProduct | null,
+): string | null {
+  if (!cmsProduct) {
+    return null;
+  }
 
+  const rawPrice =
+    cmsProduct.salePrice ||
+    cmsProduct.regularPrice ||
+    cmsProduct.price;
+
+  const tomanPrice = Number(rawPrice);
+
+  if (!Number.isFinite(tomanPrice) || tomanPrice <= 0) {
+    return null;
+  }
+
+  return String(Math.round(tomanPrice * 10));
+}
+
+function getSchemaAvailability(
+  cmsProduct: CmsProduct | null,
+): string {
+  if (!cmsProduct) {
+    return "https://schema.org/PreOrder";
+  }
+
+  if (cmsProduct.stockStatus === "outofstock") {
+    return "https://schema.org/OutOfStock";
+  }
+
+  if (cmsProduct.stockStatus === "onbackorder") {
+    return "https://schema.org/BackOrder";
+  }
+
+  return "https://schema.org/InStock";
+}
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
