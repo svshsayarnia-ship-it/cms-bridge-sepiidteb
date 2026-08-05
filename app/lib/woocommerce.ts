@@ -255,7 +255,18 @@ function mapImage(image: WooImage): CmsImage {
     alt: image.alt ?? "",
   };
 }
+function getProductMeta(
+  product: WooProduct,
+  key: string,
+): string {
+  const meta = (product.meta_data ?? []).find(
+    (item) => item.key === key,
+  );
 
+  return typeof meta?.value === "string"
+    ? meta.value
+    : "";
+}
 function mapProduct(product: WooProduct): CmsProduct {
   return {
     id: product.id,
@@ -268,6 +279,40 @@ function mapProduct(product: WooProduct): CmsProduct {
     featured: product.featured,
     description: product.description,
     shortDescription: product.short_description,
+    seoTitle: getProductMeta(
+  product,
+  "sepiid_seo_title",
+),
+metaDescription: getProductMeta(
+  product,
+  "sepiid_meta_description",
+),
+focusKeyword: getProductMeta(
+  product,
+  "sepiid_focus_keyword",
+),
+
+sourceName: getProductMeta(
+  product,
+  "sepiid_source_name",
+),
+sourceUrl: getProductMeta(
+  product,
+  "sepiid_source_url",
+),
+
+reviewerName: getProductMeta(
+  product,
+  "sepiid_reviewer_name",
+),
+reviewerRole: getProductMeta(
+  product,
+  "sepiid_reviewer_role",
+),
+reviewedAt: getProductMeta(
+  product,
+  "sepiid_reviewed_at",
+),
     price: product.price,
     regularPrice: product.regular_price,
     salePrice: product.sale_price,
