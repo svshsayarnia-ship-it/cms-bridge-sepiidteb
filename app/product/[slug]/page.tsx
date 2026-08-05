@@ -20,6 +20,7 @@ import {
   whatsappHref,
 } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
+import type { CmsProduct } from "../../lib/cms-types";
 import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
@@ -39,43 +40,32 @@ function formatTomanPrice(value: string) {
   if (!Number.isFinite(numeric) || numeric <= 0) return "";
   return `${priceFormatter.format(numeric)} تومان`;
 }
+function cleanProductHtml(html: string) {
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
+    .replace(/\son\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(
+      /\s(href|src)=["']\s*javascript:[^"']*["']/gi,
+      "",
+    )
+    .trim();
+}
 
-async function getLiveProductPricing(
+function plainText(html: string) {
+  return html
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+async function getLiveProduct(
   slug: string,
-): Promise<ProductPricing | null> {
+): Promise<CmsProduct | null> {
   try {
-    const cmsProduct = await getCmsProductBySlug(slug);
-
-    if (!cmsProduct) {
-      return null;
-    }
-
-    if (cmsProduct.stockStatus === "outofstock") {
-      return {
-        label: "ناموجود",
-        note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
-      };
-    }
-
-    const salePrice = formatTomanPrice(cmsProduct.salePrice);
-
-    const regularPrice = formatTomanPrice(
-      cmsProduct.regularPrice || cmsProduct.price,
-    );
-
-    const livePrice = salePrice || regularPrice;
-
-    if (!livePrice) {
-      return null;
-    }
-
-    return {
-      label: livePrice,
-      note:
-        salePrice && regularPrice
-          ? `قیمت عادی: ${regularPrice}`
-          : "قیمت از CMS / WooCommerce خوانده شده است.",
-    };
+    return await getCmsProductBySlug(slug);
   } catch (error) {
     if (error instanceof WooCommerceError) {
       return null;
@@ -85,33 +75,58 @@ async function getLiveProductPricing(
   }
 }
 
-async function getLiveProductImage(
-  slug: string,
-): Promise<{ src: string; alt: string } | null> {
-  try {
-    const cmsProduct = await getCmsProductBySlug(slug);
-
-    if (!cmsProduct) {
-      return null;
-    }
-
-    const image = cmsProduct.images?.[0];
-
-    if (!image?.src) {
-      return null;
-    }
-
-    return {
-      src: image.src,
-      alt: image.alt || cmsProduct.name || "",
-    };
-  } catch (error) {
-    if (error instanceof WooCommerceError) {
-      return null;
-    }
-
-    throw error;
+function getLiveProductPricing(
+  cmsProduct: CmsProduct | null,
+): ProductPricing | null {
+  if (!cmsProduct) {
+    return null;
   }
+
+  if (cmsProduct.stockStatus === "outofstock") {
+    return {
+      label: "ناموجود",
+      note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
+    };
+  }
+
+  const salePrice = formatTomanPrice(cmsProduct.salePrice);
+
+  const regularPrice = formatTomanPrice(
+    cmsProduct.regularPrice || cmsProduct.price,
+  );
+
+  const livePrice = salePrice || regularPrice;
+
+  if (!livePrice) {
+    return null;
+  }
+
+  return {
+    label: livePrice,
+    note:
+      salePrice && regularPrice
+        ? `قیمت عادی: ${regularPrice}`
+        : "قیمت از CMS / WooCommerce خوانده شده است.",
+  };
+}
+
+function getLiveProductImage(
+  cmsProduct: CmsProduct | null,
+): { src: string; alt: string } | null {
+  if (!cmsProduct) {
+    return null;
+  }
+
+  const image = cmsProduct.images?.[0];
+
+  if (!image?.src) {
+    return null;
+  }
+
+  return {
+    src: image.src,
+    alt: image.alt || cmsProduct.name || "",
+  };
 }
 
 
@@ -157,10 +172,24 @@ export default async function ProductPage({
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const group = getGroupForCategory(product.category);
 
-const [livePricing, liveImage] = await Promise.all([
-  getLiveProductPricing(product.slug),
-  getLiveProductImage(product.slug),
-]);
+const liveProduct = await getLiveProduct(product.slug);
+
+const livePricing = getLiveProductPricing(liveProduct);
+const liveImage = getLiveProductImage(liveProduct);
+
+const liveShortDescription = cleanProductHtml(
+  liveProduct?.shortDescription || "",
+);
+
+const liveDescription = cleanProductHtml(
+  liveProduct?.description || "",
+);
+
+const schemaDescription = plainText(
+  liveShortDescription ||
+    liveDescription ||
+    product.summary,
+);
 
 const image = liveImage?.src || product.image;
   const inquiryLink = whatsappHref(
@@ -224,7 +253,18 @@ const image = liveImage?.src || product.image;
             </div>
             <h1>{product.nameFa}</h1>
             <p className="sb-product-summary__en">{product.nameEn}</p>
-            <p className="sb-product-summary__lead">{product.summary}</p>
+           {liveShortDescription ? (
+  <div
+    className="sb-product-summary__lead sb-product-rich-text"
+    dangerouslySetInnerHTML={{
+      __html: liveShortDescription,
+    }}
+  />
+) : (
+  <p className="sb-product-summary__lead">
+    {product.summary}
+  </p>
+)}
 
             <div
               className={`sb-product-summary__verification ${
@@ -278,14 +318,45 @@ const image = liveImage?.src || product.image;
       </section>
 
       <nav className="sb-product-anchor-nav" aria-label="بخش‌های صفحه محصول">
-        <div className="sb-shell">
-          <a href="#specs">مشخصات</a>
-          <a href="#authenticity">کنترل اصالت</a>
-          <a href="#safety">نکات مهم</a>
-          <a href="#questions">پرسش‌ها</a>
-        </div>
-      </nav>
+     <div className="sb-shell">
+  {liveDescription && (
+    <a href="#description">توضیحات</a>
+  )}
 
+  <a href="#specs">مشخصات</a>
+  <a href="#authenticity">کنترل اصالت</a>
+  <a href="#safety">نکات مهم</a>
+  <a href="#questions">پرسش‌ها</a>
+</div>
+      </nav>
+{liveDescription && (
+  <section
+    className="sb-section sb-product-description"
+    id="description"
+  >
+    <div className="sb-shell sb-product-description__grid">
+      <div className="sb-product-description__heading">
+        <span className="sb-eyebrow">
+          PRODUCT / DESCRIPTION
+        </span>
+
+        <h2>توضیحات محصول</h2>
+
+        <p>
+          اطلاعات تکمیلی این محصول از CMS و WooCommerce
+          دریافت شده است.
+        </p>
+      </div>
+
+      <article
+        className="sb-product-description__content sb-product-rich-text"
+        dangerouslySetInnerHTML={{
+          __html: liveDescription,
+        }}
+      />
+    </div>
+  </section>
+)}
       <section className="sb-section sb-product-info-section" id="specs">
         <div className="sb-shell sb-product-info-section__grid">
           <div>
