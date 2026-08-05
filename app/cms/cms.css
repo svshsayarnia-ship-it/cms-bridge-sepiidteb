@@ -534,7 +534,117 @@ body:has(.spb-cms-login) {
 .spb-rich-field + .spb-rich-field {
   margin-top: 16px;
 }
+.spb-rich-field__head {
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
+.spb-rich-field__head .spb-field-label {
+  margin-bottom: 0;
+}
+
+.spb-rich-mode-switch {
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #f2f5f4;
+  border: 1px solid #cbd4d1;
+  border-radius: 6px;
+}
+
+.spb-rich-mode-switch button {
+  min-width: 62px;
+  min-height: 30px;
+  padding: 4px 10px;
+  color: #42514d;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.spb-rich-mode-switch button:hover {
+  color: #176b55;
+  background: #fff;
+}
+
+.spb-rich-mode-switch button.is-active {
+  color: #fff;
+  background: #176b55;
+  border-color: #176b55;
+}
+
+.spb-rich-toolbar {
+  flex-wrap: wrap;
+}
+
+.spb-rich-html-editor {
+  width: 100%;
+  padding: 12px;
+  display: block;
+  resize: vertical;
+  color: #17211f;
+  background: #f8faf9;
+  border: 1px solid #cbd4d1;
+  border-radius: 5px;
+  outline: none;
+  direction: ltr;
+  text-align: left;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+}
+
+.spb-rich-html-editor:focus {
+  background: #fff;
+  border-color: #217a62;
+  box-shadow:
+    0 0 0 3px
+    rgba(33, 122, 98, 0.12);
+}
+
+.spb-rich-html-help {
+  margin-top: 7px;
+  display: block;
+  color: #71807c;
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+@media (max-width: 680px) {
+  .spb-rich-field__head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spb-rich-mode-switch {
+    width: 100%;
+  }
+
+  .spb-rich-mode-switch button {
+    flex: 1;
+  }
+
+  .spb-rich-html-editor {
+    font-size: 11px;
+  }
+}
 .spb-rich-toolbar {
   padding: 6px;
   display: flex;
