@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
+import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { parseProductInput } from "@/app/lib/cms-input";
 import {
   errorResponse,
@@ -38,8 +40,21 @@ export async function PUT(request: Request, context: Context) {
 
   try {
     const id = await productId(context);
-    const input = parseProductInput(await request.json());
-    return Response.json({ product: await updateProduct(id, input) });
+    const input = parseProductInput(
+      await request.json(),
+    );
+
+    const product = await updateProduct(
+      id,
+      input,
+    );
+
+    revalidateTag(
+      STOREFRONT_CATALOG_TAG,
+      { expire: 0 },
+    );
+
+    return Response.json({ product });
   } catch (error) {
     return errorResponse(error);
   }
@@ -50,7 +65,16 @@ export async function DELETE(request: Request, context: Context) {
   if (denied) return denied;
 
   try {
-    return Response.json({ product: await trashProduct(await productId(context)) });
+    const product = await trashProduct(
+      await productId(context),
+    );
+
+    revalidateTag(
+      STOREFRONT_CATALOG_TAG,
+      { expire: 0 },
+    );
+
+    return Response.json({ product });
   } catch (error) {
     return errorResponse(error);
   }
