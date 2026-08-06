@@ -20,6 +20,7 @@ import {
   whatsappHref,
 } from "../../data";
 import type { Product } from "../../data";
+import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import {
@@ -372,9 +373,16 @@ if (!product) {
   notFound();
 }
 
-const related = products
-    .filter((item) => item.category === product.category && item.slug !== product.slug)
-    .slice(0, 3);
+const storefrontProducts =
+  await getStorefrontProducts();
+
+const related = storefrontProducts
+  .filter(
+    (item) =>
+      item.category === product.category &&
+      item.slug !== product.slug,
+  )
+  .slice(0, 3);
   const article =
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const group = getGroupForCategory(product.category);
