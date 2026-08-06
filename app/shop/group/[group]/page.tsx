@@ -1,21 +1,30 @@
-/* eslint-disable @next/next/no-img-element -- local optimized Drive imagery */
+/* eslint-disable @next/next/no-img-element -- category imagery */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { Breadcrumbs } from "../../../components/Breadcrumbs";
 import { ArrowIcon } from "../../../components/Icons";
 import { JsonLd } from "../../../components/JsonLd";
 import { ProductCard } from "../../../components/ProductCard";
+
 import {
   catalogGroups,
   getCatalogGroup,
   productHref,
 } from "../../../catalog";
-import { categories, products } from "../../../data";
+
+import { categories } from "../../../data";
 import { siteOrigin } from "../../../lib/site-url";
+import { getStorefrontCatalog } from "../../../lib/storefront-catalog";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
-  return catalogGroups.map((group) => ({ group: group.slug }));
+  return catalogGroups.map((group) => ({
+    group: group.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -25,12 +34,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { group: slug } = await params;
   const group = getCatalogGroup(slug);
-  if (!group) return {};
+
+  if (!group) {
+    return {};
+  }
 
   return {
     title: `${group.title}؛ دسته‌ها و محصولات`,
     description: group.description,
-    alternates: { canonical: `/shop/group/${group.slug}` },
+
+    alternates: {
+      canonical: `/shop/group/${group.slug}`,
+    },
   };
 }
 
@@ -40,14 +55,28 @@ export default async function ProductGroupPage({
   params: Promise<{ group: string }>;
 }) {
   const { group: slug } = await params;
-  const group = getCatalogGroup(slug);
-  if (!group) notFound();
 
-  const childCategories = categories.filter((category) =>
-    group.categorySlugs.includes(category.slug),
+  const group = getCatalogGroup(slug);
+
+  if (!group) {
+    notFound();
+  }
+
+  const { products } =
+    await getStorefrontCatalog();
+
+  const childCategories = categories.filter(
+    (category) =>
+      group.categorySlugs.includes(
+        category.slug,
+      ),
   );
-  const groupProducts = products.filter((product) =>
-    group.categorySlugs.includes(product.category),
+
+  const groupProducts = products.filter(
+    (product) =>
+      group.categorySlugs.includes(
+        product.category,
+      ),
   );
 
   return (
@@ -55,20 +84,35 @@ export default async function ProductGroupPage({
       <div className="sb-shell">
         <Breadcrumbs
           items={[
-            { label: "فروشگاه", href: "/shop" },
-            { label: group.title },
+            {
+              label: "فروشگاه",
+              href: "/shop",
+            },
+            {
+              label: group.title,
+            },
           ]}
         />
       </div>
 
       <section className="sb-page-hero sb-group-hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">{group.en}</span>
+          <span className="sb-eyebrow">
+            {group.en}
+          </span>
+
           <h1>{group.title}</h1>
+
           <p>{group.description}</p>
+
           <div className="sb-group-hero__stats">
-            <span>{childCategories.length} مسیر تخصصی</span>
-            <span>{groupProducts.length} صفحه محصول مستقل</span>
+            <span>
+              {childCategories.length} مسیر تخصصی
+            </span>
+
+            <span>
+              {groupProducts.length} صفحه محصول مستقل
+            </span>
           </div>
         </div>
       </section>
@@ -77,39 +121,66 @@ export default async function ProductGroupPage({
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">CATEGORY / PATHS</span>
-              <h2>مسیر دقیق‌تر را انتخاب کنید.</h2>
+              <span className="sb-eyebrow">
+                CATEGORY / PATHS
+              </span>
+
+              <h2>
+                مسیر دقیق‌تر را انتخاب کنید.
+              </h2>
             </div>
+
             <p>
-              هر مسیر، فیلترها و توضیحات مخصوص خود را دارد؛ عنوان دسته جایگزین
+              هر مسیر، فیلترها و توضیحات مخصوص
+              خود را دارد؛ عنوان دسته جایگزین
               انتخاب حرفه‌ای نیست.
             </p>
           </div>
+
           <div className="sb-group-category-grid">
-            {childCategories.map((category) => {
-              const count = groupProducts.filter(
-                (product) => product.category === category.slug,
-              ).length;
-              return (
-                <Link href={`/shop/${category.slug}`} key={category.slug}>
-                  <img
-                    src={category.image}
-                    alt={`تصویر مفهومی ${category.title}`}
-                    width="1254"
-                    height="1254"
-                  />
-                  <div>
-                    <span>{count} محصول</span>
-                    <h2>{category.title}</h2>
-                    <p>{category.description}</p>
-                    <strong>
-                      ورود به دسته
-                      <ArrowIcon />
-                    </strong>
-                  </div>
-                </Link>
-              );
-            })}
+            {childCategories.map(
+              (category) => {
+                const count =
+                  groupProducts.filter(
+                    (product) =>
+                      product.category ===
+                      category.slug,
+                  ).length;
+
+                return (
+                  <Link
+                    href={`/shop/${category.slug}`}
+                    key={category.slug}
+                  >
+                    <img
+                      src={category.image}
+                      alt={`تصویر مفهومی ${category.title}`}
+                      width="1254"
+                      height="1254"
+                    />
+
+                    <div>
+                      <span>
+                        {count} محصول
+                      </span>
+
+                      <h2>
+                        {category.title}
+                      </h2>
+
+                      <p>
+                        {category.description}
+                      </p>
+
+                      <strong>
+                        ورود به دسته
+                        <ArrowIcon />
+                      </strong>
+                    </div>
+                  </Link>
+                );
+              },
+            )}
           </div>
         </div>
       </section>
@@ -118,19 +189,50 @@ export default async function ProductGroupPage({
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">PRODUCT / INDEX</span>
-              <h2>نمونه‌هایی از این گروه</h2>
+              <span className="sb-eyebrow">
+                PRODUCT / INDEX
+              </span>
+
+              <h2>
+                نمونه‌هایی از این گروه
+              </h2>
             </div>
-            <Link className="sb-text-link" href="/shop">
+
+            <Link
+              className="sb-text-link"
+              href="/shop"
+            >
               مشاهده کاتالوگ کامل
               <ArrowIcon />
             </Link>
           </div>
-          <div className="sb-product-grid sb-product-grid--three">
-            {groupProducts.slice(0, 9).map((product) => (
-              <ProductCard product={product} key={product.slug} />
-            ))}
-          </div>
+
+          {groupProducts.length > 0 ? (
+            <div className="sb-product-grid sb-product-grid--three">
+              {groupProducts
+                .slice(0, 9)
+                .map((product) => (
+                  <ProductCard
+                    product={product}
+                    key={product.slug}
+                  />
+                ))}
+            </div>
+          ) : (
+            <div className="sb-catalog__empty">
+              <span>۰ محصول</span>
+
+              <h2>
+                هنوز محصول منتشرشده‌ای در این گروه
+                وجود ندارد.
+              </h2>
+
+              <p>
+                محصولات پس از انتشار در WooCommerce
+                در این بخش نمایش داده می‌شوند.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -140,15 +242,23 @@ export default async function ProductGroupPage({
           "@type": "CollectionPage",
           name: group.title,
           description: group.description,
+
           mainEntity: {
             "@type": "ItemList",
-            numberOfItems: groupProducts.length,
-            itemListElement: groupProducts.map((product, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              name: product.nameFa,
-              url: `${siteOrigin}${productHref(product)}`,
-            })),
+            numberOfItems:
+              groupProducts.length,
+
+            itemListElement:
+              groupProducts.map(
+                (product, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  name: product.nameFa,
+                  url: `${siteOrigin}${productHref(
+                    product,
+                  )}`,
+                }),
+              ),
           },
         }}
       />

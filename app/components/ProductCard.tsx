@@ -1,39 +1,13 @@
-"use client";
-
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+
 import { productHref } from "../catalog";
 import type { Product } from "../data";
-import { ArrowIcon, ShieldIcon } from "./Icons";
-
-type LiveProductImage = {
-  image?: string | null;
-  alt?: string;
-};
-
-type ProductImagesResponse = {
-  images?: Record<string, LiveProductImage>;
-};
-
-let liveImagesPromise: Promise<ProductImagesResponse> | null = null;
-
-function getLiveProductImages(): Promise<ProductImagesResponse> {
-  if (!liveImagesPromise) {
-    liveImagesPromise = fetch("/api/store-product-images")
-      .then(async (response) => {
-        if (!response.ok) {
-          return { images: {} };
-        }
-
-        return (await response.json()) as ProductImagesResponse;
-      })
-      .catch(() => ({ images: {} }));
-  }
-
-  return liveImagesPromise;
-}
+import {
+  ArrowIcon,
+  ShieldIcon,
+} from "./Icons";
 
 export function ProductCard({
   product,
@@ -44,36 +18,10 @@ export function ProductCard({
 }) {
   const href = productHref(product);
 
-  const [imageSrc, setImageSrc] = useState(product.image);
-  const [imageAlt, setImageAlt] = useState(
-    product.imageAlt ?? `تصویر ${product.nameFa}`,
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadLiveImage() {
-      const data = await getLiveProductImages();
-
-      if (cancelled) return;
-
-      const liveImage = data.images?.[product.slug];
-
-      if (liveImage?.image) {
-        setImageSrc(liveImage.image);
-      }
-
-      if (liveImage?.alt) {
-        setImageAlt(liveImage.alt);
-      }
-    }
-
-    void loadLiveImage();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [product.slug]);
+  const imageSrc = product.image;
+  const imageAlt =
+    product.imageAlt ||
+    `تصویر ${product.nameFa}`;
 
   return (
     <article className="sb-product-card">
@@ -87,7 +35,12 @@ export function ProductCard({
           alt={imageAlt}
           width="1254"
           height="1254"
-          loading={priority ? "eager" : "lazy"}
+          loading={
+            priority ? "eager" : "lazy"
+          }
+          fetchPriority={
+            priority ? "high" : "auto"
+          }
           decoding="async"
         />
 
@@ -105,7 +58,9 @@ export function ProductCard({
 
       <div className="sb-product-card__content">
         <div className="sb-product-card__meta">
-          <span>{product.brand}</span>
+          {product.brand && (
+            <span>{product.brand}</span>
+          )}
 
           <span>
             <ShieldIcon />
@@ -115,16 +70,28 @@ export function ProductCard({
 
         <Link href={href}>
           <h3>{product.nameFa}</h3>
-          <small>{product.nameEn}</small>
+
+          {product.nameEn && (
+            <small>{product.nameEn}</small>
+          )}
         </Link>
 
         <div className="sb-product-card__facts">
-          {product.volume && <span>{product.volume}</span>}
-          <span>{product.sourceStatus}</span>
+          {product.volume && (
+            <span>{product.volume}</span>
+          )}
+
+          {product.sourceStatus && (
+            <span>
+              {product.sourceStatus}
+            </span>
+          )}
         </div>
 
         <div className="sb-product-card__footer">
-          <strong>مشاهده و استعلام</strong>
+          <strong>
+            مشاهده و استعلام
+          </strong>
 
           <Link
             className="sb-product-card__cta"
