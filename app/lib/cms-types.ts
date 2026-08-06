@@ -14,6 +14,12 @@ export type CmsImage = {
   alt: string;
 };
 
+export type CmsBrand = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
 export type CmsProduct = {
   id: number;
   name: string;
@@ -42,6 +48,7 @@ reviewedAt: string;
   stockQuantity: number | null;
   stockStatus: "instock" | "outofstock" | "onbackorder";
   categories: Array<{ id: number; name: string; slug: string }>;
+  brands: CmsBrand[];
   images: CmsImage[];
   permalink: string;
   dateModifiedGmt: string;
@@ -49,7 +56,7 @@ reviewedAt: string;
 
 export type CmsProductInput = Omit<
   CmsProduct,
-  "id" | "price" | "type" | "permalink" | "dateModifiedGmt" | "categories"
+  "id" | "price" | "type" | "permalink" | "dateModifiedGmt" | "categories" | "brands"
 > & {
   id?: number;
   categoryIds: number[];

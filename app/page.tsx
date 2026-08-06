@@ -16,7 +16,8 @@ import { JsonLd } from "./components/JsonLd";
 import { ProductCard } from "./components/ProductCard";
 import { ProductUseReveal } from "./components/ProductUseReveal";
 import { Reveal } from "./components/Reveal";
-import { articles, categories, products, whatsappHref } from "./data";
+import { articles, categories, whatsappHref } from "./data";
+import { getStorefrontCatalog } from "./lib/storefront-catalog";
 
 const faqs = [
   {
@@ -41,7 +42,45 @@ const faqs = [
   },
 ];
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { products } =
+    await getStorefrontCatalog();
+
+  const prioritizedProducts = [
+    ...products.filter(
+      (product) => product.featured,
+    ),
+    ...products.filter(
+      (product) => !product.featured,
+    ),
+  ];
+
+  const featuredProducts = Array.from(
+    new Map(
+      prioritizedProducts.map(
+        (product) => [
+          product.slug,
+          product,
+        ],
+      ),
+    ).values(),
+  ).slice(0, 4);
+
+  const homeBrands = Array.from(
+    new Set(
+      products
+        .map((product) =>
+          product.brand.trim(),
+        )
+        .filter(Boolean),
+    ),
+  )
+    .sort((first, second) =>
+      first.localeCompare(second, "fa"),
+    )
+    .slice(0, 6);
   return (
     <main id="main-content">
       <CustomerJourney />
@@ -195,24 +234,21 @@ export default function Home() {
               </div>
             </div>
             <div className="sb-product-grid">
-              {[
-                "revofil-ultra",
-                "jalupro-hmw",
-                "fusion-f-lift-face",
-                "neuramis-deep-lidocaine",
-              ].map((slug, index) => (
-                <ProductCard
-                  product={products.find((product) => product.slug === slug)!}
-                  priority={index < 2}
-                  key={slug}
-                />
-              ))}
+              {featuredProducts.map(
+  (product, index) => (
+    <ProductCard
+      product={product}
+      priority={index < 2}
+      key={product.slug}
+    />
+  ),
+)}
             </div>
           </div>
         </section>
       </Reveal>
 
-      <HomeFinder />
+      <HomeFinder products={products} />
 
       <Reveal>
         <BrandStory />
@@ -292,13 +328,14 @@ export default function Home() {
         <div className="sb-shell">
           <span className="sb-eyebrow">BRANDS / INDEX</span>
           <div className="sb-brands-home__row">
-            {["Neuramis", "Jalupro", "Profhilo", "Revofil", "Mesolike", "Fusion"].map(
-              (brand) => (
-                <Link href={`/brands#${brand.toLowerCase().replace(".", "")}`} key={brand}>
-                  {brand}
-                </Link>
-              ),
-            )}
+           {homeBrands.map((brand) => (
+  <Link
+    href="/brands"
+    key={brand}
+  >
+    {brand}
+  </Link>
+))}
           </div>
           <Link className="sb-text-link" href="/brands">
             راهنمای برندها

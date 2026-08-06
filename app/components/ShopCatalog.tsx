@@ -67,7 +67,16 @@ export function ShopCatalog({
   }, [filtersOpen]);
 
   const brands = useMemo(
-    () => Array.from(new Set(items.map((item) => item.brand))).sort(),
+    () =>
+      Array.from(
+        new Set(
+          items
+            .map((item) => item.brand.trim())
+            .filter(Boolean),
+        ),
+      ).sort((first, second) =>
+        first.localeCompare(second, "fa"),
+      ),
     [items],
   );
 

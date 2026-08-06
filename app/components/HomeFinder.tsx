@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { products, whatsappHref } from "../data";
+import { whatsappHref } from "../data";
+import type { Product } from "../data";
 import { ArrowIcon, CheckIcon } from "./Icons";
 import { VialMark } from "./VialMark";
 
@@ -69,7 +70,11 @@ const categoryLabels: Record<string, string> = {
   "rejuvenation-cocktails": "کوکتل‌های پوستی",
 };
 
-export function HomeFinder() {
+export function HomeFinder({
+  products,
+}: {
+  products: Product[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);

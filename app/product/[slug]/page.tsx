@@ -20,6 +20,7 @@ import {
   whatsappHref,
 } from "../../data";
 import type { Product } from "../../data";
+import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import {
@@ -153,6 +154,7 @@ function isPublicCmsProduct(
 }
 function buildCmsOnlyProduct(
   cmsProduct: CmsProduct,
+  fallback?: Product,
 ): Product {
   const category = cmsProduct.categories?.[0];
   const image = getLiveProductImage(cmsProduct);
@@ -163,37 +165,71 @@ function buildCmsOnlyProduct(
         cmsProduct.description ||
         "",
     ) ||
+    fallback?.summary ||
     "اطلاعات این محصول از CMS و WooCommerce دریافت شده است.";
 
   return {
     slug: cmsProduct.slug,
-    nameFa: cmsProduct.name,
-    nameEn: "",
-    brand: "",
-    category: category?.slug || "products",
-    categoryTitle: category?.name || "محصولات",
+    nameFa:
+      cmsProduct.name ||
+      fallback?.nameFa ||
+      cmsProduct.slug,
+    nameEn: fallback?.nameEn ?? "",
+    brand:
+      cmsProduct.brands?.[0]?.name ||
+      fallback?.brand ||
+      "",
+    category:
+      category?.slug ||
+      fallback?.category ||
+      "products",
+    categoryTitle:
+      category?.name ||
+      fallback?.categoryTitle ||
+      "محصولات",
+    group: fallback?.group,
+    groupTitle: fallback?.groupTitle,
+    badge:
+      cmsProduct.featured
+        ? "منتخب"
+        : fallback?.badge,
     image:
       image?.src ||
+      fallback?.image ||
       "/images/editorial-detail.webp",
     imageAlt:
       image?.alt ||
+      fallback?.imageAlt ||
       `تصویر ${cmsProduct.name}`,
-    imageVerified: Boolean(image?.src),
-    position: "center",
+    imageVerified:
+      Boolean(image?.src) ||
+      Boolean(fallback?.imageVerified),
+    position:
+      fallback?.position || "center",
+    volume: fallback?.volume,
     sourceStatus:
       cmsProduct.sourceName ||
+      fallback?.sourceStatus ||
       "اطلاعات ثبت‌شده در CMS",
+    warning: fallback?.warning,
     summary,
-    shortBenefit: summary,
-    audience: "پزشکان و کلینیک‌ها",
-    features: [],
-    specs: cmsProduct.sku
-      ? [["SKU", cmsProduct.sku]]
-      : [],
-    checks: [
-      "نام محصول، بسته‌بندی، تاریخ و بچ‌کد پیش از مصرف بررسی شود.",
-    ],
-    faq: [],
+    shortBenefit:
+      fallback?.shortBenefit || summary,
+    audience:
+      fallback?.audience ||
+      "پزشکان و کلینیک‌ها",
+    features: fallback?.features ?? [],
+    specs:
+      fallback?.specs?.length
+        ? fallback.specs
+        : cmsProduct.sku
+          ? [["SKU", cmsProduct.sku]]
+          : [],
+    checks:
+      fallback?.checks ?? [
+        "نام محصول، بسته‌بندی، تاریخ و بچ‌کد پیش از مصرف بررسی شود.",
+      ],
+    faq: fallback?.faq ?? [],
   };
 }
 function getSchemaPrice(
@@ -261,11 +297,13 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
-  const product =
-    staticProduct ||
-    (liveProduct
-      ? buildCmsOnlyProduct(liveProduct)
-      : null);
+ const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
   if (!product) {
     return {};
@@ -329,18 +367,27 @@ const liveProduct = isPublicCmsProduct(cmsProduct)
   : null;
 
 const product =
-  staticProduct ||
-  (liveProduct
-    ? buildCmsOnlyProduct(liveProduct)
-    : null);
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
 if (!product) {
   notFound();
 }
 
-const related = products
-    .filter((item) => item.category === product.category && item.slug !== product.slug)
-    .slice(0, 3);
+const storefrontProducts =
+  await getStorefrontProducts();
+
+const related = storefrontProducts
+  .filter(
+    (item) =>
+      item.category === product.category &&
+      item.slug !== product.slug,
+  )
+  .slice(0, 3);
   const article =
     articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
   const group = getGroupForCategory(product.category);

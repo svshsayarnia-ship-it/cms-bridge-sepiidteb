@@ -5,12 +5,23 @@ import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ShopCatalog } from "../../components/ShopCatalog";
-import { getGroupForCategory, productHref } from "../../catalog";
-import { categories, getCategory, products } from "../../data";
+import {
+  getGroupForCategory,
+  productHref,
+} from "../../catalog";
+import {
+  categories,
+  getCategory,
+} from "../../data";
 import { siteOrigin } from "../../lib/site-url";
+import { getStorefrontCatalog } from "../../lib/storefront-catalog";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
-  return categories.map((category) => ({ category: category.slug }));
+  return categories.map((category) => ({
+    category: category.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -20,11 +31,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category: slug } = await params;
   const category = getCategory(slug);
-  if (!category) return {};
+
+  if (!category) {
+    return {};
+  }
+
   return {
     title: `${category.title}؛ بررسی و استعلام محصولات`,
     description: category.description,
-    alternates: { canonical: `/shop/${category.slug}` },
+
+    alternates: {
+      canonical: `/shop/${category.slug}`,
+    },
+
     openGraph: {
       title: `${category.title} | Sepiid Beauty`,
       description: category.description,
@@ -39,22 +58,47 @@ export default async function CategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category: slug } = await params;
-  const category = getCategory(slug);
-  if (!category) notFound();
 
-  const items = products.filter((product) => product.category === category.slug);
-  const group = getGroupForCategory(category.slug);
+  const category = getCategory(slug);
+
+  if (!category) {
+    notFound();
+  }
+
+  const { products } =
+    await getStorefrontCatalog();
+
+  const items = products.filter(
+    (product) =>
+      product.category === category.slug,
+  );
+
+  const group = getGroupForCategory(
+    category.slug,
+  );
 
   return (
     <main id="main-content">
       <div className="sb-shell">
         <Breadcrumbs
           items={[
-            { label: "فروشگاه", href: "/shop" },
+            {
+              label: "فروشگاه",
+              href: "/shop",
+            },
+
             ...(group
-              ? [{ label: group.title, href: `/shop/group/${group.slug}` }]
+              ? [
+                  {
+                    label: group.title,
+                    href: `/shop/group/${group.slug}`,
+                  },
+                ]
               : []),
-            { label: category.title },
+
+            {
+              label: category.title,
+            },
           ]}
         />
       </div>
@@ -62,14 +106,20 @@ export default async function CategoryPage({
       <section className="sb-category-hero">
         <div className="sb-shell sb-category-hero__grid">
           <div>
-            <span className="sb-eyebrow">{category.en}</span>
+            <span className="sb-eyebrow">
+              {category.en}
+            </span>
+
             <h1>{category.title}</h1>
+
             <p>{category.description}</p>
+
             <div className="sb-category-hero__notice">
               <span>راهنمای تصمیم</span>
               <p>{category.guide}</p>
             </div>
           </div>
+
           <div
             className="sb-category-hero__image"
             style={{
@@ -85,17 +135,25 @@ export default async function CategoryPage({
       <div className="sb-subcategory-nav">
         <div className="sb-shell">
           <span>دسته‌های دیگر:</span>
+
           {categories
             .filter(
               (item) =>
                 item.slug !== category.slug &&
-                (!group || group.categorySlugs.includes(item.slug)),
+                (!group ||
+                  group.categorySlugs.includes(
+                    item.slug,
+                  )),
             )
             .map((item) => (
-              <Link href={`/shop/${item.slug}`} key={item.slug}>
+              <Link
+                href={`/shop/${item.slug}`}
+                key={item.slug}
+              >
                 {item.title}
               </Link>
             ))}
+
           <Link href="/shop">
             همه محصولات
             <ArrowIcon />
@@ -105,28 +163,46 @@ export default async function CategoryPage({
 
       <section className="sb-section sb-catalog-section">
         <div className="sb-shell">
-          <ShopCatalog items={items} initialCategory={category.slug} />
+          <ShopCatalog
+            items={items}
+            initialCategory={category.slug}
+          />
         </div>
       </section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">
           <div>
-            <span className="sb-eyebrow">SEPIID GUIDE</span>
-            <h2>چطور این دسته را بررسی کنید؟</h2>
+            <span className="sb-eyebrow">
+              SEPIID GUIDE
+            </span>
+
+            <h2>
+              چطور این دسته را بررسی کنید؟
+            </h2>
           </div>
+
           <div>
             <p>
-              ابتدا هدف و مخاطب محصول را مشخص کنید؛ سپس نام کامل مدل، ترکیب درج‌شده
-              و روش استفاده سازنده را بخوانید. عنوان بازاری یا محبوبیت، جای این
-              بررسی را نمی‌گیرد.
+              ابتدا هدف و مخاطب محصول را مشخص
+              کنید؛ سپس نام کامل مدل، ترکیب
+              درج‌شده و روش استفاده سازنده را
+              بخوانید. عنوان بازاری یا محبوبیت،
+              جای این بررسی را نمی‌گیرد.
             </p>
+
             <p>
-              برای سفارش، مشخصات بسته موجود، تاریخ، بچ‌کد و شرایط تحویل را استعلام
-              کنید. اگر اطلاعات ناسازگار یا ناخوانا بود، خرید یا استفاده را متوقف
-              کنید.
+              برای سفارش، مشخصات بسته موجود،
+              تاریخ، بچ‌کد و شرایط تحویل را
+              استعلام کنید. اگر اطلاعات ناسازگار
+              یا ناخوانا بود، خرید یا استفاده را
+              متوقف کنید.
             </p>
-            <Link className="sb-text-link" href="/guides">
+
+            <Link
+              className="sb-text-link"
+              href="/guides"
+            >
               مشاهده راهنماهای کامل
               <ArrowIcon />
             </Link>
@@ -139,16 +215,23 @@ export default async function CategoryPage({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: category.title,
-          description: category.description,
+          description:
+            category.description,
+
           mainEntity: {
             "@type": "ItemList",
             numberOfItems: items.length,
-            itemListElement: items.map((product, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              name: product.nameFa,
-              url: `${siteOrigin}${productHref(product)}`,
-            })),
+
+            itemListElement: items.map(
+              (product, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: product.nameFa,
+                url: `${siteOrigin}${productHref(
+                  product,
+                )}`,
+              }),
+            ),
           },
         }}
       />
