@@ -9,6 +9,7 @@ import type {
   CmsProductInput,
   CmsProductsResponse,
 } from "../lib/cms-types";
+import { CategoryManager } from "./CategoryManager";
 import { RichTextEditor } from "./RichTextEditor";
 
 type ApiError = { error?: string; code?: string };
@@ -702,6 +703,21 @@ async function uploadFiles(files: FileList | null) {
       )}
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
+
+      {categories.length > 0 && (
+        <CategoryManager
+          categories={categories}
+          onCategoryUpdated={(category) => {
+            setCategories((current) =>
+              current.map((item) =>
+                item.id === category.id
+                  ? category
+                  : item,
+              ),
+            );
+          }}
+        />
+      )}
 
       <div className="spb-cms-layout">
         <aside className="spb-cms-list">
