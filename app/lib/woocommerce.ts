@@ -1,5 +1,6 @@
 import type {
   CmsCategory,
+  CmsCategoryInput,
   CmsConnectionStatus,
   CmsImage,
   CmsProduct,
@@ -44,6 +45,7 @@ type WooCategory = {
   id: number;
   name: string;
   slug: string;
+  description: string;
   parent: number;
   image: WooImage | null;
   count: number;
@@ -507,10 +509,63 @@ export async function listCategories(): Promise<CmsCategory[]> {
     id: category.id,
     name: category.name,
     slug: category.slug,
+    description: category.description,
     parent: category.parent,
     image: category.image ? mapImage(category.image) : null,
     count: category.count,
   }));
+}
+
+export async function updateCategory(
+  id: number,
+  input: CmsCategoryInput,
+): Promise<CmsCategory> {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new WooCommerceError(
+      "شناسه دسته‌بندی معتبر نیست.",
+      400,
+      "invalid_category_id",
+    );
+  }
+
+  if (!input.name.trim()) {
+    throw new WooCommerceError(
+      "نام دسته‌بندی الزامی است.",
+      400,
+      "missing_category_name",
+    );
+  }
+
+  const response = await wooRequest<WooCategory>(
+    `products/categories/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        name: input.name.trim(),
+        slug: input.slug.trim(),
+        description: input.description,
+        image: input.image
+          ? input.image.id > 0
+            ? { id: input.image.id }
+            : { src: input.image.src }
+          : null,
+      }),
+    },
+  );
+
+  const category = response.data;
+
+  return {
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
+    parent: category.parent,
+    image: category.image
+      ? mapImage(category.image)
+      : null,
+    count: category.count,
+  };
 }
 
 export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
