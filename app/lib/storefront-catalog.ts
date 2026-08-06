@@ -144,7 +144,10 @@ function mapWooProduct(
       fallback?.nameFa ||
       product.slug,
     nameEn: fallback?.nameEn ?? "",
-    brand: fallback?.brand ?? "",
+    brand:
+      product.brands?.[0]?.name ||
+      fallback?.brand ||
+      "",
     category: categorySlug,
     categoryTitle,
     group:

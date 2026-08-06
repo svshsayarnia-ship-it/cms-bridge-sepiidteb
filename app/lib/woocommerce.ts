@@ -9,6 +9,7 @@ import type {
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
+type WooBrandRef = { id: number; name: string; slug: string };
 type WooMetaData = {
   id?: number;
   key: string;
@@ -32,6 +33,7 @@ type WooProduct = {
   stock_quantity: number | null;
   stock_status: CmsProduct["stockStatus"];
   categories: WooCategoryRef[];
+  brands?: WooBrandRef[];
   images: WooImage[];
   permalink: string;
   date_modified_gmt: string;
@@ -320,6 +322,7 @@ reviewedAt: getProductMeta(
     stockQuantity: product.stock_quantity,
     stockStatus: product.stock_status,
     categories: product.categories,
+    brands: product.brands ?? [],
     images: product.images.map(mapImage),
     permalink: product.permalink,
     dateModifiedGmt: product.date_modified_gmt,

@@ -175,7 +175,10 @@ function buildCmsOnlyProduct(
       fallback?.nameFa ||
       cmsProduct.slug,
     nameEn: fallback?.nameEn ?? "",
-    brand: fallback?.brand ?? "",
+    brand:
+      cmsProduct.brands?.[0]?.name ||
+      fallback?.brand ||
+      "",
     category:
       category?.slug ||
       fallback?.category ||
