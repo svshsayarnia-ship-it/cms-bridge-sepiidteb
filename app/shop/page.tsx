@@ -12,7 +12,7 @@ import { categories } from "../data";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "فروشگاه محصولات تخصصی زیبایی",

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
   catalogProducts,
@@ -13,6 +14,9 @@ const PRODUCTS_PER_PAGE = 100;
 const MAX_CATALOG_PAGES = 500;
 const DEFAULT_PRODUCT_IMAGE =
   "/images/editorial-detail.webp";
+
+export const STOREFRONT_CATALOG_TAG =
+  "storefront-catalog";
 
 export type StorefrontCatalogSource =
   | "woocommerce"
@@ -346,8 +350,18 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   }
 }
 
+const getCachedStorefrontCatalog =
+  unstable_cache(
+    loadStorefrontCatalog,
+    ["storefront-catalog-v1"],
+    {
+      revalidate: 300,
+      tags: [STOREFRONT_CATALOG_TAG],
+    },
+  );
+
 export const getStorefrontCatalog = cache(
-  loadStorefrontCatalog,
+  getCachedStorefrontCatalog,
 );
 
 export async function getStorefrontProducts(): Promise<

@@ -16,7 +16,7 @@ import {
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export function generateStaticParams() {
   return categories.map((category) => ({
