@@ -294,11 +294,13 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
-  const product =
-    staticProduct ||
-    (liveProduct
-      ? buildCmsOnlyProduct(liveProduct)
-      : null);
+ const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
   if (!product) {
     return {};
