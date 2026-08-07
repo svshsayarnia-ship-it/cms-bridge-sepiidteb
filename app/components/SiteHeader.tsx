@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { catalogGroups, productHref } from "../catalog";
-import { categories, products, whatsappHref } from "../data";
+import {
+  products,
+  whatsappHref,
+  type Category,
+} from "../data";
 import {
   ArrowIcon,
   ChevronIcon,
@@ -49,7 +53,11 @@ function BrandMark({ light = false }: { light?: boolean }) {
 
 export { BrandMark };
 
-export function SiteHeader() {
+export function SiteHeader({
+  categories,
+}: {
+  categories: Category[];
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);

@@ -9,6 +9,9 @@ import {
   STOREFRONT_CATALOG_TAG,
 } from "@/app/lib/storefront-catalog";
 import {
+  STOREFRONT_CATEGORIES_TAG,
+} from "@/app/lib/storefront-categories";
+import {
   errorResponse,
   updateCategory,
   WooCommerceError,
@@ -148,6 +151,11 @@ export async function PUT(
 
     revalidateTag(
       STOREFRONT_CATALOG_TAG,
+      { expire: 0 },
+    );
+
+    revalidateTag(
+      STOREFRONT_CATEGORIES_TAG,
       { expire: 0 },
     );
 
