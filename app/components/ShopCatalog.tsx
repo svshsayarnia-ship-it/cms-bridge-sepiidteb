@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categories, type Product } from "../data";
+import type {
+  Category,
+  Product,
+} from "../data";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
 export function ShopCatalog({
   items,
   initialCategory,
+  categoryOptions = [],
 }: {
   items: Product[];
   initialCategory?: string;
+  categoryOptions?: Category[];
 }) {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
@@ -163,7 +168,7 @@ export function ShopCatalog({
             همه دسته‌ها
             <small>{items.length}</small>
           </label>
-          {categories.map((item) => (
+          {categoryOptions.map((item) => (
             <label key={item.slug}>
               <input
                 type="radio"

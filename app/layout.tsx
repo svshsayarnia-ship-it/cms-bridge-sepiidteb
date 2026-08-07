@@ -7,6 +7,7 @@ import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
+import { getStorefrontCategories } from "./lib/storefront-categories";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -40,15 +41,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const categories =
+    await getStorefrontCategories();
+
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader />
+        <SiteHeader categories={categories} />
         {children}
         <SiteFooter />
        { <SmartAssistant /> }

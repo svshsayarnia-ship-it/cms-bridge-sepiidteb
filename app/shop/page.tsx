@@ -8,7 +8,7 @@ import {
   catalogGroups,
   productHref,
 } from "../catalog";
-import { categories } from "../data";
+import { getStorefrontCategories } from "../lib/storefront-categories";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
 
@@ -24,8 +24,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ShopPage() {
-  const { products } =
-    await getStorefrontCatalog();
+  const [{ products }, categories] =
+    await Promise.all([
+      getStorefrontCatalog(),
+      getStorefrontCategories(),
+    ]);
 
   return (
     <main id="main-content">
@@ -148,10 +151,13 @@ export default async function ShopPage() {
       </section>
 
       <section className="sb-section sb-catalog-section">
-        <div className="sb-shell">
-          <ShopCatalog items={products} />
-        </div>
-      </section>
+  <div className="sb-shell">
+    <ShopCatalog
+      items={products}
+      categoryOptions={categories}
+    />
+  </div>
+</section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">

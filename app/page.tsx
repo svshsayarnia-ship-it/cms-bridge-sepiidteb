@@ -16,8 +16,9 @@ import { JsonLd } from "./components/JsonLd";
 import { ProductCard } from "./components/ProductCard";
 import { ProductUseReveal } from "./components/ProductUseReveal";
 import { Reveal } from "./components/Reveal";
-import { articles, categories, whatsappHref } from "./data";
+import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
+import { getStorefrontCategories } from "./lib/storefront-categories";
 
 const faqs = [
   {
@@ -45,8 +46,11 @@ const faqs = [
 export const revalidate = 300;
 
 export default async function Home() {
-  const { products } =
-    await getStorefrontCatalog();
+  const [{ products }, categories] =
+    await Promise.all([
+      getStorefrontCatalog(),
+      getStorefrontCategories(),
+    ]);
 
   const prioritizedProducts = [
     ...products.filter(

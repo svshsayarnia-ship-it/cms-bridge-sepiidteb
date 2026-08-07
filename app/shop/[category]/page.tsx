@@ -6,22 +6,25 @@ import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ShopCatalog } from "../../components/ShopCatalog";
 import {
+  catalogCategories,
   getGroupForCategory,
   productHref,
 } from "../../catalog";
 import {
-  categories,
-  getCategory,
-} from "../../data";
+  getStorefrontCategories,
+  getStorefrontCategoryBySlug,
+} from "../../lib/storefront-categories";
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 
 export const revalidate = 300;
 
 export function generateStaticParams() {
-  return categories.map((category) => ({
-    category: category.slug,
-  }));
+  return catalogCategories.map(
+    (category) => ({
+      category: category.slug,
+    }),
+  );
 }
 
 export async function generateMetadata({
@@ -30,7 +33,10 @@ export async function generateMetadata({
   params: Promise<{ category: string }>;
 }): Promise<Metadata> {
   const { category: slug } = await params;
-  const category = getCategory(slug);
+  const category =
+    await getStorefrontCategoryBySlug(
+      slug,
+    );
 
   if (!category) {
     return {};
@@ -59,14 +65,21 @@ export default async function CategoryPage({
 }) {
   const { category: slug } = await params;
 
-  const category = getCategory(slug);
+  const [categories, { products }] =
+    await Promise.all([
+      getStorefrontCategories(),
+      getStorefrontCatalog(),
+    ]);
+
+  const category =
+    categories.find(
+      (item) =>
+        item.slug === slug,
+    );
 
   if (!category) {
     notFound();
   }
-
-  const { products } =
-    await getStorefrontCatalog();
 
   const items = products.filter(
     (product) =>

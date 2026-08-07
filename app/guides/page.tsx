@@ -3,7 +3,10 @@ import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, CheckIcon } from "../components/Icons";
-import { articles, categories, whatsappHref } from "../data";
+import { articles, whatsappHref } from "../data";
+import { getStorefrontCategories } from "../lib/storefront-categories";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
@@ -35,7 +38,10 @@ const steps = [
   },
 ];
 
-export default function GuidesPage() {
+export default async function GuidesPage() {
+  const categories =
+    await getStorefrontCategories();
+
   return (
     <main id="main-content">
       <div className="sb-shell">
