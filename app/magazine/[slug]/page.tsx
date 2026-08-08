@@ -7,8 +7,14 @@ import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
-import { articles, getArticle, products } from "../../data";
+import { articles, products } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
+import { applyArticlePresentation, getSitePresentation } from "../../lib/site-presentation";
+
+async function getEditableArticle(slug: string) {
+  return applyArticlePresentation(articles, await getSitePresentation())
+    .find((article) => article.slug === slug);
+}
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -20,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getEditableArticle(slug);
   if (!article) return {};
 
   return {
@@ -46,7 +52,7 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getEditableArticle(slug);
   if (!article) notFound();
 
   const image =

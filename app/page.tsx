@@ -19,6 +19,8 @@ import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
+import { getSitePresentation } from "./lib/site-presentation";
+import { EditableHomeHero } from "./components/EditableHomeHero";
 
 const faqs = [
   {
@@ -46,10 +48,11 @@ const faqs = [
 export const revalidate = 300;
 
 export default async function Home() {
-  const [{ products }, categories] =
+  const [{ products }, categories, presentation] =
     await Promise.all([
       getStorefrontCatalog(),
       getStorefrontCategories(),
+      getSitePresentation(),
     ]);
 
   const prioritizedProducts = [
@@ -88,7 +91,8 @@ export default async function Home() {
   return (
     <main id="main-content">
       <CustomerJourney />
-      <section className="sb-hero">
+      <EditableHomeHero hero={presentation.home.hero} />
+      <section className="sb-hero sb-hero--legacy">
         <div className="sb-shell sb-hero__grid">
           <div className="sb-hero__content">
             <span className="sb-eyebrow">

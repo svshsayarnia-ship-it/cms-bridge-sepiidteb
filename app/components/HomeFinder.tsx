@@ -101,7 +101,7 @@ export function HomeFinder({
         .replace(/ك/g, "ک")
         .includes(normalized),
     );
-  }, [productName]);
+  }, [productName, products]);
 
   const recommendation = useMemo(() => {
     const categoryTitle = categoryLabels[category] ?? categoryLabels["skin-boosters"];

@@ -10,6 +10,7 @@ import {
   whatsappHref,
   type Category,
 } from "../data";
+import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
   ChevronIcon,
@@ -27,11 +28,12 @@ const navItems = [
   { href: "/contact", label: "تماس" },
 ];
 
-function BrandMark({ light = false }: { light?: boolean }) {
+function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: string }) {
   return (
     <Link
       className={`sb-brand ${light ? "sb-brand--light" : ""}`}
       href="/"
+      title={tagline}
       aria-label="Sepiid Beauty، صفحه اصلی"
     >
       <span className="sb-brand__mark">
@@ -55,8 +57,10 @@ export { BrandMark };
 
 export function SiteHeader({
   categories,
+  presentation,
 }: {
   categories: Category[];
+  presentation: SitePresentation["header"];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -184,7 +188,7 @@ export function SiteHeader({
       </div>
       <header className="sb-header">
         <div className="sb-shell sb-header__primary">
-          <BrandMark />
+          <BrandMark tagline={presentation.brandTagline} />
 
           <button
             className="sb-header-search"
@@ -327,7 +331,7 @@ export function SiteHeader({
             </div>
 
             <div className="sb-nav__links">
-              {navItems.map((item) => {
+              {(presentation.navigation.length ? presentation.navigation : navItems).map((item) => {
                 const active =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(`${item.href}/`));

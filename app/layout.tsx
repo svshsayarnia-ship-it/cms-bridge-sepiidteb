@@ -8,6 +8,7 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
 import { getStorefrontCategories } from "./lib/storefront-categories";
+import { getSitePresentation } from "./lib/site-presentation";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -46,15 +47,17 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const categories =
-    await getStorefrontCategories();
+  const [categories, presentation] = await Promise.all([
+    getStorefrontCategories(),
+    getSitePresentation(),
+  ]);
 
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader categories={categories} />
+        <SiteHeader categories={categories} presentation={presentation.header} />
         {children}
-        <SiteFooter />
+        <SiteFooter presentation={{ ...presentation.footer, brandTagline: presentation.header.brandTagline }} />
        { <SmartAssistant /> }
         <JsonLd
           data={{

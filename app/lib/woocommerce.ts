@@ -7,6 +7,7 @@ import type {
   CmsProductInput,
   CmsProductsResponse,
 } from "./cms-types";
+import type { SitePresentation } from "./site-presentation";
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
@@ -636,6 +637,23 @@ export async function connectionStatus(): Promise<CmsConnectionStatus> {
     message: connectionProblem?.message,
     code: connectionProblem?.code,
   };
+}
+
+export async function getSitePresentation(): Promise<Partial<SitePresentation> | null> {
+  const response = await wooRequest<{
+    presentation: Partial<SitePresentation> | null;
+  }>("sepiid-site-presentation");
+  return response.data.presentation;
+}
+
+export async function updateSitePresentation(
+  presentation: SitePresentation,
+): Promise<SitePresentation> {
+  const response = await wooRequest<{ presentation: SitePresentation }>(
+    "sepiid-site-presentation",
+    { method: "PUT", body: JSON.stringify(presentation) },
+  );
+  return response.data.presentation;
 }
 
 export function errorResponse(error: unknown): Response {

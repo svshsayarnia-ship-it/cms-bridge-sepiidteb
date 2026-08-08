@@ -5,6 +5,7 @@ import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { articles } from "../data";
+import { applyArticlePresentation, getSitePresentation } from "../lib/site-presentation";
 
 export const metadata: Metadata = {
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
@@ -18,10 +19,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MagazinePage() {
+export default async function MagazinePage() {
+  const editableArticles = applyArticlePresentation(articles, await getSitePresentation());
   const featured =
-    articles.find((article) => article.slug === "botulinum-cold-chain-checklist") ??
-    articles[0];
+    editableArticles.find((article) => article.slug === "botulinum-cold-chain-checklist") ??
+    editableArticles[0];
 
   return (
     <main id="main-content">
@@ -93,7 +95,7 @@ export default function MagazinePage() {
             <p>{articles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
           </div>
           <div className="sb-article-grid">
-            {articles.map((article) => (
+            {editableArticles.map((article) => (
               <ArticleCard article={article} key={article.slug} />
             ))}
           </div>

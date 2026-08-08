@@ -10,6 +10,7 @@ import type {
   CmsProductsResponse,
 } from "../lib/cms-types";
 import { CategoryManager } from "./CategoryManager";
+import { SiteContentManager } from "./SiteContentManager";
 import { RichTextEditor } from "./RichTextEditor";
 
 type ApiError = { error?: string; code?: string };
@@ -703,6 +704,8 @@ async function uploadFiles(files: FileList | null) {
       )}
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
+
+      <SiteContentManager />
 
       {categories.length > 0 && (
         <CategoryManager
