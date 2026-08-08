@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { catalogGroups, productHref } from "../catalog";
 import {
-  products,
   whatsappHref,
   type Category,
+  type Product,
 } from "../data";
 import {
   ArrowIcon,
@@ -55,8 +55,10 @@ export { BrandMark };
 
 export function SiteHeader({
   categories,
+  products,
 }: {
   categories: Category[];
+  products: Product[];
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -88,7 +90,7 @@ export function SiteHeader({
           .includes(normalized),
       )
       .slice(0, 7);
-  }, [query]);
+  }, [products, query]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {

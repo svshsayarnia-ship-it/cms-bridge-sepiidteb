@@ -6,6 +6,7 @@ import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
+import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 
@@ -46,13 +47,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const categories =
-    await getStorefrontCategories();
+  const [{ products }, categories] = await Promise.all([
+    getStorefrontCatalog(),
+    getStorefrontCategories(),
+  ]);
 
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader categories={categories} />
+        <SiteHeader categories={categories} products={products} />
         {children}
         <SiteFooter />
        { <SmartAssistant /> }

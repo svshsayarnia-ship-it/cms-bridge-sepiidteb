@@ -7,7 +7,8 @@ import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
-import { articles, getArticle, products } from "../../data";
+import { articles, getArticle } from "../../data";
+import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 
 export function generateStaticParams() {
@@ -53,7 +54,8 @@ export default async function ArticlePage({
     article.slug === "verify-dermal-filler-authenticity"
       ? "/images/magazine-authenticity-v2.webp"
       : article.image;
-  const relatedProducts = products.filter((product) =>
+  const storefrontProducts = await getStorefrontProducts();
+  const relatedProducts = storefrontProducts.filter((product) =>
     article.relatedProducts.includes(product.slug),
   );
   const relatedArticles = articles.filter((item) => item.slug !== article.slug).slice(0, 2);

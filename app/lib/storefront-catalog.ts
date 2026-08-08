@@ -281,7 +281,9 @@ async function fetchAllWooProducts(): Promise<
     const response = await listProducts({
       page,
       perPage: PRODUCTS_PER_PAGE,
-      status: "all",
+      // Ask WooCommerce for public records only. The visibility check below is
+      // still required because `hidden` products can be published.
+      status: "publish",
     });
 
     products.push(...response.products);

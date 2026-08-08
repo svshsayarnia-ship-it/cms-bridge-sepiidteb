@@ -20,13 +20,12 @@ import {
   whatsappHref,
 } from "../../data";
 import type { Product } from "../../data";
-import { getStorefrontProducts } from "../../lib/storefront-catalog";
+import {
+  getStorefrontProductBySlug,
+  getStorefrontProducts,
+} from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
-import {
-  getProductBySlug as getCmsProductBySlug,
-  WooCommerceError,
-} from "../../lib/woocommerce";
 
 export const dynamic = "force-dynamic";
 
@@ -79,15 +78,45 @@ function plainText(html: string) {
 async function getLiveProduct(
   slug: string,
 ): Promise<CmsProduct | null> {
-  try {
-    return await getCmsProductBySlug(slug);
-  } catch (error) {
-    if (error instanceof WooCommerceError) {
-      return null;
-    }
+  const product = await getStorefrontProductBySlug(slug);
 
-    throw error;
-  }
+  if (!product?.live) return null;
+
+  return {
+    id: product.wooId ?? 0,
+    name: product.nameFa,
+    slug: product.slug,
+    sku: product.sku,
+    type: "simple",
+    status: "publish",
+    catalogVisibility: "visible",
+    featured: product.featured,
+    description: product.descriptionHtml,
+    shortDescription: product.shortDescriptionHtml,
+    seoTitle: product.seoTitle,
+    metaDescription: product.metaDescription,
+    focusKeyword: product.focusKeyword,
+    sourceName: product.sourceName,
+    sourceUrl: product.sourceUrl,
+    reviewerName: product.reviewerName,
+    reviewerRole: product.reviewerRole,
+    reviewedAt: product.reviewedAt,
+    price: product.price,
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
+    manageStock: product.manageStock,
+    stockQuantity: product.stockQuantity,
+    stockStatus: product.stockStatus === "unknown"
+      ? "outofstock"
+      : product.stockStatus,
+    categories: [{ id: 0, name: product.categoryTitle, slug: product.category }],
+    brands: product.brand ? [{ id: 0, name: product.brand, slug: product.brand }] : [],
+    images: product.image
+      ? [{ id: 0, src: product.image, name: "", alt: product.imageAlt ?? product.nameFa }]
+      : [],
+    permalink: "",
+    dateModifiedGmt: product.dateModifiedGmt,
+  };
 }
 
 function getLiveProductPricing(
