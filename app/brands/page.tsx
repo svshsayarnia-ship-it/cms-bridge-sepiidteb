@@ -6,7 +6,7 @@ import { ArrowIcon } from "../components/Icons";
 import { ProductCard } from "../components/ProductCard";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "برندهای محصولات حرفه‌ای زیبایی",

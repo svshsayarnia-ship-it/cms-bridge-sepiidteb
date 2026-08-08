@@ -15,11 +15,11 @@ import {
   productHref,
 } from "../../../catalog";
 
-import { categories } from "../../../data";
+import { getStorefrontCategories } from "../../../lib/storefront-categories";
 import { siteOrigin } from "../../../lib/site-url";
 import { getStorefrontCatalog } from "../../../lib/storefront-catalog";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export function generateStaticParams() {
   return catalogGroups.map((group) => ({
@@ -62,8 +62,11 @@ export default async function ProductGroupPage({
     notFound();
   }
 
-  const { products } =
-    await getStorefrontCatalog();
+  const [{ products }, categories] =
+    await Promise.all([
+      getStorefrontCatalog(),
+      getStorefrontCategories(),
+    ]);
 
   const childCategories = categories.filter(
     (category) =>

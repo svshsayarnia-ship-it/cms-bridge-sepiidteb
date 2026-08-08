@@ -2,9 +2,17 @@ export type CmsCategory = {
   id: number;
   name: string;
   slug: string;
+  description: string;
   parent: number;
   image: CmsImage | null;
   count: number;
+};
+
+export type CmsCategoryInput = {
+  name: string;
+  slug: string;
+  description: string;
+  image: CmsImage | null;
 };
 
 export type CmsImage = {

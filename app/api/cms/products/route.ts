@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
+import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { parseProductInput } from "@/app/lib/cms-input";
 import {
   createProduct,
@@ -32,8 +34,19 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   try {
-    const product = await createProduct(parseProductInput(await request.json()));
-    return Response.json({ product }, { status: 201 });
+    const product = await createProduct(
+      parseProductInput(await request.json()),
+    );
+
+    revalidateTag(
+      STOREFRONT_CATALOG_TAG,
+      { expire: 0 },
+    );
+
+    return Response.json(
+      { product },
+      { status: 201 },
+    );
   } catch (error) {
     return errorResponse(error);
   }
