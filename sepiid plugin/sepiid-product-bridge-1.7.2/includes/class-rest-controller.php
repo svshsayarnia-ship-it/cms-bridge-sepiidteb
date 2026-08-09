@@ -246,7 +246,23 @@ final class Rest_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function create_media( $request ) {
+		$started_at     = microtime( true );
+		$correlation_id = sanitize_text_field( (string) $request->get_header( 'x-sepiid-correlation-id' ) );
+		if ( ! preg_match( '/^[A-Za-z0-9-]{8,64}$/', $correlation_id ) ) {
+			$correlation_id = wp_generate_uuid4();
+		}
+
 		$files = $request->get_file_params();
+		$file  = ! empty( $files['file'] ) && is_array( $files['file'] ) ? $files['file'] : array();
+		$this->log_media_observation(
+			'wordpress_bridge_upload_received',
+			array(
+				'correlation_id' => $correlation_id,
+				'file_size'      => isset( $file['size'] ) ? (int) $file['size'] : 0,
+				'mime_type'      => isset( $file['type'] ) ? sanitize_mime_type( $file['type'] ) : 'unknown',
+				'elapsed_ms'     => $this->elapsed_milliseconds( $started_at ),
+			)
+		);
 		if ( empty( $files['file'] ) || ! is_array( $files['file'] ) ) {
 			return $this->error(
 				'sepiid_bridge_missing_file',
@@ -255,7 +271,6 @@ final class Rest_Controller {
 			);
 		}
 
-		$file         = $files['file'];
 		$upload_error = isset( $file['error'] ) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE;
 		if ( UPLOAD_ERR_OK !== $upload_error ) {
 			return $this->upload_error( $upload_error );
@@ -321,6 +336,16 @@ final class Rest_Controller {
 			'post_content' => wp_kses_post( (string) $request->get_param( 'description' ) ),
 		);
 
+		$this->log_media_observation(
+			'wordpress_media_handle_upload_started',
+			array(
+				'correlation_id' => $correlation_id,
+				'file_size'      => $file_size,
+				'mime_type'      => $file_type['type'],
+				'elapsed_ms'     => $this->elapsed_milliseconds( $started_at ),
+			)
+		);
+
 		$attachment_id = media_handle_upload(
 			'file',
 			0,
@@ -332,6 +357,17 @@ final class Rest_Controller {
 		);
 
 		if ( is_wp_error( $attachment_id ) ) {
+			$this->log_media_observation(
+				'wordpress_media_handle_upload_failed',
+				array(
+					'correlation_id' => $correlation_id,
+					'file_size'      => $file_size,
+					'mime_type'      => $file_type['type'],
+					'elapsed_ms'     => $this->elapsed_milliseconds( $started_at ),
+					'http_status'    => 500,
+					'error_category' => 'media_handle_upload_failed',
+				)
+			);
 			$this->log_error( 'Media upload failed.', $attachment_id );
 			return $this->error(
 				'sepiid_bridge_media_upload_failed',
@@ -339,6 +375,18 @@ final class Rest_Controller {
 				500
 			);
 		}
+
+		$this->log_media_observation(
+			'wordpress_media_handle_upload_completed',
+			array(
+				'correlation_id' => $correlation_id,
+				'file_size'      => $file_size,
+				'mime_type'      => $file_type['type'],
+				'elapsed_ms'     => $this->elapsed_milliseconds( $started_at ),
+				'http_status'    => 201,
+				'attachment_id'  => (int) $attachment_id,
+			)
+		);
 
 		$alt = sanitize_text_field( (string) $request->get_param( 'alt' ) );
 		if ( '' !== $alt ) {
@@ -744,5 +792,56 @@ final class Rest_Controller {
 				'user_id'    => get_current_user_id(),
 			)
 		);
+	}
+
+	/**
+	 * Emit a whitelisted, credential-free media timing checkpoint.
+	 *
+	 * @param string $marker Stable checkpoint name.
+	 * @param array  $context Safe observation fields.
+	 * @return void
+	 */
+	private function log_media_observation( $marker, $context ) {
+		if ( ! function_exists( 'wc_get_logger' ) ) {
+			return;
+		}
+
+		$safe_context = array( 'source' => 'sepiid-product-bridge' );
+		$allowed_keys = array(
+			'correlation_id',
+			'file_size',
+			'mime_type',
+			'elapsed_ms',
+			'http_status',
+			'attachment_id',
+			'error_category',
+		);
+
+		foreach ( $allowed_keys as $key ) {
+			if ( ! array_key_exists( $key, $context ) ) {
+				continue;
+			}
+
+			if ( in_array( $key, array( 'file_size', 'elapsed_ms', 'http_status', 'attachment_id' ), true ) ) {
+				$safe_context[ $key ] = max( 0, (int) $context[ $key ] );
+			} else {
+				$safe_context[ $key ] = substr( sanitize_text_field( (string) $context[ $key ] ), 0, 200 );
+			}
+		}
+
+		wc_get_logger()->info(
+			'[sepiid-media] ' . sanitize_key( $marker ),
+			$safe_context
+		);
+	}
+
+	/**
+	 * Convert a request-relative timestamp to integer milliseconds.
+	 *
+	 * @param float $started_at Request start from microtime(true).
+	 * @return int
+	 */
+	private function elapsed_milliseconds( $started_at ) {
+		return max( 0, (int) round( ( microtime( true ) - $started_at ) * 1000 ) );
 	}
 }

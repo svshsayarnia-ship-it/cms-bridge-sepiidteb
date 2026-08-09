@@ -4,7 +4,7 @@ Tags: woocommerce, rest-api, cms, media
 Requires at least: 6.9
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,10 @@ Sepiid Product Bridge قابلیت‌های تکمیلی موردنیاز Sepiid
 صحیح است. مرورگر بدون Consumer Key و Consumer Secret نباید به این مسیر دسترسی داشته باشد. آزمون واقعی باید از CMS یا ابزار API امن انجام شود.
 
 == Changelog ==
+
+= 1.7.2 =
+
+* افزودن لاگ‌های امن و هم‌بسته برای زمان‌بندی مراحل آپلود رسانه، بدون ثبت پیام خطا یا اطلاعات محرمانه.
 
 = 1.7.1 =
 

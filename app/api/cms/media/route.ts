@@ -10,12 +10,25 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/g
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
+  const correlationId = crypto.randomUUID();
+  const startedAt = performance.now();
+  console.info("[sepiid-media] next_request_received", {
+    correlationId,
+    elapsedMs: 0,
+  });
+
   const denied = await cmsApiGuard(request);
   if (denied) return denied;
 
   try {
     const form = await request.formData();
     const file = form.get("file");
+    console.info("[sepiid-media] next_form_data_completed", {
+      correlationId,
+      fileSize: file instanceof File ? file.size : 0,
+      mimeType: file instanceof File ? file.type : "unknown",
+      elapsedMs: Math.round(performance.now() - startedAt),
+    });
     if (!(file instanceof File)) {
       throw new WooCommerceError("فایل تصویر ارسال نشده است.", 400, "missing_file");
     }
@@ -33,7 +46,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const image = await uploadMedia(file, String(form.get("alt") ?? ""));
+    const image = await uploadMedia(
+      file,
+      String(form.get("alt") ?? ""),
+      correlationId,
+    );
     return Response.json({ image }, { status: 201 });
   } catch (error) {
     return errorResponse(error);

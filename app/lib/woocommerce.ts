@@ -55,6 +55,7 @@ type WooCategory = {
 type WooRequestResult<T> = {
   data: T;
   headers: Headers;
+  status: number;
 };
 
 const DEFAULT_WOO_TIMEOUT_MS = 20_000;
@@ -208,6 +209,7 @@ async function wooRequest<T>(
       return {
         data: data as T,
         headers: response.headers,
+        status: response.status,
       };
     } catch (error) {
       if (error instanceof WooCommerceError) {
@@ -569,20 +571,58 @@ export async function updateCategory(
   };
 }
 
-export async function uploadMedia(file: File, alt: string): Promise<CmsImage> {
+export async function uploadMedia(
+  file: File,
+  alt: string,
+  correlationId: string,
+): Promise<CmsImage> {
+  const startedAt = performance.now();
   const form = new FormData();
   form.set("file", file, file.name);
   form.set("alt", alt);
-  const response = await wooRequest<WooImage>(
-    "sepiid-media",
-    {
-      method: "POST",
-      body: form,
-    },
-    undefined,
-    MEDIA_UPLOAD_TIMEOUT_MS,
-  );
-  return mapImage(response.data);
+  console.info("[sepiid-media] wordpress_request_started", {
+    correlationId,
+    fileSize: file.size,
+    mimeType: file.type,
+    elapsedMs: 0,
+  });
+
+  try {
+    const response = await wooRequest<WooImage>(
+      "sepiid-media",
+      {
+        method: "POST",
+        body: form,
+        headers: { "x-sepiid-correlation-id": correlationId },
+      },
+      undefined,
+      MEDIA_UPLOAD_TIMEOUT_MS,
+    );
+    console.info("[sepiid-media] wordpress_response_received", {
+      correlationId,
+      fileSize: file.size,
+      mimeType: file.type,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      httpStatus: response.status,
+      attachmentId: response.data.id,
+    });
+    return mapImage(response.data);
+  } catch (error) {
+    console.warn("[sepiid-media] wordpress_response_failed", {
+      correlationId,
+      fileSize: file.size,
+      mimeType: file.type,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      httpStatus: error instanceof WooCommerceError ? error.status : 502,
+      errorCategory:
+        error instanceof WooCommerceError && error.status === 504
+          ? "woo_timeout"
+          : error instanceof WooCommerceError
+            ? "wordpress_http_error"
+            : "woo_connection_failed",
+    });
+    throw error;
+  }
 }
 
 export async function connectionStatus(): Promise<CmsConnectionStatus> {
