@@ -8565,3 +8565,6 @@ footer {
   }
 }
 .sb-hero--legacy { display: none; }
+.sb-header__consult[data-label] { font-size: 0; }
+.sb-header__consult[data-label]::after { content: attr(data-label); font-size: 0.86rem; }
+.sb-brand small + small { display: none; }

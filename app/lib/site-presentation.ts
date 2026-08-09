@@ -90,7 +90,25 @@ export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
   })),
 };
 
-function mergePresentation(value: Partial<SitePresentation> | null): SitePresentation {
+function restoreCanonicalKeys(value: unknown, template: unknown): unknown {
+  if (Array.isArray(value)) {
+    const itemTemplate = Array.isArray(template) ? template[0] : undefined;
+    return value.map((item) => restoreCanonicalKeys(item, itemTemplate));
+  }
+  if (!value || typeof value !== "object" || !template || typeof template !== "object") return value;
+  const source = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const [canonicalKey, templateValue] of Object.entries(template)) {
+    const actualKey = Object.keys(source).find((key) => key.toLowerCase() === canonicalKey.toLowerCase());
+    if (actualKey) result[canonicalKey] = restoreCanonicalKeys(source[actualKey], templateValue);
+  }
+  return result;
+}
+
+function mergePresentation(rawValue: Partial<SitePresentation> | null): SitePresentation {
+  const value = rawValue
+    ? restoreCanonicalKeys(rawValue, DEFAULT_SITE_PRESENTATION) as Partial<SitePresentation>
+    : null;
   if (!value) return DEFAULT_SITE_PRESENTATION;
   return {
     header: { ...DEFAULT_SITE_PRESENTATION.header, ...value.header },
