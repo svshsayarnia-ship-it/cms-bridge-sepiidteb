@@ -59,9 +59,12 @@ function cleanProductHtml(html: string) {
   return html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
     .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<(?:object|embed|form|input|button|svg|math)[\s\S]*?>[\s\S]*?<\/(?:object|embed|form|input|button|svg|math)>/gi, "")
+    .replace(/<\/?(?:object|embed|form|input|button|svg|math)\b[^>]*>/gi, "")
+    .replace(/\sstyle=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/\son\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(
-      /\s(href|src)=["']\s*javascript:[^"']*["']/gi,
+      /\s(href|src)=["']\s*(?:javascript|data):[^"']*["']/gi,
       "",
     )
     .trim();
