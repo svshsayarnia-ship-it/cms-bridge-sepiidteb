@@ -70,9 +70,13 @@ export function SiteHeader({
   const [query, setQuery] = useState("");
   const searchInput = useRef<HTMLInputElement>(null);
   const searchPanel = useRef<HTMLDivElement>(null);
+  const mobilePanel = useRef<HTMLDivElement>(null);
+  const mobileMenuTrigger = useRef<HTMLButtonElement>(null);
   const lastSearchTrigger = useRef<HTMLButtonElement | null>(null);
   const openSearch = (event: MouseEvent<HTMLButtonElement>) => {
     lastSearchTrigger.current = event.currentTarget;
+    setMobileOpen(false);
+    setCategoriesOpen(false);
     setSearchOpen(true);
   };
 
@@ -155,9 +159,41 @@ export function SiteHeader({
   useEffect(() => {
     if (!mobileOpen) return;
     const previousOverflow = document.body.style.overflow;
+    const panel = mobilePanel.current;
+    const trigger = mobileMenuTrigger.current;
+    const focusableSelector =
+      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+    const focusable = () =>
+      Array.from(panel?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
     document.body.style.overflow = "hidden";
+
+    const focusTimer = window.setTimeout(() => focusable()[0]?.focus(), 50);
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const controls = focusable();
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const closeAtDesktop = () => {
+      if (window.matchMedia("(min-width: 821px)").matches) setMobileOpen(false);
+    };
+    document.addEventListener("keydown", trapFocus);
+    window.addEventListener("resize", closeAtDesktop);
     return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", trapFocus);
+      window.removeEventListener("resize", closeAtDesktop);
       document.body.style.overflow = previousOverflow;
+      trigger?.focus();
     };
   }, [mobileOpen]);
 
@@ -218,6 +254,7 @@ export function SiteHeader({
               <SearchIcon />
             </button>
             <button
+              ref={mobileMenuTrigger}
               className="sb-icon-btn sb-mobile-menu-btn"
               type="button"
               onClick={() => setMobileOpen((value) => !value)}
@@ -250,10 +287,17 @@ export function SiteHeader({
   />
 )}
         <div
+          ref={mobilePanel}
           id="mobile-navigation"
           className={`sb-header__nav-wrap ${mobileOpen ? "sb-header__nav-wrap--open" : ""}`}
         >
-          <nav className="sb-shell sb-nav" aria-label="منوی اصلی">
+          <nav
+            className="sb-shell sb-nav"
+            aria-label="منوی اصلی"
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("a")) setMobileOpen(false);
+            }}
+          >
             <div
               className="sb-nav__categories"
               onMouseEnter={() => setCategoriesOpen(true)}
@@ -261,13 +305,7 @@ export function SiteHeader({
             >
               <button
                 type="button"
-                onClick={(event) => {
-                  if (event.detail === 0) {
-                    setCategoriesOpen((value) => !value);
-                  } else {
-                    setCategoriesOpen(true);
-                  }
-                }}
+                onClick={() => setCategoriesOpen((value) => !value)}
                 aria-expanded={categoriesOpen}
                 aria-controls="catalog-mega-menu"
               >

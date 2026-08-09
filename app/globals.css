@@ -8630,3 +8630,193 @@ footer {
 .sb-system-page__card h1 { margin: 0.75rem 0; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.45; }
 .sb-system-page__card p { margin: 0; color: var(--sb-muted); }
 .sb-system-page__card > div { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+
+/* Responsive interaction hardening: comfortable targets and bounded overlays. */
+@media (max-width: 820px) {
+  .sb-mobile-menu-btn,
+  .sb-mobile-search-btn,
+  .sb-nav a,
+  .sb-nav button {
+    touch-action: manipulation;
+  }
+
+  .sb-nav__links > a,
+  .sb-nav__categories > button,
+  .sb-nav__phone {
+    min-block-size: 44px;
+  }
+
+  .sb-search-modal {
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .sb-search-modal__panel {
+    max-block-size: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sb-search-modal__top {
+    align-items: flex-start;
+  }
+
+  .sb-search-modal__top h2 {
+    max-inline-size: 22ch;
+  }
+}
+
+@media (max-width: 420px) {
+  .sb-footer__grid,
+  .sb-brands-home__row,
+  .sb-account-side {
+    grid-template-columns: 1fr;
+  }
+
+  .sb-search-results > a {
+    grid-template-columns: 48px minmax(0, 1fr) 20px;
+  }
+
+  .sb-search-results__image {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) and (max-width: 920px) {
+  .sb-header__nav-wrap {
+    padding-top: 78px !important;
+  }
+
+  .sb-search-modal__top h2 {
+    margin-block: 4px 8px;
+    font-size: 1.3rem;
+  }
+}
+
+/* Cross-page responsive media and content contract.
+   CMS copy and remote product data are not guaranteed to have a predictable
+   length or aspect ratio, so frames—not their contents—control the layout. */
+:where(.sb-article-body, .sb-product-rich-text) :where(iframe, video, embed) {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  block-size: auto;
+  margin-block: 1.5rem;
+  border: 0;
+  border-radius: var(--sb-radius-md);
+}
+
+:where(.sb-article-body, .sb-product-rich-text) :where(img, video) {
+  max-block-size: min(70svh, 760px);
+  object-fit: contain;
+}
+
+:where(.sb-article-body, .sb-product-rich-text) :where(table, pre) {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* All editorial cover frames crop consistently; product photography remains
+   contained because packaging and vial labels must never be cut off. */
+:where(
+  .sb-article-card__image,
+  .sb-magazine-featured__image,
+  .sb-article-header figure,
+  .sb-professional-home__media,
+  .sb-professional-hero figure,
+  .sb-about-hero__grid figure
+) {
+  overflow: clip;
+  background: var(--sb-beige);
+}
+
+:where(
+  .sb-article-card__image,
+  .sb-magazine-featured__image,
+  .sb-article-header figure,
+  .sb-professional-home__media,
+  .sb-professional-hero figure,
+  .sb-about-hero__grid figure
+) > img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.sb-product-gallery__main img,
+.sb-product-card__visual > img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 820px) {
+  /* Avoid iOS form zoom and keep every interactive control comfortably
+     tappable without changing the compact desktop visual hierarchy. */
+  :where(input, select, textarea) {
+    font-size: 16px;
+  }
+
+  :where(.sb-btn, main button, main input, main select) {
+    min-block-size: 44px;
+  }
+
+  .sb-magazine-featured__image,
+  .sb-professional-home__media,
+  .sb-professional-hero figure,
+  .sb-about-hero__grid figure {
+    aspect-ratio: 4 / 3;
+    min-block-size: 0;
+  }
+
+  .sb-magazine-featured__image img,
+  .sb-professional-home__media img,
+  .sb-professional-hero figure img,
+  .sb-about-hero img {
+    min-block-size: 0;
+  }
+
+  .sb-article-header figure {
+    aspect-ratio: 4 / 3;
+  }
+
+  .sb-article-header figure img {
+    aspect-ratio: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .sb-shell {
+    width: calc(100% - 24px);
+  }
+
+  .sb-product-grid,
+  .sb-product-grid--three,
+  .sb-product-grid--catalog {
+    grid-template-columns: 1fr;
+  }
+
+  .sb-product-card__content > a small {
+    white-space: normal;
+  }
+
+  .sb-product-mobile-cta {
+    right: 6px;
+    left: 6px;
+    gap: 8px;
+  }
+
+  .sb-product-mobile-cta > a {
+    padding-inline: 10px;
+  }
+}
