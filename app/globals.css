@@ -5123,6 +5123,19 @@ contain: paint;
     gap: 18px;
   }
 
+  /* Keep the consultation CTA readable at tablet widths. The label is
+     rendered through ::after, so a shrinking flex item would otherwise wrap
+     each character into a vertical strip at the top-left of the header. */
+  .sb-header__consult[data-label] {
+    min-inline-size: 145px;
+    flex: 0 0 145px;
+    white-space: nowrap;
+  }
+
+  .sb-header__consult[data-label]::after {
+    white-space: nowrap;
+  }
+
   .sb-nav {
     grid-template-columns: 205px 1fr;
   }
