@@ -16,7 +16,7 @@ export function ProductCard({
 }) {
   const href = productHref(product);
   const volume = product.volume
-    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?\b.*$/u, "")
+    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
     .trim();
 
   const imageSrc = product.image;
