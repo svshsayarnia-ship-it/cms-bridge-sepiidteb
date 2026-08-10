@@ -14,6 +14,36 @@ const nextConfig: NextConfig = {
         destination: "/magazine/neuramis-vs-revofil-guide",
         permanent: true,
       },
+      {
+        source: "/product/neuramis-volume-lidocaine",
+        destination: "/product/neuramis-deep-lidocaine",
+        permanent: true,
+      },
+      {
+        source: "/product/neuramis-lidocaine",
+        destination: "/product/neuramis-deep-lidocaine",
+        permanent: true,
+      },
+      {
+        source: "/product/audrey-h",
+        destination: "/product/audrey-m",
+        permanent: true,
+      },
+      {
+        source: "/product/dimono-3ml",
+        destination: "/product/cg-dimono-ptx",
+        permanent: true,
+      },
+      {
+        source: "/product/dimono-mesotherapy",
+        destination: "/product/cg-dimono-ptx",
+        permanent: true,
+      },
+      {
+        source: "/product/luxiva",
+        destination: "/product/luxiva-mesogel",
+        permanent: true,
+      },
     ];
   },
   async headers() {

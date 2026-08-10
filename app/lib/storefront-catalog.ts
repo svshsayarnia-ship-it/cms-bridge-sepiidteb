@@ -6,6 +6,7 @@ import {
   catalogProducts,
   getGroupForCategory,
 } from "../catalog";
+import { currentInventoryLegacyAliases } from "../current-inventory";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
 import {
@@ -186,6 +187,8 @@ function mapWooProduct(
     position:
       fallback?.position || "50%",
     volume: fallback?.volume,
+    priceToman: fallback?.priceToman,
+    priceNote: fallback?.priceNote,
     sourceStatus:
       fallback?.sourceStatus ||
       toPublicCopy(product.sourceName) ||
@@ -250,6 +253,7 @@ function mapWooProduct(
       product.reviewedAt ||
       fallback?.reviewedAt ||
       "",
+    variants: fallback?.variants,
     dateModifiedGmt:
       product.dateModifiedGmt,
     live: true,
@@ -335,6 +339,10 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
     const mappedProducts = wooProducts
       .filter(isPublicWooProduct)
+      .filter(
+        (product) =>
+          !Object.hasOwn(currentInventoryLegacyAliases, product.slug),
+      )
       .map((product) =>
         mapWooProduct(
           product,
