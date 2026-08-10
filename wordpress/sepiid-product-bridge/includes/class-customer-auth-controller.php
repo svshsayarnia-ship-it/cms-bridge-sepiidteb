@@ -123,7 +123,7 @@ final class Customer_Auth_Controller {
 		}
 		$this->record_attempt( $rate_key );
 
-		if ( strlen( $full_name ) < 3 ) {
+		if ( $this->text_length( $full_name ) < 3 ) {
 			return $this->error( 'sepiid_customer_invalid_name', 'نام و نام خانوادگی را کامل وارد کن.', 400 );
 		}
 		if ( ! is_email( $email ) ) {
@@ -132,8 +132,8 @@ final class Customer_Auth_Controller {
 		if ( ! $phone ) {
 			return $this->error( 'sepiid_customer_invalid_phone', 'شماره موبایل ایران را با فرمت 09xxxxxxxxx وارد کن.', 400 );
 		}
-		if ( strlen( $password ) < 8 ) {
-			return $this->error( 'sepiid_customer_weak_password', 'رمز عبور باید حداقل ۸ کاراکتر باشد.', 400 );
+		if ( strlen( $password ) < 8 || strlen( $password ) > 128 ) {
+			return $this->error( 'sepiid_customer_weak_password', 'رمز عبور باید بین ۸ تا ۱۲۸ کاراکتر باشد.', 400 );
 		}
 		if ( username_exists( $phone ) || email_exists( $email ) || $this->find_user_by_phone( $phone ) ) {
 			return $this->error( 'sepiid_customer_exists', 'این شماره موبایل یا ایمیل قبلاً ثبت شده است.', 409 );
@@ -181,7 +181,7 @@ final class Customer_Auth_Controller {
 		$city          = trim( sanitize_text_field( (string) $request->get_param( 'city' ) ) );
 		$customer_type = $this->sanitize_customer_type( (string) $request->get_param( 'customer_type' ) );
 
-		if ( strlen( $full_name ) < 3 ) {
+		if ( $this->text_length( $full_name ) < 3 ) {
 			return $this->error( 'sepiid_customer_invalid_name', 'نام و نام خانوادگی را کامل وارد کن.', 400 );
 		}
 
@@ -254,9 +254,11 @@ final class Customer_Auth_Controller {
 		return $user ? $user->user_login : null;
 	}
 
-	/** Find a customer by normalized or billing phone metadata. */
+	/** Find a customer by normalized or legacy WooCommerce phone formats. */
 	private function find_user_by_phone( $phone ) {
-		$users = get_users(
+		$intl        = '+98' . substr( $phone, 1 );
+		$intl_digits = '98' . substr( $phone, 1 );
+		$users       = get_users(
 			array(
 				'number'      => 1,
 				'count_total' => false,
@@ -264,6 +266,8 @@ final class Customer_Auth_Controller {
 					'relation' => 'OR',
 					array( 'key' => 'sepiid_phone_normalized', 'value' => $phone ),
 					array( 'key' => 'billing_phone', 'value' => $phone ),
+					array( 'key' => 'billing_phone', 'value' => $intl ),
+					array( 'key' => 'billing_phone', 'value' => $intl_digits ),
 				),
 			)
 		);
@@ -304,6 +308,11 @@ final class Customer_Auth_Controller {
 			'first_name' => isset( $parts[0] ) ? $parts[0] : '',
 			'last_name'  => isset( $parts[1] ) ? $parts[1] : '',
 		);
+	}
+
+	/** UTF-8-aware length when mbstring exists, safe fallback otherwise. */
+	private function text_length( $value ) {
+		return function_exists( 'mb_strlen' ) ? mb_strlen( (string) $value, 'UTF-8' ) : strlen( (string) $value );
 	}
 
 	/** Never allow this public flow to authenticate an administrator role. */
