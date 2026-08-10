@@ -14,6 +14,7 @@
   <body>
     <div id="status">در حال آماده‌سازی…</div>
     <div id="frames"></div>
+    <script id="audit-results" type="application/json">[]</script>
     <script>
       window.__auditDone = false;
       window.__auditResults = [];
@@ -130,15 +131,20 @@
           frames.forEach((frame) => {
             frame.remove();
           });
+          status.dataset.count = String(window.__auditResults.length);
         }
 
         window.__auditDone = true;
+        document.querySelector("#audit-results").textContent = JSON.stringify(window.__auditResults);
+        status.dataset.done = "true";
         status.textContent = `تمام شد: ${window.__auditResults.length}`;
       };
 
       main().catch((error) => {
         window.__auditFatal = String(error);
         window.__auditDone = true;
+        document.querySelector("#status").dataset.done = "true";
+        document.querySelector("#status").dataset.fatal = String(error);
         document.querySelector("#status").textContent = String(error);
       });
     </script>
