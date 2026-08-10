@@ -10,7 +10,6 @@ import { ProductCard } from "../../components/ProductCard";
 import { ProductVariantExperience } from "../../components/ProductVariantExperience";
 import { getGroupForCategory } from "../../catalog";
 import {
-  articles,
   getProduct,
   products,
 } from "../../data";
@@ -21,7 +20,6 @@ import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
   getEnglishBrandLabel,
-  getPublicSourceUrl,
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
@@ -32,20 +30,6 @@ import {
 export const revalidate = 300;
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
-const reviewDateFormatter =
-  new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-function formatReviewDate(value: string): string {
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? value
-    : reviewDateFormatter.format(date);
-}
 type ProductPricing = {
   label: string;
   note: string;
@@ -128,7 +112,7 @@ function getLiveProductPricing(
     note:
       salePrice && regularPrice
         ? `قیمت عادی: ${regularPrice}`
-        : "قیمت ثبت‌شده؛ برای تأیید نهایی موجودی استعلام بگیرید.",
+        : "قیمت ثبت‌شده در سایت",
   };
 }
 
@@ -218,11 +202,6 @@ function buildCmsOnlyProduct(
     volume: fallback?.volume,
     priceToman: fallback?.priceToman,
     priceNote: fallback?.priceNote,
-    sourceStatus:
-      fallback?.sourceStatus ||
-      toPublicCopy(cmsProduct.sourceName) ||
-      "اطلاعات محصول هنگام استعلام بازبینی می‌شود",
-    warning: fallback?.warning,
     summary,
     shortBenefit:
       fallback?.shortBenefit || summary,
@@ -243,17 +222,26 @@ function buildCmsOnlyProduct(
     faq: fallback?.faq ?? [],
     publishedInCatalog:
       fallback?.publishedInCatalog,
-    sourceName:
-      fallback?.sourceName ||
-      toPublicCopy(cmsProduct.sourceName),
-    sourceUrl:
-      getPublicSourceUrl(cmsProduct.sourceUrl) ||
-      fallback?.sourceUrl,
-    reviewedAt:
-      cmsProduct.reviewedAt ||
-      fallback?.reviewedAt,
     variants: fallback?.variants,
   };
+}
+
+const blockedFaqTerms = /اصالت|تطبیق|سازنده|منبع|تأیید|تایید|رسمی|پلمب|بچ|تاریخ|مجوز|قطعی|بررسی/u;
+const usefulFaqTerms = /چند|حجم|میل|مدل|قیمت|جعبه|بسته|سرنگ|ویال|محتویات/u;
+
+function getCustomerFaqs(product: Product) {
+  return product.faq
+    .filter(
+      ({ question, answer }) =>
+        usefulFaqTerms.test(question) &&
+        !blockedFaqTerms.test(question) &&
+        !blockedFaqTerms.test(answer),
+    )
+    .map(({ question, answer }) => ({
+      question,
+      answer: (answer.split(/(?<=[.!؟؛])\s+/u)[0] ?? answer).trim(),
+    }))
+    .slice(0, 3);
 }
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
@@ -406,16 +394,15 @@ if (!product) {
 const storefrontProducts =
   await getStorefrontProducts();
 
-const related = storefrontProducts
+  const related = storefrontProducts
   .filter(
     (item) =>
       item.category === product.category &&
       item.slug !== product.slug,
-  )
-  .slice(0, 3);
-  const article =
-    articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
+    )
+    .slice(0, 3);
   const group = getGroupForCategory(product.category);
+  const customerFaqs = getCustomerFaqs(product);
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct);
@@ -459,77 +446,24 @@ const image = liveImage?.src || product.image;
         livePricing={livePricing}
         liveShortDescription={liveShortDescription}
         liveDescription={liveDescription}
-        reviewerName={liveProduct?.reviewerName}
-        reviewerRole={liveProduct?.reviewerRole}
-        reviewedAtLabel={product.reviewedAt ? formatReviewDate(product.reviewedAt) : undefined}
       />
 
-      <section className="sb-product-authenticity" id="authenticity">
-        <div className="sb-shell sb-product-authenticity__grid">
-          <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">SEPIID CHECK / 03 STEPS</span>
-            <h2>کنترل اصالت، یک کد یا هولوگرام نیست.</h2>
-            <p>
-              تصمیم مطمئن‌تر از تطبیق چند نشانه و یک مسیر تأمین قابل‌پیگیری می‌آید.
-            </p>
-            <Link
-              className="sb-text-link sb-text-link--light"
-              href="/magazine/verify-dermal-filler-authenticity"
-            >
-              چک‌لیست کامل بررسی اصالت
-              <ArrowIcon />
-            </Link>
+      {customerFaqs.length > 0 && (
+        <section className="sb-section sb-product-faq" id="questions">
+          <div className="sb-shell sb-faq-section__grid">
+            <div>
+              <h2>سؤال‌های رایج</h2>
+            </div>
+            <FaqList items={customerFaqs} />
           </div>
-          <ol>
-            {product.checks.map((check, index) => (
-              <li key={check}>
-                <span>۰{index + 1}</span>
-                <p>{check}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section className="sb-section sb-product-safety" id="safety">
-        <div className="sb-shell sb-product-safety__grid">
-          <div className="sb-product-safety__callout">
-            <span>محدوده مسئولیت</span>
-            <h2>این صفحه، اطلاعات خرید است؛ نه نسخه پزشکی.</h2>
-            <p>
-              تناسب محصول، منع مصرف، ناحیه و پروتکل باید توسط پزشک بررسی شود. نتیجه
-              نیز بین افراد متفاوت است و در این سایت تضمین نمی‌شود.
-            </p>
-          </div>
-          <article>
-            <span className="sb-eyebrow">RELATED READING</span>
-            <h3>{article.title}</h3>
-            <p>{article.excerpt}</p>
-            <Link className="sb-text-link" href={`/magazine/${article.slug}`}>
-              مطالعه راهنما
-              <ArrowIcon />
-            </Link>
-          </article>
-        </div>
-      </section>
-
-      <section className="sb-section sb-product-faq" id="questions">
-        <div className="sb-shell sb-faq-section__grid">
-          <div>
-            <span className="sb-eyebrow">PRODUCT / QUESTIONS</span>
-            <h2>پرسش‌های همین محصول</h2>
-            <p>پاسخ‌های شفاف، بدون ادعای نتیجه قطعی یا توصیه عمومی.</p>
-          </div>
-          <FaqList items={product.faq} />
-        </div>
-      </section>
+        </section>
+      )}
 
       {related.length > 0 && (
         <section className="sb-section sb-related-products">
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <span className="sb-eyebrow">RELATED / PRODUCTS</span>
                 <h2>محصولات دیگر این دسته</h2>
               </div>
               <Link className="sb-text-link" href={`/shop/${product.category}`}>
@@ -583,17 +517,19 @@ const image = liveImage?.src || product.image;
   : {}),
         }}
       />
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: product.faq.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: { "@type": "Answer", text: item.answer },
-          })),
-        }}
-      />
+      {customerFaqs.length > 0 && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: customerFaqs.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: { "@type": "Answer", text: item.answer },
+            })),
+          }}
+        />
+      )}
     </main>
   );
 }
