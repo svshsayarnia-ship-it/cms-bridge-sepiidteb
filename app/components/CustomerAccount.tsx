@@ -285,12 +285,13 @@ export function CustomerAccount({ initialMode = "login" }: { initialMode?: Accou
             <span className="sb-eyebrow">CUSTOMER ACCOUNT</span>
             <h1>حساب مشتریان سپید بیوتی</h1>
             <p>
-              مشخصات، استعلام‌ها و سوابق خریدت را با یک پروفایل واحد مدیریت کن.
+              مشخصاتت را در یک پروفایل واحد نگه دار تا استعلام‌ها و سفارش‌های آینده
+              به همان حساب متصل شوند.
             </p>
           </div>
           <div className="sb-account-status">
             <strong>{profile ? profile.fullName : "ورود امن مشتریان"}</strong>
-            <span>{profile ? profile.phone : "متصل به حساب WooCommerce"}</span>
+            <span>{profile ? profile.phone : "پروفایل یکپارچه مشتری"}</span>
           </div>
         </div>
       </section>
@@ -519,7 +520,7 @@ export function CustomerAccount({ initialMode = "login" }: { initialMode?: Accou
                 <div>
                   <span className="sb-eyebrow">PROFILE</span>
                   <h2>مشخصات من</h2>
-                  <p>این اطلاعات به حساب مشتری WooCommerce متصل است.</p>
+                  <p>این اطلاعات در پروفایل اصلی مشتری نگهداری می‌شود.</p>
                 </div>
                 <dl>
                   <div>
