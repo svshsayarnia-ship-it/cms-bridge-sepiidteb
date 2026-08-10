@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Responsive audit</title>
+    <style>
+      body { margin: 0; font: 14px sans-serif; background: #eee; }
+      #status { position: fixed; inset: 0 0 auto; z-index: 2; padding: 10px; background: #111; color: #fff; }
+      #frames { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 48px; }
+      iframe { height: 900px; border: 1px solid #bbb; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <div id="status">در حال آماده‌سازی…</div>
+    <div id="frames"></div>
+    <script>
+      window.__auditDone = false;
+      window.__auditResults = [];
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const loadFrame = (path, width) => new Promise((resolve) => {
+        const frame = document.createElement("iframe");
+        frame.width = String(width);
+        frame.style.width = `${width}px`;
+        frame.src = path;
+        frame.onload = async () => {
+          await wait(120);
+          resolve(frame);
+        };
+        document.querySelector("#frames").append(frame);
+      });
+
+      const auditFrame = (frame, path, width) => {
+        const doc = frame.contentDocument;
+        const win = frame.contentWindow;
+        const root = doc.documentElement;
+        const controls = [...doc.querySelectorAll('button, a.sb-btn, input, select, textarea, [role="button"], .sb-product-card__cta')];
+        const textNodes = [...doc.querySelectorAll('button, a.sb-btn, .sb-product-card__cta, .sb-product-card__cta span')];
+        const images = [...doc.images];
+
+        const controlOverflow = controls.flatMap((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = win.getComputedStyle(element);
+          const bad = element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
+          const offscreen = rect.right > root.clientWidth + 1 || rect.left < -1;
+          if (!bad && !offscreen) return [];
+          return [{
+            tag: element.tagName,
+            className: element.className || "",
+            text: (element.textContent || element.getAttribute("aria-label") || "").trim().slice(0, 100),
+            client: [element.clientWidth, element.clientHeight],
+            scroll: [element.scrollWidth, element.scrollHeight],
+            rect: [Math.round(rect.left), Math.round(rect.right)],
+            whiteSpace: style.whiteSpace,
+          }];
+        });
+
+        const brokenWords = textNodes.flatMap((element) => {
+          const text = (element.textContent || "").trim();
+          if (!text || /\s/.test(text)) return [];
+          const range = doc.createRange();
+          range.selectNodeContents(element);
+          const lines = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0).length;
+          return lines > 1 ? [{ className: element.className || "", text, lines }] : [];
+        });
+
+        const distortedImages = images.flatMap((image) => {
+          if (!image.complete || !image.naturalWidth || !image.naturalHeight) return [];
+          const rect = image.getBoundingClientRect();
+          const style = win.getComputedStyle(image);
+          const naturalRatio = image.naturalWidth / image.naturalHeight;
+          const renderedRatio = rect.width / Math.max(rect.height, 1);
+          const ratioDelta = Math.abs(renderedRatio / naturalRatio - 1);
+          const protectedFit = style.objectFit === "cover" || style.objectFit === "contain";
+          return ratioDelta > 0.08 && !protectedFit ? [{
+            src: image.currentSrc || image.src,
+            natural: [image.naturalWidth, image.naturalHeight],
+            rendered: [Math.round(rect.width), Math.round(rect.height)],
+            objectFit: style.objectFit,
+          }] : [];
+        });
+
+        return {
+          path,
+          width,
+          title: doc.title,
+          documentOverflow: root.scrollWidth > root.clientWidth + 1,
+          dimensions: [root.clientWidth, root.scrollWidth],
+          controlOverflow,
+          brokenWords,
+          distortedImages,
+          frameworkOverlay: Boolean(doc.querySelector('[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay')),
+          contentLength: (doc.body?.innerText || "").trim().length,
+        };
+      };
+
+      const main = async () => {
+        const sitemapText = await fetch("/sitemap.xml").then((response) => response.text());
+        const sitemap = new DOMParser().parseFromString(sitemapText, "application/xml");
+        const paths = [...sitemap.querySelectorAll("loc")].map((loc) => new URL(loc.textContent).pathname);
+        paths.push("/account", "/account/login", "/account/register", "/not-a-real-page");
+        const uniquePaths = [...new Set(paths)];
+        const widths = [320, 360, 390, 412, 560, 768, 820, 1024, 1280];
+        const jobs = uniquePaths.flatMap((path) => widths.map((width) => ({ path, width })));
+        const status = document.querySelector("#status");
+
+        for (let index = 0; index < jobs.length; index += 4) {
+          const batch = jobs.slice(index, index + 4);
+          status.textContent = `${Math.min(index + 4, jobs.length)} / ${jobs.length}`;
+          const frames = await Promise.all(batch.map(({ path, width }) => loadFrame(path, width)));
+          await wait(80);
+          frames.forEach((frame, frameIndex) => {
+            const job = batch[frameIndex];
+            try {
+              window.__auditResults.push(auditFrame(frame, job.path, job.width));
+            } catch (error) {
+              window.__auditResults.push({ path: job.path, width: job.width, auditError: String(error) });
+            }
+            frame.remove();
+          });
+        }
+
+        window.__auditDone = true;
+        status.textContent = `تمام شد: ${window.__auditResults.length}`;
+      };
+
+      main().catch((error) => {
+        window.__auditFatal = String(error);
+        window.__auditDone = true;
+        document.querySelector("#status").textContent = String(error);
+      });
+    </script>
+  </body>
+</html>

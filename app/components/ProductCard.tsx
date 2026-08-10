@@ -89,16 +89,12 @@ export function ProductCard({
         </div>
 
         <div className="sb-product-card__footer">
-          <strong>
-            مشاهده و استعلام
-          </strong>
-
           <Link
             className="sb-product-card__cta"
             href={href}
             aria-label={`مشاهده و استعلام ${product.nameFa}`}
           >
-            <span>جزئیات</span>
+            <span>مشاهده و استعلام</span>
             <ArrowIcon />
           </Link>
         </div>
