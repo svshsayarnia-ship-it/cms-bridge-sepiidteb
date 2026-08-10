@@ -20,10 +20,10 @@
 
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      const loadFrame = (path, width) => new Promise((resolve) => {
+      const loadFrame = (path) => new Promise((resolve) => {
         const frame = document.createElement("iframe");
-        frame.width = String(width);
-        frame.style.width = `${width}px`;
+        frame.width = "320";
+        frame.style.width = "320px";
         frame.src = path;
         frame.onload = async () => {
           await wait(120);
@@ -103,21 +103,31 @@
         paths.push("/account", "/account/login", "/account/register", "/not-a-real-page");
         const uniquePaths = [...new Set(paths)];
         const widths = [320, 360, 390, 412, 560, 768, 820, 1024, 1280];
-        const jobs = uniquePaths.flatMap((path) => widths.map((width) => ({ path, width })));
         const status = document.querySelector("#status");
 
-        for (let index = 0; index < jobs.length; index += 4) {
-          const batch = jobs.slice(index, index + 4);
-          status.textContent = `${Math.min(index + 4, jobs.length)} / ${jobs.length}`;
-          const frames = await Promise.all(batch.map(({ path, width }) => loadFrame(path, width)));
-          await wait(80);
-          frames.forEach((frame, frameIndex) => {
-            const job = batch[frameIndex];
-            try {
-              window.__auditResults.push(auditFrame(frame, job.path, job.width));
-            } catch (error) {
-              window.__auditResults.push({ path: job.path, width: job.width, auditError: String(error) });
-            }
+        for (let index = 0; index < uniquePaths.length; index += 4) {
+          const batch = uniquePaths.slice(index, index + 4);
+          status.textContent = `${Math.min(index + 4, uniquePaths.length)} / ${uniquePaths.length} صفحه`;
+          const frames = await Promise.all(batch.map((path) => loadFrame(path)));
+
+          for (const width of widths) {
+            frames.forEach((frame) => {
+              frame.width = String(width);
+              frame.style.width = `${width}px`;
+            });
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            await wait(35);
+            frames.forEach((frame, frameIndex) => {
+              const path = batch[frameIndex];
+              try {
+                window.__auditResults.push(auditFrame(frame, path, width));
+              } catch (error) {
+                window.__auditResults.push({ path, width, auditError: String(error) });
+              }
+            });
+          }
+
+          frames.forEach((frame) => {
             frame.remove();
           });
         }
