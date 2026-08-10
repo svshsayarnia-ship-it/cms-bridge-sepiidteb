@@ -12,6 +12,50 @@
   white-space: normal;
 }
 
+/* A button label may wrap between words, but Persian words must never be
+   fragmented character-by-character by the global long-content safeguard. */
+:where(button, .sb-btn, [role="button"]) {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+:where(button, .sb-btn, [role="button"]) > :where(span, strong, small) {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* Product cards used to combine a fixed 44px mobile square with the Persian
+   word "جزئیات".  The global emergency wrapping rule then split that single
+   word into a vertical stack.  One full-width action is clearer, gives the
+   label a real text measure and keeps the whole card tappable at every width. */
+.sb-product-card__footer {
+  display: block;
+}
+
+.sb-product-card__footer .sb-product-card__cta {
+  inline-size: 100%;
+  block-size: auto;
+  min-block-size: 44px;
+  padding-inline: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+}
+
+.sb-product-card__footer .sb-product-card__cta > span {
+  min-inline-size: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.sb-product-card__footer .sb-product-card__cta > svg {
+  flex: 0 0 auto;
+}
+
 /* The consultation label now stays in normal document flow. The decorative
    brand mark owns ::after, so the label must never be rendered there. */
 .sb-header__consult {
