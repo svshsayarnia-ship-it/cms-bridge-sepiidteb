@@ -3,7 +3,6 @@ import { errorResponse, uploadMedia, WooCommerceError } from "@/app/lib/woocomme
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const preferredRegion = "fra1";
 export const maxDuration = 120;
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);

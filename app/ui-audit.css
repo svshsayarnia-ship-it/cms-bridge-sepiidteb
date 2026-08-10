@@ -1,0 +1,39 @@
+/* Cross-page UI audit overrides.
+   Loaded after globals.css so the responsive contract has one clear owner. */
+
+:where(button, input, select, textarea, .sb-btn) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.sb-btn {
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+}
+
+/* The consultation label now stays in normal document flow. The decorative
+   brand mark owns ::after, so the label must never be rendered there. */
+.sb-header__consult {
+  min-inline-size: 0;
+  flex: 0 1 auto;
+  line-height: 1.65;
+}
+
+/* Decorative elements should contribute to the composition without
+   extending the visual bounds of the page. */
+.sb-hero__media > .sb-brand-stamp {
+  left: 8px;
+}
+
+@media (max-width: 1100px) and (min-width: 821px) {
+  .sb-header__primary {
+    grid-template-columns: minmax(170px, 0.65fr) minmax(250px, 1.1fr) minmax(160px, auto);
+    gap: 12px;
+  }
+
+  .sb-header__consult {
+    padding-inline: 42px 15px;
+    font-size: 0.76rem;
+  }
+}

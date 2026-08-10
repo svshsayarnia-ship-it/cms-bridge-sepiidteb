@@ -242,8 +242,8 @@ export function SiteHeader({
             <Link className="sb-header__account" href="/account">
               ورود / عضویت
             </Link>
-            <Link className="sb-btn sb-btn--ghost sb-header__consult" href={whatsappHref()} data-label={presentation.consultationLabel}>
-              مشاوره و استعلام
+            <Link className="sb-btn sb-btn--ghost sb-header__consult" href={whatsappHref()}>
+              {presentation.consultationLabel}
             </Link>
             <button
               className="sb-icon-btn sb-mobile-search-btn"

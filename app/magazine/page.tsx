@@ -10,7 +10,7 @@ import { applyArticlePresentation, getSitePresentation } from "../lib/site-prese
 export const metadata: Metadata = {
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
   description:
-    "مقالات منبع‌دار و به‌روز درباره پروفایلو، فیلر، اسکین‌بوستر، ریزش مو، اصالت محصولات و مدیریت خرید کلینیک.",
+    "مقالات منبع‌دار و به‌روز درباره فیلرهای پرجست‌وجو، بوتولینوم، مزوژل، ریزش مو، اصالت محصولات و مدیریت خرید کلینیک.",
   alternates: { canonical: "/magazine" },
   openGraph: {
     title: "مجله سپید | Sepiid Beauty",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function MagazinePage() {
   const editableArticles = applyArticlePresentation(articles, await getSitePresentation());
   const featured =
-    editableArticles.find((article) => article.slug === "profhilo-vs-dermal-filler") ??
+    editableArticles.find((article) => article.slug === "neuramis-vs-revofil-guide") ??
     editableArticles[0];
 
   return (
@@ -47,7 +47,7 @@ export default async function MagazinePage() {
           <Link href={`/magazine/${featured.slug}`} className="sb-magazine-featured__image">
             <img
               src={featured.image}
-              alt="بررسی حرفه‌ای زنجیره سرد و بسته‌بندی محصولات حساس"
+              alt={featured.imageAlt ?? featured.title}
               width="1254"
               height="1254"
               fetchPriority="high"
@@ -92,7 +92,7 @@ export default async function MagazinePage() {
               <span className="sb-eyebrow">LATEST / ARTICLES</span>
               <h2>تازه‌ترین راهنماها</h2>
             </div>
-            <p>{articles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
+            <p>{editableArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
           </div>
           <div className="sb-article-grid">
             {editableArticles.map((article) => (
