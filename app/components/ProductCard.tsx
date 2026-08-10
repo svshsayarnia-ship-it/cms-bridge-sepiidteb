@@ -4,10 +4,8 @@ import Link from "next/link";
 
 import { productHref } from "../catalog";
 import type { Product } from "../data";
-import {
-  ArrowIcon,
-  ShieldIcon,
-} from "./Icons";
+import { getCompactBrandLabel } from "../lib/public-copy";
+import { ArrowIcon } from "./Icons";
 
 export function ProductCard({
   product,
@@ -22,6 +20,7 @@ export function ProductCard({
   const imageAlt =
     product.imageAlt ||
     `تصویر ${product.nameFa}`;
+  const brand = getCompactBrandLabel(product.brand);
 
   return (
     <article className="sb-product-card">
@@ -58,14 +57,7 @@ export function ProductCard({
 
       <div className="sb-product-card__content">
         <div className="sb-product-card__meta">
-          {product.brand && (
-            <span>{product.brand}</span>
-          )}
-
-          <span>
-            <ShieldIcon />
-            بررسی پیش از ارسال
-          </span>
+          {brand && <span>{brand}</span>}
         </div>
 
         <Link href={href}>
