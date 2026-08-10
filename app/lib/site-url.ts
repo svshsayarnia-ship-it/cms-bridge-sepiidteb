@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://sepiidbeauty.ir";
+const DEFAULT_SITE_URL = "https://www.sepiidbeauty.ir";
 
 export const siteOrigin = (() => {
   const configuredUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim();

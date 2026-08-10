@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
+import { buildSeoMetadata } from "../../lib/seo";
 import { whatsappHref } from "../../data";
 
 const policies = {
@@ -113,11 +114,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const policy = policies[slug as PolicySlug];
   if (!policy) return {};
-  return {
+  return buildSeoMetadata({
     title: policy.title,
     description: policy.lead,
-    alternates: { canonical: `/policies/${slug}` },
-  };
+    path: `/policies/${slug}`,
+    imageAlt: policy.title,
+  });
 }
 
 export default async function PolicyPage({

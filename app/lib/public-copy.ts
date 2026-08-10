@@ -13,6 +13,14 @@ export function getEnglishBrandLabel(value: string): string {
     .join(" / ");
 }
 
+export function getCompactBrandLabel(
+  value: string,
+): string {
+  return getEnglishBrandLabel(value)
+    .split("/")[0]
+    .trim();
+}
+
 export function toPublicCopy(value: string): string {
   return value
     .replace(/\bMasoon\s+Darou\b/giu, "تولیدکننده")

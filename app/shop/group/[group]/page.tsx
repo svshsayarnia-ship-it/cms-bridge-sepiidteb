@@ -18,6 +18,7 @@ import {
 import { getStorefrontCategories } from "../../../lib/storefront-categories";
 import { siteOrigin } from "../../../lib/site-url";
 import { getStorefrontCatalog } from "../../../lib/storefront-catalog";
+import { buildSeoMetadata } from "../../../lib/seo";
 
 export const revalidate = 300;
 
@@ -39,14 +40,12 @@ export async function generateMetadata({
     return {};
   }
 
-  return {
+  return buildSeoMetadata({
     title: `${group.title}؛ دسته‌ها و محصولات`,
     description: group.description,
-
-    alternates: {
-      canonical: `/shop/group/${group.slug}`,
-    },
-  };
+    path: `/shop/group/${group.slug}`,
+    imageAlt: group.title,
+  });
 }
 
 export default async function ProductGroupPage({

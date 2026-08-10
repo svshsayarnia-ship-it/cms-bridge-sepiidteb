@@ -16,6 +16,7 @@ import {
 } from "../../lib/storefront-categories";
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
+import { buildSeoMetadata } from "../../lib/seo";
 
 export const revalidate = 300;
 
@@ -42,20 +43,13 @@ export async function generateMetadata({
     return {};
   }
 
-  return {
-    title: `${category.title}؛ بررسی و استعلام محصولات`,
+  return buildSeoMetadata({
+    title: `${category.title}؛ بررسی محصولات`,
     description: category.description,
-
-    alternates: {
-      canonical: `/shop/${category.slug}`,
-    },
-
-    openGraph: {
-      title: `${category.title} | Sepiid Beauty`,
-      description: category.description,
-      images: [category.image],
-    },
-  };
+    path: `/shop/${category.slug}`,
+    image: category.image,
+    imageAlt: category.title,
+  });
 }
 
 export default async function CategoryPage({

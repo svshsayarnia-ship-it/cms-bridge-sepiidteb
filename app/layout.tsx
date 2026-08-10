@@ -27,13 +27,31 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  formatDetection: {
+    address: false,
+    email: false,
+    telephone: false,
+  },
   openGraph: {
     title: "Sepiid Beauty | انتخاب آگاهانه محصولات حرفه‌ای زیبایی",
     description:
       "فروشگاه و مجله تخصصی محصولات زیبایی؛ همراه با مسیر بررسی اصالت و خرید حرفه‌ای.",
     locale: "fa_IR",
     type: "website",
+    url: "/",
     siteName: "Sepiid Beauty",
+    images: [
+      {
+        url: "/images/drive/hero-rejuvenation.webp",
+        alt: "Sepiid Beauty؛ فروشگاه تخصصی محصولات زیبایی",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sepiid Beauty | انتخاب آگاهانه محصولات حرفه‌ای زیبایی",
+    description:
+      "فروشگاه و مجله تخصصی محصولات زیبایی همراه با راهنمای خرید و بررسی اصالت.",
     images: ["/images/drive/hero-rejuvenation.webp"],
   },
   icons: {
@@ -66,6 +84,8 @@ export default async function RootLayout({
             name: "Sepiid Beauty",
             alternateName: "سپید بیوتی",
             url: siteOrigin,
+            logo: `${siteOrigin}/images/sepiid-logo.webp`,
+            image: `${siteOrigin}/images/drive/hero-rejuvenation.webp`,
             telephone: "+989037251266",
             areaServed: "IR",
             description:
@@ -84,6 +104,7 @@ export default async function RootLayout({
             "@type": "WebSite",
             name: "Sepiid Beauty",
             url: siteOrigin,
+            inLanguage: "fa-IR",
           }}
         />
       </body>

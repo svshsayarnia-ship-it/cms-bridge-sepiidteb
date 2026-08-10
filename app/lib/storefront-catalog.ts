@@ -373,9 +373,12 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   } catch {
     return {
       products:
-        catalogProducts.map(
-          mapFallbackProduct,
-        ),
+        catalogProducts
+          .filter(
+            (product) =>
+              product.publishedInCatalog,
+          )
+          .map(mapFallbackProduct),
       connected: false,
       source: "migration-fallback",
     };

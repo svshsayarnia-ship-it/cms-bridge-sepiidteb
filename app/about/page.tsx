@@ -1,15 +1,16 @@
 /* eslint-disable @next/next/no-img-element -- local editorial imagery */
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, HeadsetIcon, PackageIcon, ShieldIcon } from "../components/Icons";
+import { buildSeoMetadata } from "../lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "درباره Sepiid Beauty",
   description:
     "استاندارد سپید برای انتخاب آگاهانه، بررسی قابل‌پیگیری و پشتیبانی انسانی در خرید محصولات حرفه‌ای زیبایی.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+  imageAlt: "درباره سپید بیوتی",
+});
 
 export default function AboutPage() {
   return (
@@ -87,4 +88,3 @@ export default function AboutPage() {
     </main>
   );
 }
-

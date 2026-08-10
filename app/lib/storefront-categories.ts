@@ -59,7 +59,8 @@ async function loadStorefrontCategories(): Promise<
             fallback.title,
 
           description:
-            live.description,
+            live.description.trim() ||
+            fallback.description,
 
           image:
             live.image?.src ||

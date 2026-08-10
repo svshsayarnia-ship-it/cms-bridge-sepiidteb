@@ -1,23 +1,20 @@
 /* eslint-disable @next/next/no-img-element -- local editorial imagery */
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { articles } from "../data";
 import { applyArticlePresentation, getSitePresentation } from "../lib/site-presentation";
+import { buildSeoMetadata } from "../lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
   description:
     "مقالات منبع‌دار و به‌روز درباره فیلرهای پرجست‌وجو، بوتولینوم، مزوژل، ریزش مو، اصالت محصولات و مدیریت خرید کلینیک.",
-  alternates: { canonical: "/magazine" },
-  openGraph: {
-    title: "مجله سپید | Sepiid Beauty",
-    description: "راهنمای تصمیم برای خرید و استفاده حرفه‌ای محصولات زیبایی.",
-    images: ["/images/magazine-authenticity-v2.webp"],
-  },
-};
+  path: "/magazine",
+  image: "/images/magazine-authenticity-v2.webp",
+  imageAlt: "مجله سپید بیوتی",
+});
 
 export default async function MagazinePage() {
   const editableArticles = applyArticlePresentation(articles, await getSitePresentation());

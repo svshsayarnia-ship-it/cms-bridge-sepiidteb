@@ -66,29 +66,46 @@ body h4 {
    it scrolls horizontally instead of wrapping or misaligning a cell. */
 .sb-brands-home__row {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(148px, 1fr);
-  grid-template-columns: none;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: stretch;
-  overflow-x: auto;
+  overflow: hidden;
   overscroll-behavior-inline: contain;
   scrollbar-width: thin;
 }
 
 .sb-brands-home__row a {
   min-height: 90px;
-  padding: 12px 18px;
+  max-width: 100%;
+  padding: 12px 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
   border-inline-start: 1px solid rgba(255, 255, 255, 0.82);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
+  direction: ltr;
+  font-size: clamp(0.72rem, 1.05vw, 0.88rem);
 }
 
 .sb-brands-home__row a:last-child {
   border-inline-end: 1px solid rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 699px) {
+  .sb-brands-home__row {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(96px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .sb-brands-home__row a {
+    font-size: 0.72rem;
+  }
 }
 
 :where(button, input, select, textarea, .sb-btn) {

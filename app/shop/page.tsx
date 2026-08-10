@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
@@ -11,17 +10,18 @@ import {
 import { getStorefrontCategories } from "../lib/storefront-categories";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
+import { buildSeoMetadata } from "../lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "فروشگاه محصولات تخصصی زیبایی",
   description:
     "مرور و استعلام محصولات تخصصی زیبایی؛ از فیلر و اسکین‌بوستر تا فرآورده‌های بوتولینوم و کوکتل‌های حرفه‌ای.",
-  alternates: {
-    canonical: "/shop",
-  },
-};
+  path: "/shop",
+  image: "/images/drive/category-fillers.webp",
+  imageAlt: "فروشگاه محصولات تخصصی زیبایی",
+});
 
 export default async function ShopPage() {
   const [{ products }, categories] =

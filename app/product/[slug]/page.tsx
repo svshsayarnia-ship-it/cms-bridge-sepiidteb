@@ -23,6 +23,7 @@ import type { Product } from "../../data";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
+import { buildSeoMetadata } from "../../lib/seo";
 import {
   getEnglishBrandLabel,
   getPublicSourceUrl,
@@ -293,7 +294,11 @@ function getSchemaAvailability(
 }
 
 export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+  return products
+    .filter(
+      (product) => product.publishedInCatalog,
+    )
+    .map((product) => ({ slug: product.slug }));
 }
 export async function generateMetadata({
   params,
@@ -306,7 +311,6 @@ export async function generateMetadata({
   const cmsProduct = await getLiveProduct(slug);
 
   if (
-    cmsProduct &&
     !isPublicCmsProduct(cmsProduct) &&
     !staticProduct?.publishedInCatalog
   ) {
@@ -356,22 +360,14 @@ export async function generateMetadata({
     liveImage?.src ||
     product.image;
 
-  return {
+  return buildSeoMetadata({
     title,
     description,
-
-    alternates: {
-      canonical: `/product/${product.slug}`,
-    },
-
-    openGraph: {
-      type: "website",
-      title,
-      description,
-      url: `/product/${product.slug}`,
-      images: [image],
-    },
-  };
+    path: `/product/${product.slug}`,
+    image,
+    imageAlt:
+      liveImage?.alt || product.imageAlt,
+  });
 }
 export default async function ProductPage({
   params,
@@ -384,7 +380,6 @@ const staticProduct = getProduct(slug);
 const cmsProduct = await getLiveProduct(slug);
 
 if (
-  cmsProduct &&
   !isPublicCmsProduct(cmsProduct) &&
   !staticProduct?.publishedInCatalog
 ) {

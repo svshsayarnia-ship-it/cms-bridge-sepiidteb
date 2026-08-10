@@ -1,22 +1,21 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { ProductCard } from "../components/ProductCard";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
-import { getEnglishBrandLabel } from "../lib/public-copy";
+import { getCompactBrandLabel } from "../lib/public-copy";
+import { buildSeoMetadata } from "../lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "برندهای محصولات حرفه‌ای زیبایی",
   description:
     "نمایه برندهای موجود در Sepiid Beauty و دسترسی مستقیم به صفحات مستقل محصولات و دسته‌های مرتبط.",
-  alternates: {
-    canonical: "/brands",
-  },
-};
+  path: "/brands",
+  imageAlt: "برندهای محصولات حرفه‌ای زیبایی",
+});
 
 function createBrandAnchor(
   brand: string,
@@ -40,7 +39,7 @@ export default async function BrandsPage() {
   >();
 
   for (const product of products) {
-    const brand = getEnglishBrandLabel(
+    const brand = getCompactBrandLabel(
       product.brand,
     );
 

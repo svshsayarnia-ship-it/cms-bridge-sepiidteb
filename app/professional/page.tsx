@@ -1,16 +1,18 @@
 /* eslint-disable @next/next/no-img-element -- local generated imagery */
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, CheckIcon } from "../components/Icons";
 import { ProfessionalForm } from "../components/ProfessionalForm";
+import { buildSeoMetadata } from "../lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "خرید حرفه‌ای پزشکان و کلینیک‌ها",
   description:
     "استعلام چندمحصولی، ثبت مشخصات بچ، برنامه تحویل و هماهنگی سفارش‌های دوره‌ای برای کلینیک‌های زیبایی.",
-  alternates: { canonical: "/professional" },
-};
+  path: "/professional",
+  image: "/images/professional-clinic-v2.webp",
+  imageAlt: "خرید حرفه‌ای پزشکان و کلینیک‌ها",
+});
 
 export default function ProfessionalPage() {
   return (
@@ -114,4 +116,3 @@ export default function ProfessionalPage() {
     </main>
   );
 }
-

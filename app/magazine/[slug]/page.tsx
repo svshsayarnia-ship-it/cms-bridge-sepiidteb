@@ -10,6 +10,7 @@ import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
 import { articles, products } from "../../data";
 import { siteOrigin } from "../../lib/site-url";
+import { buildSeoMetadata } from "../../lib/seo";
 import { applyArticlePresentation, getSitePresentation } from "../../lib/site-presentation";
 
 async function getEditableArticle(slug: string) {
@@ -30,21 +31,24 @@ export async function generateMetadata({
   const article = await getEditableArticle(slug);
   if (!article) return {};
 
-  return {
+  const image =
+    article.slug === "verify-dermal-filler-authenticity"
+      ? "/images/magazine-authenticity-v2.webp"
+      : article.image;
+
+  return buildSeoMetadata({
     title: article.seoTitle || article.title,
     description: article.metaDescription || article.excerpt,
-    alternates: { canonical: `/magazine/${article.slug}` },
-    openGraph: {
-      type: "article",
-      title: article.seoTitle || article.title,
-      description: article.metaDescription || article.excerpt,
-      images: [
-        article.slug === "verify-dermal-filler-authenticity"
-          ? "/images/magazine-authenticity-v2.webp"
-          : article.image,
-      ],
-    },
-  };
+    path: `/magazine/${article.slug}`,
+    image,
+    imageAlt:
+      article.imageAlt || article.title,
+    type: "article",
+    publishedTime: article.datePublished,
+    modifiedTime:
+      article.dateModified ||
+      article.datePublished,
+  });
 }
 
 export default async function ArticlePage({
@@ -286,6 +290,11 @@ export default async function ArticlePage({
           publisher: {
             "@type": "Organization",
             name: "Sepiid Beauty",
+            url: siteOrigin,
+            logo: {
+              "@type": "ImageObject",
+              url: `${siteOrigin}/images/sepiid-logo.webp`,
+            },
           },
           datePublished: article.datePublished || "2026-07-25",
           dateModified: article.dateModified || article.datePublished || "2026-07-25",

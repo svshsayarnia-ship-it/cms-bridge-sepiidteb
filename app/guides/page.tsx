@@ -1,19 +1,21 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, CheckIcon } from "../components/Icons";
 import { articles, whatsappHref } from "../data";
 import { getStorefrontCategories } from "../lib/storefront-categories";
+import { buildSeoMetadata } from "../lib/seo";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
   description:
     "مسیر آموزشی برای شناخت دسته محصولات، پرسش‌های لازم پیش از خرید، بررسی اصالت و تفکیک راهنمای خرید از تصمیم پزشکی.",
-  alternates: { canonical: "/guides" },
-};
+  path: "/guides",
+  image: "/images/magazine-authenticity-v2.webp",
+  imageAlt: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
+});
 
 const steps = [
   {
@@ -172,4 +174,3 @@ export default async function GuidesPage() {
     </main>
   );
 }
-

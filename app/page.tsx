@@ -4,7 +4,6 @@ import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
 import { HomeFinder } from "./components/HomeFinder";
 import { BrandStory } from "./components/BrandStory";
-import { BrandStamp } from "./components/BrandStamp";
 import { CustomerJourney } from "./components/CustomerJourney";
 import {
   ArrowIcon,
@@ -21,7 +20,7 @@ import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
 import { EditableHomeHero } from "./components/EditableHomeHero";
-import { getEnglishBrandLabel } from "./lib/public-copy";
+import { getCompactBrandLabel } from "./lib/public-copy";
 
 const faqs = [
   {
@@ -79,7 +78,7 @@ export default async function Home() {
   const homeBrands = Array.from(
     new Set(
       products
-        .map((product) => getEnglishBrandLabel(product.brand))
+        .map((product) => getCompactBrandLabel(product.brand))
         .filter(Boolean),
     ),
   )
@@ -91,62 +90,6 @@ export default async function Home() {
     <main id="main-content">
       <CustomerJourney />
       <EditableHomeHero hero={presentation.home.hero} />
-      <section className="sb-hero sb-hero--legacy">
-        <div className="sb-shell sb-hero__grid">
-          <div className="sb-hero__content">
-            <span className="sb-eyebrow">
-              <i />
-              فروشگاه تخصصی و مجله تصمیم‌یار زیبایی
-            </span>
-            <h1>
-              <em>از انتخاب اول تا آخرین لحظه با شما هستیم.</em>
-            </h1>
-            <p>
-              محصول، مشخصات و استعلام موجودی را سریع و مرتب در یک‌جا ببینید.
-            </p>
-            <div className="sb-hero__actions">
-              <Link className="sb-btn sb-btn--dark" href="/shop">
-                دیدن محصولات
-                <ArrowIcon />
-              </Link>
-              <Link className="sb-btn sb-btn--outline" href="/guides">
-                راهنمای پنج‌سؤالی
-              </Link>
-            </div>
-            <div className="sb-hero__microproof">
-              <span>اطلاعات بچ پیش از خرید</span>
-              <span>مسیر ویژه کلینیک</span>
-              <span>مقالات منبع‌دار</span>
-            </div>
-          </div>
-
-          <figure className="sb-hero__media">
-            <BrandStamp />
-            <span className="sb-hero__orb sb-hero__orb--one" />
-            <span className="sb-hero__orb sb-hero__orb--two" />
-            <div className="sb-hero__photo">
-              <img
-                src="/images/drive/hero-rejuvenation.webp"
-                alt="تصویر ادیتوریال جوان‌سازی پوست از مجموعه Sepiid Beauty"
-                width="1400"
-                height="933"
-                fetchPriority="high"
-              />
-            </div>
-            <figcaption>
-              <span>SEPIID EDITORIAL / 01</span>
-              <p>علم، ظرافت و انتخاب مسئولانه</p>
-            </figcaption>
-            <div className="sb-hero__quality">
-              <ShieldIcon />
-              <div>
-                <strong>بررسی قبل از ارسال</strong>
-                <small>PACK / LOT / CONDITION</small>
-              </div>
-            </div>
-          </figure>
-        </div>
-      </section>
 
       <section className="sb-proof-strip">
         <div className="sb-shell sb-proof-strip__grid">

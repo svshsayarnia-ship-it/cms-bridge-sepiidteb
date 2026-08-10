@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon, PhoneIcon } from "../components/Icons";
 import { whatsappHref } from "../data";
+import { buildSeoMetadata } from "../lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = buildSeoMetadata({
   title: "تماس با سپید بیوتی",
   description:
     "تماس مستقیم برای استعلام موجودی، مشخصات بسته، خرید کلینیکی و پیگیری سفارش Sepiid Beauty.",
-  alternates: { canonical: "/contact" },
-};
+  path: "/contact",
+  imageAlt: "تماس و پشتیبانی سپید بیوتی",
+});
 
 export default function ContactPage() {
   return (
@@ -99,4 +100,3 @@ export default function ContactPage() {
     </main>
   );
 }
-
