@@ -332,10 +332,10 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
         ),
       );
 
-    const wooSlugs = new Set(
-      wooProducts
-        .map((product) => product.slug)
-        .filter(Boolean),
+    const publicWooSlugs = new Set(
+      mappedProducts.map(
+        (product) => product.slug,
+      ),
     );
 
     const publishedCodeProducts =
@@ -343,7 +343,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
         .filter(
           (product) =>
             product.publishedInCatalog &&
-            !wooSlugs.has(product.slug),
+            !publicWooSlugs.has(product.slug),
         )
         .map(mapFallbackProduct);
 

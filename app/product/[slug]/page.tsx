@@ -298,7 +298,11 @@ export async function generateMetadata({
   const staticProduct = getProduct(slug);
   const cmsProduct = await getLiveProduct(slug);
 
-  if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+  if (
+    cmsProduct &&
+    !isPublicCmsProduct(cmsProduct) &&
+    !staticProduct?.publishedInCatalog
+  ) {
     return {
       robots: {
         index: false,
@@ -372,7 +376,11 @@ export default async function ProductPage({
 const staticProduct = getProduct(slug);
 const cmsProduct = await getLiveProduct(slug);
 
-if (cmsProduct && !isPublicCmsProduct(cmsProduct)) {
+if (
+  cmsProduct &&
+  !isPublicCmsProduct(cmsProduct) &&
+  !staticProduct?.publishedInCatalog
+) {
   notFound();
 }
 
