@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "../data";
-import { ArrowIcon, CheckIcon, PackageIcon, ShieldIcon } from "./Icons";
+import { ArrowIcon, CheckIcon, PackageIcon } from "./Icons";
 
 type Pricing = {
   label: string;
@@ -41,9 +41,6 @@ export function ProductVariantExperience({
   livePricing,
   liveShortDescription,
   liveDescription,
-  reviewerName,
-  reviewerRole,
-  reviewedAtLabel,
 }: ProductVariantExperienceProps) {
   const [selectedId, setSelectedId] = useState(product.variants?.[0]?.id ?? "");
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
@@ -65,10 +62,6 @@ export function ProductVariantExperience({
   const displayImage = selectedVariant?.image ?? liveImage?.src ?? product.image;
   const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
   const imageVerified = selectedVariant?.imageVerified ?? (liveImage?.src ? true : product.imageVerified);
-  const needsVerification = hasVariants ? !imageVerified : Boolean(product.warning) || !imageVerified;
-  const sourceName = selectedVariant?.sourceName ?? product.sourceName;
-  const sourceUrl = selectedVariant?.sourceUrl ?? product.sourceUrl;
-  const sourceStatus = selectedVariant?.sourceStatus ?? product.sourceStatus;
   const pricing = hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
@@ -101,11 +94,6 @@ export function ProductVariantExperience({
               </span>
             </div>
             <div className="sb-product-gallery__proofs">
-              <article>
-                <ShieldIcon />
-                <strong>تطبیق همان مدل</strong>
-                <p>نام، حجم، بچ‌کد و تاریخ</p>
-              </article>
               <article>
                 <PackageIcon />
                 <strong>واحد قیمت روشن</strong>
@@ -151,14 +139,6 @@ export function ProductVariantExperience({
               />
             ) : (
               <p className="sb-product-summary__lead" aria-live="polite">{displaySummary}</p>
-            )}
-
-            {sourceStatus && (
-              <div className={`sb-product-summary__verification${needsVerification ? " sb-product-summary__verification--warning" : ""}`}>
-                <span>وضعیت تطبیق اطلاعات</span>
-                <strong>{needsVerification ? "نیازمند تأیید بسته" : "بررسی‌شده"}</strong>
-                <p>{sourceStatus}</p>
-              </div>
             )}
 
             <div className="sb-product-summary__facts">
@@ -221,21 +201,11 @@ export function ProductVariantExperience({
             <p>با تغییر مدل، این جدول و عکس هم‌زمان عوض می‌شوند. برچسب همان بسته مرجع نهایی تحویل است.</p>
           </div>
           <dl className="sb-spec-table">
-            {displaySpecs.map(([label, value]) => (
+            {displaySpecs
+              .filter(([label]) => !isInternalReviewSpec(label))
+              .map(([label, value]) => (
               <div key={`${selectedId}-${label}`}><dt>{label}</dt><dd>{value}</dd></div>
-            ))}
-            {sourceName && (
-              <div>
-                <dt>منبع اطلاعات</dt>
-                <dd>
-                  {sourceUrl && /^https?:\/\//i.test(sourceUrl)
-                    ? <a href={sourceUrl} target="_blank" rel="noopener noreferrer">{sourceName}</a>
-                    : sourceName}
-                </dd>
-              </div>
-            )}
-            {reviewerName && <div><dt>بازبینی محتوا</dt><dd>{reviewerName}{reviewerRole ? ` — ${reviewerRole}` : ""}</dd></div>}
-            {reviewedAtLabel && <div><dt>تاریخ آخرین بازبینی</dt><dd>{reviewedAtLabel}</dd></div>}
+              ))}
           </dl>
         </div>
       </section>
@@ -246,4 +216,9 @@ export function ProductVariantExperience({
       </div>
     </>
   );
+}
+
+/** اطلاعات داخلی بررسی در صفحه عمومی محصول نمایش داده نمی‌شوند. */
+function isInternalReviewSpec(label: string) {
+  return /سازنده|کشور|منبع|یادداشت|بازبین|بازبینی|تاریخ آخرین بازبینی|وضعیت/.test(label);
 }
