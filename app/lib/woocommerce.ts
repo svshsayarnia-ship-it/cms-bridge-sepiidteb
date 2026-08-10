@@ -433,7 +433,13 @@ export async function getProduct(id: number): Promise<CmsProduct> {
   return mapProduct(response.data);
 }
 
-export async function getProductBySlug(slug: string): Promise<CmsProduct | null> {
+export async function getProductBySlug(
+  slug: string,
+  options: {
+    requestTimeoutMs?: number;
+    requestMaxAttempts?: number;
+  } = {},
+): Promise<CmsProduct | null> {
   const cleanSlug = slug.trim();
   if (!cleanSlug) return null;
 
@@ -445,6 +451,8 @@ export async function getProductBySlug(slug: string): Promise<CmsProduct | null>
       per_page: "1",
       status: "any",
     }),
+    options.requestTimeoutMs,
+    options.requestMaxAttempts,
   );
 
   const [product] = response.data;

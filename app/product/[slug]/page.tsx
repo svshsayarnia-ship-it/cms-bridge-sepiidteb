@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { FaqList } from "../../components/FaqList";
 import {
@@ -34,7 +35,7 @@ import {
   WooCommerceError,
 } from "../../lib/woocommerce";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const reviewDateFormatter =
@@ -85,11 +86,14 @@ function plainText(html: string) {
     .replace(/\s+/g, " ")
     .trim());
 }
-async function getLiveProduct(
+const getLiveProduct = cache(async (
   slug: string,
-): Promise<CmsProduct | null> {
+): Promise<CmsProduct | null> => {
   try {
-    return await getCmsProductBySlug(slug);
+    return await getCmsProductBySlug(slug, {
+      requestTimeoutMs: 5_000,
+      requestMaxAttempts: 1,
+    });
   } catch (error) {
     if (error instanceof WooCommerceError) {
       return null;
@@ -97,7 +101,7 @@ async function getLiveProduct(
 
     throw error;
   }
-}
+});
 
 function getLiveProductPricing(
   cmsProduct: CmsProduct | null,
@@ -130,7 +134,7 @@ function getLiveProductPricing(
     note:
       salePrice && regularPrice
         ? `قیمت عادی: ${regularPrice}`
-        : "قیمت و موجودی همین لحظه به‌روز است.",
+        : "قیمت ثبت‌شده؛ برای تأیید نهایی موجودی استعلام بگیرید.",
   };
 }
 
