@@ -237,7 +237,7 @@ export function ProductVariantExperience({
 
             <div className="sb-product-summary__order">
               <div>
-                <span>قیمت فهرست فعلی</span>
+                <span>قیمت</span>
                 <strong>{pricing.label}</strong>
                 <small>{pricing.note}</small>
               </div>
