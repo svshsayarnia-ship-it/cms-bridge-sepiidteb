@@ -76,17 +76,11 @@ export function ProductCard({
           )}
         </Link>
 
-        <div className="sb-product-card__facts">
-          {product.volume && (
+        {product.volume && (
+          <div className="sb-product-card__facts">
             <span>{product.volume}</span>
-          )}
-
-          {product.sourceStatus && (
-            <span>
-              {product.sourceStatus}
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="sb-product-card__footer">
           <Link

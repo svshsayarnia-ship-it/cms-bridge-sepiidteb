@@ -231,8 +231,8 @@ export default async function ProductGroupPage({
               </h2>
 
               <p>
-                محصولات پس از انتشار در WooCommerce
-                در این بخش نمایش داده می‌شوند.
+                محصولات پس از انتشار در این بخش
+                نمایش داده می‌شوند.
               </p>
             </div>
           )}

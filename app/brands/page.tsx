@@ -5,6 +5,7 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { ProductCard } from "../components/ProductCard";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
+import { getEnglishBrandLabel } from "../lib/public-copy";
 
 export const revalidate = 300;
 
@@ -33,29 +34,38 @@ export default async function BrandsPage() {
   const { products } =
     await getStorefrontCatalog();
 
-  const brandNames = Array.from(
-    new Set(
-      products
-        .map((product) => product.brand.trim())
-        .filter(Boolean),
-    ),
-  ).sort((first, second) =>
-    first.localeCompare(second, "fa"),
-  );
+  const productsByBrand = new Map<
+    string,
+    typeof products
+  >();
 
-  const brands = brandNames.map(
-    (brand, index) => ({
+  for (const product of products) {
+    const brand = getEnglishBrandLabel(
+      product.brand,
+    );
+
+    if (!brand) continue;
+
+    productsByBrand.set(brand, [
+      ...(productsByBrand.get(brand) ?? []),
+      product,
+    ]);
+  }
+
+  const brands = Array.from(
+    productsByBrand.entries(),
+  )
+    .sort(([first], [second]) =>
+      first.localeCompare(second, "en"),
+    )
+    .map(([brand, brandProducts], index) => ({
       name: brand,
       anchor: createBrandAnchor(
         brand,
         index,
       ),
-      products: products.filter(
-        (product) =>
-          product.brand === brand,
-      ),
-    }),
-  );
+      products: brandProducts,
+    }));
 
   return (
     <main id="main-content">
@@ -161,9 +171,8 @@ export default async function BrandsPage() {
               </h2>
 
               <p>
-                پس از ثبت اطلاعات برند محصولات در
-                WooCommerce، نمایه برندها در این
-                قسمت نمایش داده می‌شود.
+                پس از انتشار نخستین محصول، نمایه
+                برندها در این قسمت نمایش داده می‌شود.
               </p>
 
               <Link

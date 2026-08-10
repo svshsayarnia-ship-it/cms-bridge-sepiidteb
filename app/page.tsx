@@ -21,6 +21,7 @@ import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
 import { EditableHomeHero } from "./components/EditableHomeHero";
+import { getEnglishBrandLabel } from "./lib/public-copy";
 
 const faqs = [
   {
@@ -78,9 +79,7 @@ export default async function Home() {
   const homeBrands = Array.from(
     new Set(
       products
-        .map((product) =>
-          product.brand.trim(),
-        )
+        .map((product) => getEnglishBrandLabel(product.brand))
         .filter(Boolean),
     ),
   )

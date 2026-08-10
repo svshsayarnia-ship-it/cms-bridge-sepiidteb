@@ -24,6 +24,11 @@ import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import {
+  getEnglishBrandLabel,
+  getPublicSourceUrl,
+  toPublicCopy,
+} from "../../lib/public-copy";
+import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
@@ -56,7 +61,7 @@ function formatTomanPrice(value: string) {
   return `${priceFormatter.format(numeric)} تومان`;
 }
 function cleanProductHtml(html: string) {
-  return html
+  return toPublicCopy(html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
     .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
     .replace(/<(?:object|embed|form|input|button|svg|math)[\s\S]*?>[\s\S]*?<\/(?:object|embed|form|input|button|svg|math)>/gi, "")
@@ -67,17 +72,17 @@ function cleanProductHtml(html: string) {
       /\s(href|src)=["']\s*(?:javascript|data):[^"']*["']/gi,
       "",
     )
-    .trim();
+    .trim());
 }
 
 function plainText(html: string) {
-  return html
+  return toPublicCopy(html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim());
 }
 async function getLiveProduct(
   slug: string,
@@ -103,7 +108,7 @@ function getLiveProductPricing(
   if (cmsProduct.stockStatus === "outofstock") {
     return {
       label: "ناموجود",
-      note: "موجودی این محصول در CMS ناموجود ثبت شده است.",
+      note: "این محصول در حال حاضر ناموجود است.",
     };
   }
 
@@ -124,7 +129,7 @@ function getLiveProductPricing(
     note:
       salePrice && regularPrice
         ? `قیمت عادی: ${regularPrice}`
-        : "قیمت از CMS / WooCommerce خوانده شده است.",
+        : "قیمت و موجودی همین لحظه به‌روز است.",
   };
 }
 
@@ -169,7 +174,7 @@ function buildCmsOnlyProduct(
         "",
     ) ||
     fallback?.summary ||
-    "اطلاعات این محصول از CMS و WooCommerce دریافت شده است.";
+    "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
 
   return {
     slug: cmsProduct.slug,
@@ -179,9 +184,11 @@ function buildCmsOnlyProduct(
       cmsProduct.slug,
     nameEn: fallback?.nameEn ?? "",
     brand:
-      cmsProduct.brands?.[0]?.name ||
-      fallback?.brand ||
-      "",
+      getEnglishBrandLabel(
+        cmsProduct.brands?.[0]?.name ||
+          fallback?.brand ||
+          "",
+      ) || fallback?.brand || "",
     category:
       category?.slug ||
       fallback?.category ||
@@ -211,9 +218,9 @@ function buildCmsOnlyProduct(
       fallback?.position || "center",
     volume: fallback?.volume,
     sourceStatus:
-      cmsProduct.sourceName ||
       fallback?.sourceStatus ||
-      "اطلاعات ثبت‌شده در CMS",
+      toPublicCopy(cmsProduct.sourceName) ||
+      "اطلاعات محصول هنگام استعلام بازبینی می‌شود",
     warning: fallback?.warning,
     summary,
     shortBenefit:
@@ -236,10 +243,10 @@ function buildCmsOnlyProduct(
     publishedInCatalog:
       fallback?.publishedInCatalog,
     sourceName:
-      cmsProduct.sourceName ||
-      fallback?.sourceName,
+      fallback?.sourceName ||
+      toPublicCopy(cmsProduct.sourceName),
     sourceUrl:
-      cmsProduct.sourceUrl ||
+      getPublicSourceUrl(cmsProduct.sourceUrl) ||
       fallback?.sourceUrl,
     reviewedAt:
       cmsProduct.reviewedAt ||
@@ -509,16 +516,6 @@ const image = liveImage?.src || product.image;
   </p>
 )}
 
-            <div
-              className={`sb-product-summary__verification ${
-                product.warning ? "sb-product-summary__verification--warning" : ""
-              }`}
-            >
-              <span>وضعیت اطلاعات</span>
-              <strong>{product.sourceStatus}</strong>
-              {product.warning && <p>{product.warning}</p>}
-            </div>
-
             <div className="sb-product-summary__facts">
               <div>
                 <span>مخاطب</span>
@@ -586,8 +583,8 @@ const image = liveImage?.src || product.image;
         <h2>توضیحات محصول</h2>
 
         <p>
-          اطلاعات تکمیلی این محصول از CMS و WooCommerce
-          دریافت شده است.
+          ترکیبات، کاربرد حرفه‌ای و نکات مهم محصول را
+          در ادامه یک‌جا بخوانید.
         </p>
       </div>
 

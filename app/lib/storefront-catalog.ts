@@ -8,6 +8,11 @@ import {
 } from "../catalog";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
+import {
+  getEnglishBrandLabel,
+  getPublicSourceUrl,
+  toPublicCopy,
+} from "./public-copy";
 import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -55,7 +60,7 @@ export type StorefrontCatalog = {
 };
 
 function plainText(html: string): string {
-  return html
+  return toPublicCopy(html
     .replace(
       /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
       " ",
@@ -70,7 +75,7 @@ function plainText(html: string): string {
     .replace(/&quot;/gi, '"')
     .replace(/&#039;/gi, "'")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim());
 }
 
 export function isPublicWooProduct(
@@ -134,7 +139,7 @@ function mapWooProduct(
   const summary =
     descriptionText ||
     fallback?.summary ||
-    "اطلاعات این محصول از WooCommerce دریافت شده است.";
+    "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
 
   const specs = addSkuToSpecs(
     [...(fallback?.specs ?? [])],
@@ -149,9 +154,11 @@ function mapWooProduct(
       product.slug,
     nameEn: fallback?.nameEn ?? "",
     brand:
-      product.brands?.[0]?.name ||
-      fallback?.brand ||
-      "",
+      getEnglishBrandLabel(
+        product.brands?.[0]?.name ||
+          fallback?.brand ||
+          "",
+      ) || fallback?.brand || "",
     category: categorySlug,
     categoryTitle,
     group:
@@ -179,9 +186,9 @@ function mapWooProduct(
       fallback?.position || "50%",
     volume: fallback?.volume,
     sourceStatus:
-      product.sourceName ||
       fallback?.sourceStatus ||
-      "اطلاعات ثبت‌شده در WooCommerce",
+      toPublicCopy(product.sourceName) ||
+      "اطلاعات محصول در زمان استعلام بازبینی می‌شود",
     warning: fallback?.warning,
     summary,
     shortBenefit:
@@ -227,11 +234,11 @@ function mapWooProduct(
     focusKeyword:
       product.focusKeyword,
     sourceName:
-      product.sourceName ||
       fallback?.sourceName ||
+      toPublicCopy(product.sourceName) ||
       "",
     sourceUrl:
-      product.sourceUrl ||
+      getPublicSourceUrl(product.sourceUrl) ||
       fallback?.sourceUrl ||
       "",
     reviewerName:

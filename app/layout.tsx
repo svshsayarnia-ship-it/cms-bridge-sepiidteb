@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/estedad";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
