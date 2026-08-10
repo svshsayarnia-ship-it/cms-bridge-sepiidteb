@@ -23,14 +23,22 @@
 
       const loadFrame = (path) => new Promise((resolve) => {
         const frame = document.createElement("iframe");
+        let settled = false;
+        const finish = (timedOut = false) => {
+          if (settled) return;
+          settled = true;
+          frame.dataset.loadTimedOut = timedOut ? "true" : "false";
+          resolve(frame);
+        };
         frame.width = "320";
         frame.style.width = "320px";
         frame.src = path;
         frame.onload = async () => {
           await wait(120);
-          resolve(frame);
+          finish(false);
         };
         document.querySelector("#frames").append(frame);
+        setTimeout(() => finish(true), 12000);
       });
 
       const auditFrame = (frame, path, width) => {
@@ -86,6 +94,7 @@
         return {
           path,
           width,
+          loadTimedOut: frame.dataset.loadTimedOut === "true",
           title: doc.title,
           documentOverflow: root.scrollWidth > root.clientWidth + 1,
           dimensions: [root.clientWidth, root.scrollWidth],
@@ -132,6 +141,7 @@
             frame.remove();
           });
           status.dataset.count = String(window.__auditResults.length);
+          document.querySelector("#audit-results").textContent = JSON.stringify(window.__auditResults);
         }
 
         window.__auditDone = true;
