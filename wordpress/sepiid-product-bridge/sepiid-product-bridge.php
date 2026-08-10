@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Sepiid Product Bridge
  * Plugin URI:        https://sepiidbeauty.ir/
- * Description:       اتصال امن Sepiid CMS به محصولات، دسته‌بندی‌ها و رسانه‌های WooCommerce.
- * Version:           1.7.2
+ * Description:       اتصال امن Sepiid CMS و حساب مشتریان به WooCommerce، دسته‌بندی‌ها و رسانه‌ها.
+ * Version:           1.8.0
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Author:            Sepiid Beauty
@@ -23,15 +23,15 @@ namespace Sepiid\ProductBridge;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.7.2';
+const VERSION = '1.8.0';
 const FILE    = __FILE__;
 const PATH    = __DIR__;
 
 /**
  * Declare compatibility only for WooCommerce features this bridge does not alter.
  *
- * The plugin uses public WordPress media APIs and WooCommerce REST authentication.
- * It never reads or writes order storage directly.
+ * The plugin uses public WordPress media/user APIs and WooCommerce REST
+ * authentication. It never reads or writes order storage directly.
  *
  * @return void
  */
@@ -55,6 +55,7 @@ add_action( 'before_woocommerce_init', __NAMESPACE__ . '\\declare_woocommerce_co
  */
 function boot() {
 	require_once PATH . '/includes/class-rest-controller.php';
+	require_once PATH . '/includes/class-customer-auth-controller.php';
 	require_once PATH . '/includes/class-site-presentation-controller.php';
 	require_once PATH . '/includes/class-admin.php';
 
@@ -66,8 +67,10 @@ function boot() {
 	$rest_controller = new Rest_Controller();
 	$rest_controller->hooks();
 
-	$site_presentation_controller =
-		new Site_Presentation_Controller();
+	$customer_auth_controller = new Customer_Auth_Controller();
+	$customer_auth_controller->hooks();
+
+	$site_presentation_controller = new Site_Presentation_Controller();
 	$site_presentation_controller->hooks();
 
 	if ( is_admin() ) {
@@ -76,4 +79,3 @@ function boot() {
 	}
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\boot', 20 );
-
