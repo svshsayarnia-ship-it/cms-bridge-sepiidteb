@@ -15,6 +15,9 @@ export function ProductCard({
   priority?: boolean;
 }) {
   const href = productHref(product);
+  const volume = product.volume
+    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?\b.*$/u, "")
+    .trim();
 
   const imageSrc = product.image;
   const imageAlt =
@@ -68,9 +71,9 @@ export function ProductCard({
           )}
         </Link>
 
-        {product.volume && (
+        {volume && (
           <div className="sb-product-card__facts">
-            <span>{product.volume}</span>
+            <span>{volume}</span>
           </div>
         )}
 
