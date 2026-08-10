@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- local editorial product imagery */
 import Link from "next/link";
 import { useState } from "react";
-import type { Product } from "../data";
+import type { Product, ProductVariant } from "../data";
 import { ArrowIcon } from "./Icons";
 
 type Pricing = {
@@ -11,8 +11,41 @@ type Pricing = {
   note: string;
 };
 
+type ProductExperienceVariant = Pick<
+  ProductVariant,
+  | "id"
+  | "label"
+  | "nameFa"
+  | "nameEn"
+  | "image"
+  | "imageAlt"
+  | "imageVerified"
+  | "volume"
+  | "summary"
+  | "specs"
+  | "priceToman"
+  | "priceNote"
+>;
+
+export type ProductExperienceProduct = Pick<
+  Product,
+  | "nameFa"
+  | "nameEn"
+  | "brand"
+  | "categoryTitle"
+  | "image"
+  | "imageAlt"
+  | "volume"
+  | "priceToman"
+  | "priceNote"
+  | "summary"
+  | "specs"
+> & {
+  variants?: ProductExperienceVariant[];
+};
+
 type ProductVariantExperienceProps = {
-  product: Product;
+  product: ProductExperienceProduct;
   liveImage: { src: string; alt: string } | null;
   livePricing: Pricing | null;
   liveShortDescription: string;
@@ -70,8 +103,6 @@ const visibleSpecLabels = new Map<string, string>([
   ["حجم", "حجم"],
   ["حجم یا واحد مشاهده‌شده", "حجم"],
   ["حجم‌های موجود", "حجم‌های موجود"],
-  ["حجم فهرست", "حجم"],
-  ["حجم درج‌شده در فهرست", "حجم"],
   ["حجم کل", "حجم کل"],
   ["حجم هر سرنگ", "حجم هر سرنگ"],
   ["حجم هر ویال", "حجم هر ویال"],
