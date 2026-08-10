@@ -1,7 +1,12 @@
 import type { Category, Product } from "./data";
+import {
+  currentInventoryLegacyAliases,
+  currentInventorySeeds,
+} from "./current-inventory";
+import type { ProductSeed } from "./product-seed";
 
 export type CatalogGroup = {
-  slug: "injectables" | "mesotherapy-cocktails";
+  slug: "injectables" | "mesotherapy-cocktails" | "professional-support";
   title: string;
   en: string;
   description: string;
@@ -15,7 +20,7 @@ export const catalogGroups: CatalogGroup[] = [
     en: "PROFESSIONAL INJECTABLES",
     description:
       "فیلرها، اسکین‌بوسترها، مزوژل‌ها و فرآورده‌های بوتولینوم در مسیرهای جدا و قابل‌مقایسه.",
-    categorySlugs: ["fillers", "skin-boosters", "botulinum-toxins"],
+    categorySlugs: ["fillers", "body-fillers", "skin-boosters", "botulinum-toxins"],
   },
   {
     slug: "mesotherapy-cocktails",
@@ -30,6 +35,14 @@ export const catalogGroups: CatalogGroup[] = [
       "hair-cocktails",
     ],
   },
+  {
+    slug: "professional-support",
+    title: "محصولات پشتیبان حرفه‌ای",
+    en: "PROFESSIONAL SUPPORT",
+    description:
+      "فرآورده‌های کمکی کلینیکی با تفکیک روشن از محصولات زیبایی و با تأکید بر نام، قدرت و واحد بسته.",
+    categorySlugs: ["hyaluronidase-products"],
+  },
 ];
 
 export const catalogCategories: Category[] = [
@@ -43,6 +56,19 @@ export const catalogCategories: Category[] = [
       "مقایسه فیلرها و ژل‌های حرفه‌ای بر اساس نام دقیق مدل، حجم درج‌شده و وضعیت اطلاعات بسته‌بندی.",
     guide:
       "ناحیه، تکنیک و تناسب محصول باید توسط پزشک تعیین شود؛ اطلاعات بازار مرجع نهایی نیست.",
+    image: "/images/drive/category-fillers.webp",
+    position: "50%",
+  },
+  {
+    slug: "body-fillers",
+    title: "فیلرهای حجم بالا",
+    en: "HIGH-VOLUME FILLERS",
+    group: "injectables",
+    groupTitle: "محصولات تزریقی زیبایی",
+    description:
+      "محصولات دارای سرنگ یا ویال حجم بالا؛ جدا از فیلرهای یک تا دو میلی‌لیتری تا حجم بسته با غلظت یا نام مدل اشتباه نشود.",
+    guide:
+      "حجم بالا به معنی مناسب‌بودن برای هر کاربرد نیست؛ نام مدل، حجم واقعی و اصالت همان بسته پیش از سفارش بررسی می‌شود.",
     image: "/images/drive/category-fillers.webp",
     position: "50%",
   },
@@ -124,36 +150,22 @@ export const catalogCategories: Category[] = [
     image: "/images/product-hair-care-v2.webp",
     position: "50%",
   },
+  {
+    slug: "hyaluronidase-products",
+    title: "آنزیم‌های هیالورونیداز",
+    en: "HYALURONIDASE PRODUCTS",
+    group: "professional-support",
+    groupTitle: "محصولات پشتیبان حرفه‌ای",
+    description:
+      "مقایسه آنزیم‌ها بر اساس نام سازنده، قدرت درج‌شده، تعداد ویال یا آمپول و کشور بسته‌بندی.",
+    guide:
+      "این دسته برای مصرف عمومی یا خانگی نیست؛ قدرت و روش آماده‌سازی هر برند باید از برگه همان بسته خوانده شود.",
+    image: "/images/drive/category-supplies.webp",
+    position: "50%",
+  },
 ];
 
-type ProductSeed = {
-  slug: string;
-  nameFa: string;
-  nameEn: string;
-  brand: string;
-  category: string;
-  type: string;
-  volume?: string;
-  country?: string;
-  detail?: string;
-  badge?: string;
-  warning?: string;
-  image?: string;
-  imageVerified?: boolean;
-  publishedInCatalog?: boolean;
-  sourceName?: string;
-  sourceUrl?: string;
-  reviewedAt?: string;
-  sourceStatus?: string;
-  summary?: string;
-  audience?: string;
-  features?: string[];
-  specs?: Array<[string, string]>;
-  checks?: string[];
-  faq?: Array<{ question: string; answer: string }>;
-};
-
-const seeds: ProductSeed[] = [
+const legacySeeds: ProductSeed[] = [
   {
     slug: "neuramis-deep-lidocaine",
     nameFa: "نورامیس دیپ لیدوکائین",
@@ -651,14 +663,28 @@ const seeds: ProductSeed[] = [
 
 ];
 
+const currentInventorySlugs = new Set(
+  [
+    ...currentInventorySeeds.map((seed) => seed.slug),
+    ...Object.keys(currentInventoryLegacyAliases),
+  ],
+);
+
+const seeds: ProductSeed[] = [
+  ...legacySeeds.filter((seed) => !currentInventorySlugs.has(seed.slug)),
+  ...currentInventorySeeds,
+];
+
 const shortBenefits: Record<string, string> = {
   fillers: "مقایسه مشخصات فیلر و وضعیت اطلاعات بسته",
+  "body-fillers": "مقایسه حجم واقعی، مدل و واحد بسته",
   "skin-boosters": "مقایسه حرفه‌ای کیفیت پوست و آبرسانی",
   "botulinum-toxins": "استعلام اصالت، واحد و شرایط نگهداری",
   "rejuvenation-cocktails": "عنوان رایج بازار: جوان‌سازی و کیفیت پوست",
   "brightening-cocktails": "عنوان رایج بازار: روشن‌کنندگی و یکنواختی رنگ",
   "eye-cocktails": "محصول حرفه‌ای مرتبط با پوست اطراف چشم",
   "hair-cocktails": "محصول حرفه‌ای مرتبط با مو و پوست سر",
+  "hyaluronidase-products": "مقایسه قدرت، تعداد و سازنده آنزیم",
 };
 
 const fallbackImages: Record<string, string> = Object.fromEntries(
@@ -696,6 +722,8 @@ function makeProduct(seed: ProductSeed): Product {
       : `تصویر مفهومی گروه ${category.title}`,
     position: "50%",
     volume: seed.volume,
+    priceToman: seed.priceToman,
+    priceNote: seed.priceNote,
     sourceStatus,
     warning: seed.warning,
     summary:
@@ -731,6 +759,7 @@ function makeProduct(seed: ProductSeed): Product {
     sourceName: seed.sourceName,
     sourceUrl: seed.sourceUrl,
     reviewedAt: seed.reviewedAt,
+    variants: seed.variants,
   };
 }
 

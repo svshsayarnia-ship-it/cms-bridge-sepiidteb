@@ -1,0 +1,31 @@
+import type { ProductVariant } from "./data";
+
+export type ProductSeed = {
+  slug: string;
+  nameFa: string;
+  nameEn: string;
+  brand: string;
+  category: string;
+  type: string;
+  volume?: string;
+  priceToman?: number;
+  priceNote?: string;
+  country?: string;
+  detail?: string;
+  badge?: string;
+  warning?: string;
+  image?: string;
+  imageVerified?: boolean;
+  publishedInCatalog?: boolean;
+  sourceName?: string;
+  sourceUrl?: string;
+  reviewedAt?: string;
+  sourceStatus?: string;
+  summary?: string;
+  audience?: string;
+  features?: string[];
+  specs?: Array<[string, string]>;
+  checks?: string[];
+  faq?: Array<{ question: string; answer: string }>;
+  variants?: ProductVariant[];
+};

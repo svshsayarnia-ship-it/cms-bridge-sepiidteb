@@ -27,6 +27,8 @@ export type Product = {
   imageVerified?: boolean;
   position: string;
   volume?: string;
+  priceToman?: number;
+  priceNote?: string;
   sourceStatus?: string;
   warning?: string;
   summary: string;
@@ -40,6 +42,26 @@ export type Product = {
   sourceName?: string;
   sourceUrl?: string;
   reviewedAt?: string;
+  variants?: ProductVariant[];
+};
+
+export type ProductVariant = {
+  id: string;
+  label: string;
+  nameFa: string;
+  nameEn: string;
+  image: string;
+  imageAlt: string;
+  imageVerified?: boolean;
+  volume: string;
+  summary: string;
+  features: string[];
+  specs: Array<[string, string]>;
+  priceToman: number;
+  priceNote: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceStatus?: string;
 };
 
 export type ArticleSubsection = {

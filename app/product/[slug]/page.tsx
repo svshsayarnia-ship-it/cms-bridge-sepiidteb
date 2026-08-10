@@ -1,24 +1,18 @@
-/* eslint-disable @next/next/no-img-element -- local generated product imagery */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { FaqList } from "../../components/FaqList";
-import {
-  ArrowIcon,
-  CheckIcon,
-  PackageIcon,
-  ShieldIcon,
-} from "../../components/Icons";
+import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
+import { ProductVariantExperience } from "../../components/ProductVariantExperience";
 import { getGroupForCategory } from "../../catalog";
 import {
   articles,
   getProduct,
   products,
-  whatsappHref,
 } from "../../data";
 import type { Product } from "../../data";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
@@ -222,6 +216,8 @@ function buildCmsOnlyProduct(
     position:
       fallback?.position || "center",
     volume: fallback?.volume,
+    priceToman: fallback?.priceToman,
+    priceNote: fallback?.priceNote,
     sourceStatus:
       fallback?.sourceStatus ||
       toPublicCopy(cmsProduct.sourceName) ||
@@ -256,6 +252,7 @@ function buildCmsOnlyProduct(
     reviewedAt:
       cmsProduct.reviewedAt ||
       fallback?.reviewedAt,
+    variants: fallback?.variants,
   };
 }
 function getSchemaPrice(
@@ -441,10 +438,6 @@ const schemaPrice = getSchemaPrice(liveProduct);
 const schemaAvailability =
   getSchemaAvailability(liveProduct);
 const image = liveImage?.src || product.image;
-  const inquiryLink = whatsappHref(
-    `سلام، برای «${product.nameFa}» موجودی، قیمت و مشخصات بسته موجود را استعلام می‌کنم.`,
-  );
-
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -460,207 +453,16 @@ const image = liveImage?.src || product.image;
         />
       </div>
 
-      <section className="sb-product-detail">
-        <div className="sb-shell sb-product-detail__grid">
-          <div className="sb-product-gallery">
-            <div className="sb-product-gallery__main">
-              <img
-                src={image}
-                alt={
-  liveImage?.alt ||
-  product.imageAlt ||
-  `تصویر ${product.nameFa}`
-}
-                width="1254"
-                height="1254"
-                fetchPriority="high"
-              />
-              <span>
-                {product.imageVerified
-                  ? "تصویر مجموعه محصول"
-                  : "تصویر مفهومی گروه؛ تصویر بسته هنگام استعلام"}
-              </span>
-            </div>
-            <div className="sb-product-gallery__proofs">
-              <article>
-                <ShieldIcon />
-                <strong>بررسی ظاهری</strong>
-                <p>پلمب، تاریخ و بچ‌کد قابل مشاهده</p>
-              </article>
-              <article>
-                <PackageIcon />
-                <strong>تحویل هماهنگ</strong>
-                <p>روش ارسال متناسب با نوع کالا</p>
-              </article>
-            </div>
-          </div>
-
-          <div className="sb-product-summary">
-            <div className="sb-product-summary__top">
-              <span>{product.categoryTitle}</span>
-              <span>{product.brand}</span>
-            </div>
-            <h1>{product.nameFa}</h1>
-            <p className="sb-product-summary__en">{product.nameEn}</p>
-           {liveShortDescription ? (
-  <div
-    className="sb-product-summary__lead sb-product-rich-text"
-    dangerouslySetInnerHTML={{
-      __html: liveShortDescription,
-    }}
-  />
-) : (
-  <p className="sb-product-summary__lead">
-    {product.summary}
-  </p>
-)}
-
-            <div className="sb-product-summary__facts">
-              <div>
-                <span>مخاطب</span>
-                <strong>{product.audience}</strong>
-              </div>
-              <div>
-                <span>وضعیت</span>
-                <strong>استعلام پیش از سفارش</strong>
-              </div>
-            </div>
-
-            <ul className="sb-product-summary__features">
-              {product.features.map((feature) => (
-                <li key={feature}>
-                  <CheckIcon />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-
-            <div className="sb-product-summary__order">
-              <div>
-                <span>قیمت و موجودی</span>
-                <strong>{livePricing?.label ?? "استعلام همان روز"}</strong>
-                <small>
-                  {livePricing?.note ?? "اطلاعات ساختگی یا قیمت منقضی نمایش داده نمی‌شود."}
-                </small>
-              </div>
-              <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
-                استعلام موجودی و مشخصات همین بچ
-                <ArrowIcon />
-              </Link>
-            </div>
-            <p className="sb-product-summary__notice">
-              انتخاب و استفاده محصولات تزریقی فقط باید توسط فرد واجد صلاحیت و پس از
-              ارزیابی انجام شود.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <nav className="sb-product-anchor-nav" aria-label="بخش‌های صفحه محصول">
-     <div className="sb-shell">
-  {liveDescription && (
-    <a href="#description">توضیحات</a>
-  )}
-
-  <a href="#specs">مشخصات</a>
-  <a href="#authenticity">کنترل اصالت</a>
-  <a href="#safety">نکات مهم</a>
-  <a href="#questions">پرسش‌ها</a>
-</div>
-      </nav>
-{liveDescription && (
-  <section
-    className="sb-section sb-product-description"
-    id="description"
-  >
-    <div className="sb-shell sb-product-description__grid">
-      <div className="sb-product-description__heading">
-        <span className="sb-eyebrow">
-          PRODUCT / DESCRIPTION
-        </span>
-
-        <h2>توضیحات محصول</h2>
-
-        <p>
-          ترکیبات، کاربرد حرفه‌ای و نکات مهم محصول را
-          در ادامه یک‌جا بخوانید.
-        </p>
-      </div>
-
-      <article
-        className="sb-product-description__content sb-product-rich-text"
-        dangerouslySetInnerHTML={{
-          __html: liveDescription,
-        }}
+      <ProductVariantExperience
+        product={product}
+        liveImage={liveImage}
+        livePricing={livePricing}
+        liveShortDescription={liveShortDescription}
+        liveDescription={liveDescription}
+        reviewerName={liveProduct?.reviewerName}
+        reviewerRole={liveProduct?.reviewerRole}
+        reviewedAtLabel={product.reviewedAt ? formatReviewDate(product.reviewedAt) : undefined}
       />
-    </div>
-  </section>
-)}
-      <section className="sb-section sb-product-info-section" id="specs">
-        <div className="sb-shell sb-product-info-section__grid">
-          <div>
-            <span className="sb-eyebrow">PRODUCT / SPECIFICATIONS</span>
-            <h2>مشخصات برای تصمیم‌گیری</h2>
-            <p>
-              داده‌های هر بسته ممکن است با بازار یا بچ تغییر کند؛ برچسب و بروشور
-              همان محصول مرجع نهایی است.
-            </p>
-          </div>
-         <dl className="sb-spec-table">
-  {product.specs.map(([label, value]) => (
-    <div key={label}>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
-  ))}
-
-  {product.sourceName && (
-    <div>
-      <dt>منبع اطلاعات</dt>
-      <dd>
-        {product.sourceUrl &&
-        /^https?:\/\//i.test(
-          product.sourceUrl,
-        ) ? (
-          <a
-            href={product.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {product.sourceName}
-          </a>
-        ) : (
-          product.sourceName
-        )}
-      </dd>
-    </div>
-  )}
-
-  {liveProduct?.reviewerName && (
-    <div>
-      <dt>بازبینی محتوا</dt>
-      <dd>
-        {liveProduct.reviewerName}
-        {liveProduct.reviewerRole
-          ? ` — ${liveProduct.reviewerRole}`
-          : ""}
-      </dd>
-    </div>
-  )}
-
-  {product.reviewedAt && (
-    <div>
-      <dt>تاریخ آخرین بازبینی</dt>
-      <dd>
-        {formatReviewDate(
-          product.reviewedAt,
-        )}
-      </dd>
-    </div>
-  )}
-</dl>
-        </div>
-      </section>
 
       <section className="sb-product-authenticity" id="authenticity">
         <div className="sb-shell sb-product-authenticity__grid">
@@ -743,14 +545,6 @@ const image = liveImage?.src || product.image;
           </div>
         </section>
       )}
-
-      <div className="sb-product-mobile-cta">
-        <div>
-          <span>{product.brand}</span>
-          <strong>{livePricing?.label ?? "استعلام روز"}</strong>
-        </div>
-        <Link href={inquiryLink}>استعلام موجودی و مشخصات</Link>
-      </div>
 
       <JsonLd
         data={{
