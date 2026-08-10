@@ -3,6 +3,7 @@ import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, CheckIcon } from "../components/Icons";
 import { articles, whatsappHref } from "../data";
+import { concernTopics, guideTopics } from "../lib/discovery-hubs";
 import { getStorefrontCategories } from "../lib/storefront-categories";
 import { buildSeoMetadata } from "../lib/seo";
 
@@ -11,7 +12,7 @@ export const revalidate = 300;
 export const metadata = buildSeoMetadata({
   title: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
   description:
-    "مسیر آموزشی برای شناخت دسته محصولات، پرسش‌های لازم پیش از خرید، بررسی اصالت و تفکیک راهنمای خرید از تصمیم پزشکی.",
+    "پیلارهای تصمیم‌گیری برای شناخت دسته محصولات، مقایسه مدل‌ها، بررسی اصالت و شروع از نیاز واقعی کاربر بدون تبدیل راهنمای خرید به تصمیم پزشکی.",
   path: "/guides",
   image: "/images/magazine-authenticity-v2.webp",
   imageAlt: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
@@ -41,8 +42,7 @@ const steps = [
 ];
 
 export default async function GuidesPage() {
-  const categories =
-    await getStorefrontCategories();
+  const categories = await getStorefrontCategories();
 
   return (
     <main id="main-content">
@@ -83,8 +83,68 @@ export default async function GuidesPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
+              <span className="sb-eyebrow">PILLAR / GUIDES</span>
+              <h2>راهنماهای اصلی تصمیم‌گیری</h2>
+            </div>
+            <p>
+              هر راهنما یک موضوع مشخص را مالک می‌شود و کاربر را از سؤال به دسته،
+              مقاله و صفحه محصول هدایت می‌کند.
+            </p>
+          </div>
+
+          <div className="sb-guide-paths__grid">
+            {guideTopics.map((topic, index) => (
+              <article key={topic.slug}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <small>{topic.eyebrow}</small>
+                <h3>{topic.title}</h3>
+                <p>{topic.description}</p>
+                <Link className="sb-text-link" href={`/guides/${topic.slug}`}>
+                  باز کردن راهنما
+                  <ArrowIcon />
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sb-section sb-guide-paths">
+        <div className="sb-shell">
+          <div className="sb-section-head">
+            <div>
+              <span className="sb-eyebrow">START FROM THE CONCERN</span>
+              <h2>اگر هنوز اسم محصول را نمی‌دانید، از نیاز شروع کنید.</h2>
+            </div>
+            <Link className="sb-text-link" href="/concerns">
+              همه نیازها و دغدغه‌ها
+              <ArrowIcon />
+            </Link>
+          </div>
+
+          <div className="sb-guide-paths__grid">
+            {concernTopics.slice(0, 6).map((topic, index) => (
+              <article key={topic.slug}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <small>{topic.eyebrow}</small>
+                <h3>{topic.title}</h3>
+                <p>{topic.description}</p>
+                <Link className="sb-text-link" href={`/concerns/${topic.slug}`}>
+                  ورود از مسیر نیاز
+                  <ArrowIcon />
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="sb-section sb-guide-paths">
+        <div className="sb-shell">
+          <div className="sb-section-head">
+            <div>
               <span className="sb-eyebrow">START / CATEGORY</span>
-              <h2>از گروه درست شروع کنید.</h2>
+              <h2>یا از گروه درست شروع کنید.</h2>
             </div>
             <p>هر مسیر، سؤال‌های مخصوص خود را دارد.</p>
           </div>
