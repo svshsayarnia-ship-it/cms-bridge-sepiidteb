@@ -7,7 +7,10 @@ import { FaqList } from "../../components/FaqList";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
-import { ProductVariantExperience } from "../../components/ProductVariantExperience";
+import {
+  ProductVariantExperience,
+} from "../../components/ProductVariantExperience";
+import type { ProductExperienceProduct } from "../../components/ProductVariantExperience";
 import { getGroupForCategory } from "../../catalog";
 import {
   getProduct,
@@ -19,6 +22,7 @@ import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
+  getCompactBrandLabel,
   getEnglishBrandLabel,
   toPublicCopy,
 } from "../../lib/public-copy";
@@ -40,21 +44,6 @@ function formatTomanPrice(value: string) {
   if (!Number.isFinite(numeric) || numeric <= 0) return "";
   return `${priceFormatter.format(numeric)} تومان`;
 }
-function cleanProductHtml(html: string) {
-  return toPublicCopy(html
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
-    .replace(/<(?:object|embed|form|input|button|svg|math)[\s\S]*?>[\s\S]*?<\/(?:object|embed|form|input|button|svg|math)>/gi, "")
-    .replace(/<\/?(?:object|embed|form|input|button|svg|math)\b[^>]*>/gi, "")
-    .replace(/\sstyle=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\son\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(
-      /\s(href|src)=["']\s*(?:javascript|data):[^"']*["']/gi,
-      "",
-    )
-    .trim());
-}
-
 function plainText(html: string) {
   return toPublicCopy(html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
@@ -64,6 +53,18 @@ function plainText(html: string) {
     .replace(/\s+/g, " ")
     .trim());
 }
+
+const internalCmsCopyTerms =
+  /سازنده|تولید(?:شده)? توسط|کشور|شرکت|اصالت|تاریخ انقضا|بچ|پلمب|منبع|بررسی|پزشک|تزریق|کلینیک|پروتکل|درمان|Medytox|Caregen|Dongkook|BioPlus|Masoondarou|Professional Derma|Wockhardt|Daehan|Spad Pharmed/iu;
+
+function getPublicSummary(value: string) {
+  return (plainText(value)
+    .split(/(?<=[.!؟؛])\s+/u)
+    .find((sentence) =>
+      sentence.length > 20 && !internalCmsCopyTerms.test(sentence),
+    ) ?? "").trim();
+}
+
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
@@ -151,13 +152,12 @@ function buildCmsOnlyProduct(
   const image = getLiveProductImage(cmsProduct);
 
   const summary =
-    plainText(
+    getPublicSummary(
       cmsProduct.shortDescription ||
         cmsProduct.description ||
         "",
     ) ||
-    fallback?.summary ||
-    "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
+    getPublicSummary(fallback?.summary || "");
 
   return {
     slug: cmsProduct.slug,
@@ -243,6 +243,80 @@ function getCustomerFaqs(product: Product) {
     }))
     .slice(0, 3);
 }
+
+const publicSpecLabels = new Set([
+  "مدل",
+  "مدل‌های موجود",
+  "حجم",
+  "حجم یا واحد مشاهده‌شده",
+  "حجم‌های موجود",
+  "حجم کل",
+  "حجم هر سرنگ",
+  "حجم هر ویال",
+  "تعداد",
+  "تعداد ست",
+  "تعداد جعبه",
+  "تعداد و حجم",
+  "محتویات",
+  "بسته",
+  "بسته رایج",
+  "شکل بسته",
+  "شکل محصول",
+  "سرنگ",
+  "ویال",
+  "قدرت",
+  "غلظت درج‌شده",
+  "ترکیبات فعال اعلام‌شده",
+  "واحد قیمت",
+]);
+
+function getPublicSpecs(specs: Product["specs"]) {
+  return specs.flatMap(([label, value]) => {
+    const cleanValue = toPublicCopy(value)
+      .replace(
+        /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست\s+موجودی|فهرست\s+بازار).*$/u,
+        "",
+      )
+      .trim();
+
+    return publicSpecLabels.has(label) && cleanValue
+      ? [[label, cleanValue] as [string, string]]
+      : [];
+  });
+}
+
+function getProductExperience(
+  product: Product,
+): ProductExperienceProduct {
+  return {
+    nameFa: product.nameFa,
+    nameEn: product.nameEn,
+    brand: getCompactBrandLabel(product.brand),
+    categoryTitle: product.categoryTitle,
+    image: product.image,
+    imageAlt: product.imageAlt,
+    volume: product.volume,
+    priceToman: product.priceToman,
+    priceNote: product.priceNote,
+    summary: getPublicSummary(product.summary),
+    specs: getPublicSpecs(product.specs),
+    variants: product.variants?.map((variant) => ({
+      id: variant.id,
+      label: variant.label,
+      nameFa: variant.nameFa,
+      nameEn: variant.nameEn,
+      image: variant.image,
+      imageAlt: variant.imageAlt,
+      imageVerified: variant.imageVerified,
+      volume: variant.volume,
+      summary: getPublicSummary(variant.summary),
+      specs: getPublicSpecs(variant.specs),
+      priceToman: variant.priceToman,
+      priceNote: variant.priceNote,
+    })),
+  };
+}
+
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
 ): string | null {
@@ -334,16 +408,14 @@ export async function generateMetadata({
     liveProduct?.name ||
     product.nameFa;
 
-  const cmsDescription = plainText(
-    liveProduct?.shortDescription ||
-      liveProduct?.description ||
-      "",
-  );
-
   const description =
-    liveProduct?.metaDescription?.trim() ||
-    cmsDescription ||
-    `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`;
+    getPublicSummary(
+      liveProduct?.shortDescription ||
+        liveProduct?.description ||
+        "",
+    ) ||
+    getPublicSummary(product.summary) ||
+    `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
   const image =
     liveImage?.src ||
@@ -403,23 +475,13 @@ const storefrontProducts =
     .slice(0, 3);
   const group = getGroupForCategory(product.category);
   const customerFaqs = getCustomerFaqs(product);
+  const productExperience = getProductExperience(product);
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct);
 
-const liveShortDescription = cleanProductHtml(
-  liveProduct?.shortDescription || "",
-);
-
-const liveDescription = cleanProductHtml(
-  liveProduct?.description || "",
-);
-
-const schemaDescription = plainText(
-  liveShortDescription ||
-    liveDescription ||
-    product.summary,
-);
+const schemaDescription =
+  getPublicSummary(product.summary) || product.nameFa;
 const schemaPrice = getSchemaPrice(liveProduct);
 
 const schemaAvailability =
@@ -441,11 +503,11 @@ const image = liveImage?.src || product.image;
       </div>
 
       <ProductVariantExperience
-        product={product}
+        product={productExperience}
         liveImage={liveImage}
         livePricing={livePricing}
-        liveShortDescription={liveShortDescription}
-        liveDescription={liveDescription}
+        liveShortDescription=""
+        liveDescription=""
       />
 
       {customerFaqs.length > 0 && (
@@ -488,7 +550,7 @@ const image = liveImage?.src || product.image;
           alternateName: product.nameEn,
           brand: {
             "@type": "Brand",
-            name: product.brand,
+            name: getCompactBrandLabel(product.brand),
           },
           category: product.categoryTitle,
           description: schemaDescription,
