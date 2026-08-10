@@ -128,6 +128,7 @@ async function wooRequest<T>(
   options: RequestInit = {},
   query?: URLSearchParams,
   timeoutMs = DEFAULT_WOO_TIMEOUT_MS,
+  maxAttemptsOverride?: number,
 ): Promise<WooRequestResult<T>> {
   const { consumerKey, consumerSecret } = config();
 
@@ -150,7 +151,10 @@ async function wooRequest<T>(
   const method = (options.method ?? "GET").toUpperCase();
 
   const canRetry = method === "GET" || method === "HEAD";
-  const maxAttempts = canRetry ? 3 : 1;
+  const maxAttempts = Math.max(
+    1,
+    maxAttemptsOverride ?? (canRetry ? 3 : 1),
+  );
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const controller = new AbortController();
@@ -395,6 +399,8 @@ export async function listProducts(params: {
   perPage?: number;
   search?: string;
   status?: string;
+  requestTimeoutMs?: number;
+  requestMaxAttempts?: number;
 }): Promise<CmsProductsResponse> {
   const page = Math.max(1, params.page ?? 1);
   const perPage = Math.max(1, Math.min(100, params.perPage ?? 30));
@@ -407,7 +413,13 @@ export async function listProducts(params: {
   });
   if (params.search?.trim()) query.set("search", params.search.trim());
 
-  const response = await wooRequest<WooProduct[]>("products", {}, query);
+  const response = await wooRequest<WooProduct[]>(
+    "products",
+    {},
+    query,
+    params.requestTimeoutMs,
+    params.requestMaxAttempts,
+  );
   return {
     products: response.data.map(mapProduct),
     page,
@@ -502,11 +514,16 @@ export async function trashProduct(id: number): Promise<CmsProduct> {
   return mapProduct(response.data);
 }
 
-export async function listCategories(): Promise<CmsCategory[]> {
+export async function listCategories(options: {
+  requestTimeoutMs?: number;
+  requestMaxAttempts?: number;
+} = {}): Promise<CmsCategory[]> {
   const response = await wooRequest<WooCategory[]>(
     "products/categories",
     {},
     new URLSearchParams({ per_page: "100", hide_empty: "false", orderby: "name" }),
+    options.requestTimeoutMs,
+    options.requestMaxAttempts,
   );
   return response.data.map((category) => ({
     id: category.id,
@@ -679,10 +696,19 @@ export async function connectionStatus(): Promise<CmsConnectionStatus> {
   };
 }
 
-export async function getSitePresentation(): Promise<Partial<SitePresentation> | null> {
+export async function getSitePresentation(options: {
+  requestTimeoutMs?: number;
+  requestMaxAttempts?: number;
+} = {}): Promise<Partial<SitePresentation> | null> {
   const response = await wooRequest<{
     presentation: Partial<SitePresentation> | null;
-  }>("sepiid-site-presentation");
+  }>(
+    "sepiid-site-presentation",
+    {},
+    undefined,
+    options.requestTimeoutMs,
+    options.requestMaxAttempts,
+  );
   return response.data.presentation;
 }
 

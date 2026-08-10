@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { articles } from "../data";
 import { getSitePresentation as getRemotePresentation } from "./woocommerce";
@@ -118,13 +119,28 @@ function mergePresentation(rawValue: Partial<SitePresentation> | null): SitePres
   };
 }
 
-export const getSitePresentation = cache(async () => {
+async function loadSitePresentation() {
   try {
-    return mergePresentation(await getRemotePresentation());
+    return mergePresentation(
+      await getRemotePresentation({
+        requestTimeoutMs: 2_500,
+        requestMaxAttempts: 1,
+      }),
+    );
   } catch {
     return DEFAULT_SITE_PRESENTATION;
   }
-});
+}
+
+const getCachedSitePresentation = unstable_cache(
+  loadSitePresentation,
+  ["site-presentation-v2"],
+  { revalidate: 300 },
+);
+
+export const getSitePresentation = cache(
+  getCachedSitePresentation,
+);
 
 export function applyArticlePresentation<T extends { slug: string }>(items: T[], presentation: SitePresentation) {
   const overrides = new Map(presentation.articles.map((item) => [item.slug, item]));

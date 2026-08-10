@@ -9,6 +9,7 @@ import { listCategories } from "./woocommerce";
 
 export const STOREFRONT_CATEGORIES_TAG =
   "storefront-categories";
+const PUBLIC_WOO_TIMEOUT_MS = 6_000;
 
 export type StorefrontCategory =
   Category & {
@@ -31,7 +32,10 @@ async function loadStorefrontCategories(): Promise<
 > {
   try {
     const wooCategories =
-      await listCategories();
+      await listCategories({
+        requestTimeoutMs: PUBLIC_WOO_TIMEOUT_MS,
+        requestMaxAttempts: 1,
+      });
 
     const wooBySlug = new Map(
       wooCategories.map((category) => [
@@ -81,7 +85,7 @@ async function loadStorefrontCategories(): Promise<
 const getCachedStorefrontCategories =
   unstable_cache(
     loadStorefrontCategories,
-    ["storefront-categories-v1"],
+    ["storefront-categories-v2"],
     {
       revalidate: 300,
       tags: [

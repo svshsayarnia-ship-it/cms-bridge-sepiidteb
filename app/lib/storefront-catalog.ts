@@ -17,6 +17,7 @@ import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
 const MAX_CATALOG_PAGES = 500;
+const PUBLIC_WOO_TIMEOUT_MS = 6_000;
 const DEFAULT_PRODUCT_IMAGE =
   "/images/editorial-detail.webp";
 
@@ -297,6 +298,8 @@ async function fetchAllWooProducts(): Promise<
       page,
       perPage: PRODUCTS_PER_PAGE,
       status: "all",
+      requestTimeoutMs: PUBLIC_WOO_TIMEOUT_MS,
+      requestMaxAttempts: 1,
     });
 
     products.push(...response.products);
@@ -388,7 +391,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 const getCachedStorefrontCatalog =
   unstable_cache(
     loadStorefrontCatalog,
-    ["storefront-catalog-v1"],
+    ["storefront-catalog-v2"],
     {
       revalidate: 300,
       tags: [STOREFRONT_CATALOG_TAG],
