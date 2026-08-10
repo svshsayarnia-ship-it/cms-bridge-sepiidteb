@@ -4063,6 +4063,69 @@ contain: paint;
   color: var(--sb-gold);
 }
 
+.sb-article-subsection {
+  margin-top: 30px;
+  padding: 22px 24px;
+  border-right: 3px solid var(--sb-gold);
+  border-radius: 0 var(--sb-radius-md) var(--sb-radius-md) 0;
+  background: var(--sb-beige);
+}
+
+.sb-article-subsection h3 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+.sb-article-subsection p {
+  margin: 0;
+  color: #514b45;
+  font-size: 0.86rem;
+  line-height: 2.1;
+}
+
+.sb-article-table {
+  max-inline-size: 100%;
+  margin: 28px 0;
+  overflow-x: auto;
+  border: 1px solid var(--sb-border);
+  border-radius: var(--sb-radius-md);
+  background: var(--sb-surface);
+}
+
+.sb-article-table table {
+  inline-size: 100%;
+  min-inline-size: 640px;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.sb-article-table :where(th, td) {
+  padding: 15px 17px;
+  border-bottom: 1px solid var(--sb-border);
+  vertical-align: top;
+  font-size: 0.76rem;
+  line-height: 1.9;
+}
+
+.sb-article-table th {
+  background: var(--sb-beige);
+  color: var(--sb-text);
+  font-weight: 700;
+}
+
+.sb-article-table td {
+  color: #514b45;
+}
+
+.sb-article-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sb-article-faq .sb-faq-list {
+  margin-top: 22px;
+}
+
 .sb-article-sources {
   margin-top: 55px;
   padding: 30px !important;
@@ -5121,6 +5184,19 @@ contain: paint;
   .sb-header__primary {
     grid-template-columns: minmax(190px, 0.7fr) minmax(300px, 1.2fr) auto;
     gap: 18px;
+  }
+
+  /* Keep the consultation CTA readable at tablet widths. The label is
+     rendered through ::after, so a shrinking flex item would otherwise wrap
+     each character into a vertical strip at the top-left of the header. */
+  .sb-header__consult[data-label] {
+    min-inline-size: 145px;
+    flex: 0 0 145px;
+    white-space: nowrap;
+  }
+
+  .sb-header__consult[data-label]::after {
+    white-space: nowrap;
   }
 
   .sb-nav {

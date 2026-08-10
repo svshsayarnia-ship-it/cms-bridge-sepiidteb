@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "../../components/ArticleCard";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
+import { FaqList } from "../../components/FaqList";
 import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
@@ -30,13 +31,13 @@ export async function generateMetadata({
   if (!article) return {};
 
   return {
-    title: article.title,
-    description: article.excerpt,
+    title: article.seoTitle || article.title,
+    description: article.metaDescription || article.excerpt,
     alternates: { canonical: `/magazine/${article.slug}` },
     openGraph: {
       type: "article",
-      title: article.title,
-      description: article.excerpt,
+      title: article.seoTitle || article.title,
+      description: article.metaDescription || article.excerpt,
       images: [
         article.slug === "verify-dermal-filler-authenticity"
           ? "/images/magazine-authenticity-v2.webp"
@@ -62,7 +63,9 @@ export default async function ArticlePage({
   const relatedProducts = products.filter((product) =>
     article.relatedProducts.includes(product.slug),
   );
-  const relatedArticles = articles.filter((item) => item.slug !== article.slug).slice(0, 2);
+  const relatedArticles = article.relatedArticles?.length
+    ? articles.filter((item) => article.relatedArticles?.includes(item.slug)).slice(0, 2)
+    : articles.filter((item) => item.slug !== article.slug).slice(0, 2);
 
   return (
     <main id="main-content">
@@ -93,13 +96,15 @@ export default async function ArticlePage({
           <figure>
             <img
               src={image}
-              alt=""
+              alt={article.imageAlt || `تصویر مقاله ${article.title}`}
               width="1672"
               height="941"
               fetchPriority="high"
               style={{ objectPosition: article.imagePosition }}
             />
-            <figcaption>تصویر ادیتوریال · بدون نمایش محصول یا برند مشخص</figcaption>
+            <figcaption>
+              {article.imageCaption || "تصویر ادیتوریال · بدون نمایش محصول یا برند مشخص"}
+            </figcaption>
           </figure>
         </div>
       </header>
@@ -114,11 +119,12 @@ export default async function ArticlePage({
                 {section.heading}
               </a>
             ))}
+            {article.faq?.length ? <a href="#faq">پرسش‌های پرتکرار</a> : null}
             <a href="#sources">منابع</a>
           </nav>
           <p>
             آخرین بازبینی محتوایی
-            <b>۲۵ ژوئیه ۲۰۲۶</b>
+            <b>{article.date.replace("به‌روزرسانی: ", "")}</b>
           </p>
         </aside>
 
@@ -147,8 +153,53 @@ export default async function ArticlePage({
                   ))}
                 </ul>
               )}
+              {section.table && (
+                <div className="sb-article-table" role="region" aria-label={section.heading}>
+                  <table>
+                    <thead>
+                      <tr>
+                        {section.table.headers.map((header) => (
+                          <th scope="col" key={header}>{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.table.rows.map((row) => (
+                        <tr key={row.join("|")}>
+                          {row.map((cell, cellIndex) => (
+                            <td key={`${cellIndex}-${cell}`}>{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {section.subsections?.map((subsection) => (
+                <div className="sb-article-subsection" key={subsection.heading}>
+                  <h3>{subsection.heading}</h3>
+                  {subsection.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                  {subsection.bullets && (
+                    <ul>
+                      {subsection.bullets.map((bullet) => (
+                        <li key={bullet}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
             </section>
           ))}
+
+          {article.faq?.length ? (
+            <section className="sb-article-faq" id="faq">
+              <span className="sb-eyebrow">FAQ / پرسش‌های پرتکرار</span>
+              <h2>سؤال‌هایی که معمولاً پیش از تصمیم مطرح می‌شوند</h2>
+              <FaqList items={article.faq} />
+            </section>
+          ) : null}
 
           <section className="sb-article-sources" id="sources">
             <span className="sb-eyebrow">SOURCES / منابع</span>
@@ -236,11 +287,27 @@ export default async function ArticlePage({
             "@type": "Organization",
             name: "Sepiid Beauty",
           },
-          datePublished: "2026-07-25",
-          dateModified: "2026-07-25",
+          datePublished: article.datePublished || "2026-07-25",
+          dateModified: article.dateModified || article.datePublished || "2026-07-25",
           mainEntityOfPage: `${siteOrigin}/magazine/${article.slug}`,
         }}
       />
+      {article.faq?.length ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: article.faq.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+          }}
+        />
+      ) : null}
     </main>
   );
 }

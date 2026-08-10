@@ -199,6 +199,8 @@ function mapWooProduct(
       ],
     faq:
       fallback?.faq ?? [],
+    publishedInCatalog:
+      fallback?.publishedInCatalog,
 
     wooId: product.id,
     sku: product.sku,
@@ -225,15 +227,21 @@ function mapWooProduct(
     focusKeyword:
       product.focusKeyword,
     sourceName:
-      product.sourceName,
+      product.sourceName ||
+      fallback?.sourceName ||
+      "",
     sourceUrl:
-      product.sourceUrl,
+      product.sourceUrl ||
+      fallback?.sourceUrl ||
+      "",
     reviewerName:
       product.reviewerName,
     reviewerRole:
       product.reviewerRole,
     reviewedAt:
-      product.reviewedAt,
+      product.reviewedAt ||
+      fallback?.reviewedAt ||
+      "",
     dateModifiedGmt:
       product.dateModifiedGmt,
     live: true,
@@ -259,11 +267,11 @@ function mapFallbackProduct(
     seoTitle: "",
     metaDescription: "",
     focusKeyword: "",
-    sourceName: "",
-    sourceUrl: "",
+    sourceName: product.sourceName ?? "",
+    sourceUrl: product.sourceUrl ?? "",
     reviewerName: "",
     reviewerRole: "",
-    reviewedAt: "",
+    reviewedAt: product.reviewedAt ?? "",
     dateModifiedGmt: "",
     live: false,
   };
@@ -324,12 +332,29 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
         ),
       );
 
+    const wooSlugs = new Set(
+      wooProducts
+        .map((product) => product.slug)
+        .filter(Boolean),
+    );
+
+    const publishedCodeProducts =
+      catalogProducts
+        .filter(
+          (product) =>
+            product.publishedInCatalog &&
+            !wooSlugs.has(product.slug),
+        )
+        .map(mapFallbackProduct);
+
     const uniqueProducts = Array.from(
       new Map(
-        mappedProducts.map((product) => [
-          product.slug,
-          product,
-        ]),
+        [...mappedProducts, ...publishedCodeProducts].map(
+          (product) => [
+            product.slug,
+            product,
+          ],
+        ),
       ).values(),
     );
 

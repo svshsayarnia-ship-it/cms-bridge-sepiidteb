@@ -5,7 +5,7 @@ import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
 const fallbackLastModified = new Date(
-  "2026-07-25",
+  "2026-08-10",
 );
 
 function getProductLastModified(
@@ -43,11 +43,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productRoutes =
     catalog.products.map((product) => ({
       url: `${siteOrigin}/product/${product.slug}`,
-      lastModified: product.live
+          lastModified: product.live
         ? getProductLastModified(
-            product.dateModifiedGmt,
+            product.dateModifiedGmt ||
+              product.reviewedAt,
           )
-        : fallbackLastModified,
+        : getProductLastModified(
+            product.reviewedAt,
+          ),
       changeFrequency:
         "weekly" as const,
       priority: product.live
@@ -94,8 +97,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     ...articles.map((article) => ({
       url: `${siteOrigin}/magazine/${article.slug}`,
-      lastModified:
-        fallbackLastModified,
+      lastModified: getProductLastModified(
+        article.dateModified ||
+          article.datePublished ||
+          "",
+      ),
       changeFrequency:
         "monthly" as const,
       priority: 0.7,

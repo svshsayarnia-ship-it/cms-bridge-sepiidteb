@@ -140,6 +140,17 @@ type ProductSeed = {
   warning?: string;
   image?: string;
   imageVerified?: boolean;
+  publishedInCatalog?: boolean;
+  sourceName?: string;
+  sourceUrl?: string;
+  reviewedAt?: string;
+  sourceStatus?: string;
+  summary?: string;
+  audience?: string;
+  features?: string[];
+  specs?: Array<[string, string]>;
+  checks?: string[];
+  faq?: Array<{ question: string; answer: string }>;
 };
 
 const seeds: ProductSeed[] = [
@@ -158,7 +169,61 @@ const seeds: ProductSeed[] = [
   { slug: "regenfill-volume", nameFa: "رجنفیل والیوم", nameEn: "Regenfill Volume", brand: "Regenfill", category: "fillers", type: "فیلر حجم‌دهنده" },
   { slug: "rabianca", nameFa: "رابیانکا", nameEn: "Rabianca", brand: "Rabianca", category: "fillers", type: "فیلر", volume: "۷۰ سی‌سی؛ گزارش برخی آگهی‌ها", warning: "عدد ۷۰ سی‌سی مشکوک است و پیش از انتشار قطعی باید با بسته رسمی تطبیق داده شود." },
 
-  { slug: "profhilo", nameFa: "پروفایلو", nameEn: "Profhilo", brand: "Profhilo", category: "skin-boosters", type: "محصول بیورمدلینگ بر پایه هیالورونیک اسید", volume: "۲ میلی‌لیتر؛ گزارش بازار", country: "ایتالیا؛ گزارش بازار", badge: "شناخته‌شده" },
+  {
+    slug: "profhilo",
+    nameFa: "پروفایلو ۶۴ میلی‌گرم",
+    nameEn: "PROFHILO® 64 mg",
+    brand: "PROFHILO / IBSA Derma",
+    category: "skin-boosters",
+    type: "محصول تزریقی بیورمدلینگ بر پایه هیالورونیک اسید",
+    volume: "۱ سرنگ از پیش پرشده ۲ میلی‌لیتری",
+    badge: "مشخصات رسمی",
+    publishedInCatalog: true,
+    sourceName: "IBSA Derma — PROFHILO®",
+    sourceUrl: "https://ibsadermanordic.com/products/profhilo/profhilo/",
+    reviewedAt: "2026-08-10",
+    sourceStatus: "تطبیق‌شده با صفحه رسمی IBSA Derma در ۱۹ مرداد ۱۴۰۵",
+    summary:
+      "پروفایلو ۶۴ میلی‌گرم یک محصول تزریقی هیالورونیک اسید برای بیورمدلینگ بافت است. سازنده آن را برای بهبود شلی پوست صورت و گردن معرفی می‌کند؛ این محصول با فیلرهای حجم‌دهنده یکسان نیست و انتخاب آن باید پس از ارزیابی پزشکی انجام شود.",
+    audience: "پزشکان و مراکز درمانی دارای صلاحیت تزریق",
+    features: [
+      "مجموع ۶۴ میلی‌گرم هیالورونیک اسید در سرنگ ۲ میلی‌لیتری",
+      "ترکیب هیبریدی هیالورونیک اسید با وزن مولکولی بالا و پایین",
+      "کاربری حرفه‌ای؛ بدون وعده حجم‌دهی یا نتیجه یکسان برای همه",
+    ],
+    specs: [
+      ["نام رسمی", "PROFHILO® 64 mg"],
+      ["سازنده", "IBSA Derma"],
+      ["گروه محصول", "محصول تزریقی بیورمدلینگ بر پایه هیالورونیک اسید"],
+      ["مقدار هیالورونیک اسید", "۶۴ میلی‌گرم در مجموع"],
+      ["حجم سرنگ", "۲ میلی‌لیتر"],
+      ["ساختار ماده", "کمپلکس هیبریدی هیالورونیک اسید با وزن مولکولی بالا و پایین"],
+      ["ناحیه ذکرشده توسط سازنده", "صورت و گردن"],
+      ["وضعیت عرضه", "فقط برای مصرف حرفه‌ای؛ موجودی و مشخصات همان بچ باید استعلام شود"],
+    ],
+    checks: [
+      "نام PROFHILO®، عبارت 64 mg و حجم 2 ml روی بسته با سفارش تطبیق داده شود.",
+      "پلمب، بچ‌کد، تاریخ و سلامت سرنگ پیش از تحویل بررسی و ثبت شود.",
+      "نسخه محصول، بروشور همان بسته و وضعیت مجاز عرضه در محل مصرف تأیید شود.",
+    ],
+    faq: [
+      {
+        question: "آیا پروفایلو همان فیلر حجم‌دهنده است؟",
+        answer:
+          "خیر. پروفایلو در منابع رسمی به‌عنوان محصول بیورمدلینگ معرفی می‌شود. هدف، ناحیه و تکنیک آن با فیلر حجم‌دهنده فرق دارد و تشخیص این تفاوت بر عهده پزشک است.",
+      },
+      {
+        question: "بسته پروفایلو ۶۴ میلی‌گرم چه حجمی دارد؟",
+        answer:
+          "نسخه بررسی‌شده در منبع رسمی، ۶۴ میلی‌گرم هیالورونیک اسید را در یک سرنگ ۲ میلی‌لیتری ارائه می‌کند. پیش از خرید، مشخصات همان بسته موجود را دوباره تطبیق دهید.",
+      },
+      {
+        question: "آیا نتیجه پروفایلو برای همه یکسان است؟",
+        answer:
+          "خیر. وضعیت پوست، سن، ناحیه، پروتکل و شرایط فردی روی نتیجه اثر می‌گذارند. این صفحه تضمین نتیجه یا توصیه شخصی ارائه نمی‌کند.",
+      },
+    ],
+  },
   { slug: "ejal-40", nameFa: "اجال ۴۰", nameEn: "Ejal 40", brand: "Ejal", category: "skin-boosters", type: "اسکین‌بوستر و مزوژل آبرسان" },
   { slug: "kiara-reju", nameFa: "کیارا ریجو", nameEn: "Kiara Reju", brand: "Kiara", category: "skin-boosters", type: "مزوژل و اسکین‌بوستر", volume: "۳ سرنگ ۲٫۲ میلی‌لیتری؛ مجموع ۶٫۶ میلی‌لیتر", country: "کره جنوبی؛ گزارش بازار", detail: "شرکت BioPlus در برخی آگهی‌ها" },
   { slug: "mesoheal-plus", nameFa: "مزوهیل پلاس", nameEn: "Mesoheal Plus", brand: "Mesoheal", category: "skin-boosters", type: "مزوژل جوان‌ساز", country: "کره جنوبی؛ گزارش بازار", detail: "شرکت Krofarma در برخی آگهی‌ها", warning: "شرکت و طبقه‌بندی محصول نیازمند تأیید رسمی است." },
@@ -190,7 +255,60 @@ const seeds: ProductSeed[] = [
   { slug: "medicube-pdrn", nameFa: "پی‌دی‌آر‌ان مدی‌کیوب", nameEn: "Medicube PDRN", brand: "Medicube", category: "rejuvenation-cocktails", type: "کوکتل جوان‌سازی حاوی PDRN؛ عنوان بازار", volume: "۲ میلی‌لیتر، بسته ۱۰ عددی؛ گزارش بازار", warning: "نوع محصول، ترکیبات و روش مصرف رسمی تأیید شود." },
 
   { slug: "fusion-f-radiance", nameFa: "فیوژن اف رادیانس", nameEn: "Fusion F-RADIANCE", brand: "Fusion", category: "brightening-cocktails", type: "کوکتل روشن‌کننده و شفاف‌کننده" },
-  { slug: "fusion-f-melaclear", nameFa: "فیوژن اف ملاکلیر", nameEn: "Fusion F-MELACLEAR", brand: "Fusion", category: "brightening-cocktails", type: "کوکتل ضدلک و یکنواخت‌کننده رنگ پوست" },
+  {
+    slug: "fusion-f-melaclear",
+    nameFa: "فیوژن اف ملاکلیر",
+    nameEn: "Fusion F-MELACLEAR",
+    brand: "Fusion Meso",
+    category: "brightening-cocktails",
+    type: "ویال استریل حرفه‌ای برای لک و ناهماهنگی رنگ پوست",
+    volume: "۵ ویال ۱۰ میلی‌لیتری",
+    badge: "مشخصات رسمی",
+    publishedInCatalog: true,
+    sourceName: "Fusion Meso — F-MELACLEAR",
+    sourceUrl: "https://fusionmeso.com/product/f-melaclear-sterile-serum-vials-for-pigmentation-dark-spots/",
+    reviewedAt: "2026-08-10",
+    sourceStatus: "تطبیق‌شده با صفحه رسمی Fusion Meso در ۱۹ مرداد ۱۴۰۵",
+    summary:
+      "فیوژن اف ملاکلیر مجموعه‌ای از ویال‌های استریل حرفه‌ای برای لک‌های موضعی و ناهماهنگی رنگ پوست است. ترکیب‌های اعلام‌شده سازنده شامل نیاسینامید، ترانگزامیک اسید، رزورسینول، گلوتاتیون و آربوتین است؛ تناسب روش استفاده باید برای هر مراجعه‌کننده جداگانه بررسی شود.",
+    audience: "پزشکان و متخصصان واجد صلاحیت در درمان‌های حرفه‌ای پوست",
+    features: [
+      "بسته رسمی اعلام‌شده: ۵ ویال ۱۰ میلی‌لیتری",
+      "فهرست ترکیبات فعال بر اساس صفحه رسمی سازنده",
+      "تمرکز بر لک موضعی؛ بدون وعده پاک‌شدن قطعی یا دائمی لک",
+    ],
+    specs: [
+      ["نام رسمی", "F-MELACLEAR"],
+      ["برند", "Fusion Meso"],
+      ["شکل محصول", "ویال استریل حرفه‌ای"],
+      ["تعداد و حجم", "۵ ویال، هر ویال ۱۰ میلی‌لیتر"],
+      ["ترکیبات فعال اعلام‌شده", "نیاسینامید، ترانگزامیک اسید، رزورسینول، گلوتاتیون و آربوتین"],
+      ["موارد هدف اعلام‌شده", "ملاسما، تیرگی موضعی، هایپرپیگمنتیشن و ناهماهنگی رنگ پوست"],
+      ["وضعیت عرضه", "مصرف حرفه‌ای؛ روش کاربرد از بروشور همان بسته بررسی شود"],
+    ],
+    checks: [
+      "نام F-MELACLEAR و بسته 5 × 10 ml با محصول تحویلی تطبیق داده شود.",
+      "فهرست ترکیبات، بچ‌کد، تاریخ و پلمب روی همان بسته بررسی شود.",
+      "علت لک، نوع پوست، منع مصرف و روش کاربرد پیش از شروع کار توسط فرد متخصص ارزیابی شود.",
+    ],
+    faq: [
+      {
+        question: "ترکیبات اصلی اف ملاکلیر چیست؟",
+        answer:
+          "صفحه رسمی Fusion Meso نیاسینامید، ترانگزامیک اسید، رزورسینول، گلوتاتیون و آربوتین را به‌عنوان ترکیبات فعال نام می‌برد. برچسب همان بچ، مرجع نهایی تحویل است.",
+      },
+      {
+        question: "آیا اف ملاکلیر هر نوع لکی را از بین می‌برد؟",
+        answer:
+          "خیر. لک علت‌های متفاوتی دارد و پاسخ پوست‌ها یکسان نیست. تشخیص علت، محافظت در برابر آفتاب و انتخاب پروتکل مناسب باید پیش از خرید محصول در نظر گرفته شود.",
+      },
+      {
+        question: "این محصول برای مصرف خانگی است؟",
+        answer:
+          "این صفحه نسخه ویال استریل حرفه‌ای را معرفی می‌کند. روش کاربرد و صلاحیت مصرف‌کننده باید از بروشور رسمی و مقررات محل عرضه بررسی شود.",
+      },
+    ],
+  },
   { slug: "fusion-f-vitamin-c", nameFa: "فیوژن اف ویتامین سی", nameEn: "Fusion F-VITAMIN C", brand: "Fusion", category: "brightening-cocktails", type: "کوکتل حاوی ویتامین C" },
   { slug: "fusion-f-melirutin", nameFa: "فیوژن اف ملی‌روتین", nameEn: "Fusion F-MELIRUTIN", brand: "Fusion", category: "brightening-cocktails", type: "کوکتل ضدلک", volume: "۱۰ میلی‌لیتر؛ گزارش بازار" },
   { slug: "revitacare-532", nameFa: "رویتاکر ۵۳۲", nameEn: "Revitacare 532", brand: "Revitacare", category: "brightening-cocktails", type: "کوکتل روشن‌کننده و ضدلک", volume: "نسخه ۵ میلی‌لیتری؛ گزارش بازار", warning: "نسخه و نوع رسمی محصول تأیید شود." },
@@ -203,7 +321,61 @@ const seeds: ProductSeed[] = [
   { slug: "mesolike-eye-top", nameFa: "مزولایک آی تاپ", nameEn: "Mesolike Eye Top", brand: "Mesolike", category: "eye-cocktails", type: "کوکتل دور چشم", volume: "۵ میلی‌لیتر؛ گزارش بازار" },
 
   { slug: "fusion-f-hair", nameFa: "فیوژن اف هیر", nameEn: "Fusion F-HAIR", brand: "Fusion", category: "hair-cocktails", type: "کوکتل مو", volume: "نسخه‌های متفاوت در بازار" },
-  { slug: "fusion-f-hair-men", nameFa: "فیوژن اف هیر من", nameEn: "Fusion F-Hair Men", brand: "Fusion", category: "hair-cocktails", type: "کوکتل موی مردانه" },
+  {
+    slug: "fusion-f-hair-men",
+    nameFa: "فیوژن اف هیر من",
+    nameEn: "Fusion F-HAIR MEN",
+    brand: "Fusion Meso",
+    category: "hair-cocktails",
+    type: "ویال استریل حرفه‌ای مو و پوست سر",
+    volume: "۵ ویال ۵ میلی‌لیتری",
+    badge: "مشخصات رسمی",
+    publishedInCatalog: true,
+    sourceName: "Fusion Meso — F-HAIR MEN",
+    sourceUrl: "https://fusionmeso.com/product/f-hair-men-sterile-vials-for-androgenic-alopecia-hair-loss/",
+    reviewedAt: "2026-08-10",
+    sourceStatus: "تطبیق‌شده با صفحه رسمی Fusion Meso در ۱۹ مرداد ۱۴۰۵",
+    summary:
+      "فیوژن اف هیر من یک مجموعه ویال استریل حرفه‌ای برای مراقبت‌های تخصصی مو و پوست سر است. سازنده آن را برای ریزش موی آندروژنتیک و نازک‌شدن مو معرفی می‌کند، اما انتخاب محصول نباید جای تشخیص علت ریزش توسط پزشک را بگیرد.",
+    audience: "پزشکان و متخصصان واجد صلاحیت در درمان‌های مو و پوست سر",
+    features: [
+      "بسته رسمی اعلام‌شده: ۵ ویال ۵ میلی‌لیتری",
+      "ترکیب پپتیدها، فاکتورهای رشد، سیلیسیوم آلی، دکسپانتنول و هیالورونیک اسید",
+      "مناسب برای بررسی حرفه‌ای پس از تشخیص علت ریزش؛ نه نسخه عمومی",
+    ],
+    specs: [
+      ["نام رسمی", "F-HAIR MEN"],
+      ["برند", "Fusion Meso"],
+      ["شکل محصول", "ویال استریل حرفه‌ای"],
+      ["تعداد و حجم", "۵ ویال، هر ویال ۵ میلی‌لیتر"],
+      ["پپتیدها و عصاره", "استیل تتراپپتید-۳، عصاره شبدر، تری‌پپتید مس-۱ و دکاپپتید-۴"],
+      ["سایر ترکیبات اعلام‌شده", "FGF، VEGF، سیلیسیوم آلی، کارنوزین، دکسپانتنول و هیالورونیک اسید"],
+      ["موارد هدف اعلام‌شده", "ریزش موی آندروژنتیک، نازک‌شدن مو و مراقبت حرفه‌ای پوست سر"],
+      ["وضعیت عرضه", "مصرف حرفه‌ای؛ پروتکل از بروشور همان بسته بررسی شود"],
+    ],
+    checks: [
+      "نام F-HAIR MEN و بسته 5 × 5 ml با محصول تحویلی تطبیق داده شود.",
+      "ترکیبات، بچ‌کد، تاریخ و سلامت ویال‌ها روی همان بسته بررسی و ثبت شود.",
+      "پیش از انتخاب کوکتل، علت ریزش و گزینه‌های درمانی مبتنی بر شواهد توسط پزشک بررسی شود.",
+    ],
+    faq: [
+      {
+        question: "اف هیر من برای چه نوع ریزشی معرفی شده است؟",
+        answer:
+          "سازنده از ریزش موی آندروژنتیک، نازک‌شدن مو و مراقبت از پوست سر نام می‌برد. با این حال، نام محصول به‌تنهایی تشخیص پزشکی نیست.",
+      },
+      {
+        question: "بسته اف هیر من چند ویال دارد؟",
+        answer:
+          "طبق صفحه رسمی سازنده، بسته شامل ۵ ویال استریل ۵ میلی‌لیتری است. هنگام سفارش، تعداد، حجم و نام مدل را روی بسته موجود دوباره کنترل کنید.",
+      },
+      {
+        question: "آیا اف هیر من جایگزین درمان پزشکی ریزش مو است؟",
+        answer:
+          "خیر. ابتدا باید علت ریزش مشخص شود. پزشک ممکن است بر اساس تشخیص، درمان‌های دیگری را مقدم بداند یا این محصول را مناسب نداند.",
+      },
+    ],
+  },
   { slug: "revitacare-haircare", nameFa: "رویتاکر هیرکر", nameEn: "Revitacare Haircare", brand: "Revitacare", category: "hair-cocktails", type: "کوکتل مو", volume: "چند نسخه متفاوت در بازار", warning: "نسخه دقیق روی بسته مبنای سفارش است." },
   { slug: "dermaheal-hl", nameFa: "درماهیل اچ‌ال", nameEn: "Dermaheal HL", brand: "Dermaheal", category: "hair-cocktails", type: "کوکتل مو", volume: "۵ میلی‌لیتر؛ گزارش بازار" },
   { slug: "mesolike-hair", nameFa: "مزولایک ضدریزش مو", nameEn: "Mesolike Hair", brand: "Mesolike", category: "hair-cocktails", type: "کوکتل مو", volume: "۱۰ میلی‌لیتر؛ گزارش بازار" },
@@ -229,10 +401,10 @@ const fallbackImages: Record<string, string> = Object.fromEntries(
 
 function makeProduct(seed: ProductSeed): Product {
   const category = catalogCategories.find((item) => item.slug === seed.category)!;
-  const sourceStatus = seed.warning
+  const sourceStatus = seed.sourceStatus ?? (seed.warning
     ? "نیازمند تطبیق پیش از انتشار قطعی"
-    : "اطلاعات اولیه بازار؛ در انتظار تطبیق رسمی";
-  const specs: Array<[string, string]> = [
+    : "اطلاعات اولیه بازار؛ در انتظار تطبیق رسمی");
+  const specs: Array<[string, string]> = seed.specs ?? [
     ["گروه محصول", seed.type],
     ["برند", seed.brand],
     ["وضعیت اطلاعات", sourceStatus],
@@ -262,22 +434,23 @@ function makeProduct(seed: ProductSeed): Product {
     sourceStatus,
     warning: seed.warning,
     summary:
+      seed.summary ??
       `${seed.nameFa} در گروه ${category.title} قرار می‌گیرد. این صفحه برای مقایسه فنی، بررسی بسته‌بندی و استعلام اطلاعات همان بچ آماده شده است.`,
     shortBenefit: shortBenefits[seed.category],
-    audience: "پزشکان، کلینیک‌ها و مسئولان خرید حرفه‌ای",
-    features: [
+    audience: seed.audience ?? "پزشکان، کلینیک‌ها و مسئولان خرید حرفه‌ای",
+    features: seed.features ?? [
       "تطبیق نام کامل مدل با بسته موجود پیش از سفارش",
       "درخواست تصویر بچ‌کد، تاریخ و پلمب قابل مشاهده",
       "تفکیک اطلاعات بازار از مشخصات تأییدشده سازنده",
     ],
     specs,
-    checks: [
+    checks: seed.checks ?? [
       "نام محصول، مدل و مشخصات روی جعبه با سفارش تطبیق داده شود.",
       "بچ‌کد، تاریخ، پلمب و سلامت بسته‌بندی پیش از تحویل بررسی شود.",
       seed.warning ??
         "ترکیبات، مجوز و شرایط نگهداری از روی بسته و بروشور رسمی همان محصول تأیید شود.",
     ],
-    faq: [
+    faq: seed.faq ?? [
       {
         question: `اطلاعات ${seed.nameFa} در این صفحه قطعی است؟`,
         answer:
@@ -289,6 +462,10 @@ function makeProduct(seed: ProductSeed): Product {
           "در صورت موجودی، نام دقیق مدل، تصویر قابل‌ارائه از بسته، بچ‌کد و تاریخ قابل مشاهده و شرایط تحویل بررسی می‌شود.",
       },
     ],
+    publishedInCatalog: seed.publishedInCatalog,
+    sourceName: seed.sourceName,
+    sourceUrl: seed.sourceUrl,
+    reviewedAt: seed.reviewedAt,
   };
 }
 

@@ -10,7 +10,7 @@ import { applyArticlePresentation, getSitePresentation } from "../lib/site-prese
 export const metadata: Metadata = {
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
   description:
-    "مقالات منبع‌دار و به‌روز درباره اصالت فیلر، تفاوت اسکین‌بوستر و مزوژل، مراقبت پیش و پس از تزریق و مدیریت خرید کلینیک.",
+    "مقالات منبع‌دار و به‌روز درباره پروفایلو، فیلر، اسکین‌بوستر، ریزش مو، اصالت محصولات و مدیریت خرید کلینیک.",
   alternates: { canonical: "/magazine" },
   openGraph: {
     title: "مجله سپید | Sepiid Beauty",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function MagazinePage() {
   const editableArticles = applyArticlePresentation(articles, await getSitePresentation());
   const featured =
-    editableArticles.find((article) => article.slug === "botulinum-cold-chain-checklist") ??
+    editableArticles.find((article) => article.slug === "profhilo-vs-dermal-filler") ??
     editableArticles[0];
 
   return (
@@ -75,7 +75,7 @@ export default async function MagazinePage() {
       <section className="sb-topic-strip">
         <div className="sb-shell">
           <span>موضوع‌ها:</span>
-          {["راهنمای انتخاب", "ایمنی و اصالت", "مراقبت آگاهانه", "مدیریت کلینیک"].map(
+          {["راهنمای انتخاب", "مو و پوست سر", "ایمنی و اصالت", "مراقبت آگاهانه"].map(
             (topic) => (
               <a href="#articles" key={topic}>
                 {topic}

@@ -233,6 +233,17 @@ function buildCmsOnlyProduct(
         "نام محصول، بسته‌بندی، تاریخ و بچ‌کد پیش از مصرف بررسی شود.",
       ],
     faq: fallback?.faq ?? [],
+    publishedInCatalog:
+      fallback?.publishedInCatalog,
+    sourceName:
+      cmsProduct.sourceName ||
+      fallback?.sourceName,
+    sourceUrl:
+      cmsProduct.sourceUrl ||
+      fallback?.sourceUrl,
+    reviewedAt:
+      cmsProduct.reviewedAt ||
+      fallback?.reviewedAt,
   };
 }
 function getSchemaPrice(
@@ -599,23 +610,23 @@ const image = liveImage?.src || product.image;
     </div>
   ))}
 
-  {liveProduct?.sourceName && (
+  {product.sourceName && (
     <div>
       <dt>منبع اطلاعات</dt>
       <dd>
-        {liveProduct.sourceUrl &&
+        {product.sourceUrl &&
         /^https?:\/\//i.test(
-          liveProduct.sourceUrl,
+          product.sourceUrl,
         ) ? (
           <a
-            href={liveProduct.sourceUrl}
+            href={product.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {liveProduct.sourceName}
+            {product.sourceName}
           </a>
         ) : (
-          liveProduct.sourceName
+          product.sourceName
         )}
       </dd>
     </div>
@@ -633,12 +644,12 @@ const image = liveImage?.src || product.image;
     </div>
   )}
 
-  {liveProduct?.reviewedAt && (
+  {product.reviewedAt && (
     <div>
       <dt>تاریخ آخرین بازبینی</dt>
       <dd>
         {formatReviewDate(
-          liveProduct.reviewedAt,
+          product.reviewedAt,
         )}
       </dd>
     </div>
