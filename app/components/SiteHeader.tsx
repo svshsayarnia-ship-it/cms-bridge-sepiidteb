@@ -10,6 +10,7 @@ import {
   whatsappHref,
   type Category,
 } from "../data";
+import { preparePublicImageProduct } from "../lib/public-product-image";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -27,6 +28,11 @@ const navItems = [
   { href: "/professional", label: "همکاری با کلینیک‌ها" },
   { href: "/contact", label: "تماس" },
 ];
+
+const publicSearchProducts = products.flatMap((product) => {
+  const publicProduct = preparePublicImageProduct(product);
+  return publicProduct ? [publicProduct] : [];
+});
 
 function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: string }) {
   return (
@@ -82,9 +88,9 @@ export function SiteHeader({
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
-    if (!normalized) return products.slice(0, 5);
+    if (!normalized) return publicSearchProducts.slice(0, 5);
 
-    return products
+    return publicSearchProducts
       .filter((product) =>
         [
           product.nameFa,
@@ -275,17 +281,17 @@ export function SiteHeader({
             </button>
           </div>
         )}
-{mobileOpen && (
-  <button
-    className="sb-mobile-menu-backdrop"
-    type="button"
-    aria-label="بستن منوی موبایل"
-    onClick={() => {
-      setMobileOpen(false);
-      setCategoriesOpen(false);
-    }}
-  />
-)}
+        {mobileOpen && (
+          <button
+            className="sb-mobile-menu-backdrop"
+            type="button"
+            aria-label="بستن منوی موبایل"
+            onClick={() => {
+              setMobileOpen(false);
+              setCategoriesOpen(false);
+            }}
+          />
+        )}
         <div
           ref={mobilePanel}
           id="mobile-navigation"
