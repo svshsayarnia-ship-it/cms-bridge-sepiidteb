@@ -7,6 +7,7 @@ import {
   catalogGroups,
   productHref,
 } from "../catalog";
+import { toPublicCatalogItem } from "../lib/public-catalog-item";
 import { getStorefrontCategories } from "../lib/storefront-categories";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
@@ -29,6 +30,7 @@ export default async function ShopPage() {
       getStorefrontCatalog(),
       getStorefrontCategories(),
     ]);
+  const publicCatalogItems = products.map(toPublicCatalogItem);
 
   return (
     <main id="main-content">
@@ -51,10 +53,8 @@ export default async function ShopPage() {
             </h1>
 
             <p>
-              محصولات را با دسته، برند و سطح
-              دسترسی فیلتر کنید. هر کارت به صفحه
-              مستقلی می‌رسد که مشخصات، فرایند
-              بررسی و مسیر استعلام را یک‌جا دارد.
+              محصولات را با دسته و برند مرور کنید. هر کارت به صفحه مستقلی می‌رسد
+              که مدل‌ها، مشخصات قابل‌نمایش و مسیر استعلام را یک‌جا دارد.
             </p>
           </div>
 
@@ -151,13 +151,13 @@ export default async function ShopPage() {
       </section>
 
       <section className="sb-section sb-catalog-section">
-  <div className="sb-shell">
-    <ShopCatalog
-      items={products}
-      categoryOptions={categories}
-    />
-  </div>
-</section>
+        <div className="sb-shell">
+          <ShopCatalog
+            items={publicCatalogItems}
+            categoryOptions={categories}
+          />
+        </div>
+      </section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">
@@ -175,9 +175,8 @@ export default async function ShopPage() {
           <div>
             <p>
               عنوان دسته برای تصمیم نهایی کافی
-              نیست. نام کامل محصول، اطلاعات
-              سازنده، مشخصات بسته و نظر پزشک باید
-              کنار هم دیده شوند.
+              نیست. نام کامل محصول، مشخصات بسته و
+              نظر فرد واجد صلاحیت باید کنار هم دیده شوند.
             </p>
 
             <p>
