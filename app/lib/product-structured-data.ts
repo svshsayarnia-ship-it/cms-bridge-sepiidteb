@@ -16,11 +16,20 @@ function absoluteUrl(siteOrigin: string, value: string) {
 }
 
 function schemaIdentifier(value: string) {
-  return value
+  const normalized = value
     .normalize("NFKD")
     .replace(/[^A-Za-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 120);
+
+  if (normalized) return normalized;
+
+  return (
+    encodeURIComponent(value.trim() || "variant")
+      .replace(/%/g, "")
+      .replace(/[^A-Za-z0-9._-]+/g, "-")
+      .slice(0, 120) || "variant"
+  );
 }
 
 function variantUrl(siteOrigin: string, slug: string, variantId: string) {
