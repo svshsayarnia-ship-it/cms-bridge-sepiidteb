@@ -16,6 +16,19 @@ export type PublicCatalogItem = Pick<
   brand: string;
 };
 
+function getPublicVolumeLabel(value?: string) {
+  if (!value) return undefined;
+
+  const clean = value
+    .replace(
+      /(?:؛|،)?\s*(?:(?:در|طبق)\s+)?فهرست(?:\s+(?:موجودی|بازار))?.*$/u,
+      "",
+    )
+    .trim();
+
+  return clean || undefined;
+}
+
 export function toPublicCatalogItem(product: Product): PublicCatalogItem {
   return {
     slug: product.slug,
@@ -27,6 +40,6 @@ export function toPublicCatalogItem(product: Product): PublicCatalogItem {
     badge: product.badge,
     image: product.image,
     imageAlt: product.imageAlt,
-    volume: product.volume,
+    volume: getPublicVolumeLabel(product.volume),
   };
 }
