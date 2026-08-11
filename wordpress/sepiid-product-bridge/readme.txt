@@ -4,7 +4,7 @@ Tags: woocommerce, rest-api, cms, media, customers
 Requires at least: 6.9
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -85,7 +85,17 @@ Sepiid Product Bridge قابلیت‌های تکمیلی موردنیاز Sepiid
 
 صحیح است. مرورگر بدون Consumer Key و Consumer Secret نباید به این مسیر دسترسی داشته باشد. آزمون واقعی باید از CMS یا ابزار API امن انجام شود.
 
+= خطای Cannot redeclare بعد از نصب نسخه جدید =
+
+نسخه 1.8.1 Bootstrap ضدتداخل دارد و در صورت فعال‌بودن هم‌زمان نسخه قدیمی به‌جای Fatal خودکار متوقف می‌شود و در مدیریت WordPress هشدار نشان می‌دهد. با این حال فقط یک پوشه Sepiid Product Bridge باید فعال بماند و نسخه‌های قدیمی بهتر است حذف شوند.
+
 == Changelog ==
+
+= 1.8.1 =
+
+* جلوگیری از Fatal در صورت باقی‌ماندن یا فعال‌بودن هم‌زمان یک نسخه قدیمی Sepiid Product Bridge.
+* تشخیص نسخه قدیمی پیش از تعریف constant/functionهای تاریخی و پیش از بارگذاری Controllerها.
+* مدیریت امن وجود دو کپی از بسته 1.8.1 بدون redeclare.
 
 = 1.8.0 =
 
