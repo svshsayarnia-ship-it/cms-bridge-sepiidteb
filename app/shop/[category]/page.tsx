@@ -10,6 +10,7 @@ import {
   getGroupForCategory,
   productHref,
 } from "../../catalog";
+import { toPublicCatalogItem } from "../../lib/public-catalog-item";
 import {
   getStorefrontCategories,
   getStorefrontCategoryBySlug,
@@ -79,6 +80,7 @@ export default async function CategoryPage({
     (product) =>
       product.category === category.slug,
   );
+  const publicCatalogItems = items.map(toPublicCatalogItem);
 
   const group = getGroupForCategory(
     category.slug,
@@ -171,7 +173,7 @@ export default async function CategoryPage({
       <section className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
-            items={items}
+            items={publicCatalogItems}
             initialCategory={category.slug}
           />
         </div>
@@ -192,10 +194,9 @@ export default async function CategoryPage({
           <div>
             <p>
               ابتدا هدف و مخاطب محصول را مشخص
-              کنید؛ سپس نام کامل مدل، ترکیب
-              درج‌شده و روش استفاده سازنده را
-              بخوانید. عنوان بازاری یا محبوبیت،
-              جای این بررسی را نمی‌گیرد.
+              کنید؛ سپس نام کامل مدل و مشخصات درج‌شده روی بسته را بخوانید. عنوان
+              بازاری یا محبوبیت، جای این بررسی را
+              نمی‌گیرد.
             </p>
 
             <p>

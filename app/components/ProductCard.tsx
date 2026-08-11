@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { productHref } from "../catalog";
-import type { Product } from "../data";
+import type { PublicCatalogItem } from "../lib/public-catalog-item";
 import { getCompactBrandLabel } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
@@ -11,7 +11,7 @@ export function ProductCard({
   product,
   priority = false,
 }: {
-  product: Product;
+  product: PublicCatalogItem;
   priority?: boolean;
 }) {
   const href = productHref(product);
