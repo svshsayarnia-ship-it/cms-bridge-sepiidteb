@@ -1424,28 +1424,44 @@ contain: paint;
     linear-gradient(145deg, #faf8f5 0%, #f1ece6 100%);
 }
 
-.sb-category-visual[data-category="body-fillers"],
-.sb-category-visual[data-category="hyaluronidase-products"] {
+.sb-category-visual[data-category="body-fillers"] {
   --category-accent: #877b70;
   --category-accent-rgb: 135, 123, 112;
 }
 
-.sb-category-visual[data-category="skin-boosters"],
-.sb-category-visual[data-category="brightening-cocktails"] {
+.sb-category-visual[data-category="skin-boosters"] {
   --category-accent: #8d9b91;
   --category-accent-rgb: 141, 155, 145;
 }
 
-.sb-category-visual[data-category="botulinum-toxins"],
-.sb-category-visual[data-category="eye-cocktails"] {
+.sb-category-visual[data-category="botulinum-toxins"] {
   --category-accent: #8c829b;
   --category-accent-rgb: 140, 130, 155;
 }
 
-.sb-category-visual[data-category="rejuvenation-cocktails"],
-.sb-category-visual[data-category="hair-cocktails"] {
+.sb-category-visual[data-category="rejuvenation-cocktails"] {
   --category-accent: #a68870;
   --category-accent-rgb: 166, 136, 112;
+}
+
+.sb-category-visual[data-category="brightening-cocktails"] {
+  --category-accent: #b09562;
+  --category-accent-rgb: 176, 149, 98;
+}
+
+.sb-category-visual[data-category="eye-cocktails"] {
+  --category-accent: #7d93a3;
+  --category-accent-rgb: 125, 147, 163;
+}
+
+.sb-category-visual[data-category="hair-cocktails"] {
+  --category-accent: #7f8d79;
+  --category-accent-rgb: 127, 141, 121;
+}
+
+.sb-category-visual[data-category="hyaluronidase-products"] {
+  --category-accent: #817d7a;
+  --category-accent-rgb: 129, 125, 122;
 }
 
 .sb-category-visual__grid,
@@ -1484,46 +1500,50 @@ contain: paint;
 
 .sb-category-visual__subject {
   z-index: 1;
-  inset: 10% 10% 15%;
+  inset: 7% 6% 13%;
   display: grid;
   place-items: center;
-  filter: drop-shadow(0 15px 18px rgba(47, 42, 37, 0.12));
-  transform: rotate(-5deg) scale(0.9);
+  filter: drop-shadow(0 16px 18px rgba(47, 42, 37, 0.14));
+  transform: rotate(-3deg) scale(0.94);
   transform-origin: center;
   transition: transform 640ms var(--sb-ease), filter 640ms ease;
 }
 
-.sb-category-visual__subject svg {
+.sb-category-card .sb-category-visual__subject > svg {
   width: 100%;
   height: 100%;
+  max-width: none;
   overflow: visible;
-  fill: rgba(255, 255, 255, 0.72);
-  stroke: rgba(47, 42, 37, 0.45);
-  stroke-width: 1.45;
+  fill: none;
+  stroke: rgba(47, 42, 37, 0.68);
+  stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.sb-category-visual__subject path,
-.sb-category-visual__subject rect {
+.sb-category-visual__subject :is(path, rect, circle) {
   vector-effect: non-scaling-stroke;
 }
 
-.sb-category-visual__subject .sb-category-subject__label-line,
-.sb-category-visual__subject .sb-category-subject__ampoule,
-.sb-category-visual__subject .sb-category-subject__hair-line {
-  fill: none;
+.sb-category-visual__subject .sb-category-subject__solid {
+  fill: rgba(255, 255, 255, 0.86);
 }
 
-.sb-category-visual__subject .sb-category-subject__box,
-.sb-category-visual__subject .sb-category-subject__ampoules,
-.sb-category-visual__subject .sb-category-subject__cocktail {
-  fill: rgba(var(--category-accent-rgb), 0.15);
+.sb-category-visual__subject .sb-category-subject__accent {
+  fill: rgba(var(--category-accent-rgb), 0.24);
+  stroke: rgba(var(--category-accent-rgb), 0.72);
 }
 
-.sb-category-visual__subject .sb-category-subject__vial path:first-child,
-.sb-category-visual__subject .sb-category-subject__bottle path:first-child {
-  fill: rgba(var(--category-accent-rgb), 0.16);
+.sb-category-subject__motion-a,
+.sb-category-subject__motion-b,
+.sb-category-subject__signal {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 620ms var(--sb-ease), opacity 420ms ease;
+}
+
+.sb-category-subject__signal {
+  opacity: 0.74;
 }
 
 .sb-category-visual__seal {
@@ -1592,7 +1612,23 @@ contain: paint;
 .sb-category-card:hover .sb-category-visual__subject,
 .sb-category-card:focus-visible .sb-category-visual__subject {
   filter: drop-shadow(0 21px 24px rgba(47, 42, 37, 0.18));
-  transform: rotate(1deg) translateY(-5px) scale(1.04);
+  transform: rotate(0) translateY(-4px) scale(1.02);
+}
+
+.sb-category-card:hover .sb-category-subject__motion-a,
+.sb-category-card:focus-visible .sb-category-subject__motion-a {
+  transform: translate3d(-3px, -4px, 0) rotate(-1.5deg);
+}
+
+.sb-category-card:hover .sb-category-subject__motion-b,
+.sb-category-card:focus-visible .sb-category-subject__motion-b {
+  transform: translate3d(4px, -2px, 0) rotate(2deg);
+}
+
+.sb-category-card:hover .sb-category-subject__signal,
+.sb-category-card:focus-visible .sb-category-subject__signal {
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .sb-category-card:hover .sb-category-visual__seal,
