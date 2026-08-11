@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { whatsappHref } from "../data";
-import type { Product } from "../data";
+import type { PublicProduct } from "../lib/public-product";
 import { ArrowIcon, CheckIcon } from "./Icons";
 import { VialMark } from "./VialMark";
 
@@ -73,7 +73,7 @@ const categoryLabels: Record<string, string> = {
 export function HomeFinder({
   products,
 }: {
-  products: Product[];
+  products: PublicProduct[];
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -160,10 +160,12 @@ export function HomeFinder({
   };
 
   const showNamedProducts = () => {
-    const name = productName.trim();
-    const targetCategory = productMatch?.category ?? category;
-    const query = name ? `?q=${encodeURIComponent(name)}` : "";
-    router.push(`/shop/${targetCategory}${query}`);
+    if (productMatch) {
+      router.push(`/product/${productMatch.slug}`);
+      return;
+    }
+
+    router.push(`/shop/${category}`);
   };
 
   const restart = () => {

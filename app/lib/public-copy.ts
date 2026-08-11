@@ -35,3 +35,12 @@ export function toPublicCopy(value: string): string {
 export function getPublicSourceUrl(value: string): string {
   return /masoon[\s-]*darou/iu.test(value) ? "" : value;
 }
+
+export function getPublicPackagingLabel(value?: string): string | null {
+  if (!value) return null;
+
+  return /(?:[۰-۹0-9]{1,2})\s*(?:×\s*)?سرنگ(?:ی)?/u.test(value) ||
+    /(?:\b[2-9]|\b10)\s*(?:x\s*)?syringes?/iu.test(value)
+    ? "تکی و جعبه‌ای"
+    : null;
+}

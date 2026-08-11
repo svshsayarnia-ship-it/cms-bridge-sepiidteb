@@ -76,7 +76,7 @@ export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
   },
   home: { hero: {
     eyebrow: "فروشگاه تخصصی و مجله تصمیم‌یار زیبایی",
-    title: "از انتخاب اول تا آخرین لحظه با شما هستیم.",
+    title: "محصولات زیبایی و کلینیکی را آگاهانه انتخاب کنید.",
     description: "محصول، مشخصات و استعلام موجودی را سریع و مرتب در یک‌جا ببینید.",
     primaryCtaLabel: "دیدن محصولات", primaryCtaHref: "/shop",
     secondaryCtaLabel: "راهنمای پنج‌سؤالی", secondaryCtaHref: "/guides",

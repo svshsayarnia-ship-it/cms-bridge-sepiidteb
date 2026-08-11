@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Category } from "../data";
-import type { PublicCatalogItem } from "../lib/public-catalog-item";
+import type {
+  Category,
+} from "../data";
+import type { PublicProduct } from "../lib/public-product";
+import { getCompactBrandLabel } from "../lib/public-copy";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -11,7 +14,7 @@ export function ShopCatalog({
   initialCategory,
   categoryOptions = [],
 }: {
-  items: PublicCatalogItem[];
+  items: PublicProduct[];
   initialCategory?: string;
   categoryOptions?: Category[];
 }) {
@@ -67,13 +70,22 @@ export function ShopCatalog({
     };
   }, [filtersOpen]);
 
-  const brands = useMemo(
-    () =>
-      Array.from(new Set(items.map((item) => item.brand).filter(Boolean))).sort(
-        (first, second) => first.localeCompare(second, "fa"),
-      ),
-    [items],
-  );
+  const brandOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const item of items) {
+      const label = getCompactBrandLabel(item.brand);
+      if (!label) continue;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+
+    return Array.from(counts, ([label, count]) => ({
+      label,
+      count,
+    })).sort((first, second) =>
+      first.label.localeCompare(second.label, "fa"),
+    );
+  }, [items]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
@@ -83,23 +95,35 @@ export function ShopCatalog({
         [
           item.nameFa,
           item.nameEn,
-          item.brand,
+          getCompactBrandLabel(item.brand),
+          item.shortBenefit,
           item.volume ?? "",
           item.categoryTitle,
         ]
           .join(" ")
           .toLocaleLowerCase("fa")
           .includes(normalized);
-      const matchesBrand = brand === "all" || item.brand === brand;
+      const matchesBrand =
+        brand === "all" ||
+        getCompactBrandLabel(item.brand) === brand;
       const matchesCategory = category === "all" || item.category === category;
-      return matchesQuery && matchesBrand && matchesCategory;
+      return (
+        matchesQuery &&
+        matchesBrand &&
+        matchesCategory
+      );
     });
 
     if (sort === "name") {
       return [...result].sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
     }
     if (sort === "brand") {
-      return [...result].sort((a, b) => a.brand.localeCompare(b.brand, "fa"));
+      return [...result].sort((a, b) =>
+        getCompactBrandLabel(a.brand).localeCompare(
+          getCompactBrandLabel(b.brand),
+          "fa",
+        ),
+      );
     }
     return result;
   }, [brand, category, items, query, sort]);
@@ -172,16 +196,16 @@ export function ShopCatalog({
           همه برندها
           <small>{items.length}</small>
         </label>
-        {brands.map((item) => (
-          <label key={item}>
+        {brandOptions.map((item) => (
+          <label key={item.label}>
             <input
               type="radio"
               name="brand"
-              checked={brand === item}
-              onChange={() => setBrand(item)}
+              checked={brand === item.label}
+              onChange={() => setBrand(item.label)}
             />
-            {item}
-            <small>{items.filter((product) => product.brand === item).length}</small>
+            {item.label}
+            <small>{item.count}</small>
           </label>
         ))}
       </fieldset>

@@ -1,20 +1,29 @@
 import type { MetadataRoute } from "next";
 import { catalogGroups } from "./catalog";
-import { articles, categories } from "./data";
 import {
-  concernTopics,
-  getBrandEntries,
-  guideTopics,
-} from "./lib/discovery-hubs";
+  brandPages,
+  concerns,
+  guides,
+} from "./content-architecture";
+import { articles, categories } from "./data";
+import { getCompactBrandLabel } from "./lib/public-copy";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
-const fallbackLastModified = new Date("2026-08-10");
+const fallbackLastModified = new Date(
+  "2026-08-11",
+);
 
-function getProductLastModified(dateModifiedGmt: string): Date {
-  const modified = new Date(dateModifiedGmt || "");
+function getProductLastModified(
+  dateModifiedGmt: string,
+): Date {
+  const modified = new Date(
+    dateModifiedGmt || "",
+  );
 
-  return Number.isNaN(modified.getTime()) ? fallbackLastModified : modified;
+  return Number.isNaN(modified.getTime())
+    ? fallbackLastModified
+    : modified;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -23,11 +32,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/shop",
     "/brands",
     "/guides",
-    "/concerns",
     "/magazine",
     "/professional",
     "/about",
     "/contact",
+    "/faq",
     "/policies/privacy",
     "/policies/terms",
     "/policies/shipping",
@@ -35,78 +44,122 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/policies/authenticity",
   ];
 
-  const catalog = await getStorefrontCatalog();
+  const catalog =
+    await getStorefrontCatalog();
 
-  const productRoutes = catalog.products.map((product) => ({
-    url: `${siteOrigin}/product/${product.slug}`,
-    lastModified: product.live
-      ? getProductLastModified(product.dateModifiedGmt || product.reviewedAt)
-      : getProductLastModified(product.reviewedAt),
-    changeFrequency: "weekly" as const,
-    priority: product.live ? 0.78 : 0.75,
-  }));
+  const productRoutes =
+    catalog.products.map((product) => ({
+      url: `${siteOrigin}/product/${product.slug}`,
+          lastModified: product.live
+        ? getProductLastModified(
+            product.dateModifiedGmt ||
+              product.reviewedAt,
+          )
+        : getProductLastModified(
+            product.reviewedAt,
+          ),
+      changeFrequency:
+        "weekly" as const,
+      priority: product.live
+        ? 0.78
+        : 0.75,
+    }));
 
-  const brandRoutes = getBrandEntries(catalog.products).map((brand) => ({
-    url: `${siteOrigin}/brands/${brand.slug}`,
-    lastModified: fallbackLastModified,
-    changeFrequency: "weekly" as const,
-    priority: 0.76,
-  }));
+  const categoryRoutes = categories.filter(
+    (category) =>
+      catalog.products.some(
+        (product) => product.category === category.slug,
+      ),
+  );
 
-  const guideRoutes = guideTopics.map((topic) => ({
-    url: `${siteOrigin}/guides/${topic.slug}`,
-    lastModified: fallbackLastModified,
-    changeFrequency: "monthly" as const,
-    priority: 0.78,
-  }));
+  const groupRoutes = catalogGroups.filter((group) =>
+    catalog.products.some((product) =>
+      group.categorySlugs.includes(product.category),
+    ),
+  );
 
-  const concernRoutes = concernTopics.map((topic) => ({
-    url: `${siteOrigin}/concerns/${topic.slug}`,
-    lastModified: fallbackLastModified,
-    changeFrequency: "monthly" as const,
-    priority: 0.76,
-  }));
+  const brandRoutes = brandPages.filter((brand) => {
+    if (!brand.indexable) return false;
+
+    const productCount = catalog.products.filter((product) => {
+      const label = getCompactBrandLabel(product.brand);
+      return brand.matchers.includes(label);
+    }).length;
+
+    return productCount >= brand.minProductCount;
+  });
 
   return [
     ...staticRoutes.map((route) => ({
       url: `${siteOrigin}${route}`,
-      lastModified: fallbackLastModified,
-      changeFrequency: route === "" ? ("weekly" as const) : ("monthly" as const),
+      lastModified:
+        fallbackLastModified,
+      changeFrequency:
+        route === ""
+          ? ("weekly" as const)
+          : ("monthly" as const),
       priority:
         route === ""
           ? 1
           : route === "/shop"
             ? 0.9
-            : route === "/brands" || route === "/guides" || route === "/concerns"
-              ? 0.8
-              : 0.7,
+            : 0.7,
     })),
 
-    ...categories.map((category) => ({
+    ...categoryRoutes.map((category) => ({
       url: `${siteOrigin}/shop/${category.slug}`,
-      lastModified: fallbackLastModified,
-      changeFrequency: "weekly" as const,
+      lastModified:
+        fallbackLastModified,
+      changeFrequency:
+        "weekly" as const,
       priority: 0.8,
     })),
 
-    ...catalogGroups.map((group) => ({
+    ...groupRoutes.map((group) => ({
       url: `${siteOrigin}/shop/group/${group.slug}`,
-      lastModified: fallbackLastModified,
-      changeFrequency: "weekly" as const,
+      lastModified:
+        fallbackLastModified,
+      changeFrequency:
+        "weekly" as const,
       priority: 0.82,
     })),
 
-    ...brandRoutes,
-    ...guideRoutes,
-    ...concernRoutes,
     ...productRoutes,
+
+    ...brandRoutes.map((brand) => ({
+      url: `${siteOrigin}/brands/${brand.slug}`,
+      lastModified: fallbackLastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.76,
+    })),
+
+    ...guides
+      .filter((guide) => guide.indexable)
+      .map((guide) => ({
+        url: `${siteOrigin}/guides/${guide.slug}`,
+        lastModified: fallbackLastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.8,
+      })),
+
+    ...concerns
+      .filter((concern) => concern.indexable)
+      .map((concern) => ({
+        url: `${siteOrigin}/concerns/${concern.slug}`,
+        lastModified: fallbackLastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.72,
+      })),
 
     ...articles.map((article) => ({
       url: `${siteOrigin}/magazine/${article.slug}`,
       lastModified: getProductLastModified(
-        article.dateModified || article.datePublished || "",
+        article.dateModified ||
+          article.datePublished ||
+          "",
       ),
-      changeFrequency: "monthly" as const,
+      changeFrequency:
+        "monthly" as const,
       priority: 0.7,
     })),
   ];

@@ -15,9 +15,9 @@ import {
   toPublicCopy,
 } from "./public-copy";
 import {
-  isVerifiedPublicProductImage,
-  preparePublicImageProduct,
-} from "./public-product-image";
+  isPublicCmsProduct,
+  isPublicStaticProduct,
+} from "./public-product";
 import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -87,11 +87,7 @@ function plainText(html: string): string {
 export function isPublicWooProduct(
   product: CmsProduct,
 ): boolean {
-  return Boolean(
-    product.slug &&
-      product.status === "publish" &&
-      product.catalogVisibility !== "hidden",
-  );
+  return isPublicCmsProduct(product);
 }
 
 function addSkuToSpecs(
@@ -132,12 +128,8 @@ function mapWooProduct(
   const group =
     getGroupForCategory(categorySlug);
 
-  const liveImage = product.images?.find((image) =>
-    isVerifiedPublicProductImage({
-      src: image.src,
-      alt: image.alt,
-      verified: true,
-    }),
+  const liveImage = product.images?.find(
+    (image) => Boolean(image.src),
   );
 
   const descriptionText = plainText(
@@ -192,6 +184,13 @@ function mapWooProduct(
     imageVerified:
       Boolean(liveImage?.src) ||
       Boolean(fallback?.imageVerified),
+    imageKind:
+      liveImage?.src
+        ? "official"
+        : fallback?.imageKind,
+    imageApproved:
+      Boolean(liveImage?.src) ||
+      Boolean(fallback?.imageApproved),
     position:
       fallback?.position || "50%",
     volume: fallback?.volume,
@@ -297,12 +296,6 @@ function mapFallbackProduct(
   };
 }
 
-function enforcePublicImageQa(
-  product: StorefrontProduct,
-): StorefrontProduct | null {
-  return preparePublicImageProduct(product);
-}
-
 async function fetchAllWooProducts(): Promise<
   CmsProduct[]
 > {
@@ -362,11 +355,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
           product,
           fallbackBySlug.get(product.slug),
         ),
-      )
-      .flatMap((product) => {
-        const publicProduct = enforcePublicImageQa(product);
-        return publicProduct ? [publicProduct] : [];
-      });
+      );
 
     const publicWooSlugs = new Set(
       mappedProducts.map(
@@ -378,14 +367,10 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
       catalogProducts
         .filter(
           (product) =>
-            product.publishedInCatalog &&
+            isPublicStaticProduct(product) &&
             !publicWooSlugs.has(product.slug),
         )
-        .map(mapFallbackProduct)
-        .flatMap((product) => {
-          const publicProduct = enforcePublicImageQa(product);
-          return publicProduct ? [publicProduct] : [];
-        });
+        .map(mapFallbackProduct);
 
     const uniqueProducts = Array.from(
       new Map(
@@ -408,14 +393,9 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
       products:
         catalogProducts
           .filter(
-            (product) =>
-              product.publishedInCatalog,
+            (product) => isPublicStaticProduct(product),
           )
-          .map(mapFallbackProduct)
-          .flatMap((product) => {
-            const publicProduct = enforcePublicImageQa(product);
-            return publicProduct ? [publicProduct] : [];
-          }),
+          .map(mapFallbackProduct),
       connected: false,
       source: "migration-fallback",
     };
@@ -425,7 +405,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 const getCachedStorefrontCatalog =
   unstable_cache(
     loadStorefrontCatalog,
-    ["storefront-catalog-v3-image-qa"],
+    ["storefront-catalog-v2"],
     {
       revalidate: 300,
       tags: [STOREFRONT_CATALOG_TAG],

@@ -6,11 +6,10 @@ import { usePathname } from "next/navigation";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { catalogGroups, productHref } from "../catalog";
 import {
-  products,
   whatsappHref,
   type Category,
 } from "../data";
-import { preparePublicImageProduct } from "../lib/public-product-image";
+import type { PublicProduct } from "../lib/public-product";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -29,19 +28,12 @@ const navItems = [
   { href: "/contact", label: "تماس" },
 ];
 
-const publicSearchProducts = products.flatMap((product) => {
-  const publicProduct = preparePublicImageProduct(product);
-  return publicProduct ? [publicProduct] : [];
-});
-
 function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: string }) {
-  const displayTagline = tagline?.trim() || "سپید بیوتی · انتخاب حرفه‌ای";
-
   return (
     <Link
       className={`sb-brand ${light ? "sb-brand--light" : ""}`}
       href="/"
-      title={displayTagline}
+      title={tagline}
       aria-label="Sepiid Beauty، صفحه اصلی"
     >
       <span className="sb-brand__mark">
@@ -55,7 +47,8 @@ function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: stri
       </span>
       <span>
         <strong>Sepiid Beauty</strong>
-        <small>{displayTagline}</small>
+        {tagline && <small>{tagline}</small>}
+        <small>سپید بیوتی · انتخاب حرفه‌ای</small>
       </span>
     </Link>
   );
@@ -65,9 +58,11 @@ export { BrandMark };
 
 export function SiteHeader({
   categories,
+  products,
   presentation,
 }: {
   categories: Category[];
+  products: PublicProduct[];
   presentation: SitePresentation["header"];
 }) {
   const pathname = usePathname();
@@ -89,9 +84,9 @@ export function SiteHeader({
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
-    if (!normalized) return publicSearchProducts.slice(0, 5);
+    if (!normalized) return products.slice(0, 5);
 
-    return publicSearchProducts
+    return products
       .filter((product) =>
         [
           product.nameFa,
@@ -104,7 +99,7 @@ export function SiteHeader({
           .includes(normalized),
       )
       .slice(0, 7);
-  }, [query]);
+  }, [products, query]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -282,17 +277,17 @@ export function SiteHeader({
             </button>
           </div>
         )}
-        {mobileOpen && (
-          <button
-            className="sb-mobile-menu-backdrop"
-            type="button"
-            aria-label="بستن منوی موبایل"
-            onClick={() => {
-              setMobileOpen(false);
-              setCategoriesOpen(false);
-            }}
-          />
-        )}
+{mobileOpen && (
+  <button
+    className="sb-mobile-menu-backdrop"
+    type="button"
+    aria-label="بستن منوی موبایل"
+    onClick={() => {
+      setMobileOpen(false);
+      setCategoriesOpen(false);
+    }}
+  />
+)}
         <div
           ref={mobilePanel}
           id="mobile-navigation"

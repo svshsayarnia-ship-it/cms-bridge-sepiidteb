@@ -10,7 +10,6 @@ import {
   getGroupForCategory,
   productHref,
 } from "../../catalog";
-import { toPublicCatalogItem } from "../../lib/public-catalog-item";
 import {
   getStorefrontCategories,
   getStorefrontCategoryBySlug,
@@ -18,6 +17,7 @@ import {
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 import { buildSeoMetadata } from "../../lib/seo";
+import { toPublicProduct } from "../../lib/public-product";
 
 export const revalidate = 300;
 
@@ -42,6 +42,22 @@ export async function generateMetadata({
 
   if (!category) {
     return {};
+  }
+
+  const { products } = await getStorefrontCatalog();
+
+  if (
+    !products.some(
+      (product) => product.category === category.slug,
+    )
+  ) {
+    return {
+      title: category.title,
+      robots: { index: false, follow: true },
+      alternates: {
+        canonical: `/shop/${category.slug}`,
+      },
+    };
   }
 
   return buildSeoMetadata({
@@ -80,7 +96,6 @@ export default async function CategoryPage({
     (product) =>
       product.category === category.slug,
   );
-  const publicCatalogItems = items.map(toPublicCatalogItem);
 
   const group = getGroupForCategory(
     category.slug,
@@ -173,7 +188,7 @@ export default async function CategoryPage({
       <section className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
-            items={publicCatalogItems}
+            items={items.map(toPublicProduct)}
             initialCategory={category.slug}
           />
         </div>
@@ -194,9 +209,10 @@ export default async function CategoryPage({
           <div>
             <p>
               ابتدا هدف و مخاطب محصول را مشخص
-              کنید؛ سپس نام کامل مدل و مشخصات درج‌شده روی بسته را بخوانید. عنوان
-              بازاری یا محبوبیت، جای این بررسی را
-              نمی‌گیرد.
+              کنید؛ سپس نام کامل مدل، ترکیب
+              درج‌شده و روش استفاده سازنده را
+              بخوانید. عنوان بازاری یا محبوبیت،
+              جای این بررسی را نمی‌گیرد.
             </p>
 
             <p>

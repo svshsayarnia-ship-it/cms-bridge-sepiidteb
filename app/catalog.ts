@@ -298,6 +298,9 @@ const legacySeeds: ProductSeed[] = [
     type: "ژل بیورویتالایزر بر پایه هیالورونیک اسید",
     volume: "۱ سرنگ از پیش پرشده ۲ میلی‌لیتری",
     badge: "پر‌جست‌وجو در ایران",
+    image: "/images/products/ejal-40.jpg",
+    imageAlt: "تصویر واقعی بسته EJAL 40، جعبه قرمز ۴۰ میلی‌گرم در ۲ میلی‌لیتر",
+    imageVerified: true,
     publishedInCatalog: true,
     sourceName: "Medixa — EJAL 40",
     sourceUrl: "https://www.medixasrl.com/ejal/",
@@ -691,8 +694,97 @@ const fallbackImages: Record<string, string> = Object.fromEntries(
   catalogCategories.map((category) => [category.slug, category.image]),
 );
 
+const editorialFamilyImages: Record<string, string> = {
+  fillers: "/images/products/editorial/fillers-family.webp",
+  "skin-boosters": "/images/products/editorial/skin-boosters-family.webp",
+  "botulinum-toxins": "/images/products/editorial/botulinum-family.webp",
+  "rejuvenation-cocktails": "/images/products/editorial/rejuvenation-family.webp",
+  "brightening-cocktails": "/images/products/editorial/brightening-family.webp",
+  "eye-cocktails": "/images/products/editorial/eye-family.webp",
+  "hair-cocktails": "/images/products/editorial/hair-family.webp",
+};
+
+const officialImageOverrides: Record<
+  string,
+  Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind">
+> = {
+  "neurafill-deep-lidocaine": {
+    image: "/images/products/sourced/norafill-deep.webp",
+    imageAlt: "تصویر بسته نورافیل دیپ لیدوکائین یک میلی‌لیتری",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  "arasti-white": {
+    image: "/images/products/sourced/arasti-white.webp",
+    imageAlt: "تصویر بسته آراستی وایت و سرنگ یک‌میلی‌لیتری",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  "sofiderm-derm-plus": {
+    image: "/images/products/sourced/sofiderm-derm-plus.webp",
+    imageAlt: "تصویر بسته و سرنگ سوفیدرم درم پلاس",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  "fusion-f-lift-face": {
+    image: "/images/products/sourced/fusion-lift-face.webp",
+    imageAlt: "تصویر ویال فیوژن اف لیفت پلاس فیس",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  "fusion-f-melaclear": {
+    image: "/images/products/sourced/fusion-melaclear.webp",
+    imageAlt: "تصویر بسته و ویال‌های فیوژن اف ملاکلیر",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  "fusion-f-hair-men": {
+    image: "/images/products/sourced/fusion-hair-men.webp",
+    imageAlt: "تصویر بسته فیوژن اف هیر من و ویال‌های آن",
+    imageVerified: true,
+    imageKind: "official",
+  },
+  dysport: {
+    image: "/images/products/sourced/dysport-500.webp",
+    imageAlt: "تصویر بسته و ویال دیسپورت ۵۰۰ واحد",
+    imageVerified: true,
+    imageKind: "official",
+  },
+};
+
 function makeProduct(seed: ProductSeed): Product {
   const category = catalogCategories.find((item) => item.slug === seed.category)!;
+  const imageOverride = officialImageOverrides[seed.slug];
+  const resolvedImage =
+    imageOverride?.image ||
+    (seed.image && !/(?:category-|product-hair-care-v2)/iu.test(seed.image)
+      ? seed.image
+      : editorialFamilyImages[seed.category]) ||
+    fallbackImages[seed.category];
+  const resolvedImageKind =
+    imageOverride?.imageKind ||
+    seed.imageKind ||
+    (resolvedImage === editorialFamilyImages[seed.category]
+      ? "editorial-family"
+      : seed.imageVerified
+        ? "official"
+        : undefined);
+  const resolvedImageVerified =
+    imageOverride?.imageVerified ??
+    seed.imageVerified ??
+    false;
+  const variants = seed.variants?.map((variant) =>
+    ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
+      ? {
+          ...variant,
+          image: editorialFamilyImages.fillers,
+          imageAlt: `تصویر ادیتوریال هم‌خانواده برای ${variant.nameFa}؛ بسته دقیق هنگام استعلام تطبیق می‌شود`,
+          imageVerified: false,
+          imageKind: "editorial-family" as const,
+          imageApproved: true,
+        }
+      : variant,
+  );
   const sourceStatus = seed.sourceStatus ?? (seed.warning
     ? "نیازمند تطبیق پیش از انتشار قطعی"
     : "اطلاعات اولیه بازار؛ در انتظار تطبیق رسمی");
@@ -715,11 +807,20 @@ function makeProduct(seed: ProductSeed): Product {
     group: category.group,
     groupTitle: category.groupTitle,
     badge: seed.badge,
-    image: seed.image ?? fallbackImages[seed.category],
-    imageVerified: seed.imageVerified ?? false,
-    imageAlt: seed.imageVerified
-      ? `تصویر مجموعه ${seed.nameEn}`
-      : `تصویر مفهومی گروه ${category.title}`,
+    image: resolvedImage,
+    imageVerified: resolvedImageVerified,
+    imageKind: resolvedImageKind,
+    imageApproved:
+      seed.imageApproved ??
+      (resolvedImageKind === "editorial-family"),
+    imageAlt:
+      imageOverride?.imageAlt ||
+      seed.imageAlt ||
+      (resolvedImageKind === "editorial-family"
+        ? `تصویر ادیتوریال هم‌خانواده برای ${seed.nameFa}؛ بسته دقیق هنگام استعلام تطبیق می‌شود`
+        : resolvedImageVerified
+          ? `تصویر بسته ${seed.nameEn}`
+          : `تصویر مفهومی گروه ${category.title}`),
     position: "50%",
     volume: seed.volume,
     priceToman: seed.priceToman,
@@ -755,11 +856,11 @@ function makeProduct(seed: ProductSeed): Product {
           "در صورت موجودی، نام دقیق مدل، تصویر قابل‌ارائه از بسته، بچ‌کد و تاریخ قابل مشاهده و شرایط تحویل بررسی می‌شود.",
       },
     ],
-    publishedInCatalog: seed.publishedInCatalog,
+    publishedInCatalog: seed.publishedInCatalog ?? true,
     sourceName: seed.sourceName,
     sourceUrl: seed.sourceUrl,
     reviewedAt: seed.reviewedAt,
-    variants: seed.variants,
+    variants,
   };
 }
 

@@ -1,280 +1,109 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { whatsappHref } from "../data";
 
-type AccountMode = "login" | "register" | "profile" | "edit";
-type CustomerType = "clinic" | "doctor" | "buyer" | "customer";
+type AccountMode = "login" | "register" | "profile";
 
 type CustomerProfile = {
-  id: number;
   fullName: string;
-  email: string;
   phone: string;
   clinicName: string;
   city: string;
-  customerType: CustomerType;
-  dateCreated: string | null;
+  role: string;
 };
 
-type RegistrationForm = {
-  fullName: string;
-  email: string;
-  phone: string;
-  password: string;
-  clinicName: string;
-  city: string;
-  customerType: CustomerType;
-};
+const STORAGE_KEY = "sepiid_customer_profile_v1";
 
-type LoginForm = {
-  identifier: string;
-  password: string;
-};
-
-const emptyRegistration: RegistrationForm = {
+const emptyProfile: CustomerProfile = {
   fullName: "",
-  email: "",
   phone: "",
-  password: "",
   clinicName: "",
   city: "",
-  customerType: "clinic",
+  role: "clinic",
 };
 
-const emptyLogin: LoginForm = {
-  identifier: "",
-  password: "",
-};
-
-const customerTypeLabels: Record<CustomerType, string> = {
-  clinic: "کلینیک / مرکز زیبایی",
-  doctor: "پزشک یا فرد واجد صلاحیت",
-  buyer: "مسئول خرید",
-  customer: "خریدار / سایر",
-};
-
-function profileToRegistration(profile: CustomerProfile): RegistrationForm {
-  return {
-    fullName: profile.fullName,
-    email: profile.email,
-    phone: profile.phone,
-    password: "",
-    clinicName: profile.clinicName,
-    city: profile.city,
-    customerType: profile.customerType,
-  };
-}
-
-async function readResponse(response: Response) {
-  const data = (await response.json().catch(() => null)) as
-    | { profile?: CustomerProfile; error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(data?.error || "ارتباط با حساب کاربری انجام نشد.");
-  }
-
-  return data;
+function normalizePhone(value: string) {
+  return value.replace(/[^\d+]/g, "");
 }
 
 export function CustomerAccount({ initialMode = "login" }: { initialMode?: AccountMode }) {
   const [mode, setMode] = useState<AccountMode>(initialMode);
-  const [profile, setProfile] = useState<CustomerProfile | null>(null);
-  const [login, setLogin] = useState<LoginForm>(emptyLogin);
-  const [registration, setRegistration] =
-    useState<RegistrationForm>(emptyRegistration);
+  const [profile, setProfile] = useState<CustomerProfile>(emptyProfile);
+  const [savedProfile, setSavedProfile] = useState<CustomerProfile | null>(null);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    let active = true;
+    const timer = window.setTimeout(() => {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
 
-    async function loadProfile() {
       try {
-        const response = await fetch("/api/account/profile", {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        if (response.status === 401) {
-          if (active) setMode(initialMode === "profile" ? "login" : initialMode);
-          return;
-        }
-
-        const data = await readResponse(response);
-        if (!active || !data?.profile) return;
-
-        setProfile(data.profile);
-        setRegistration(profileToRegistration(data.profile));
-        setMode("profile");
-      } catch (error) {
-        if (active) {
-          setMessage(
-            error instanceof Error
-              ? error.message
-              : "اتصال به حساب کاربری انجام نشد.",
-          );
-        }
-      } finally {
-        if (active) setLoading(false);
+        const saved = JSON.parse(raw) as CustomerProfile;
+        setSavedProfile(saved);
+        setProfile(saved);
+        if (initialMode === "profile") setMode("profile");
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
       }
-    }
+    }, 0);
 
-    void loadProfile();
-    return () => {
-      active = false;
-    };
+    return () => window.clearTimeout(timer);
   }, [initialMode]);
 
   const supportLink = useMemo(() => {
-    const current = profile ?? {
-      fullName: registration.fullName,
-      phone: registration.phone,
-      clinicName: registration.clinicName,
-      city: registration.city,
-    };
     const text = [
       "سلام، برای حساب کاربری سپید بیوتی نیاز به بررسی دارم.",
-      current.fullName && `نام: ${current.fullName}`,
-      current.phone && `شماره: ${current.phone}`,
-      current.clinicName && `کلینیک/مرکز: ${current.clinicName}`,
-      current.city && `شهر: ${current.city}`,
+      profile.fullName && `نام: ${profile.fullName}`,
+      profile.phone && `شماره: ${profile.phone}`,
+      profile.clinicName && `کلینیک/مرکز: ${profile.clinicName}`,
+      profile.city && `شهر: ${profile.city}`,
     ]
       .filter(Boolean)
       .join("\n");
     return whatsappHref(text);
-  }, [profile, registration]);
+  }, [profile]);
 
-  function updateLogin(field: keyof LoginForm, value: string) {
-    setLogin((current) => ({ ...current, [field]: value }));
+  function update(field: keyof CustomerProfile, value: string) {
+    setProfile((current) => ({ ...current, [field]: value }));
     setMessage("");
   }
 
-  function updateRegistration(field: keyof RegistrationForm, value: string) {
-    setRegistration((current) => ({ ...current, [field]: value }));
-    setMessage("");
-  }
-
-  async function submitLogin(event: FormEvent) {
+  function submitRegister(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const response = await fetch("/api/account/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(login),
-      });
-      const data = await readResponse(response);
-      if (!data?.profile) throw new Error("پروفایل مشتری دریافت نشد.");
-
-      setProfile(data.profile);
-      setRegistration(profileToRegistration(data.profile));
-      setLogin(emptyLogin);
-      setMode("profile");
-      setMessage("با موفقیت وارد حساب شدی.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "ورود به حساب انجام نشد.",
-      );
-    } finally {
-      setBusy(false);
+    if (!profile.fullName.trim() || normalizePhone(profile.phone).length < 10) {
+      setMessage("نام و شماره موبایل معتبر را وارد کن.");
+      return;
     }
+
+    const nextProfile = { ...profile, phone: normalizePhone(profile.phone) };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProfile));
+    setSavedProfile(nextProfile);
+    setProfile(nextProfile);
+    setMode("profile");
+    setMessage("مشخصات اولیه روی همین دستگاه ذخیره شد.");
   }
 
-  async function submitRegister(event: FormEvent) {
+  function submitLogin(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const response = await fetch("/api/account/register", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(registration),
-      });
-      const data = await readResponse(response);
-      if (!data?.profile) throw new Error("پروفایل مشتری دریافت نشد.");
-
-      setProfile(data.profile);
-      setRegistration(profileToRegistration(data.profile));
+    const phone = normalizePhone(profile.phone);
+    if (savedProfile && normalizePhone(savedProfile.phone) === phone) {
+      setProfile(savedProfile);
       setMode("profile");
-      setMessage("حساب کاربری با موفقیت ساخته شد.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "ثبت‌نام انجام نشد.",
-      );
-    } finally {
-      setBusy(false);
+      setMessage("وارد پنل کاربری شدی.");
+      return;
     }
+
+    setMessage("برای این شماره پروفایلی روی این دستگاه پیدا نشد. ابتدا عضویت را ثبت کن.");
   }
 
-  async function submitProfileUpdate(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const response = await fetch("/api/account/profile", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          fullName: registration.fullName,
-          clinicName: registration.clinicName,
-          city: registration.city,
-          customerType: registration.customerType,
-        }),
-      });
-      const data = await readResponse(response);
-      if (!data?.profile) throw new Error("پروفایل مشتری دریافت نشد.");
-
-      setProfile(data.profile);
-      setRegistration(profileToRegistration(data.profile));
-      setMode("profile");
-      setMessage("تغییرات حساب ذخیره شد.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "ویرایش حساب انجام نشد.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function logout() {
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const response = await fetch("/api/account/logout", { method: "POST" });
-      await readResponse(response);
-      setProfile(null);
-      setRegistration(emptyRegistration);
-      setLogin(emptyLogin);
-      setMode("login");
-      setMessage("از حساب کاربری خارج شدی.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "خروج از حساب انجام نشد.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (loading) {
-    return (
-      <main id="main-content" className="sb-account-page">
-        <section className="sb-section">
-          <div className="sb-shell sb-account-panel" aria-live="polite">
-            <p className="sb-account-message">در حال بررسی حساب کاربری…</p>
-          </div>
-        </section>
-      </main>
-    );
+  function clearProfile() {
+    window.localStorage.removeItem(STORAGE_KEY);
+    setSavedProfile(null);
+    setProfile(emptyProfile);
+    setMode("login");
+    setMessage("از حساب کاربری خارج شدی.");
   }
 
   return (
@@ -283,378 +112,160 @@ export function CustomerAccount({ initialMode = "login" }: { initialMode?: Accou
         <div className="sb-shell sb-account-hero__grid">
           <div>
             <span className="sb-eyebrow">CUSTOMER ACCOUNT</span>
-            <h1>حساب مشتریان سپید بیوتی</h1>
+            <h1>ورود و پروفایل مشتریان سپید بیوتی</h1>
             <p>
-              مشخصاتت را در یک پروفایل واحد نگه دار تا استعلام‌ها و سفارش‌های آینده
-              به همان حساب متصل شوند.
+              این نسخه، پروفایل اولیه مشتری را برای پیگیری سریع استعلام‌ها آماده
+              می‌کند. سفارش، پرداخت و سوابق خرید رسمی هنوز باید از مسیر پشتیبانی
+              تأیید شود.
             </p>
           </div>
           <div className="sb-account-status">
-            <strong>{profile ? profile.fullName : "ورود امن مشتریان"}</strong>
-            <span>{profile ? profile.phone : "پروفایل یکپارچه مشتری"}</span>
+            <strong>{savedProfile ? savedProfile.fullName : "پروفایل ثبت نشده"}</strong>
+            <span>{savedProfile ? savedProfile.phone : "ثبت سریع با موبایل"}</span>
           </div>
         </div>
       </section>
 
       <section className="sb-section">
         <div className="sb-shell sb-account-layout">
-          <aside className="sb-account-side" aria-label="بخش‌های حساب کاربری">
-            {!profile && (
-              <>
-                <button
-                  type="button"
-                  className={mode === "login" ? "is-active" : ""}
-                  onClick={() => setMode("login")}
-                >
-                  ورود
-                </button>
-                <button
-                  type="button"
-                  className={mode === "register" ? "is-active" : ""}
-                  onClick={() => setMode("register")}
-                >
-                  ثبت‌نام
-                </button>
-              </>
-            )}
-            {profile && (
-              <>
-                <button
-                  type="button"
-                  className={mode === "profile" ? "is-active" : ""}
-                  onClick={() => setMode("profile")}
-                >
-                  مشخصات من
-                </button>
-                <button
-                  type="button"
-                  className={mode === "edit" ? "is-active" : ""}
-                  onClick={() => setMode("edit")}
-                >
-                  ویرایش مشخصات
-                </button>
-              </>
-            )}
+          <aside className="sb-account-side">
+            <button
+              type="button"
+              className={mode === "login" ? "is-active" : ""}
+              onClick={() => setMode("login")}
+            >
+              ورود
+            </button>
+            <button
+              type="button"
+              className={mode === "register" ? "is-active" : ""}
+              onClick={() => setMode("register")}
+            >
+              ثبت‌نام
+            </button>
+            <button
+              type="button"
+              className={mode === "profile" ? "is-active" : ""}
+              onClick={() => setMode("profile")}
+            >
+              مشخصات کاربر
+            </button>
           </aside>
 
           <div className="sb-account-panel">
-            {message && (
-              <p className="sb-account-message" role="status" aria-live="polite">
-                {message}
-              </p>
-            )}
+            {message && <p className="sb-account-message">{message}</p>}
 
-            {!profile && mode === "login" && (
+            {mode === "login" && (
               <form className="sb-account-form" onSubmit={submitLogin}>
                 <div>
                   <span className="sb-eyebrow">LOGIN</span>
-                  <h2>ورود به حساب</h2>
-                  <p>با شماره موبایل یا ایمیل و رمز عبور وارد شو.</p>
+                  <h2>ورود با شماره موبایل</h2>
+                  <p>در این نسخه، ورود فقط پروفایل ذخیره‌شده روی همین دستگاه را باز می‌کند.</p>
                 </div>
                 <label>
-                  <span>شماره موبایل یا ایمیل</span>
+                  <span>شماره موبایل</span>
                   <input
                     dir="ltr"
-                    autoComplete="username"
-                    value={login.identifier}
-                    onChange={(event) =>
-                      updateLogin("identifier", event.target.value)
-                    }
+                    inputMode="tel"
+                    value={profile.phone}
+                    onChange={(event) => update("phone", event.target.value)}
                     placeholder="09xxxxxxxxx"
-                    required
                   />
                 </label>
-                <label>
-                  <span>رمز عبور</span>
-                  <input
-                    dir="ltr"
-                    type="password"
-                    autoComplete="current-password"
-                    value={login.password}
-                    onChange={(event) =>
-                      updateLogin("password", event.target.value)
-                    }
-                    required
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="sb-btn sb-btn--dark"
-                  disabled={busy}
-                >
-                  {busy ? "در حال ورود…" : "ورود"}
-                </button>
-                <button
-                  type="button"
-                  className="sb-account-inline"
-                  onClick={() => setMode("register")}
-                  disabled={busy}
-                >
-                  هنوز حساب ندارم
+                <button type="submit" className="sb-btn sb-btn--dark">ورود</button>
+                <button type="button" className="sb-account-inline" onClick={() => setMode("register")}>
+                  هنوز ثبت‌نام نکرده‌ام
                 </button>
               </form>
             )}
 
-            {!profile && mode === "register" && (
+            {mode === "register" && (
               <form className="sb-account-form" onSubmit={submitRegister}>
                 <div>
                   <span className="sb-eyebrow">REGISTER</span>
-                  <h2>ساخت حساب کاربری</h2>
-                  <p>
-                    اطلاعات اصلی را یک‌بار ثبت کن تا استعلام‌ها و سفارش‌های آینده
-                    به همین حساب متصل شوند.
-                  </p>
+                  <h2>ثبت مشخصات اولیه</h2>
+                  <p>این اطلاعات برای سریع‌تر شدن استعلام و ارتباط با پشتیبانی استفاده می‌شود.</p>
                 </div>
                 <div className="sb-account-form__grid">
                   <label>
                     <span>نام و نام خانوادگی</span>
-                    <input
-                      autoComplete="name"
-                      value={registration.fullName}
-                      onChange={(event) =>
-                        updateRegistration("fullName", event.target.value)
-                      }
-                      required
-                    />
+                    <input value={profile.fullName} onChange={(event) => update("fullName", event.target.value)} />
                   </label>
                   <label>
                     <span>شماره موبایل</span>
                     <input
                       dir="ltr"
                       inputMode="tel"
-                      autoComplete="tel"
-                      value={registration.phone}
-                      onChange={(event) =>
-                        updateRegistration("phone", event.target.value)
-                      }
-                      placeholder="09xxxxxxxxx"
-                      required
-                    />
-                  </label>
-                  <label>
-                    <span>ایمیل</span>
-                    <input
-                      dir="ltr"
-                      type="email"
-                      autoComplete="email"
-                      value={registration.email}
-                      onChange={(event) =>
-                        updateRegistration("email", event.target.value)
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    <span>رمز عبور</span>
-                    <input
-                      dir="ltr"
-                      type="password"
-                      autoComplete="new-password"
-                      minLength={8}
-                      value={registration.password}
-                      onChange={(event) =>
-                        updateRegistration("password", event.target.value)
-                      }
-                      required
+                      value={profile.phone}
+                      onChange={(event) => update("phone", event.target.value)}
                     />
                   </label>
                   <label>
                     <span>کلینیک یا مرکز</span>
-                    <input
-                      autoComplete="organization"
-                      value={registration.clinicName}
-                      onChange={(event) =>
-                        updateRegistration("clinicName", event.target.value)
-                      }
-                    />
+                    <input value={profile.clinicName} onChange={(event) => update("clinicName", event.target.value)} />
                   </label>
                   <label>
                     <span>شهر</span>
-                    <input
-                      autoComplete="address-level2"
-                      value={registration.city}
-                      onChange={(event) =>
-                        updateRegistration("city", event.target.value)
-                      }
-                    />
+                    <input value={profile.city} onChange={(event) => update("city", event.target.value)} />
                   </label>
                   <label>
-                    <span>نوع مشتری</span>
-                    <select
-                      value={registration.customerType}
-                      onChange={(event) =>
-                        updateRegistration(
-                          "customerType",
-                          event.target.value as CustomerType,
-                        )
-                      }
-                    >
-                      {Object.entries(customerTypeLabels).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
+                    <span>نوع کاربر</span>
+                    <select value={profile.role} onChange={(event) => update("role", event.target.value)}>
+                      <option value="clinic">کلینیک / مرکز زیبایی</option>
+                      <option value="doctor">پزشک یا فرد واجد صلاحیت</option>
+                      <option value="buyer">مسئول خرید</option>
                     </select>
                   </label>
                 </div>
-                <button
-                  type="submit"
-                  className="sb-btn sb-btn--dark"
-                  disabled={busy}
-                >
-                  {busy ? "در حال ساخت حساب…" : "ساخت حساب"}
-                </button>
-                <button
-                  type="button"
-                  className="sb-account-inline"
-                  onClick={() => setMode("login")}
-                  disabled={busy}
-                >
-                  قبلاً حساب ساخته‌ام
-                </button>
+                <button type="submit" className="sb-btn sb-btn--dark">ثبت مشخصات</button>
               </form>
             )}
 
-            {profile && mode === "profile" && (
+            {mode === "profile" && (
               <div className="sb-account-profile">
                 <div>
                   <span className="sb-eyebrow">PROFILE</span>
-                  <h2>مشخصات من</h2>
-                  <p>این اطلاعات در پروفایل اصلی مشتری نگهداری می‌شود.</p>
+                  <h2>مشخصات کاربر</h2>
+                  <p>برای ویرایش مشخصات، فرم ثبت‌نام را دوباره ذخیره کن.</p>
                 </div>
                 <dl>
                   <div>
                     <dt>نام</dt>
-                    <dd>{profile.fullName || "ثبت نشده"}</dd>
+                    <dd>{savedProfile?.fullName || "ثبت نشده"}</dd>
                   </div>
                   <div>
                     <dt>موبایل</dt>
-                    <dd dir="ltr">{profile.phone || "ثبت نشده"}</dd>
-                  </div>
-                  <div>
-                    <dt>ایمیل</dt>
-                    <dd dir="ltr">{profile.email || "ثبت نشده"}</dd>
+                    <dd dir="ltr">{savedProfile?.phone || "ثبت نشده"}</dd>
                   </div>
                   <div>
                     <dt>کلینیک / مرکز</dt>
-                    <dd>{profile.clinicName || "ثبت نشده"}</dd>
+                    <dd>{savedProfile?.clinicName || "ثبت نشده"}</dd>
                   </div>
                   <div>
                     <dt>شهر</dt>
-                    <dd>{profile.city || "ثبت نشده"}</dd>
-                  </div>
-                  <div>
-                    <dt>نوع مشتری</dt>
-                    <dd>{customerTypeLabels[profile.customerType]}</dd>
+                    <dd>{savedProfile?.city || "ثبت نشده"}</dd>
                   </div>
                 </dl>
                 <div className="sb-account-actions">
-                  <button
-                    type="button"
-                    className="sb-btn sb-btn--dark"
-                    onClick={() => setMode("edit")}
-                  >
+                  <a className="sb-btn sb-btn--dark" href={supportLink}>
+                    ارسال مشخصات برای پشتیبانی
+                  </a>
+                  <button type="button" className="sb-btn sb-btn--ghost" onClick={() => setMode("register")}>
                     ویرایش مشخصات
                   </button>
-                  <a className="sb-btn sb-btn--ghost" href={supportLink}>
-                    ارتباط با پشتیبانی
-                  </a>
-                  <button
-                    type="button"
-                    className="sb-account-inline"
-                    onClick={() => void logout()}
-                    disabled={busy}
-                  >
-                    {busy ? "در حال خروج…" : "خروج از حساب"}
-                  </button>
+                  {savedProfile && (
+                    <button type="button" className="sb-account-inline" onClick={clearProfile}>
+                      خروج از حساب
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
-            {profile && mode === "edit" && (
-              <form className="sb-account-form" onSubmit={submitProfileUpdate}>
-                <div>
-                  <span className="sb-eyebrow">EDIT PROFILE</span>
-                  <h2>ویرایش مشخصات</h2>
-                  <p>
-                    برای حفظ امنیت حساب، تغییر شماره موبایل یا ایمیل از مسیر
-                    پشتیبانی انجام می‌شود.
-                  </p>
-                </div>
-                <div className="sb-account-form__grid">
-                  <label>
-                    <span>نام و نام خانوادگی</span>
-                    <input
-                      autoComplete="name"
-                      value={registration.fullName}
-                      onChange={(event) =>
-                        updateRegistration("fullName", event.target.value)
-                      }
-                      required
-                    />
-                  </label>
-                  <label>
-                    <span>کلینیک یا مرکز</span>
-                    <input
-                      autoComplete="organization"
-                      value={registration.clinicName}
-                      onChange={(event) =>
-                        updateRegistration("clinicName", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    <span>شهر</span>
-                    <input
-                      autoComplete="address-level2"
-                      value={registration.city}
-                      onChange={(event) =>
-                        updateRegistration("city", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    <span>نوع مشتری</span>
-                    <select
-                      value={registration.customerType}
-                      onChange={(event) =>
-                        updateRegistration(
-                          "customerType",
-                          event.target.value as CustomerType,
-                        )
-                      }
-                    >
-                      {Object.entries(customerTypeLabels).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="sb-account-actions">
-                  <button
-                    type="submit"
-                    className="sb-btn sb-btn--dark"
-                    disabled={busy}
-                  >
-                    {busy ? "در حال ذخیره…" : "ذخیره تغییرات"}
-                  </button>
-                  <button
-                    type="button"
-                    className="sb-btn sb-btn--ghost"
-                    onClick={() => {
-                      setRegistration(profileToRegistration(profile));
-                      setMode("profile");
-                      setMessage("");
-                    }}
-                    disabled={busy}
-                  >
-                    انصراف
-                  </button>
-                </div>
-              </form>
-            )}
+            <p className="sb-account-note">
+              برای پنل واقعی شامل رمز عبور، سفارش‌ها، پرداخت و تاریخچه خرید، مرحله بعد باید
+              دیتابیس و احراز هویت امن اضافه شود. <Link href="/contact">تماس با پشتیبانی</Link>
+            </p>
           </div>
         </div>
       </section>

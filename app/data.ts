@@ -25,6 +25,8 @@ export type Product = {
   image: string;
   imageAlt?: string;
   imageVerified?: boolean;
+  imageKind?: "official" | "editorial-family";
+  imageApproved?: boolean;
   position: string;
   volume?: string;
   priceToman?: number;
@@ -53,6 +55,8 @@ export type ProductVariant = {
   image: string;
   imageAlt: string;
   imageVerified?: boolean;
+  imageKind?: "official" | "editorial-family";
+  imageApproved?: boolean;
   volume: string;
   summary: string;
   features: string[];

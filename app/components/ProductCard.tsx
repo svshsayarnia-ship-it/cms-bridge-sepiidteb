@@ -3,15 +3,18 @@
 import Link from "next/link";
 
 import { productHref } from "../catalog";
-import type { PublicCatalogItem } from "../lib/public-catalog-item";
-import { getCompactBrandLabel } from "../lib/public-copy";
+import type { PublicProduct } from "../lib/public-product";
+import {
+  getCompactBrandLabel,
+  getPublicPackagingLabel,
+} from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
 export function ProductCard({
   product,
   priority = false,
 }: {
-  product: PublicCatalogItem;
+  product: PublicProduct;
   priority?: boolean;
 }) {
   const href = productHref(product);
@@ -24,6 +27,7 @@ export function ProductCard({
     product.imageAlt ||
     `تصویر ${product.nameFa}`;
   const brand = getCompactBrandLabel(product.brand);
+  const packagingLabel = getPublicPackagingLabel(product.volume);
 
   return (
     <article className="sb-product-card">
@@ -74,6 +78,7 @@ export function ProductCard({
         {volume && (
           <div className="sb-product-card__facts">
             <span>{volume}</span>
+            {packagingLabel && <span>{packagingLabel}</span>}
           </div>
         )}
 

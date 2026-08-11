@@ -12,6 +12,7 @@ import {
 } from "../../components/ProductVariantExperience";
 import type { ProductExperienceProduct } from "../../components/ProductVariantExperience";
 import { getGroupForCategory } from "../../catalog";
+import { getBrandPageForLabel } from "../../content-architecture";
 import {
   getProduct,
   products,
@@ -22,15 +23,15 @@ import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
+  isPublicCmsProduct,
+  isPublicImageSrc,
+  isPublicStaticProduct,
+} from "../../lib/public-product";
+import {
   getCompactBrandLabel,
   getEnglishBrandLabel,
   toPublicCopy,
 } from "../../lib/public-copy";
-import {
-  isVerifiedPublicProductImage,
-  preparePublicImageProduct,
-} from "../../lib/public-product-image";
-import { buildProductStructuredData } from "../../lib/product-structured-data";
 import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
@@ -43,15 +44,6 @@ type ProductPricing = {
   label: string;
   note: string;
 };
-
-type ProductSearchParams = {
-  variant?: string | string[];
-};
-
-function getRequestedVariantId(searchParams: ProductSearchParams) {
-  const value = searchParams.variant;
-  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
-}
 
 function formatTomanPrice(value: string) {
   const numeric = Number(value);
@@ -138,13 +130,7 @@ function getLiveProductImage(
     return null;
   }
 
-  const image = cmsProduct.images?.find((candidate) =>
-    isVerifiedPublicProductImage({
-      src: candidate.src,
-      alt: candidate.alt,
-      verified: true,
-    }),
-  );
+  const image = cmsProduct.images?.[0];
 
   if (!image?.src) {
     return null;
@@ -154,15 +140,6 @@ function getLiveProductImage(
     src: image.src,
     alt: image.alt || cmsProduct.name || "",
   };
-}
-function isPublicCmsProduct(
-  cmsProduct: CmsProduct | null,
-): cmsProduct is CmsProduct {
-  return Boolean(
-    cmsProduct &&
-      cmsProduct.status === "publish" &&
-      cmsProduct.catalogVisibility !== "hidden",
-  );
 }
 function buildCmsOnlyProduct(
   cmsProduct: CmsProduct,
@@ -217,6 +194,13 @@ function buildCmsOnlyProduct(
     imageVerified:
       Boolean(image?.src) ||
       Boolean(fallback?.imageVerified),
+    imageKind:
+      image?.src
+        ? "official"
+        : fallback?.imageKind,
+    imageApproved:
+      Boolean(image?.src) ||
+      Boolean(fallback?.imageApproved),
     position:
       fallback?.position || "center",
     volume: fallback?.volume,
@@ -315,12 +299,21 @@ function getProductExperience(
     categoryTitle: product.categoryTitle,
     image: product.image,
     imageAlt: product.imageAlt,
+    imageKind: product.imageKind,
     volume: product.volume,
     priceToman: product.priceToman,
     priceNote: product.priceNote,
     summary: getPublicSummary(product.summary),
     specs: getPublicSpecs(product.specs),
-    variants: product.variants?.map((variant) => ({
+    variants: product.variants
+      ?.filter(
+        (variant) =>
+          (variant.imageVerified === true ||
+            (variant.imageKind === "editorial-family" &&
+              variant.imageApproved === true)) &&
+          isPublicImageSrc(variant.image),
+      )
+      .map((variant) => ({
       id: variant.id,
       label: variant.label,
       nameFa: variant.nameFa,
@@ -328,61 +321,29 @@ function getProductExperience(
       image: variant.image,
       imageAlt: variant.imageAlt,
       imageVerified: variant.imageVerified,
+      imageKind: variant.imageKind,
       volume: variant.volume,
       summary: getPublicSummary(variant.summary),
       specs: getPublicSpecs(variant.specs),
       priceToman: variant.priceToman,
       priceNote: variant.priceNote,
-    })),
+      })),
   };
-}
-
-function getProductSeoTitle(
-  product: Product,
-  explicitTitle?: string,
-) {
-  const cleanExplicitTitle = explicitTitle
-    ?.trim()
-    .replace(/\s*\|\s*(?:Sepiid Beauty|سپید بیوتی)\s*$/iu, "")
-    .trim();
-
-  if (
-    cleanExplicitTitle &&
-    /خرید/u.test(cleanExplicitTitle) &&
-    /قیمت/u.test(cleanExplicitTitle)
-  ) {
-    return cleanExplicitTitle;
-  }
-
-  const primaryVariant = product.variants?.[0];
-  const nameFa = primaryVariant?.nameFa?.trim() || product.nameFa.trim();
-  const nameEn = (
-    primaryVariant?.nameEn?.trim() ||
-    product.nameEn.trim() ||
-    getCompactBrandLabel(product.brand)
-  )
-    .replace(/[®™]/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return nameEn
-    ? `خرید ${nameFa} | قیمت ${nameEn} و مشخصات`
-    : `خرید ${nameFa} | قیمت و مشخصات`;
 }
 
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
+  staticPriceToman?: number,
 ): string | null {
-  if (!cmsProduct) {
-    return null;
-  }
+  const rawPrice = cmsProduct
+    ? cmsProduct.salePrice ||
+      cmsProduct.regularPrice ||
+      cmsProduct.price
+    : staticPriceToman;
 
-  const rawPrice =
-    cmsProduct.salePrice ||
-    cmsProduct.regularPrice ||
-    cmsProduct.price;
-
-  const tomanPrice = Number(rawPrice);
+  const tomanPrice = cmsProduct
+    ? Number(rawPrice)
+    : Number(staticPriceToman);
 
   if (!Number.isFinite(tomanPrice) || tomanPrice <= 0) {
     return null;
@@ -409,26 +370,62 @@ function getSchemaAvailability(
   return "https://schema.org/InStock";
 }
 
+function buildTransactionalProductTitle(
+  product: Product,
+  staticProduct: Product | undefined,
+  liveProduct: CmsProduct | null,
+  variantId?: string,
+): string {
+  const primaryVariant =
+    product.variants?.find((variant) => variant.id === variantId) ??
+    product.variants?.[0];
+  const titleFa = (
+    primaryVariant?.nameFa ||
+    staticProduct?.nameFa ||
+    liveProduct?.name ||
+    product.nameFa
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  const titleEn = (
+    primaryVariant?.nameEn ||
+    liveProduct?.name ||
+    staticProduct?.nameEn ||
+    product.nameEn ||
+    titleFa
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `خرید ${titleFa} | قیمت ${titleEn} و مشخصات | سپید بیوتی`;
+}
+
 export function generateStaticParams() {
-  return products.flatMap((product) =>
-    preparePublicImageProduct(product)
-      ? [{ slug: product.slug }]
-      : [],
-  );
+  return products
+    .filter(
+      (product) => isPublicStaticProduct(product),
+    )
+    .map((product) => ({ slug: product.slug }));
 }
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const variantParam = await searchParams;
+  const variantId = Array.isArray(variantParam.variant)
+    ? variantParam.variant[0]
+    : variantParam.variant;
 
   const staticProduct = getProduct(slug);
   const cmsProduct = await getLiveProduct(slug);
 
   if (
     !isPublicCmsProduct(cmsProduct) &&
-    !staticProduct?.publishedInCatalog
+    !isPublicStaticProduct(staticProduct)
   ) {
     return {
       robots: {
@@ -442,29 +439,26 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
-  const rawProduct =
-    liveProduct
-      ? buildCmsOnlyProduct(
-          liveProduct,
-          staticProduct ?? undefined,
-        )
-      : staticProduct;
-
-  const product = rawProduct
-    ? preparePublicImageProduct(rawProduct)
-    : null;
+ const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
   if (!product) {
-    return {
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+    return {};
   }
 
   const liveImage = getLiveProductImage(liveProduct);
-  const title = getProductSeoTitle(product, liveProduct?.seoTitle);
+
+  const title = buildTransactionalProductTitle(
+    product,
+    staticProduct,
+    liveProduct,
+    variantId,
+  );
 
   const description =
     getPublicSummary(
@@ -479,7 +473,7 @@ export async function generateMetadata({
     liveImage?.src ||
     product.image;
 
-  return buildSeoMetadata({
+  const metadata = buildSeoMetadata({
     title,
     description,
     path: `/product/${product.slug}`,
@@ -487,89 +481,134 @@ export async function generateMetadata({
     imageAlt:
       liveImage?.alt || product.imageAlt,
   });
+
+  return {
+    ...metadata,
+    title: { absolute: title },
+  };
 }
 export default async function ProductPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<ProductSearchParams>;
+  searchParams: Promise<{ variant?: string | string[] }>;
 }) {
-  const [{ slug }, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams,
-  ]);
+ const { slug } = await params;
+ const variantParam = await searchParams;
+ const initialVariantId = Array.isArray(variantParam.variant)
+   ? variantParam.variant[0]
+   : variantParam.variant;
 
-  const staticProduct = getProduct(slug);
-  const cmsProduct = await getLiveProduct(slug);
+const staticProduct = getProduct(slug);
+const cmsProduct = await getLiveProduct(slug);
 
-  if (
-    !isPublicCmsProduct(cmsProduct) &&
-    !staticProduct?.publishedInCatalog
-  ) {
-    notFound();
-  }
+if (
+  !isPublicCmsProduct(cmsProduct) &&
+  !isPublicStaticProduct(staticProduct)
+) {
+  notFound();
+}
 
-  const liveProduct = isPublicCmsProduct(cmsProduct)
-    ? cmsProduct
-    : null;
+const liveProduct = isPublicCmsProduct(cmsProduct)
+  ? cmsProduct
+  : null;
 
-  const rawProduct =
-    liveProduct
-      ? buildCmsOnlyProduct(
-          liveProduct,
-          staticProduct ?? undefined,
-        )
-      : staticProduct;
+const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
-  const product = rawProduct
-    ? preparePublicImageProduct(rawProduct)
-    : null;
+if (!product) {
+  notFound();
+}
 
-  if (!product) {
-    notFound();
-  }
-
-  const requestedVariantId = getRequestedVariantId(resolvedSearchParams);
-  const initialVariantId = product.variants?.some(
-    (variant) => variant.id === requestedVariantId,
-  )
-    ? requestedVariantId
-    : product.variants?.[0]?.id;
-
-  const storefrontProducts =
-    await getStorefrontProducts();
+const storefrontProducts =
+  await getStorefrontProducts();
 
   const related = storefrontProducts
-    .filter(
-      (item) =>
-        item.category === product.category &&
-        item.slug !== product.slug,
+  .filter(
+    (item) =>
+      item.category === product.category &&
+      item.slug !== product.slug,
     )
     .slice(0, 3);
   const group = getGroupForCategory(product.category);
   const customerFaqs = getCustomerFaqs(product);
   const productExperience = getProductExperience(product);
+  const compactBrand = getCompactBrandLabel(product.brand);
+  const brandPage = getBrandPageForLabel(compactBrand);
+  const brandProductCount = brandPage
+    ? storefrontProducts.filter(
+        (item) =>
+          brandPage.matchers.includes(
+            getCompactBrandLabel(item.brand),
+          ),
+      ).length
+    : 0;
+  const brandHref =
+    brandPage &&
+    brandPage.indexable &&
+    brandProductCount >= brandPage.minProductCount
+      ? `/brands/${brandPage.slug}`
+      : undefined;
 
-  const livePricing = getLiveProductPricing(liveProduct);
-  const liveImage = getLiveProductImage(liveProduct);
+const livePricing = getLiveProductPricing(liveProduct);
+const liveImage = getLiveProductImage(liveProduct);
 
-  const schemaDescription =
-    getPublicSummary(product.summary) || product.nameFa;
-  const schemaPrice = getSchemaPrice(liveProduct);
-  const schemaAvailability = getSchemaAvailability(liveProduct);
-  const image = liveImage?.src || product.image;
-  const productStructuredData = buildProductStructuredData({
-    product,
-    siteOrigin,
-    brandName: getCompactBrandLabel(product.brand),
-    description: schemaDescription,
-    image,
-    liveSku: liveProduct?.sku || undefined,
-    schemaPrice,
-    schemaAvailability,
+const schemaDescription =
+  getPublicSummary(product.summary) || product.nameFa;
+const schemaPrice = getSchemaPrice(
+  liveProduct,
+  product.priceToman,
+);
+
+const schemaAvailability =
+  getSchemaAvailability(liveProduct);
+const image = liveImage?.src || product.image;
+const variants = productExperience.variants ?? [];
+const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
+const absoluteImage = (value: string) =>
+  value.startsWith("http") ? value : `${siteOrigin}${value}`;
+const variantSchemas = variants
+  .filter((variant) => variant.priceToman > 0)
+  .map((variant) => {
+  const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
+  const variantPrice =
+    variant.priceToman > 0
+      ? String(Math.round(variant.priceToman * 10))
+      : null;
+
+  return {
+    "@type": "Product",
+    "@id": `${variantUrl}#product`,
+    name: variant.nameFa,
+    alternateName: variant.nameEn,
+    url: variantUrl,
+    sku: `${product.slug}-${variant.id}`,
+    image: absoluteImage(variant.image),
+    description: variant.summary || variant.nameFa,
+    isVariantOf: { "@id": productGroupId },
+    ...(variantPrice
+      ? {
+          offers: {
+            "@type": "Offer",
+            url: variantUrl,
+            price: variantPrice,
+            priceCurrency: "IRR",
+            availability: schemaAvailability,
+            itemCondition: "https://schema.org/NewCondition",
+          },
+        }
+      : {}),
+  };
   });
-
+const hasProductOffer = Boolean(
+  schemaPrice || variantSchemas.length > 0,
+);
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -591,6 +630,7 @@ export default async function ProductPage({
         livePricing={livePricing}
         liveShortDescription=""
         liveDescription=""
+        brandHref={brandHref}
         initialVariantId={initialVariantId}
       />
 
@@ -626,7 +666,60 @@ export default async function ProductPage({
         </section>
       )}
 
-      <JsonLd data={productStructuredData} />
+      {variants.length > 0 && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "ProductGroup",
+            "@id": productGroupId,
+            name: product.nameFa,
+            description: schemaDescription,
+            url: `${siteOrigin}/product/${product.slug}`,
+            productGroupID: product.slug,
+            variesBy: ["https://schema.org/size"],
+            brand: {
+              "@type": "Brand",
+              name: getCompactBrandLabel(product.brand),
+            },
+            hasVariant: variantSchemas,
+          }}
+        />
+      )}
+      {hasProductOffer && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.nameFa,
+            alternateName: product.nameEn,
+            brand: {
+              "@type": "Brand",
+              name: getCompactBrandLabel(product.brand),
+            },
+            category: product.categoryTitle,
+            description: schemaDescription,
+            image: absoluteImage(image),
+            url: `${siteOrigin}/product/${product.slug}`,
+            audience: {
+              "@type": "Audience",
+              audienceType: product.audience,
+            },
+            sku: liveProduct?.sku || product.slug,
+            ...(schemaPrice
+              ? {
+                  offers: {
+                    "@type": "Offer",
+                    url: `${siteOrigin}/product/${product.slug}`,
+                    price: schemaPrice,
+                    priceCurrency: "IRR",
+                    availability: schemaAvailability,
+                    itemCondition: "https://schema.org/NewCondition",
+                  },
+                }
+              : {}),
+          }}
+        />
+      )}
       {customerFaqs.length > 0 && (
         <JsonLd
           data={{

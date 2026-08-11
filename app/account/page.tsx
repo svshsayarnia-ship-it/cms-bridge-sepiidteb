@@ -3,10 +3,7 @@ import { CustomerAccount } from "../components/CustomerAccount";
 
 export const metadata: Metadata = {
   title: "حساب کاربری",
-  description: "ورود، ثبت‌نام و مدیریت حساب مشتریان Sepiid Beauty.",
-  alternates: {
-    canonical: "/account",
-  },
+  description: "ورود، ثبت‌نام و مشاهده مشخصات اولیه مشتریان Sepiid Beauty.",
   robots: {
     index: false,
     follow: true,

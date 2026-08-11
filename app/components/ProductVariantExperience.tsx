@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Product, ProductVariant } from "../data";
+import { getPublicPackagingLabel } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
 type Pricing = {
@@ -20,6 +21,7 @@ type ProductExperienceVariant = Pick<
   | "image"
   | "imageAlt"
   | "imageVerified"
+  | "imageKind"
   | "volume"
   | "summary"
   | "specs"
@@ -35,6 +37,7 @@ export type ProductExperienceProduct = Pick<
   | "categoryTitle"
   | "image"
   | "imageAlt"
+  | "imageKind"
   | "volume"
   | "priceToman"
   | "priceNote"
@@ -50,6 +53,7 @@ type ProductVariantExperienceProps = {
   livePricing: Pricing | null;
   liveShortDescription: string;
   liveDescription: string;
+  brandHref?: string;
   initialVariantId?: string;
 };
 
@@ -149,13 +153,15 @@ export function ProductVariantExperience({
   livePricing,
   liveShortDescription,
   liveDescription,
+  brandHref,
   initialVariantId,
 }: ProductVariantExperienceProps) {
-  const defaultVariantId =
+  const defaultVariantId = product.variants?.[0]?.id ?? "";
+  const [selectedId, setSelectedId] = useState(
     product.variants?.some((variant) => variant.id === initialVariantId)
-      ? initialVariantId ?? ""
-      : product.variants?.[0]?.id ?? "";
-  const [selectedId, setSelectedId] = useState(defaultVariantId);
+      ? initialVariantId ?? defaultVariantId
+      : defaultVariantId,
+  );
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
   const hasVariants = Boolean(product.variants?.length);
   const displayName = selectedVariant?.nameFa ?? product.nameFa;
@@ -176,8 +182,12 @@ export function ProductVariantExperience({
     : product.specs;
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
+  const packagingLabel = getPublicPackagingLabel(displayVolume);
   const displayImage = selectedVariant?.image ?? liveImage?.src ?? product.image;
   const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
+  const isEditorialFamilyImage =
+    (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
+    !liveImage?.src;
   const pricing = hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
@@ -192,13 +202,11 @@ export function ProductVariantExperience({
   function selectVariant(id: string) {
     setSelectedId(id);
 
-    const url = new URL(window.location.href);
-    url.searchParams.set("variant", id);
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`,
-    );
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("variant", id);
+      window.history.replaceState({}, "", url);
+    }
   }
 
   return (
@@ -216,11 +224,23 @@ export function ProductVariantExperience({
                 fetchPriority="high"
               />
             </div>
+            {isEditorialFamilyImage && (
+              <p className="sb-product-gallery__image-note">
+                تصویر ادیتوریال هم‌خانواده است؛ بسته دقیق هنگام استعلام تطبیق می‌شود.
+              </p>
+            )}
           </div>
 
           <div className="sb-product-summary">
             <div className="sb-product-summary__top">
               <span>{product.categoryTitle}</span>
+              {product.brand ? (
+                brandHref ? (
+                  <Link href={brandHref}>{product.brand}</Link>
+                ) : (
+                  <span>{product.brand}</span>
+                )
+              ) : null}
             </div>
             <h1>{displayName}</h1>
             <p className="sb-product-summary__en">{displayNameEn}</p>
@@ -229,7 +249,10 @@ export function ProductVariantExperience({
               <div className="sb-product-variants">
                 <div className="sb-product-variants__head">
                   <strong>انتخاب مدل</strong>
-                  <span>{displayVolume}</span>
+                  <span>
+                    {displayVolume}
+                    {packagingLabel ? ` · ${packagingLabel}` : ""}
+                  </span>
                 </div>
                 <div className="sb-product-variants__options" role="group" aria-label="انتخاب مدل محصول">
                   {product.variants?.map((variant) => (

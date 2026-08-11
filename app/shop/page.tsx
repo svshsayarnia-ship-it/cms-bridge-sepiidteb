@@ -7,11 +7,11 @@ import {
   catalogGroups,
   productHref,
 } from "../catalog";
-import { toPublicCatalogItem } from "../lib/public-catalog-item";
 import { getStorefrontCategories } from "../lib/storefront-categories";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
 import { buildSeoMetadata } from "../lib/seo";
+import { toPublicProduct } from "../lib/public-product";
 
 export const revalidate = 300;
 
@@ -30,7 +30,6 @@ export default async function ShopPage() {
       getStorefrontCatalog(),
       getStorefrontCategories(),
     ]);
-  const publicCatalogItems = products.map(toPublicCatalogItem);
 
   return (
     <main id="main-content">
@@ -48,13 +47,14 @@ export default async function ShopPage() {
             </span>
 
             <h1>
-              فروشگاهی برای مقایسه؛ نه انتخاب
-              عجولانه.
+              فروشگاه محصولات تخصصی زیبایی
             </h1>
 
             <p>
-              محصولات را با دسته و برند مرور کنید. هر کارت به صفحه مستقلی می‌رسد
-              که مدل‌ها، مشخصات قابل‌نمایش و مسیر استعلام را یک‌جا دارد.
+              محصولات را با دسته، برند و مدل
+              پیدا کنید. هر کارت به صفحه مستقلی
+              می‌رسد که مشخصات، تصویر و مسیر
+              استعلام را یک‌جا دارد.
             </p>
           </div>
 
@@ -151,13 +151,13 @@ export default async function ShopPage() {
       </section>
 
       <section className="sb-section sb-catalog-section">
-        <div className="sb-shell">
-          <ShopCatalog
-            items={publicCatalogItems}
-            categoryOptions={categories}
-          />
-        </div>
-      </section>
+  <div className="sb-shell">
+    <ShopCatalog
+      items={products.map(toPublicProduct)}
+      categoryOptions={categories}
+    />
+  </div>
+</section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">
@@ -175,8 +175,8 @@ export default async function ShopPage() {
           <div>
             <p>
               عنوان دسته برای تصمیم نهایی کافی
-              نیست. نام کامل محصول، مشخصات بسته و
-              نظر فرد واجد صلاحیت باید کنار هم دیده شوند.
+              نیست. نام کامل محصول، مدل، حجم و
+              مشخصات همان بسته را کنار هم ببینید.
             </p>
 
             <p>
