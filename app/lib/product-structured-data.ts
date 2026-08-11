@@ -37,6 +37,11 @@ function canUseSizeDimension(variants: ProductVariant[]) {
   return values.every(Boolean) && new Set(values).size === variants.length;
 }
 
+function publicVariantDescription(variant: ProductVariant, fallback: string) {
+  const parts = [variant.nameFa.trim(), variant.volume?.trim()].filter(Boolean);
+  return parts.length ? parts.join("، ") : fallback;
+}
+
 export function buildProductStructuredData({
   product,
   siteOrigin,
@@ -80,7 +85,7 @@ export function buildProductStructuredData({
           "@id": `${url}#product`,
           name: variant.nameFa,
           alternateName: variant.nameEn,
-          description: variant.summary || description,
+          description: publicVariantDescription(variant, description),
           image: absoluteUrl(siteOrigin, variant.image),
           url,
           sku,
