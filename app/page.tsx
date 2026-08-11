@@ -14,6 +14,7 @@ import {
 import { JsonLd } from "./components/JsonLd";
 import { ProductCard } from "./components/ProductCard";
 import { ProductUseReveal } from "./components/ProductUseReveal";
+import { CategoryHoverVisual } from "./components/CategoryHoverVisual";
 import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
@@ -175,12 +176,10 @@ export default async function Home() {
                   href={`/shop/${category.slug}`}
                   key={category.slug}
                 >
-                  <div
-                    className="sb-category-card__image"
-                    style={{
-                      backgroundImage: `url(${category.image})`,
-                      backgroundPosition: `${category.position} center`,
-                    }}
+                  <CategoryHoverVisual
+                    slug={category.slug}
+                    title={category.title}
+                    en={category.en}
                   />
                   <div className="sb-category-card__content">
                     <span>۰{index + 1}</span>
