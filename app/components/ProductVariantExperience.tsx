@@ -50,6 +50,7 @@ type ProductVariantExperienceProps = {
   livePricing: Pricing | null;
   liveShortDescription: string;
   liveDescription: string;
+  initialVariantId?: string;
 };
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
@@ -148,8 +149,13 @@ export function ProductVariantExperience({
   livePricing,
   liveShortDescription,
   liveDescription,
+  initialVariantId,
 }: ProductVariantExperienceProps) {
-  const [selectedId, setSelectedId] = useState(product.variants?.[0]?.id ?? "");
+  const defaultVariantId =
+    product.variants?.some((variant) => variant.id === initialVariantId)
+      ? initialVariantId ?? ""
+      : product.variants?.[0]?.id ?? "";
+  const [selectedId, setSelectedId] = useState(defaultVariantId);
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
   const hasVariants = Boolean(product.variants?.length);
   const displayName = selectedVariant?.nameFa ?? product.nameFa;
@@ -182,6 +188,18 @@ export function ProductVariantExperience({
         note: product.priceNote ?? "قیمت و موجودی امروز",
       };
   const inquiryLink = buildInquiryLink(displayName, displayVolume);
+
+  function selectVariant(id: string) {
+    setSelectedId(id);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("variant", id);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }
 
   return (
     <>
@@ -220,7 +238,7 @@ export function ProductVariantExperience({
                       aria-pressed={variant.id === selectedId}
                       className={variant.id === selectedId ? "is-active" : ""}
                       key={variant.id}
-                      onClick={() => setSelectedId(variant.id)}
+                      onClick={() => selectVariant(variant.id)}
                     >
                       {variant.label}
                     </button>

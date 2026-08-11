@@ -27,6 +27,11 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
+  isVerifiedPublicProductImage,
+  preparePublicImageProduct,
+} from "../../lib/public-product-image";
+import { buildProductStructuredData } from "../../lib/product-structured-data";
+import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
@@ -38,6 +43,15 @@ type ProductPricing = {
   label: string;
   note: string;
 };
+
+type ProductSearchParams = {
+  variant?: string | string[];
+};
+
+function getRequestedVariantId(searchParams: ProductSearchParams) {
+  const value = searchParams.variant;
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
 
 function formatTomanPrice(value: string) {
   const numeric = Number(value);
@@ -124,7 +138,13 @@ function getLiveProductImage(
     return null;
   }
 
-  const image = cmsProduct.images?.[0];
+  const image = cmsProduct.images?.find((candidate) =>
+    isVerifiedPublicProductImage({
+      src: candidate.src,
+      alt: candidate.alt,
+      verified: true,
+    }),
+  );
 
   if (!image?.src) {
     return null;
@@ -317,6 +337,39 @@ function getProductExperience(
   };
 }
 
+function getProductSeoTitle(
+  product: Product,
+  explicitTitle?: string,
+) {
+  const cleanExplicitTitle = explicitTitle
+    ?.trim()
+    .replace(/\s*\|\s*(?:Sepiid Beauty|سپید بیوتی)\s*$/iu, "")
+    .trim();
+
+  if (
+    cleanExplicitTitle &&
+    /خرید/u.test(cleanExplicitTitle) &&
+    /قیمت/u.test(cleanExplicitTitle)
+  ) {
+    return cleanExplicitTitle;
+  }
+
+  const primaryVariant = product.variants?.[0];
+  const nameFa = primaryVariant?.nameFa?.trim() || product.nameFa.trim();
+  const nameEn = (
+    primaryVariant?.nameEn?.trim() ||
+    product.nameEn.trim() ||
+    getCompactBrandLabel(product.brand)
+  )
+    .replace(/[®™]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return nameEn
+    ? `خرید ${nameFa} | قیمت ${nameEn} و مشخصات`
+    : `خرید ${nameFa} | قیمت و مشخصات`;
+}
+
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
 ): string | null {
@@ -357,11 +410,11 @@ function getSchemaAvailability(
 }
 
 export function generateStaticParams() {
-  return products
-    .filter(
-      (product) => product.publishedInCatalog,
-    )
-    .map((product) => ({ slug: product.slug }));
+  return products.flatMap((product) =>
+    preparePublicImageProduct(product)
+      ? [{ slug: product.slug }]
+      : [],
+  );
 }
 export async function generateMetadata({
   params,
@@ -389,24 +442,29 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
- const product =
-  liveProduct
-    ? buildCmsOnlyProduct(
-        liveProduct,
-        staticProduct ?? undefined,
-      )
-    : staticProduct;
+  const rawProduct =
+    liveProduct
+      ? buildCmsOnlyProduct(
+          liveProduct,
+          staticProduct ?? undefined,
+        )
+      : staticProduct;
+
+  const product = rawProduct
+    ? preparePublicImageProduct(rawProduct)
+    : null;
 
   if (!product) {
-    return {};
+    return {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
   }
 
   const liveImage = getLiveProductImage(liveProduct);
-
-  const title =
-    liveProduct?.seoTitle?.trim() ||
-    liveProduct?.name ||
-    product.nameFa;
+  const title = getProductSeoTitle(product, liveProduct?.seoTitle);
 
   const description =
     getPublicSummary(
@@ -432,61 +490,86 @@ export async function generateMetadata({
 }
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<ProductSearchParams>;
 }) {
- const { slug } = await params;
+  const [{ slug }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
 
-const staticProduct = getProduct(slug);
-const cmsProduct = await getLiveProduct(slug);
+  const staticProduct = getProduct(slug);
+  const cmsProduct = await getLiveProduct(slug);
 
-if (
-  !isPublicCmsProduct(cmsProduct) &&
-  !staticProduct?.publishedInCatalog
-) {
-  notFound();
-}
+  if (
+    !isPublicCmsProduct(cmsProduct) &&
+    !staticProduct?.publishedInCatalog
+  ) {
+    notFound();
+  }
 
-const liveProduct = isPublicCmsProduct(cmsProduct)
-  ? cmsProduct
-  : null;
+  const liveProduct = isPublicCmsProduct(cmsProduct)
+    ? cmsProduct
+    : null;
 
-const product =
-  liveProduct
-    ? buildCmsOnlyProduct(
-        liveProduct,
-        staticProduct ?? undefined,
-      )
-    : staticProduct;
+  const rawProduct =
+    liveProduct
+      ? buildCmsOnlyProduct(
+          liveProduct,
+          staticProduct ?? undefined,
+        )
+      : staticProduct;
 
-if (!product) {
-  notFound();
-}
+  const product = rawProduct
+    ? preparePublicImageProduct(rawProduct)
+    : null;
 
-const storefrontProducts =
-  await getStorefrontProducts();
+  if (!product) {
+    notFound();
+  }
+
+  const requestedVariantId = getRequestedVariantId(resolvedSearchParams);
+  const initialVariantId = product.variants?.some(
+    (variant) => variant.id === requestedVariantId,
+  )
+    ? requestedVariantId
+    : product.variants?.[0]?.id;
+
+  const storefrontProducts =
+    await getStorefrontProducts();
 
   const related = storefrontProducts
-  .filter(
-    (item) =>
-      item.category === product.category &&
-      item.slug !== product.slug,
+    .filter(
+      (item) =>
+        item.category === product.category &&
+        item.slug !== product.slug,
     )
     .slice(0, 3);
   const group = getGroupForCategory(product.category);
   const customerFaqs = getCustomerFaqs(product);
   const productExperience = getProductExperience(product);
 
-const livePricing = getLiveProductPricing(liveProduct);
-const liveImage = getLiveProductImage(liveProduct);
+  const livePricing = getLiveProductPricing(liveProduct);
+  const liveImage = getLiveProductImage(liveProduct);
 
-const schemaDescription =
-  getPublicSummary(product.summary) || product.nameFa;
-const schemaPrice = getSchemaPrice(liveProduct);
+  const schemaDescription =
+    getPublicSummary(product.summary) || product.nameFa;
+  const schemaPrice = getSchemaPrice(liveProduct);
+  const schemaAvailability = getSchemaAvailability(liveProduct);
+  const image = liveImage?.src || product.image;
+  const productStructuredData = buildProductStructuredData({
+    product,
+    siteOrigin,
+    brandName: getCompactBrandLabel(product.brand),
+    description: schemaDescription,
+    image,
+    liveSku: liveProduct?.sku || undefined,
+    schemaPrice,
+    schemaAvailability,
+  });
 
-const schemaAvailability =
-  getSchemaAvailability(liveProduct);
-const image = liveImage?.src || product.image;
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -508,6 +591,7 @@ const image = liveImage?.src || product.image;
         livePricing={livePricing}
         liveShortDescription=""
         liveDescription=""
+        initialVariantId={initialVariantId}
       />
 
       {customerFaqs.length > 0 && (
@@ -542,43 +626,7 @@ const image = liveImage?.src || product.image;
         </section>
       )}
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: product.nameFa,
-          alternateName: product.nameEn,
-          brand: {
-            "@type": "Brand",
-            name: getCompactBrandLabel(product.brand),
-          },
-          category: product.categoryTitle,
-          description: schemaDescription,
-          image: image.startsWith("http")
-  ? image
-  : `${siteOrigin}${image}`,
-          url: `${siteOrigin}/product/${product.slug}`,
-          audience: {
-            "@type": "Audience",
-            audienceType: product.audience,
-          },
-          sku: liveProduct?.sku || undefined,
-
-...(schemaPrice
-  ? {
-      offers: {
-        "@type": "Offer",
-        url: `${siteOrigin}/product/${product.slug}`,
-        price: schemaPrice,
-        priceCurrency: "IRR",
-        availability: schemaAvailability,
-        itemCondition:
-          "https://schema.org/NewCondition",
-      },
-    }
-  : {}),
-        }}
-      />
+      <JsonLd data={productStructuredData} />
       {customerFaqs.length > 0 && (
         <JsonLd
           data={{

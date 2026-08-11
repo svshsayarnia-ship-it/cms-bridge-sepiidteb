@@ -16,6 +16,7 @@ import { ProductCard } from "./components/ProductCard";
 import { ProductUseReveal } from "./components/ProductUseReveal";
 import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
+import { toBrandSlug } from "./lib/discovery-hubs";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
@@ -185,14 +186,14 @@ export default async function Home() {
             </div>
             <div className="sb-product-grid">
               {featuredProducts.map(
-  (product, index) => (
-    <ProductCard
-      product={product}
-      priority={index < 2}
-      key={product.slug}
-    />
-  ),
-)}
+                (product, index) => (
+                  <ProductCard
+                    product={product}
+                    priority={index < 2}
+                    key={product.slug}
+                  />
+                ),
+              )}
             </div>
           </div>
         </section>
@@ -278,14 +279,14 @@ export default async function Home() {
         <div className="sb-shell">
           <span className="sb-eyebrow">BRANDS / INDEX</span>
           <div className="sb-brands-home__row">
-           {homeBrands.map((brand) => (
-  <Link
-    href="/brands"
-    key={brand}
-  >
-    {brand}
-  </Link>
-))}
+            {homeBrands.map((brand) => (
+              <Link
+                href={`/brands/${toBrandSlug(brand)}`}
+                key={brand}
+              >
+                {brand}
+              </Link>
+            ))}
           </div>
           <Link className="sb-text-link" href="/brands">
             راهنمای برندها

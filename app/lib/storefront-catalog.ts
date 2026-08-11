@@ -14,6 +14,10 @@ import {
   getPublicSourceUrl,
   toPublicCopy,
 } from "./public-copy";
+import {
+  isVerifiedPublicProductImage,
+  preparePublicImageProduct,
+} from "./public-product-image";
 import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -128,8 +132,12 @@ function mapWooProduct(
   const group =
     getGroupForCategory(categorySlug);
 
-  const liveImage = product.images?.find(
-    (image) => Boolean(image.src),
+  const liveImage = product.images?.find((image) =>
+    isVerifiedPublicProductImage({
+      src: image.src,
+      alt: image.alt,
+      verified: true,
+    }),
   );
 
   const descriptionText = plainText(
@@ -289,6 +297,12 @@ function mapFallbackProduct(
   };
 }
 
+function enforcePublicImageQa(
+  product: StorefrontProduct,
+): StorefrontProduct | null {
+  return preparePublicImageProduct(product);
+}
+
 async function fetchAllWooProducts(): Promise<
   CmsProduct[]
 > {
@@ -348,7 +362,11 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
           product,
           fallbackBySlug.get(product.slug),
         ),
-      );
+      )
+      .flatMap((product) => {
+        const publicProduct = enforcePublicImageQa(product);
+        return publicProduct ? [publicProduct] : [];
+      });
 
     const publicWooSlugs = new Set(
       mappedProducts.map(
@@ -363,7 +381,11 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
             product.publishedInCatalog &&
             !publicWooSlugs.has(product.slug),
         )
-        .map(mapFallbackProduct);
+        .map(mapFallbackProduct)
+        .flatMap((product) => {
+          const publicProduct = enforcePublicImageQa(product);
+          return publicProduct ? [publicProduct] : [];
+        });
 
     const uniqueProducts = Array.from(
       new Map(
@@ -389,7 +411,11 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
             (product) =>
               product.publishedInCatalog,
           )
-          .map(mapFallbackProduct),
+          .map(mapFallbackProduct)
+          .flatMap((product) => {
+            const publicProduct = enforcePublicImageQa(product);
+            return publicProduct ? [publicProduct] : [];
+          }),
       connected: false,
       source: "migration-fallback",
     };
@@ -399,7 +425,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 const getCachedStorefrontCatalog =
   unstable_cache(
     loadStorefrontCatalog,
-    ["storefront-catalog-v2"],
+    ["storefront-catalog-v3-image-qa"],
     {
       revalidate: 300,
       tags: [STOREFRONT_CATALOG_TAG],

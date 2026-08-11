@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  Category,
-  Product,
-} from "../data";
+import type { Category, Product } from "../data";
+import { getCompactBrandLabel } from "../lib/public-copy";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -20,8 +18,6 @@ export function ShopCatalog({
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [category, setCategory] = useState(initialCategory ?? "all");
-  const [dataStatus, setDataStatus] = useState("all");
-  const [professionalOnly, setProfessionalOnly] = useState(false);
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -76,24 +72,23 @@ export function ShopCatalog({
       Array.from(
         new Set(
           items
-            .map((item) => item.brand.trim())
+            .map((item) => getCompactBrandLabel(item.brand))
             .filter(Boolean),
         ),
-      ).sort((first, second) =>
-        first.localeCompare(second, "fa"),
-      ),
+      ).sort((first, second) => first.localeCompare(second, "fa")),
     [items],
   );
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
     const result = items.filter((item) => {
+      const publicBrand = getCompactBrandLabel(item.brand);
       const matchesQuery =
         !normalized ||
         [
           item.nameFa,
           item.nameEn,
-          item.brand,
+          publicBrand,
           item.shortBenefit,
           item.volume ?? "",
           item.categoryTitle,
@@ -101,37 +96,29 @@ export function ShopCatalog({
           .join(" ")
           .toLocaleLowerCase("fa")
           .includes(normalized);
-      const matchesBrand = brand === "all" || item.brand === brand;
+      const matchesBrand = brand === "all" || publicBrand === brand;
       const matchesCategory = category === "all" || item.category === category;
-      const matchesDataStatus =
-        dataStatus === "all" ||
-        (dataStatus === "image" && item.imageVerified) ||
-        (dataStatus === "review" && Boolean(item.warning));
-      const matchesLevel = !professionalOnly || item.audience.includes("پزش");
-      return (
-        matchesQuery &&
-        matchesBrand &&
-        matchesCategory &&
-        matchesDataStatus &&
-        matchesLevel
-      );
+      return matchesQuery && matchesBrand && matchesCategory;
     });
 
     if (sort === "name") {
       return [...result].sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
     }
     if (sort === "brand") {
-      return [...result].sort((a, b) => a.brand.localeCompare(b.brand));
+      return [...result].sort((a, b) =>
+        getCompactBrandLabel(a.brand).localeCompare(
+          getCompactBrandLabel(b.brand),
+          "fa",
+        ),
+      );
     }
     return result;
-  }, [brand, category, dataStatus, items, professionalOnly, query, sort]);
+  }, [brand, category, items, query, sort]);
 
   const reset = () => {
     setQuery("");
     setBrand("all");
     setCategory(initialCategory ?? "all");
-    setDataStatus("all");
-    setProfessionalOnly(false);
     setSort("featured");
   };
 
@@ -205,50 +192,15 @@ export function ShopCatalog({
               onChange={() => setBrand(item)}
             />
             {item}
-            <small>{items.filter((product) => product.brand === item).length}</small>
+            <small>
+              {
+                items.filter(
+                  (product) => getCompactBrandLabel(product.brand) === item,
+                ).length
+              }
+            </small>
           </label>
         ))}
-      </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>وضعیت اطلاعات و تصویر</legend>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "all"}
-            onChange={() => setDataStatus("all")}
-          />
-          همه موارد
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "image"}
-            onChange={() => setDataStatus("image")}
-          />
-          دارای تصویر مجموعه محصول
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "review"}
-            onChange={() => setDataStatus("review")}
-          />
-          نیازمند بررسی ویژه
-        </label>
-      </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>سطح دسترسی</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={professionalOnly}
-            onChange={(event) => setProfessionalOnly(event.target.checked)}
-          />
-          ویژه پزشک و کلینیک
-        </label>
       </fieldset>
     </>
   );
@@ -271,7 +223,7 @@ export function ShopCatalog({
             </button>
             <p aria-live="polite">
               <strong>{filtered.length}</strong>
-              محصول {initialCategory ? "در این دسته" : "قابل بررسی"}
+              محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
             </p>
           </div>
           <label>
