@@ -30,6 +30,7 @@ import {
   isVerifiedPublicProductImage,
   preparePublicImageProduct,
 } from "../../lib/public-product-image";
+import { buildProductStructuredData } from "../../lib/product-structured-data";
 import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
@@ -42,6 +43,15 @@ type ProductPricing = {
   label: string;
   note: string;
 };
+
+type ProductSearchParams = {
+  variant?: string | string[];
+};
+
+function getRequestedVariantId(searchParams: ProductSearchParams) {
+  const value = searchParams.variant;
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+}
 
 function formatTomanPrice(value: string) {
   const numeric = Number(value);
@@ -480,10 +490,15 @@ export async function generateMetadata({
 }
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<ProductSearchParams>;
 }) {
-  const { slug } = await params;
+  const [{ slug }, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
 
   const staticProduct = getProduct(slug);
   const cmsProduct = await getLiveProduct(slug);
@@ -515,6 +530,13 @@ export default async function ProductPage({
     notFound();
   }
 
+  const requestedVariantId = getRequestedVariantId(resolvedSearchParams);
+  const initialVariantId = product.variants?.some(
+    (variant) => variant.id === requestedVariantId,
+  )
+    ? requestedVariantId
+    : product.variants?.[0]?.id;
+
   const storefrontProducts =
     await getStorefrontProducts();
 
@@ -535,10 +557,19 @@ export default async function ProductPage({
   const schemaDescription =
     getPublicSummary(product.summary) || product.nameFa;
   const schemaPrice = getSchemaPrice(liveProduct);
-
-  const schemaAvailability =
-    getSchemaAvailability(liveProduct);
+  const schemaAvailability = getSchemaAvailability(liveProduct);
   const image = liveImage?.src || product.image;
+  const productStructuredData = buildProductStructuredData({
+    product,
+    siteOrigin,
+    brandName: getCompactBrandLabel(product.brand),
+    description: schemaDescription,
+    image,
+    liveSku: liveProduct?.sku || undefined,
+    schemaPrice,
+    schemaAvailability,
+  });
+
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -560,6 +591,7 @@ export default async function ProductPage({
         livePricing={livePricing}
         liveShortDescription=""
         liveDescription=""
+        initialVariantId={initialVariantId}
       />
 
       {customerFaqs.length > 0 && (
@@ -594,42 +626,7 @@ export default async function ProductPage({
         </section>
       )}
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: product.nameFa,
-          alternateName: product.nameEn,
-          brand: {
-            "@type": "Brand",
-            name: getCompactBrandLabel(product.brand),
-          },
-          category: product.categoryTitle,
-          description: schemaDescription,
-          image: image.startsWith("http")
-            ? image
-            : `${siteOrigin}${image}`,
-          url: `${siteOrigin}/product/${product.slug}`,
-          audience: {
-            "@type": "Audience",
-            audienceType: product.audience,
-          },
-          sku: liveProduct?.sku || undefined,
-          ...(schemaPrice
-            ? {
-                offers: {
-                  "@type": "Offer",
-                  url: `${siteOrigin}/product/${product.slug}`,
-                  price: schemaPrice,
-                  priceCurrency: "IRR",
-                  availability: schemaAvailability,
-                  itemCondition:
-                    "https://schema.org/NewCondition",
-                },
-              }
-            : {}),
-        }}
-      />
+      <JsonLd data={productStructuredData} />
       {customerFaqs.length > 0 && (
         <JsonLd
           data={{
