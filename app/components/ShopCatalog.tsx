@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Category, Product } from "../data";
-import { getCompactBrandLabel } from "../lib/public-copy";
+import type { Category } from "../data";
+import type { PublicCatalogItem } from "../lib/public-catalog-item";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -11,7 +11,7 @@ export function ShopCatalog({
   initialCategory,
   categoryOptions = [],
 }: {
-  items: Product[];
+  items: PublicCatalogItem[];
   initialCategory?: string;
   categoryOptions?: Category[];
 }) {
@@ -69,34 +69,28 @@ export function ShopCatalog({
 
   const brands = useMemo(
     () =>
-      Array.from(
-        new Set(
-          items
-            .map((item) => getCompactBrandLabel(item.brand))
-            .filter(Boolean),
-        ),
-      ).sort((first, second) => first.localeCompare(second, "fa")),
+      Array.from(new Set(items.map((item) => item.brand).filter(Boolean))).sort(
+        (first, second) => first.localeCompare(second, "fa"),
+      ),
     [items],
   );
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
     const result = items.filter((item) => {
-      const publicBrand = getCompactBrandLabel(item.brand);
       const matchesQuery =
         !normalized ||
         [
           item.nameFa,
           item.nameEn,
-          publicBrand,
-          item.shortBenefit,
+          item.brand,
           item.volume ?? "",
           item.categoryTitle,
         ]
           .join(" ")
           .toLocaleLowerCase("fa")
           .includes(normalized);
-      const matchesBrand = brand === "all" || publicBrand === brand;
+      const matchesBrand = brand === "all" || item.brand === brand;
       const matchesCategory = category === "all" || item.category === category;
       return matchesQuery && matchesBrand && matchesCategory;
     });
@@ -105,12 +99,7 @@ export function ShopCatalog({
       return [...result].sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
     }
     if (sort === "brand") {
-      return [...result].sort((a, b) =>
-        getCompactBrandLabel(a.brand).localeCompare(
-          getCompactBrandLabel(b.brand),
-          "fa",
-        ),
-      );
+      return [...result].sort((a, b) => a.brand.localeCompare(b.brand, "fa"));
     }
     return result;
   }, [brand, category, items, query, sort]);
@@ -192,13 +181,7 @@ export function ShopCatalog({
               onChange={() => setBrand(item)}
             />
             {item}
-            <small>
-              {
-                items.filter(
-                  (product) => getCompactBrandLabel(product.brand) === item,
-                ).length
-              }
-            </small>
+            <small>{items.filter((product) => product.brand === item).length}</small>
           </label>
         ))}
       </fieldset>
