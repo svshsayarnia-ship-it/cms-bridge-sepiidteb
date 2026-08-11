@@ -317,6 +317,39 @@ function getProductExperience(
   };
 }
 
+function getProductSeoTitle(
+  product: Product,
+  explicitTitle?: string,
+) {
+  const cleanExplicitTitle = explicitTitle
+    ?.trim()
+    .replace(/\s*\|\s*(?:Sepiid Beauty|سپید بیوتی)\s*$/iu, "")
+    .trim();
+
+  if (
+    cleanExplicitTitle &&
+    /خرید/u.test(cleanExplicitTitle) &&
+    /قیمت/u.test(cleanExplicitTitle)
+  ) {
+    return cleanExplicitTitle;
+  }
+
+  const primaryVariant = product.variants?.[0];
+  const nameFa = primaryVariant?.nameFa?.trim() || product.nameFa.trim();
+  const nameEn = (
+    primaryVariant?.nameEn?.trim() ||
+    product.nameEn.trim() ||
+    getCompactBrandLabel(product.brand)
+  )
+    .replace(/[®™]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return nameEn
+    ? `خرید ${nameFa} | قیمت ${nameEn} و مشخصات`
+    : `خرید ${nameFa} | قیمت و مشخصات`;
+}
+
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
 ): string | null {
@@ -389,24 +422,20 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
- const product =
-  liveProduct
-    ? buildCmsOnlyProduct(
-        liveProduct,
-        staticProduct ?? undefined,
-      )
-    : staticProduct;
+  const product =
+    liveProduct
+      ? buildCmsOnlyProduct(
+          liveProduct,
+          staticProduct ?? undefined,
+        )
+      : staticProduct;
 
   if (!product) {
     return {};
   }
 
   const liveImage = getLiveProductImage(liveProduct);
-
-  const title =
-    liveProduct?.seoTitle?.trim() ||
-    liveProduct?.name ||
-    product.nameFa;
+  const title = getProductSeoTitle(product, liveProduct?.seoTitle);
 
   const description =
     getPublicSummary(
@@ -435,58 +464,58 @@ export default async function ProductPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
- const { slug } = await params;
+  const { slug } = await params;
 
-const staticProduct = getProduct(slug);
-const cmsProduct = await getLiveProduct(slug);
+  const staticProduct = getProduct(slug);
+  const cmsProduct = await getLiveProduct(slug);
 
-if (
-  !isPublicCmsProduct(cmsProduct) &&
-  !staticProduct?.publishedInCatalog
-) {
-  notFound();
-}
+  if (
+    !isPublicCmsProduct(cmsProduct) &&
+    !staticProduct?.publishedInCatalog
+  ) {
+    notFound();
+  }
 
-const liveProduct = isPublicCmsProduct(cmsProduct)
-  ? cmsProduct
-  : null;
+  const liveProduct = isPublicCmsProduct(cmsProduct)
+    ? cmsProduct
+    : null;
 
-const product =
-  liveProduct
-    ? buildCmsOnlyProduct(
-        liveProduct,
-        staticProduct ?? undefined,
-      )
-    : staticProduct;
+  const product =
+    liveProduct
+      ? buildCmsOnlyProduct(
+          liveProduct,
+          staticProduct ?? undefined,
+        )
+      : staticProduct;
 
-if (!product) {
-  notFound();
-}
+  if (!product) {
+    notFound();
+  }
 
-const storefrontProducts =
-  await getStorefrontProducts();
+  const storefrontProducts =
+    await getStorefrontProducts();
 
   const related = storefrontProducts
-  .filter(
-    (item) =>
-      item.category === product.category &&
-      item.slug !== product.slug,
+    .filter(
+      (item) =>
+        item.category === product.category &&
+        item.slug !== product.slug,
     )
     .slice(0, 3);
   const group = getGroupForCategory(product.category);
   const customerFaqs = getCustomerFaqs(product);
   const productExperience = getProductExperience(product);
 
-const livePricing = getLiveProductPricing(liveProduct);
-const liveImage = getLiveProductImage(liveProduct);
+  const livePricing = getLiveProductPricing(liveProduct);
+  const liveImage = getLiveProductImage(liveProduct);
 
-const schemaDescription =
-  getPublicSummary(product.summary) || product.nameFa;
-const schemaPrice = getSchemaPrice(liveProduct);
+  const schemaDescription =
+    getPublicSummary(product.summary) || product.nameFa;
+  const schemaPrice = getSchemaPrice(liveProduct);
 
-const schemaAvailability =
-  getSchemaAvailability(liveProduct);
-const image = liveImage?.src || product.image;
+  const schemaAvailability =
+    getSchemaAvailability(liveProduct);
+  const image = liveImage?.src || product.image;
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -555,28 +584,27 @@ const image = liveImage?.src || product.image;
           category: product.categoryTitle,
           description: schemaDescription,
           image: image.startsWith("http")
-  ? image
-  : `${siteOrigin}${image}`,
+            ? image
+            : `${siteOrigin}${image}`,
           url: `${siteOrigin}/product/${product.slug}`,
           audience: {
             "@type": "Audience",
             audienceType: product.audience,
           },
           sku: liveProduct?.sku || undefined,
-
-...(schemaPrice
-  ? {
-      offers: {
-        "@type": "Offer",
-        url: `${siteOrigin}/product/${product.slug}`,
-        price: schemaPrice,
-        priceCurrency: "IRR",
-        availability: schemaAvailability,
-        itemCondition:
-          "https://schema.org/NewCondition",
-      },
-    }
-  : {}),
+          ...(schemaPrice
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  url: `${siteOrigin}/product/${product.slug}`,
+                  price: schemaPrice,
+                  priceCurrency: "IRR",
+                  availability: schemaAvailability,
+                  itemCondition:
+                    "https://schema.org/NewCondition",
+                },
+              }
+            : {}),
         }}
       />
       {customerFaqs.length > 0 && (
