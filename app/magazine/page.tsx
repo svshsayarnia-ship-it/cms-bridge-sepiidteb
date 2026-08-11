@@ -32,7 +32,7 @@ export default async function MagazinePage() {
         <div className="sb-shell sb-magazine-hero__head">
           <div>
             <span className="sb-eyebrow">SEPIID JOURNAL / 2026</span>
-            <h1>مقاله‌ای که منبع ندارد، راهنمای تصمیم نیست.</h1>
+            <h1>مجله راهنمای محصولات زیبایی و خرید آگاهانه</h1>
           </div>
           <p>
             تحریریه سپید بیوتی، محتوای آموزشی را با تاریخ بازبینی، محدودیت روشن و

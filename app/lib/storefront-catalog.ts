@@ -14,6 +14,10 @@ import {
   getPublicSourceUrl,
   toPublicCopy,
 } from "./public-copy";
+import {
+  isPublicCmsProduct,
+  isPublicStaticProduct,
+} from "./public-product";
 import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -83,11 +87,7 @@ function plainText(html: string): string {
 export function isPublicWooProduct(
   product: CmsProduct,
 ): boolean {
-  return Boolean(
-    product.slug &&
-      product.status === "publish" &&
-      product.catalogVisibility !== "hidden",
-  );
+  return isPublicCmsProduct(product);
 }
 
 function addSkuToSpecs(
@@ -184,6 +184,13 @@ function mapWooProduct(
     imageVerified:
       Boolean(liveImage?.src) ||
       Boolean(fallback?.imageVerified),
+    imageKind:
+      liveImage?.src
+        ? "official"
+        : fallback?.imageKind,
+    imageApproved:
+      Boolean(liveImage?.src) ||
+      Boolean(fallback?.imageApproved),
     position:
       fallback?.position || "50%",
     volume: fallback?.volume,
@@ -360,7 +367,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
       catalogProducts
         .filter(
           (product) =>
-            product.publishedInCatalog &&
+            isPublicStaticProduct(product) &&
             !publicWooSlugs.has(product.slug),
         )
         .map(mapFallbackProduct);
@@ -386,8 +393,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
       products:
         catalogProducts
           .filter(
-            (product) =>
-              product.publishedInCatalog,
+            (product) => isPublicStaticProduct(product),
           )
           .map(mapFallbackProduct),
       connected: false,

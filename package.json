@@ -12,6 +12,7 @@
     "test": "npm run build",
     "lint": "eslint . --ignore-pattern .next",
     "audit:seo": "node scripts/seo-audit.mjs",
+    "audit:content": "node scripts/content-quality-audit.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh"
   },
   "dependencies": {

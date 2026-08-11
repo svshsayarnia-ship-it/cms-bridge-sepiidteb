@@ -8,7 +8,9 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
 import { getStorefrontCategories } from "./lib/storefront-categories";
+import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getSitePresentation } from "./lib/site-presentation";
+import { toPublicProduct } from "./lib/public-product";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -65,15 +67,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [categories, presentation] = await Promise.all([
+  const [categories, catalog, presentation] = await Promise.all([
     getStorefrontCategories(),
+    getStorefrontCatalog(),
     getSitePresentation(),
   ]);
 
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader categories={categories} presentation={presentation.header} />
+        <SiteHeader
+          categories={categories}
+          products={catalog.products.map(toPublicProduct)}
+          presentation={presentation.header}
+        />
         {children}
         <SiteFooter presentation={{ ...presentation.footer, brandTagline: presentation.header.brandTagline }} />
        { <SmartAssistant /> }

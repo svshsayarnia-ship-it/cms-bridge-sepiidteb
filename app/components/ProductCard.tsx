@@ -3,25 +3,31 @@
 import Link from "next/link";
 
 import { productHref } from "../catalog";
-import type { Product } from "../data";
+import type { PublicProduct } from "../lib/public-product";
 import {
-  ArrowIcon,
-  ShieldIcon,
-} from "./Icons";
+  getCompactBrandLabel,
+  getPublicPackagingLabel,
+} from "../lib/public-copy";
+import { ArrowIcon } from "./Icons";
 
 export function ProductCard({
   product,
   priority = false,
 }: {
-  product: Product;
+  product: PublicProduct;
   priority?: boolean;
 }) {
   const href = productHref(product);
+  const volume = product.volume
+    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
+    .trim();
 
   const imageSrc = product.image;
   const imageAlt =
     product.imageAlt ||
     `تصویر ${product.nameFa}`;
+  const brand = getCompactBrandLabel(product.brand);
+  const packagingLabel = getPublicPackagingLabel(product.volume);
 
   return (
     <article className="sb-product-card">
@@ -58,14 +64,7 @@ export function ProductCard({
 
       <div className="sb-product-card__content">
         <div className="sb-product-card__meta">
-          {product.brand && (
-            <span>{product.brand}</span>
-          )}
-
-          <span>
-            <ShieldIcon />
-            بررسی پیش از ارسال
-          </span>
+          {brand && <span>{brand}</span>}
         </div>
 
         <Link href={href}>
@@ -76,9 +75,10 @@ export function ProductCard({
           )}
         </Link>
 
-        {product.volume && (
+        {volume && (
           <div className="sb-product-card__facts">
-            <span>{product.volume}</span>
+            <span>{volume}</span>
+            {packagingLabel && <span>{packagingLabel}</span>}
           </div>
         )}
 

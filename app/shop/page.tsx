@@ -11,6 +11,7 @@ import { getStorefrontCategories } from "../lib/storefront-categories";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
 import { buildSeoMetadata } from "../lib/seo";
+import { toPublicProduct } from "../lib/public-product";
 
 export const revalidate = 300;
 
@@ -46,15 +47,14 @@ export default async function ShopPage() {
             </span>
 
             <h1>
-              فروشگاهی برای مقایسه؛ نه انتخاب
-              عجولانه.
+              فروشگاه محصولات تخصصی زیبایی
             </h1>
 
             <p>
-              محصولات را با دسته، برند و سطح
-              دسترسی فیلتر کنید. هر کارت به صفحه
-              مستقلی می‌رسد که مشخصات، فرایند
-              بررسی و مسیر استعلام را یک‌جا دارد.
+              محصولات را با دسته، برند و مدل
+              پیدا کنید. هر کارت به صفحه مستقلی
+              می‌رسد که مشخصات، تصویر و مسیر
+              استعلام را یک‌جا دارد.
             </p>
           </div>
 
@@ -153,7 +153,7 @@ export default async function ShopPage() {
       <section className="sb-section sb-catalog-section">
   <div className="sb-shell">
     <ShopCatalog
-      items={products}
+      items={products.map(toPublicProduct)}
       categoryOptions={categories}
     />
   </div>
@@ -175,9 +175,8 @@ export default async function ShopPage() {
           <div>
             <p>
               عنوان دسته برای تصمیم نهایی کافی
-              نیست. نام کامل محصول، اطلاعات
-              سازنده، مشخصات بسته و نظر پزشک باید
-              کنار هم دیده شوند.
+              نیست. نام کامل محصول، مدل، حجم و
+              مشخصات همان بسته را کنار هم ببینید.
             </p>
 
             <p>

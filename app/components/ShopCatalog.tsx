@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   Category,
-  Product,
 } from "../data";
+import type { PublicProduct } from "../lib/public-product";
+import { getCompactBrandLabel } from "../lib/public-copy";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -13,15 +14,13 @@ export function ShopCatalog({
   initialCategory,
   categoryOptions = [],
 }: {
-  items: Product[];
+  items: PublicProduct[];
   initialCategory?: string;
   categoryOptions?: Category[];
 }) {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [category, setCategory] = useState(initialCategory ?? "all");
-  const [dataStatus, setDataStatus] = useState("all");
-  const [professionalOnly, setProfessionalOnly] = useState(false);
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -71,19 +70,22 @@ export function ShopCatalog({
     };
   }, [filtersOpen]);
 
-  const brands = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          items
-            .map((item) => item.brand.trim())
-            .filter(Boolean),
-        ),
-      ).sort((first, second) =>
-        first.localeCompare(second, "fa"),
-      ),
-    [items],
-  );
+  const brandOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    for (const item of items) {
+      const label = getCompactBrandLabel(item.brand);
+      if (!label) continue;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+
+    return Array.from(counts, ([label, count]) => ({
+      label,
+      count,
+    })).sort((first, second) =>
+      first.label.localeCompare(second.label, "fa"),
+    );
+  }, [items]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
@@ -93,7 +95,7 @@ export function ShopCatalog({
         [
           item.nameFa,
           item.nameEn,
-          item.brand,
+          getCompactBrandLabel(item.brand),
           item.shortBenefit,
           item.volume ?? "",
           item.categoryTitle,
@@ -101,19 +103,14 @@ export function ShopCatalog({
           .join(" ")
           .toLocaleLowerCase("fa")
           .includes(normalized);
-      const matchesBrand = brand === "all" || item.brand === brand;
+      const matchesBrand =
+        brand === "all" ||
+        getCompactBrandLabel(item.brand) === brand;
       const matchesCategory = category === "all" || item.category === category;
-      const matchesDataStatus =
-        dataStatus === "all" ||
-        (dataStatus === "image" && item.imageVerified) ||
-        (dataStatus === "review" && Boolean(item.warning));
-      const matchesLevel = !professionalOnly || item.audience.includes("پزش");
       return (
         matchesQuery &&
         matchesBrand &&
-        matchesCategory &&
-        matchesDataStatus &&
-        matchesLevel
+        matchesCategory
       );
     });
 
@@ -121,17 +118,20 @@ export function ShopCatalog({
       return [...result].sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
     }
     if (sort === "brand") {
-      return [...result].sort((a, b) => a.brand.localeCompare(b.brand));
+      return [...result].sort((a, b) =>
+        getCompactBrandLabel(a.brand).localeCompare(
+          getCompactBrandLabel(b.brand),
+          "fa",
+        ),
+      );
     }
     return result;
-  }, [brand, category, dataStatus, items, professionalOnly, query, sort]);
+  }, [brand, category, items, query, sort]);
 
   const reset = () => {
     setQuery("");
     setBrand("all");
     setCategory(initialCategory ?? "all");
-    setDataStatus("all");
-    setProfessionalOnly(false);
     setSort("featured");
   };
 
@@ -196,59 +196,18 @@ export function ShopCatalog({
           همه برندها
           <small>{items.length}</small>
         </label>
-        {brands.map((item) => (
-          <label key={item}>
+        {brandOptions.map((item) => (
+          <label key={item.label}>
             <input
               type="radio"
               name="brand"
-              checked={brand === item}
-              onChange={() => setBrand(item)}
+              checked={brand === item.label}
+              onChange={() => setBrand(item.label)}
             />
-            {item}
-            <small>{items.filter((product) => product.brand === item).length}</small>
+            {item.label}
+            <small>{item.count}</small>
           </label>
         ))}
-      </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>وضعیت اطلاعات و تصویر</legend>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "all"}
-            onChange={() => setDataStatus("all")}
-          />
-          همه موارد
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "image"}
-            onChange={() => setDataStatus("image")}
-          />
-          دارای تصویر مجموعه محصول
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "review"}
-            onChange={() => setDataStatus("review")}
-          />
-          نیازمند بررسی ویژه
-        </label>
-      </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>سطح دسترسی</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={professionalOnly}
-            onChange={(event) => setProfessionalOnly(event.target.checked)}
-          />
-          ویژه پزشک و کلینیک
-        </label>
       </fieldset>
     </>
   );
@@ -271,7 +230,7 @@ export function ShopCatalog({
             </button>
             <p aria-live="polite">
               <strong>{filtered.length}</strong>
-              محصول {initialCategory ? "در این دسته" : "قابل بررسی"}
+              محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
             </p>
           </div>
           <label>

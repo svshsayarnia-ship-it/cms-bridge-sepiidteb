@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { catalogGroups, productHref } from "../catalog";
 import {
-  products,
   whatsappHref,
   type Category,
 } from "../data";
+import type { PublicProduct } from "../lib/public-product";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -58,9 +58,11 @@ export { BrandMark };
 
 export function SiteHeader({
   categories,
+  products,
   presentation,
 }: {
   categories: Category[];
+  products: PublicProduct[];
   presentation: SitePresentation["header"];
 }) {
   const pathname = usePathname();
@@ -97,7 +99,7 @@ export function SiteHeader({
           .includes(normalized),
       )
       .slice(0, 7);
-  }, [query]);
+  }, [products, query]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {

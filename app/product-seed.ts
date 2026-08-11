@@ -15,7 +15,10 @@ export type ProductSeed = {
   badge?: string;
   warning?: string;
   image?: string;
+  imageAlt?: string;
   imageVerified?: boolean;
+  imageKind?: "official" | "editorial-family";
+  imageApproved?: boolean;
   publishedInCatalog?: boolean;
   sourceName?: string;
   sourceUrl?: string;

@@ -1,11 +1,17 @@
 import type { MetadataRoute } from "next";
 import { catalogGroups } from "./catalog";
+import {
+  brandPages,
+  concerns,
+  guides,
+} from "./content-architecture";
 import { articles, categories } from "./data";
+import { getCompactBrandLabel } from "./lib/public-copy";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
 const fallbackLastModified = new Date(
-  "2026-08-10",
+  "2026-08-11",
 );
 
 function getProductLastModified(
@@ -30,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/professional",
     "/about",
     "/contact",
+    "/faq",
     "/policies/privacy",
     "/policies/terms",
     "/policies/shipping",
@@ -58,6 +65,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : 0.75,
     }));
 
+  const categoryRoutes = categories.filter(
+    (category) =>
+      catalog.products.some(
+        (product) => product.category === category.slug,
+      ),
+  );
+
+  const groupRoutes = catalogGroups.filter((group) =>
+    catalog.products.some((product) =>
+      group.categorySlugs.includes(product.category),
+    ),
+  );
+
+  const brandRoutes = brandPages.filter((brand) => {
+    if (!brand.indexable) return false;
+
+    const productCount = catalog.products.filter((product) => {
+      const label = getCompactBrandLabel(product.brand);
+      return brand.matchers.includes(label);
+    }).length;
+
+    return productCount >= brand.minProductCount;
+  });
+
   return [
     ...staticRoutes.map((route) => ({
       url: `${siteOrigin}${route}`,
@@ -75,7 +106,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             : 0.7,
     })),
 
-    ...categories.map((category) => ({
+    ...categoryRoutes.map((category) => ({
       url: `${siteOrigin}/shop/${category.slug}`,
       lastModified:
         fallbackLastModified,
@@ -84,7 +115,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     })),
 
-    ...catalogGroups.map((group) => ({
+    ...groupRoutes.map((group) => ({
       url: `${siteOrigin}/shop/group/${group.slug}`,
       lastModified:
         fallbackLastModified,
@@ -94,6 +125,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
 
     ...productRoutes,
+
+    ...brandRoutes.map((brand) => ({
+      url: `${siteOrigin}/brands/${brand.slug}`,
+      lastModified: fallbackLastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.76,
+    })),
+
+    ...guides
+      .filter((guide) => guide.indexable)
+      .map((guide) => ({
+        url: `${siteOrigin}/guides/${guide.slug}`,
+        lastModified: fallbackLastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.8,
+      })),
+
+    ...concerns
+      .filter((concern) => concern.indexable)
+      .map((concern) => ({
+        url: `${siteOrigin}/concerns/${concern.slug}`,
+        lastModified: fallbackLastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.72,
+      })),
 
     ...articles.map((article) => ({
       url: `${siteOrigin}/magazine/${article.slug}`,

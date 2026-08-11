@@ -17,6 +17,7 @@ import {
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 import { buildSeoMetadata } from "../../lib/seo";
+import { toPublicProduct } from "../../lib/public-product";
 
 export const revalidate = 300;
 
@@ -41,6 +42,22 @@ export async function generateMetadata({
 
   if (!category) {
     return {};
+  }
+
+  const { products } = await getStorefrontCatalog();
+
+  if (
+    !products.some(
+      (product) => product.category === category.slug,
+    )
+  ) {
+    return {
+      title: category.title,
+      robots: { index: false, follow: true },
+      alternates: {
+        canonical: `/shop/${category.slug}`,
+      },
+    };
   }
 
   return buildSeoMetadata({
@@ -171,7 +188,7 @@ export default async function CategoryPage({
       <section className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
-            items={items}
+            items={items.map(toPublicProduct)}
             initialCategory={category.slug}
           />
         </div>

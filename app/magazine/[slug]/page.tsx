@@ -8,7 +8,9 @@ import { FaqList } from "../../components/FaqList";
 import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
-import { articles, products } from "../../data";
+import { articles } from "../../data";
+import { getGuideForArticle } from "../../content-architecture";
+import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
 import { applyArticlePresentation, getSitePresentation } from "../../lib/site-presentation";
@@ -64,9 +66,12 @@ export default async function ArticlePage({
     article.slug === "verify-dermal-filler-authenticity"
       ? "/images/magazine-authenticity-v2.webp"
       : article.image;
-  const relatedProducts = products.filter((product) =>
+  const storefrontProducts =
+    await getStorefrontProducts();
+  const relatedProducts = storefrontProducts.filter((product) =>
     article.relatedProducts.includes(product.slug),
   );
+  const parentGuide = getGuideForArticle(article.slug);
   const relatedArticles = article.relatedArticles?.length
     ? articles.filter((item) => article.relatedArticles?.includes(item.slug)).slice(0, 2)
     : articles.filter((item) => item.slug !== article.slug).slice(0, 2);
@@ -142,6 +147,16 @@ export default async function ArticlePage({
             <strong>یادداشت ایمنی</strong>
             <p>{article.notice}</p>
           </div>
+
+          {parentGuide ? (
+            <div className="sb-article-parent-guide">
+              <span>راهنمای مادر این موضوع</span>
+              <Link href={`/guides/${parentGuide.slug}`}>
+                {parentGuide.title}
+                <ArrowIcon />
+              </Link>
+            </div>
+          ) : null}
 
           {article.sections.map((section, index) => (
             <section id={`section-${index + 1}`} key={section.heading}>

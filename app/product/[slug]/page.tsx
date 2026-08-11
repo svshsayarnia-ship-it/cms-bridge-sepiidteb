@@ -7,10 +7,13 @@ import { FaqList } from "../../components/FaqList";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
-import { ProductVariantExperience } from "../../components/ProductVariantExperience";
-import { getGroupForCategory } from "../../catalog";
 import {
-  articles,
+  ProductVariantExperience,
+} from "../../components/ProductVariantExperience";
+import type { ProductExperienceProduct } from "../../components/ProductVariantExperience";
+import { getGroupForCategory } from "../../catalog";
+import { getBrandPageForLabel } from "../../content-architecture";
+import {
   getProduct,
   products,
 } from "../../data";
@@ -20,8 +23,13 @@ import { siteOrigin } from "../../lib/site-url";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
+  isPublicCmsProduct,
+  isPublicImageSrc,
+  isPublicStaticProduct,
+} from "../../lib/public-product";
+import {
+  getCompactBrandLabel,
   getEnglishBrandLabel,
-  getPublicSourceUrl,
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
@@ -32,20 +40,6 @@ import {
 export const revalidate = 300;
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
-const reviewDateFormatter =
-  new Intl.DateTimeFormat("fa-IR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-function formatReviewDate(value: string): string {
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? value
-    : reviewDateFormatter.format(date);
-}
 type ProductPricing = {
   label: string;
   note: string;
@@ -56,21 +50,6 @@ function formatTomanPrice(value: string) {
   if (!Number.isFinite(numeric) || numeric <= 0) return "";
   return `${priceFormatter.format(numeric)} تومان`;
 }
-function cleanProductHtml(html: string) {
-  return toPublicCopy(html
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, "")
-    .replace(/<(?:object|embed|form|input|button|svg|math)[\s\S]*?>[\s\S]*?<\/(?:object|embed|form|input|button|svg|math)>/gi, "")
-    .replace(/<\/?(?:object|embed|form|input|button|svg|math)\b[^>]*>/gi, "")
-    .replace(/\sstyle=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\son\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(
-      /\s(href|src)=["']\s*(?:javascript|data):[^"']*["']/gi,
-      "",
-    )
-    .trim());
-}
-
 function plainText(html: string) {
   return toPublicCopy(html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
@@ -80,6 +59,18 @@ function plainText(html: string) {
     .replace(/\s+/g, " ")
     .trim());
 }
+
+const internalCmsCopyTerms =
+  /سازنده|تولید(?:شده)? توسط|کشور|شرکت|اصالت|تاریخ انقضا|بچ|پلمب|منبع|بررسی|پزشک|تزریق|کلینیک|پروتکل|درمان|Medytox|Caregen|Dongkook|BioPlus|Masoondarou|Professional Derma|Wockhardt|Daehan|Spad Pharmed/iu;
+
+function getPublicSummary(value: string) {
+  return (plainText(value)
+    .split(/(?<=[.!؟؛])\s+/u)
+    .find((sentence) =>
+      sentence.length > 20 && !internalCmsCopyTerms.test(sentence),
+    ) ?? "").trim();
+}
+
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
@@ -128,7 +119,7 @@ function getLiveProductPricing(
     note:
       salePrice && regularPrice
         ? `قیمت عادی: ${regularPrice}`
-        : "قیمت ثبت‌شده؛ برای تأیید نهایی موجودی استعلام بگیرید.",
+        : "قیمت ثبت‌شده در سایت",
   };
 }
 
@@ -150,15 +141,6 @@ function getLiveProductImage(
     alt: image.alt || cmsProduct.name || "",
   };
 }
-function isPublicCmsProduct(
-  cmsProduct: CmsProduct | null,
-): cmsProduct is CmsProduct {
-  return Boolean(
-    cmsProduct &&
-      cmsProduct.status === "publish" &&
-      cmsProduct.catalogVisibility !== "hidden",
-  );
-}
 function buildCmsOnlyProduct(
   cmsProduct: CmsProduct,
   fallback?: Product,
@@ -167,13 +149,12 @@ function buildCmsOnlyProduct(
   const image = getLiveProductImage(cmsProduct);
 
   const summary =
-    plainText(
+    getPublicSummary(
       cmsProduct.shortDescription ||
         cmsProduct.description ||
         "",
     ) ||
-    fallback?.summary ||
-    "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
+    getPublicSummary(fallback?.summary || "");
 
   return {
     slug: cmsProduct.slug,
@@ -213,16 +194,18 @@ function buildCmsOnlyProduct(
     imageVerified:
       Boolean(image?.src) ||
       Boolean(fallback?.imageVerified),
+    imageKind:
+      image?.src
+        ? "official"
+        : fallback?.imageKind,
+    imageApproved:
+      Boolean(image?.src) ||
+      Boolean(fallback?.imageApproved),
     position:
       fallback?.position || "center",
     volume: fallback?.volume,
     priceToman: fallback?.priceToman,
     priceNote: fallback?.priceNote,
-    sourceStatus:
-      fallback?.sourceStatus ||
-      toPublicCopy(cmsProduct.sourceName) ||
-      "اطلاعات محصول هنگام استعلام بازبینی می‌شود",
-    warning: fallback?.warning,
     summary,
     shortBenefit:
       fallback?.shortBenefit || summary,
@@ -243,31 +226,124 @@ function buildCmsOnlyProduct(
     faq: fallback?.faq ?? [],
     publishedInCatalog:
       fallback?.publishedInCatalog,
-    sourceName:
-      fallback?.sourceName ||
-      toPublicCopy(cmsProduct.sourceName),
-    sourceUrl:
-      getPublicSourceUrl(cmsProduct.sourceUrl) ||
-      fallback?.sourceUrl,
-    reviewedAt:
-      cmsProduct.reviewedAt ||
-      fallback?.reviewedAt,
     variants: fallback?.variants,
   };
 }
+
+const blockedFaqTerms = /اصالت|تطبیق|سازنده|منبع|تأیید|تایید|رسمی|پلمب|بچ|تاریخ|مجوز|قطعی|بررسی/u;
+const usefulFaqTerms = /چند|حجم|میل|مدل|قیمت|جعبه|بسته|سرنگ|ویال|محتویات/u;
+
+function getCustomerFaqs(product: Product) {
+  return product.faq
+    .filter(
+      ({ question, answer }) =>
+        usefulFaqTerms.test(question) &&
+        !blockedFaqTerms.test(question) &&
+        !blockedFaqTerms.test(answer),
+    )
+    .map(({ question, answer }) => ({
+      question,
+      answer: (answer.split(/(?<=[.!؟؛])\s+/u)[0] ?? answer).trim(),
+    }))
+    .slice(0, 3);
+}
+
+const publicSpecLabels = new Set([
+  "مدل",
+  "مدل‌های موجود",
+  "حجم",
+  "حجم یا واحد مشاهده‌شده",
+  "حجم‌های موجود",
+  "حجم کل",
+  "حجم هر سرنگ",
+  "حجم هر ویال",
+  "تعداد",
+  "تعداد ست",
+  "تعداد جعبه",
+  "تعداد و حجم",
+  "محتویات",
+  "بسته",
+  "بسته رایج",
+  "شکل بسته",
+  "شکل محصول",
+  "سرنگ",
+  "ویال",
+  "قدرت",
+  "غلظت درج‌شده",
+  "ترکیبات فعال اعلام‌شده",
+  "واحد قیمت",
+]);
+
+function getPublicSpecs(specs: Product["specs"]) {
+  return specs.flatMap(([label, value]) => {
+    const cleanValue = toPublicCopy(value)
+      .replace(
+        /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست\s+موجودی|فهرست\s+بازار).*$/u,
+        "",
+      )
+      .trim();
+
+    return publicSpecLabels.has(label) && cleanValue
+      ? [[label, cleanValue] as [string, string]]
+      : [];
+  });
+}
+
+function getProductExperience(
+  product: Product,
+): ProductExperienceProduct {
+  return {
+    nameFa: product.nameFa,
+    nameEn: product.nameEn,
+    brand: getCompactBrandLabel(product.brand),
+    categoryTitle: product.categoryTitle,
+    image: product.image,
+    imageAlt: product.imageAlt,
+    imageKind: product.imageKind,
+    volume: product.volume,
+    priceToman: product.priceToman,
+    priceNote: product.priceNote,
+    summary: getPublicSummary(product.summary),
+    specs: getPublicSpecs(product.specs),
+    variants: product.variants
+      ?.filter(
+        (variant) =>
+          (variant.imageVerified === true ||
+            (variant.imageKind === "editorial-family" &&
+              variant.imageApproved === true)) &&
+          isPublicImageSrc(variant.image),
+      )
+      .map((variant) => ({
+      id: variant.id,
+      label: variant.label,
+      nameFa: variant.nameFa,
+      nameEn: variant.nameEn,
+      image: variant.image,
+      imageAlt: variant.imageAlt,
+      imageVerified: variant.imageVerified,
+      imageKind: variant.imageKind,
+      volume: variant.volume,
+      summary: getPublicSummary(variant.summary),
+      specs: getPublicSpecs(variant.specs),
+      priceToman: variant.priceToman,
+      priceNote: variant.priceNote,
+      })),
+  };
+}
+
 function getSchemaPrice(
   cmsProduct: CmsProduct | null,
+  staticPriceToman?: number,
 ): string | null {
-  if (!cmsProduct) {
-    return null;
-  }
+  const rawPrice = cmsProduct
+    ? cmsProduct.salePrice ||
+      cmsProduct.regularPrice ||
+      cmsProduct.price
+    : staticPriceToman;
 
-  const rawPrice =
-    cmsProduct.salePrice ||
-    cmsProduct.regularPrice ||
-    cmsProduct.price;
-
-  const tomanPrice = Number(rawPrice);
+  const tomanPrice = cmsProduct
+    ? Number(rawPrice)
+    : Number(staticPriceToman);
 
   if (!Number.isFinite(tomanPrice) || tomanPrice <= 0) {
     return null;
@@ -294,26 +370,62 @@ function getSchemaAvailability(
   return "https://schema.org/InStock";
 }
 
+function buildTransactionalProductTitle(
+  product: Product,
+  staticProduct: Product | undefined,
+  liveProduct: CmsProduct | null,
+  variantId?: string,
+): string {
+  const primaryVariant =
+    product.variants?.find((variant) => variant.id === variantId) ??
+    product.variants?.[0];
+  const titleFa = (
+    primaryVariant?.nameFa ||
+    staticProduct?.nameFa ||
+    liveProduct?.name ||
+    product.nameFa
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  const titleEn = (
+    primaryVariant?.nameEn ||
+    liveProduct?.name ||
+    staticProduct?.nameEn ||
+    product.nameEn ||
+    titleFa
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `خرید ${titleFa} | قیمت ${titleEn} و مشخصات | سپید بیوتی`;
+}
+
 export function generateStaticParams() {
   return products
     .filter(
-      (product) => product.publishedInCatalog,
+      (product) => isPublicStaticProduct(product),
     )
     .map((product) => ({ slug: product.slug }));
 }
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const variantParam = await searchParams;
+  const variantId = Array.isArray(variantParam.variant)
+    ? variantParam.variant[0]
+    : variantParam.variant;
 
   const staticProduct = getProduct(slug);
   const cmsProduct = await getLiveProduct(slug);
 
   if (
     !isPublicCmsProduct(cmsProduct) &&
-    !staticProduct?.publishedInCatalog
+    !isPublicStaticProduct(staticProduct)
   ) {
     return {
       robots: {
@@ -341,27 +453,27 @@ export async function generateMetadata({
 
   const liveImage = getLiveProductImage(liveProduct);
 
-  const title =
-    liveProduct?.seoTitle?.trim() ||
-    liveProduct?.name ||
-    product.nameFa;
-
-  const cmsDescription = plainText(
-    liveProduct?.shortDescription ||
-      liveProduct?.description ||
-      "",
+  const title = buildTransactionalProductTitle(
+    product,
+    staticProduct,
+    liveProduct,
+    variantId,
   );
 
   const description =
-    liveProduct?.metaDescription?.trim() ||
-    cmsDescription ||
-    `${product.summary} استعلام موجودی، مشخصات بسته و شرایط تحویل از Sepiid Beauty.`;
+    getPublicSummary(
+      liveProduct?.shortDescription ||
+        liveProduct?.description ||
+        "",
+    ) ||
+    getPublicSummary(product.summary) ||
+    `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
   const image =
     liveImage?.src ||
     product.image;
 
-  return buildSeoMetadata({
+  const metadata = buildSeoMetadata({
     title,
     description,
     path: `/product/${product.slug}`,
@@ -369,20 +481,31 @@ export async function generateMetadata({
     imageAlt:
       liveImage?.alt || product.imageAlt,
   });
+
+  return {
+    ...metadata,
+    title: { absolute: title },
+  };
 }
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string | string[] }>;
 }) {
  const { slug } = await params;
+ const variantParam = await searchParams;
+ const initialVariantId = Array.isArray(variantParam.variant)
+   ? variantParam.variant[0]
+   : variantParam.variant;
 
 const staticProduct = getProduct(slug);
 const cmsProduct = await getLiveProduct(slug);
 
 if (
   !isPublicCmsProduct(cmsProduct) &&
-  !staticProduct?.publishedInCatalog
+  !isPublicStaticProduct(staticProduct)
 ) {
   notFound();
 }
@@ -406,38 +529,86 @@ if (!product) {
 const storefrontProducts =
   await getStorefrontProducts();
 
-const related = storefrontProducts
+  const related = storefrontProducts
   .filter(
     (item) =>
       item.category === product.category &&
       item.slug !== product.slug,
-  )
-  .slice(0, 3);
-  const article =
-    articles.find((item) => item.relatedProducts.includes(product.slug)) ?? articles[0];
+    )
+    .slice(0, 3);
   const group = getGroupForCategory(product.category);
+  const customerFaqs = getCustomerFaqs(product);
+  const productExperience = getProductExperience(product);
+  const compactBrand = getCompactBrandLabel(product.brand);
+  const brandPage = getBrandPageForLabel(compactBrand);
+  const brandProductCount = brandPage
+    ? storefrontProducts.filter(
+        (item) =>
+          brandPage.matchers.includes(
+            getCompactBrandLabel(item.brand),
+          ),
+      ).length
+    : 0;
+  const brandHref =
+    brandPage &&
+    brandPage.indexable &&
+    brandProductCount >= brandPage.minProductCount
+      ? `/brands/${brandPage.slug}`
+      : undefined;
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct);
 
-const liveShortDescription = cleanProductHtml(
-  liveProduct?.shortDescription || "",
+const schemaDescription =
+  getPublicSummary(product.summary) || product.nameFa;
+const schemaPrice = getSchemaPrice(
+  liveProduct,
+  product.priceToman,
 );
-
-const liveDescription = cleanProductHtml(
-  liveProduct?.description || "",
-);
-
-const schemaDescription = plainText(
-  liveShortDescription ||
-    liveDescription ||
-    product.summary,
-);
-const schemaPrice = getSchemaPrice(liveProduct);
 
 const schemaAvailability =
   getSchemaAvailability(liveProduct);
 const image = liveImage?.src || product.image;
+const variants = productExperience.variants ?? [];
+const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
+const absoluteImage = (value: string) =>
+  value.startsWith("http") ? value : `${siteOrigin}${value}`;
+const variantSchemas = variants
+  .filter((variant) => variant.priceToman > 0)
+  .map((variant) => {
+  const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
+  const variantPrice =
+    variant.priceToman > 0
+      ? String(Math.round(variant.priceToman * 10))
+      : null;
+
+  return {
+    "@type": "Product",
+    "@id": `${variantUrl}#product`,
+    name: variant.nameFa,
+    alternateName: variant.nameEn,
+    url: variantUrl,
+    sku: `${product.slug}-${variant.id}`,
+    image: absoluteImage(variant.image),
+    description: variant.summary || variant.nameFa,
+    isVariantOf: { "@id": productGroupId },
+    ...(variantPrice
+      ? {
+          offers: {
+            "@type": "Offer",
+            url: variantUrl,
+            price: variantPrice,
+            priceCurrency: "IRR",
+            availability: schemaAvailability,
+            itemCondition: "https://schema.org/NewCondition",
+          },
+        }
+      : {}),
+  };
+  });
+const hasProductOffer = Boolean(
+  schemaPrice || variantSchemas.length > 0,
+);
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -454,82 +625,31 @@ const image = liveImage?.src || product.image;
       </div>
 
       <ProductVariantExperience
-        product={product}
+        product={productExperience}
         liveImage={liveImage}
         livePricing={livePricing}
-        liveShortDescription={liveShortDescription}
-        liveDescription={liveDescription}
-        reviewerName={liveProduct?.reviewerName}
-        reviewerRole={liveProduct?.reviewerRole}
-        reviewedAtLabel={product.reviewedAt ? formatReviewDate(product.reviewedAt) : undefined}
+        liveShortDescription=""
+        liveDescription=""
+        brandHref={brandHref}
+        initialVariantId={initialVariantId}
       />
 
-      <section className="sb-product-authenticity" id="authenticity">
-        <div className="sb-shell sb-product-authenticity__grid">
-          <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">SEPIID CHECK / 03 STEPS</span>
-            <h2>کنترل اصالت، یک کد یا هولوگرام نیست.</h2>
-            <p>
-              تصمیم مطمئن‌تر از تطبیق چند نشانه و یک مسیر تأمین قابل‌پیگیری می‌آید.
-            </p>
-            <Link
-              className="sb-text-link sb-text-link--light"
-              href="/magazine/verify-dermal-filler-authenticity"
-            >
-              چک‌لیست کامل بررسی اصالت
-              <ArrowIcon />
-            </Link>
+      {customerFaqs.length > 0 && (
+        <section className="sb-section sb-product-faq" id="questions">
+          <div className="sb-shell sb-faq-section__grid">
+            <div>
+              <h2>سؤال‌های رایج</h2>
+            </div>
+            <FaqList items={customerFaqs} />
           </div>
-          <ol>
-            {product.checks.map((check, index) => (
-              <li key={check}>
-                <span>۰{index + 1}</span>
-                <p>{check}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section className="sb-section sb-product-safety" id="safety">
-        <div className="sb-shell sb-product-safety__grid">
-          <div className="sb-product-safety__callout">
-            <span>محدوده مسئولیت</span>
-            <h2>این صفحه، اطلاعات خرید است؛ نه نسخه پزشکی.</h2>
-            <p>
-              تناسب محصول، منع مصرف، ناحیه و پروتکل باید توسط پزشک بررسی شود. نتیجه
-              نیز بین افراد متفاوت است و در این سایت تضمین نمی‌شود.
-            </p>
-          </div>
-          <article>
-            <span className="sb-eyebrow">RELATED READING</span>
-            <h3>{article.title}</h3>
-            <p>{article.excerpt}</p>
-            <Link className="sb-text-link" href={`/magazine/${article.slug}`}>
-              مطالعه راهنما
-              <ArrowIcon />
-            </Link>
-          </article>
-        </div>
-      </section>
-
-      <section className="sb-section sb-product-faq" id="questions">
-        <div className="sb-shell sb-faq-section__grid">
-          <div>
-            <span className="sb-eyebrow">PRODUCT / QUESTIONS</span>
-            <h2>پرسش‌های همین محصول</h2>
-            <p>پاسخ‌های شفاف، بدون ادعای نتیجه قطعی یا توصیه عمومی.</p>
-          </div>
-          <FaqList items={product.faq} />
-        </div>
-      </section>
+        </section>
+      )}
 
       {related.length > 0 && (
         <section className="sb-section sb-related-products">
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <span className="sb-eyebrow">RELATED / PRODUCTS</span>
                 <h2>محصولات دیگر این دسته</h2>
               </div>
               <Link className="sb-text-link" href={`/shop/${product.category}`}>
@@ -546,54 +666,73 @@ const image = liveImage?.src || product.image;
         </section>
       )}
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: product.nameFa,
-          alternateName: product.nameEn,
-          brand: {
-            "@type": "Brand",
-            name: product.brand,
-          },
-          category: product.categoryTitle,
-          description: schemaDescription,
-          image: image.startsWith("http")
-  ? image
-  : `${siteOrigin}${image}`,
-          url: `${siteOrigin}/product/${product.slug}`,
-          audience: {
-            "@type": "Audience",
-            audienceType: product.audience,
-          },
-          sku: liveProduct?.sku || undefined,
-
-...(schemaPrice
-  ? {
-      offers: {
-        "@type": "Offer",
-        url: `${siteOrigin}/product/${product.slug}`,
-        price: schemaPrice,
-        priceCurrency: "IRR",
-        availability: schemaAvailability,
-        itemCondition:
-          "https://schema.org/NewCondition",
-      },
-    }
-  : {}),
-        }}
-      />
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: product.faq.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: { "@type": "Answer", text: item.answer },
-          })),
-        }}
-      />
+      {variants.length > 0 && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "ProductGroup",
+            "@id": productGroupId,
+            name: product.nameFa,
+            description: schemaDescription,
+            url: `${siteOrigin}/product/${product.slug}`,
+            productGroupID: product.slug,
+            variesBy: ["https://schema.org/size"],
+            brand: {
+              "@type": "Brand",
+              name: getCompactBrandLabel(product.brand),
+            },
+            hasVariant: variantSchemas,
+          }}
+        />
+      )}
+      {hasProductOffer && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.nameFa,
+            alternateName: product.nameEn,
+            brand: {
+              "@type": "Brand",
+              name: getCompactBrandLabel(product.brand),
+            },
+            category: product.categoryTitle,
+            description: schemaDescription,
+            image: absoluteImage(image),
+            url: `${siteOrigin}/product/${product.slug}`,
+            audience: {
+              "@type": "Audience",
+              audienceType: product.audience,
+            },
+            sku: liveProduct?.sku || product.slug,
+            ...(schemaPrice
+              ? {
+                  offers: {
+                    "@type": "Offer",
+                    url: `${siteOrigin}/product/${product.slug}`,
+                    price: schemaPrice,
+                    priceCurrency: "IRR",
+                    availability: schemaAvailability,
+                    itemCondition: "https://schema.org/NewCondition",
+                  },
+                }
+              : {}),
+          }}
+        />
+      )}
+      {customerFaqs.length > 0 && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: customerFaqs.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: { "@type": "Answer", text: item.answer },
+            })),
+          }}
+        />
+      )}
     </main>
   );
 }

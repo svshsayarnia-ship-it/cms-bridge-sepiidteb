@@ -21,6 +21,11 @@ import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
 import { EditableHomeHero } from "./components/EditableHomeHero";
 import { getCompactBrandLabel } from "./lib/public-copy";
+import { toPublicProduct } from "./lib/public-product";
+import {
+  brandPages,
+  getBrandPageForLabel,
+} from "./content-architecture";
 
 const faqs = [
   {
@@ -75,17 +80,50 @@ export default async function Home() {
     ).values(),
   ).slice(0, 4);
 
-  const homeBrands = Array.from(
+  const availableBrands = Array.from(
     new Set(
       products
         .map((product) => getCompactBrandLabel(product.brand))
         .filter(Boolean),
     ),
-  )
-    .sort((first, second) =>
-      first.localeCompare(second, "fa"),
-    )
-    .slice(0, 6);
+  ).sort((first, second) =>
+    first.localeCompare(second, "fa"),
+  );
+  const brandCounts = new Map<string, number>();
+  for (const product of products) {
+    const label = getCompactBrandLabel(product.brand);
+    if (label) {
+      brandCounts.set(label, (brandCounts.get(label) ?? 0) + 1);
+    }
+  }
+  const linkedBrandLabels = brandPages.flatMap((page) =>
+    page.indexable
+      ? availableBrands.filter(
+          (label) =>
+            page.matchers.includes(label) &&
+            (brandCounts.get(label) ?? 0) >= page.minProductCount,
+        )
+      : [],
+  );
+  const homeBrandLabels = Array.from(
+    new Set([...linkedBrandLabels, ...availableBrands]),
+  ).slice(0, 6);
+  const homeBrands = homeBrandLabels.map((label) => {
+    const page = getBrandPageForLabel(label);
+    const normalized = label
+      .toLocaleLowerCase("en")
+      .replace(/[^\p{L}\p{N}]+/gu, "-")
+      .replace(/^-+|-+$/g, "");
+    const brandIndex = availableBrands.indexOf(label);
+    const href =
+      page &&
+      page.indexable &&
+      (brandCounts.get(label) ?? 0) >= page.minProductCount
+        ? `/brands/${page.slug}`
+        : `/brands#brand-${brandIndex + 1}-${normalized || "item"}`;
+
+    return { label, href };
+  });
   return (
     <main id="main-content">
       <CustomerJourney />
@@ -198,7 +236,7 @@ export default async function Home() {
         </section>
       </Reveal>
 
-      <HomeFinder products={products} />
+      <HomeFinder products={products.map(toPublicProduct)} />
 
       <Reveal>
         <BrandStory />
@@ -278,14 +316,11 @@ export default async function Home() {
         <div className="sb-shell">
           <span className="sb-eyebrow">BRANDS / INDEX</span>
           <div className="sb-brands-home__row">
-           {homeBrands.map((brand) => (
-  <Link
-    href="/brands"
-    key={brand}
-  >
-    {brand}
-  </Link>
-))}
+            {homeBrands.map((brand) => (
+              <Link href={brand.href} key={brand.label}>
+                {brand.label}
+              </Link>
+            ))}
           </div>
           <Link className="sb-text-link" href="/brands">
             راهنمای برندها

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { ProductCard } from "../components/ProductCard";
+import { getBrandPageForLabel } from "../content-architecture";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { getCompactBrandLabel } from "../lib/public-copy";
 import { buildSeoMetadata } from "../lib/seo";
@@ -64,6 +65,7 @@ export default async function BrandsPage() {
         index,
       ),
       products: brandProducts,
+      page: getBrandPageForLabel(brand),
     }));
 
   return (
@@ -81,8 +83,7 @@ export default async function BrandsPage() {
           </span>
 
           <h1>
-            برند، نقطه شروع شناخت است؛ نه پایان
-            انتخاب.
+            برندهای محصولات حرفه‌ای زیبایی
           </h1>
 
           <p>
@@ -94,12 +95,22 @@ export default async function BrandsPage() {
           {brands.length > 0 && (
             <nav aria-label="فهرست برندها">
               {brands.map((brand) => (
-                <a
-                  href={`#${brand.anchor}`}
-                  key={brand.name}
-                >
-                  {brand.name}
-                </a>
+                brand.page &&
+                brand.products.length >= brand.page.minProductCount ? (
+                  <Link
+                    href={`/brands/${brand.page.slug}`}
+                    key={brand.name}
+                  >
+                    {brand.name}
+                  </Link>
+                ) : (
+                  <a
+                    href={`#${brand.anchor}`}
+                    key={brand.name}
+                  >
+                    {brand.name}
+                  </a>
+                )
               ))}
             </nav>
           )}
@@ -138,14 +149,20 @@ export default async function BrandsPage() {
                       </p>
                     </div>
 
-                    {firstProduct && (
+                    {brand.page &&
+                    brand.products.length >= brand.page.minProductCount ? (
+                      <Link href={`/brands/${brand.page.slug}`}>
+                        صفحه برند
+                        <ArrowIcon />
+                      </Link>
+                    ) : firstProduct ? (
                       <Link
                         href={`/shop/${firstProduct.category}`}
                       >
                         دسته مرتبط
                         <ArrowIcon />
                       </Link>
-                    )}
+                    ) : null}
                   </header>
 
                   <div className="sb-product-grid sb-product-grid--three">
