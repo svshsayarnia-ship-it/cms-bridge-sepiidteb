@@ -27,6 +27,10 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
+  isVerifiedPublicProductImage,
+  preparePublicImageProduct,
+} from "../../lib/public-product-image";
+import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
@@ -124,7 +128,13 @@ function getLiveProductImage(
     return null;
   }
 
-  const image = cmsProduct.images?.[0];
+  const image = cmsProduct.images?.find((candidate) =>
+    isVerifiedPublicProductImage({
+      src: candidate.src,
+      alt: candidate.alt,
+      verified: true,
+    }),
+  );
 
   if (!image?.src) {
     return null;
@@ -390,11 +400,11 @@ function getSchemaAvailability(
 }
 
 export function generateStaticParams() {
-  return products
-    .filter(
-      (product) => product.publishedInCatalog,
-    )
-    .map((product) => ({ slug: product.slug }));
+  return products.flatMap((product) =>
+    preparePublicImageProduct(product)
+      ? [{ slug: product.slug }]
+      : [],
+  );
 }
 export async function generateMetadata({
   params,
@@ -422,7 +432,7 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
-  const product =
+  const rawProduct =
     liveProduct
       ? buildCmsOnlyProduct(
           liveProduct,
@@ -430,8 +440,17 @@ export async function generateMetadata({
         )
       : staticProduct;
 
+  const product = rawProduct
+    ? preparePublicImageProduct(rawProduct)
+    : null;
+
   if (!product) {
-    return {};
+    return {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
   }
 
   const liveImage = getLiveProductImage(liveProduct);
@@ -480,13 +499,17 @@ export default async function ProductPage({
     ? cmsProduct
     : null;
 
-  const product =
+  const rawProduct =
     liveProduct
       ? buildCmsOnlyProduct(
           liveProduct,
           staticProduct ?? undefined,
         )
       : staticProduct;
+
+  const product = rawProduct
+    ? preparePublicImageProduct(rawProduct)
+    : null;
 
   if (!product) {
     notFound();
