@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  Category,
-  Product,
-} from "../data";
+import type { Category, Product } from "../data";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -20,8 +17,6 @@ export function ShopCatalog({
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [category, setCategory] = useState(initialCategory ?? "all");
-  const [dataStatus, setDataStatus] = useState("all");
-  const [professionalOnly, setProfessionalOnly] = useState(false);
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -74,14 +69,8 @@ export function ShopCatalog({
   const brands = useMemo(
     () =>
       Array.from(
-        new Set(
-          items
-            .map((item) => item.brand.trim())
-            .filter(Boolean),
-        ),
-      ).sort((first, second) =>
-        first.localeCompare(second, "fa"),
-      ),
+        new Set(items.map((item) => item.brand.trim()).filter(Boolean)),
+      ).sort((first, second) => first.localeCompare(second, "fa")),
     [items],
   );
 
@@ -103,18 +92,7 @@ export function ShopCatalog({
           .includes(normalized);
       const matchesBrand = brand === "all" || item.brand === brand;
       const matchesCategory = category === "all" || item.category === category;
-      const matchesDataStatus =
-        dataStatus === "all" ||
-        (dataStatus === "image" && item.imageVerified) ||
-        (dataStatus === "review" && Boolean(item.warning));
-      const matchesLevel = !professionalOnly || item.audience.includes("پزش");
-      return (
-        matchesQuery &&
-        matchesBrand &&
-        matchesCategory &&
-        matchesDataStatus &&
-        matchesLevel
-      );
+      return matchesQuery && matchesBrand && matchesCategory;
     });
 
     if (sort === "name") {
@@ -124,14 +102,12 @@ export function ShopCatalog({
       return [...result].sort((a, b) => a.brand.localeCompare(b.brand));
     }
     return result;
-  }, [brand, category, dataStatus, items, professionalOnly, query, sort]);
+  }, [brand, category, items, query, sort]);
 
   const reset = () => {
     setQuery("");
     setBrand("all");
     setCategory(initialCategory ?? "all");
-    setDataStatus("all");
-    setProfessionalOnly(false);
     setSort("featured");
   };
 
@@ -209,47 +185,6 @@ export function ShopCatalog({
           </label>
         ))}
       </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>وضعیت اطلاعات و تصویر</legend>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "all"}
-            onChange={() => setDataStatus("all")}
-          />
-          همه موارد
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "image"}
-            onChange={() => setDataStatus("image")}
-          />
-          دارای تصویر مجموعه محصول
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="data-status"
-            checked={dataStatus === "review"}
-            onChange={() => setDataStatus("review")}
-          />
-          نیازمند بررسی ویژه
-        </label>
-      </fieldset>
-      <fieldset className="sb-catalog__fieldset">
-        <legend>سطح دسترسی</legend>
-        <label>
-          <input
-            type="checkbox"
-            checked={professionalOnly}
-            onChange={(event) => setProfessionalOnly(event.target.checked)}
-          />
-          ویژه پزشک و کلینیک
-        </label>
-      </fieldset>
     </>
   );
 
@@ -271,7 +206,7 @@ export function ShopCatalog({
             </button>
             <p aria-live="polite">
               <strong>{filtered.length}</strong>
-              محصول {initialCategory ? "در این دسته" : "قابل بررسی"}
+              محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
             </p>
           </div>
           <label>
