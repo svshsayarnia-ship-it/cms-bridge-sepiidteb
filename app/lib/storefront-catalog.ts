@@ -14,7 +14,10 @@ import {
   getPublicSourceUrl,
   toPublicCopy,
 } from "./public-copy";
-import { preparePublicImageProduct } from "./public-product-image";
+import {
+  isVerifiedPublicProductImage,
+  preparePublicImageProduct,
+} from "./public-product-image";
 import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -129,8 +132,12 @@ function mapWooProduct(
   const group =
     getGroupForCategory(categorySlug);
 
-  const liveImage = product.images?.find(
-    (image) => Boolean(image.src),
+  const liveImage = product.images?.find((image) =>
+    isVerifiedPublicProductImage({
+      src: image.src,
+      alt: image.alt,
+      verified: true,
+    }),
   );
 
   const descriptionText = plainText(
