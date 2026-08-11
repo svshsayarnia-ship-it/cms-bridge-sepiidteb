@@ -35,11 +35,13 @@ const publicSearchProducts = products.flatMap((product) => {
 });
 
 function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: string }) {
+  const displayTagline = tagline?.trim() || "سپید بیوتی · انتخاب حرفه‌ای";
+
   return (
     <Link
       className={`sb-brand ${light ? "sb-brand--light" : ""}`}
       href="/"
-      title={tagline}
+      title={displayTagline}
       aria-label="Sepiid Beauty، صفحه اصلی"
     >
       <span className="sb-brand__mark">
@@ -53,8 +55,7 @@ function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: stri
       </span>
       <span>
         <strong>Sepiid Beauty</strong>
-        {tagline && <small>{tagline}</small>}
-        <small>سپید بیوتی · انتخاب حرفه‌ای</small>
+        <small>{displayTagline}</small>
       </span>
     </Link>
   );
