@@ -676,7 +676,7 @@ const hasProductOffer = Boolean(
             description: schemaDescription,
             url: `${siteOrigin}/product/${product.slug}`,
             productGroupID: product.slug,
-            variesBy: ["https://schema.org/size"],
+            variesBy: ["https://schema.org/model"],
             brand: {
               "@type": "Brand",
               name: getCompactBrandLabel(product.brand),

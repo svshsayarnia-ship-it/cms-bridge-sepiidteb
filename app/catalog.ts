@@ -53,7 +53,7 @@ export const catalogCategories: Category[] = [
     group: "injectables",
     groupTitle: "محصولات تزریقی زیبایی",
     description:
-      "مقایسه فیلرها و ژل‌های حرفه‌ای بر اساس نام دقیق مدل، حجم درج‌شده و وضعیت اطلاعات بسته‌بندی.",
+      "مقایسه فیلرها و ژل‌های حرفه‌ای بر اساس نام دقیق مدل، حجم درج‌شده و نوع بسته‌بندی.",
     guide:
       "ناحیه، تکنیک و تناسب محصول باید توسط پزشک تعیین شود؛ اطلاعات بازار مرجع نهایی نیست.",
     image: "/images/drive/category-fillers.webp",
@@ -679,7 +679,7 @@ const seeds: ProductSeed[] = [
 ];
 
 const shortBenefits: Record<string, string> = {
-  fillers: "مقایسه مشخصات فیلر و وضعیت اطلاعات بسته",
+  fillers: "مقایسه مدل، حجم و بسته‌بندی فیلر",
   "body-fillers": "مقایسه حجم واقعی، مدل و واحد بسته",
   "skin-boosters": "مقایسه حرفه‌ای کیفیت پوست و آبرسانی",
   "botulinum-toxins": "استعلام اصالت، واحد و شرایط نگهداری",

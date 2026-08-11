@@ -13,6 +13,7 @@ export type PublicProduct = Pick<
   | "badge"
   | "image"
   | "imageAlt"
+  | "imageKind"
   | "position"
   | "volume"
   | "shortBenefit"
@@ -37,6 +38,7 @@ export function toPublicProduct(
     | "badge"
     | "image"
     | "imageAlt"
+    | "imageKind"
     | "position"
     | "volume"
     | "shortBenefit"
@@ -52,6 +54,7 @@ export function toPublicProduct(
     badge: product.badge,
     image: product.image,
     imageAlt: product.imageAlt,
+    imageKind: product.imageKind,
     position: product.position,
     volume: product.volume,
     shortBenefit: product.shortBenefit,

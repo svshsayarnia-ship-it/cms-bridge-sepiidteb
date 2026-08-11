@@ -223,6 +223,13 @@ export function ProductVariantExperience({
                 height="1254"
                 fetchPriority="high"
               />
+              {isEditorialFamilyImage && (
+                <span className="sb-product-gallery__identity" aria-hidden="true">
+                  <small>{product.brand || "سپید بیوتی"}</small>
+                  <strong>{displayName}</strong>
+                  <em>{displayNameEn}</em>
+                </span>
+              )}
             </div>
             {isEditorialFamilyImage && (
               <p className="sb-product-gallery__image-note">

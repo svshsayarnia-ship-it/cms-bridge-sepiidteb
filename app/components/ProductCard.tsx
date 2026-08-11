@@ -50,6 +50,14 @@ export function ProductCard({
           decoding="async"
         />
 
+        {product.imageKind === "editorial-family" && (
+          <span className="sb-product-card__identity" aria-hidden="true">
+            <small>{brand || "سپید بیوتی"}</small>
+            <strong>{product.nameFa}</strong>
+            {product.nameEn && <em>{product.nameEn}</em>}
+          </span>
+        )}
+
         {product.badge && (
           <span className="sb-product-card__badge">
             {product.badge}
