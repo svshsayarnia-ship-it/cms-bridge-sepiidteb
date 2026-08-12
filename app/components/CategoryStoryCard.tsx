@@ -13,15 +13,50 @@ type CategoryStoryCardProps = {
   en: string;
 };
 
-const categoryDetails: Record<string, { note: string; tags: string[] }> = {
-  fillers: { note: "فرم و حجم طبیعی", tags: ["فرم صورت", "حجم", "کانتور"] },
-  "skin-boosters": { note: "آبرسانی و کیفیت پوست", tags: ["رطوبت", "شفافیت", "بافت پوست"] },
-  "botulinum-toxins": { note: "کنترل خطوط پویا", tags: ["خطوط پیشانی", "اخم", "کنترل حرکت"] },
-  "rejuvenation-cocktails": { note: "بازسازی و شادابی", tags: ["جوان‌سازی", "طراوت", "کیفیت پوست"] },
-  "brightening-cocktails": { note: "روشنایی و یکنواختی", tags: ["لک", "تیرگی", "روشن‌کننده"] },
-  "eye-cocktails": { note: "مراقبت ظریف دور چشم", tags: ["تیرگی", "پف", "خطوط ظریف"] },
-  "hair-cocktails": { note: "تقویت مو و پوست سر", tags: ["ریزش", "تراکم", "پوست سر"] },
-  "hyaluronidase-products": { note: "اصلاح و بازگشت", tags: ["اصلاح فرم", "تعادل", "بازگشت طبیعی"] },
+const categoryDetails: Record<
+  string,
+  { displayTitle: string; note: string; summary: string }
+> = {
+  fillers: {
+    displayTitle: "فیلر",
+    note: "فرم و حجم طبیعی",
+    summary: "انتخاب بر اساس ناحیه، فرم و حجم موردنیاز",
+  },
+  "skin-boosters": {
+    displayTitle: "مزوژل",
+    note: "آبرسانی و کیفیت پوست",
+    summary: "محصولات مرتبط با رطوبت، شفافیت و بافت پوست",
+  },
+  "botulinum-toxins": {
+    displayTitle: "بوتاکس",
+    note: "کنترل خطوط پویا",
+    summary: "محصولات مرتبط با خطوط پیشانی، اخم و دور چشم",
+  },
+  "rejuvenation-cocktails": {
+    displayTitle: "جوان‌سازی",
+    note: "بازسازی و شادابی",
+    summary: "کوکتل‌های مرتبط با طراوت و کیفیت ظاهری پوست",
+  },
+  "brightening-cocktails": {
+    displayTitle: "روشن‌کننده",
+    note: "روشنایی و یکنواختی",
+    summary: "محصولات مرتبط با لک، تیرگی و یکنواختی رنگ پوست",
+  },
+  "eye-cocktails": {
+    displayTitle: "دور چشم",
+    note: "مراقبت ظریف دور چشم",
+    summary: "محصولات مرتبط با تیرگی، پف و خطوط ظریف",
+  },
+  "hair-cocktails": {
+    displayTitle: "تقویت مو",
+    note: "مو و پوست سر",
+    summary: "کوکتل‌های مرتبط با ریزش، تراکم و مراقبت پوست سر",
+  },
+  "hyaluronidase-products": {
+    displayTitle: "هیالورونیداز",
+    note: "اصلاح و بازگشت",
+    summary: "محصولات حرفه‌ای مرتبط با اصلاح و بازگشت تعادل",
+  },
 };
 
 const persianDigits = new Intl.NumberFormat("fa-IR", {
@@ -37,15 +72,15 @@ export function CategoryStoryCard({
 }: CategoryStoryCardProps) {
   const [previewed, setPreviewed] = useState(false);
   const detail = categoryDetails[slug] ?? {
+    displayTitle: title,
     note: "انتخاب تخصصی",
-    tags: ["محصولات", "مشخصات", "استعلام"],
+    summary: "مشاهده محصولات و مشخصات این دسته",
   };
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-    const clickedCta = (event.target as HTMLElement).closest(".sb-category-card__cta");
 
-    if (isTouch && !previewed && !clickedCta) {
+    if (isTouch && !previewed) {
       event.preventDefault();
       setPreviewed(true);
     }
@@ -53,32 +88,31 @@ export function CategoryStoryCard({
 
   return (
     <Link
+      aria-label={`${title}؛ ${detail.note}`}
       className={`sb-category-card${previewed ? " sb-category-card--previewed" : ""}`}
       href={`/shop/${slug}`}
-      onClick={handleClick}
       onBlur={() => setPreviewed(false)}
-      aria-label={`${title}؛ ${detail.note}`}
+      onClick={handleClick}
     >
-      <div className="sb-category-card__copy">
-        <span className="sb-category-card__number">{persianDigits.format(index + 1)}</span>
+      <CategoryHoverVisual
+        displayTitle={detail.displayTitle}
+        note={detail.note}
+        slug={slug}
+        summary={detail.summary}
+        title={title}
+      />
+
+      <div className="sb-category-card__content">
+        <span className="sb-category-card__number">
+          {persianDigits.format(index + 1)}
+        </span>
         <div>
           <h3>{title}</h3>
           <small>{en}</small>
         </div>
-      </div>
-
-      <span className="sb-category-card__cta">
-        <b>مشاهده محصولات</b>
-        <ArrowIcon />
-      </span>
-
-      <CategoryHoverVisual slug={slug} title={title} />
-
-      <div className="sb-category-card__footer">
-        <p>{detail.note}</p>
-        <ul aria-hidden="true">
-          {detail.tags.map((tag) => <li key={tag}>{tag}</li>)}
-        </ul>
+        <span className="sb-category-card__arrow" aria-hidden="true">
+          <ArrowIcon />
+        </span>
       </div>
     </Link>
   );

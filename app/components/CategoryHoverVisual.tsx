@@ -1,50 +1,58 @@
-import type { CSSProperties } from "react";
+import Image from "next/image";
 
 type CategoryHoverVisualProps = {
   slug: string;
   title: string;
+  displayTitle: string;
+  note: string;
+  summary: string;
 };
 
-const categoryStoryboards: Record<string, string> = {
-  fillers: "/images/storyboard/fillers-triptych.webp",
-  "skin-boosters": "/images/storyboard/mesogel-triptych.webp",
-  "botulinum-toxins": "/images/storyboard/botox-triptych.webp",
-  "rejuvenation-cocktails": "/images/storyboard/rejuvenation-boho-triptych.webp",
-  "brightening-cocktails": "/images/storyboard/brightening-boho-triptych.webp",
-  "eye-cocktails": "/images/storyboard/eye-contour-boho-triptych.webp",
-  "hair-cocktails": "/images/storyboard/hair-triptych.webp",
-  "hyaluronidase-products": "/images/storyboard/correction-boho-triptych.webp",
+const categoryArtwork: Record<string, string> = {
+  fillers: "/images/categories/boho-fillers.webp",
+  "skin-boosters": "/images/categories/boho-skin-boosters.webp",
+  "botulinum-toxins": "/images/categories/boho-botox.webp",
+  "rejuvenation-cocktails": "/images/categories/boho-rejuvenation.webp",
+  "brightening-cocktails": "/images/categories/boho-brightening.webp",
+  "eye-cocktails": "/images/categories/boho-eye.webp",
+  "hair-cocktails": "/images/categories/boho-hair.webp",
+  "hyaluronidase-products": "/images/categories/boho-hyaluronidase.webp",
 };
 
 export function CategoryHoverVisual({
   slug,
   title,
+  displayTitle,
+  note,
+  summary,
 }: CategoryHoverVisualProps) {
-  const image = categoryStoryboards[slug] ?? categoryStoryboards.fillers;
-  const style = { "--category-story-image": `url(${image})` } as CSSProperties;
+  const image = categoryArtwork[slug] ?? categoryArtwork.fillers;
 
   return (
-    <div
-      className="sb-category-story"
-      data-category={slug}
-      style={style}
-      aria-hidden="true"
-    >
-      <span className="sb-category-story__paper" />
-      <span className="sb-category-story__frame sb-category-story__frame--before" />
-      <span className="sb-category-story__frame sb-category-story__frame--process" />
-      <span className="sb-category-story__frame sb-category-story__frame--after" />
+    <div className="sb-category-visual" data-category={slug}>
+      <Image
+        alt=""
+        aria-hidden="true"
+        className="sb-category-visual__image"
+        fill
+        sizes="(max-width: 620px) 50vw, (max-width: 1080px) 33vw, 25vw"
+        src={image}
+      />
+      <span className="sb-category-visual__veil" aria-hidden="true" />
 
-      <svg className="sb-category-story__botanical" viewBox="0 0 96 132" role="presentation">
-        <path d="M72 126C40 92 43 47 66 9" />
-        <path d="M58 87c-16-2-25-10-28-24 14 1 24 9 28 24ZM55 58c12-5 20-15 21-29-13 4-20 14-21 29ZM64 101c12-4 21-12 25-25-14 2-23 11-25 25Z" />
-      </svg>
+      <span className="sb-category-visual__title">
+        <small>دسته تخصصی</small>
+        <strong>{displayTitle}</strong>
+      </span>
 
-      <span className="sb-category-story__sun" />
-      <span className="sb-category-story__state sb-category-story__state--before">حالت اولیه</span>
-      <span className="sb-category-story__state sb-category-story__state--after">نتیجهٔ دسته</span>
-      <span className="sb-category-story__hint">برای دیدن تغییر، روی کارت بروید</span>
-      <span className="sb-sr-only">نمایش تغییر مرتبط با دستهٔ {title}</span>
+      <span className="sb-category-visual__destination">
+        <b>{note}</b>
+        <span>{summary}</span>
+      </span>
+
+      <span className="sb-sr-only">
+        ورود به دستهٔ {title}؛ {note}
+      </span>
     </div>
   );
 }
