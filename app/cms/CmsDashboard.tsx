@@ -12,6 +12,8 @@ import type {
 import { CategoryManager } from "./CategoryManager";
 import { SiteContentManager } from "./SiteContentManager";
 import { RichTextEditor } from "./RichTextEditor";
+import { emptyPricingState } from "../lib/pricing-types";
+import { PricingManager } from "./PricingManager";
 
 type ApiError = { error?: string; code?: string };
 
@@ -61,6 +63,7 @@ reviewedAt: "",
     images: [],
     permalink: "",
     dateModifiedGmt: "",
+    pricing: emptyPricingState(),
   };
 }
 
@@ -704,6 +707,8 @@ async function uploadFiles(files: FileList | null) {
       )}
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
+
+      <PricingManager />
 
       <SiteContentManager />
 

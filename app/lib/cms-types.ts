@@ -1,3 +1,5 @@
+import type { CmsPricingState } from "./pricing-types";
+
 export type CmsCategory = {
   id: number;
   name: string;
@@ -60,11 +62,19 @@ reviewedAt: string;
   images: CmsImage[];
   permalink: string;
   dateModifiedGmt: string;
+  pricing: CmsPricingState;
 };
 
 export type CmsProductInput = Omit<
   CmsProduct,
-  "id" | "price" | "type" | "permalink" | "dateModifiedGmt" | "categories" | "brands"
+  | "id"
+  | "price"
+  | "type"
+  | "permalink"
+  | "dateModifiedGmt"
+  | "categories"
+  | "brands"
+  | "pricing"
 > & {
   id?: number;
   categoryIds: number[];

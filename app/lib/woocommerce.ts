@@ -8,6 +8,8 @@ import type {
   CmsProductsResponse,
 } from "./cms-types";
 import type { SitePresentation } from "./site-presentation";
+import type { CmsPricingState } from "./pricing-types";
+import { parsePricingState } from "./pricing-types";
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
@@ -335,6 +337,9 @@ reviewedAt: getProductMeta(
     images: product.images.map(mapImage),
     permalink: product.permalink,
     dateModifiedGmt: product.date_modified_gmt,
+    pricing: parsePricingState(
+      getProductMeta(product, "sepiid_market_pricing"),
+    ),
   };
 }
 
@@ -430,6 +435,85 @@ export async function listProducts(params: {
 
 export async function getProduct(id: number): Promise<CmsProduct> {
   const response = await wooRequest<WooProduct>(`products/${id}`);
+  return mapProduct(response.data);
+}
+
+export async function listAllProductsForPricing(): Promise<CmsProduct[]> {
+  const products: CmsProduct[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await wooRequest<WooProduct[]>(
+      "products",
+      {},
+      new URLSearchParams({
+        page: String(page),
+        per_page: "100",
+        status: "publish",
+        orderby: "id",
+        order: "asc",
+      }),
+      30_000,
+    );
+
+    products.push(...response.data.map(mapProduct));
+    totalPages = Math.max(
+      1,
+      Number(response.headers.get("x-wp-totalpages") ?? 1),
+    );
+    page += 1;
+  } while (page <= totalPages && page <= 20);
+
+  return products;
+}
+
+export async function updateProductPricingState(
+  id: number,
+  pricing: CmsPricingState,
+): Promise<CmsProduct> {
+  const response = await wooRequest<WooProduct>(`products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      meta_data: [
+        {
+          key: "sepiid_market_pricing",
+          value: JSON.stringify(pricing),
+        },
+      ],
+    }),
+  });
+
+  return mapProduct(response.data);
+}
+
+export async function approveProductPricingProposal(
+  id: number,
+  priceToman: number,
+  pricing: CmsPricingState,
+): Promise<CmsProduct> {
+  if (!Number.isSafeInteger(priceToman) || priceToman <= 0) {
+    throw new WooCommerceError(
+      "قیمت پیشنهادی معتبر نیست.",
+      400,
+      "invalid_market_price",
+    );
+  }
+
+  const response = await wooRequest<WooProduct>(`products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      regular_price: String(priceToman),
+      sale_price: "",
+      meta_data: [
+        {
+          key: "sepiid_market_pricing",
+          value: JSON.stringify(pricing),
+        },
+      ],
+    }),
+  });
+
   return mapProduct(response.data);
 }
 

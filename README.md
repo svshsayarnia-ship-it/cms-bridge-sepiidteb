@@ -93,6 +93,16 @@ login variables: `CMS_ADMIN_PASSWORD` and `CMS_SESSION_SECRET`. The protected
 CMS uses a signed 12-hour HTTP-only cookie and no longer depends on ChatGPT
 identity headers when those variables are present.
 
+The market-pricing review queue also requires `CRON_SECRET` in the production
+environment. Vercel calls `/api/cron/market-prices` every day at 05:30 and
+11:30 UTC (09:00 and 15:00 Iran time) and sends this value as a bearer token.
+Each product requires at least three valid, non-duplicate market sources. The
+one-time initial import may apply a price directly after an explicit CMS
+confirmation; every later market change is saved as a pending proposal and must
+be approved by a CMS administrator. Direct Digikala monitoring remains disabled unless
+an authorized API or affiliate integration is configured and
+`DIGIKALA_PRICE_ACCESS_ENABLED=true` is set.
+
 ## Diagnostic Commands
 
 - `npm ci`: install the lockfile exactly
