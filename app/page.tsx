@@ -12,8 +12,8 @@ import {
   ShieldIcon,
 } from "./components/Icons";
 import { JsonLd } from "./components/JsonLd";
-import { ProductCard } from "./components/ProductCard";
 import { CategoryStoryCard } from "./components/CategoryStoryCard";
+import { FeaturedProductCarousel } from "./components/FeaturedProductCarousel";
 import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
@@ -184,39 +184,25 @@ export default async function Home() {
       </Reveal>
 
       <Reveal>
-        <section className="sb-section sb-featured-products">
-          <div className="sb-shell">
-            <div className="sb-section-head sb-section-head--split">
-              <div>
-                <span className="sb-eyebrow">CURATED / PRODUCTS</span>
-                <h2>
-                  محصولات منتخب،
-                  <em>با اطلاعات روشن.</em>
-                </h2>
-              </div>
-              <div>
-                <p>
-                  برای هر محصول، مشخصات و مسیر استعلام در دسترس است.
-                </p>
-                <Link className="sb-text-link" href="/shop">
-                  مشاهده همه محصولات
-                  <ArrowIcon />
-                </Link>
-              </div>
-            </div>
-            <div className="sb-product-grid">
-              {featuredProducts.map(
-  (product, index) => (
-    <ProductCard
-      product={product}
-      priority={index < 2}
-      key={product.slug}
-    />
-  ),
-)}
-            </div>
-          </div>
-        </section>
+        <FeaturedProductCarousel
+          products={featuredProducts.map((product) => ({
+            slug: product.slug,
+            nameFa: product.nameFa,
+            nameEn: product.nameEn,
+            brand: getCompactBrandLabel(product.brand),
+            categoryTitle: product.categoryTitle,
+            badge: product.badge,
+            image: product.image,
+            imageAlt: product.imageAlt,
+            volume: product.volume,
+            shortBenefit: product.shortBenefit,
+            position: product.position,
+            price: product.price,
+            regularPrice: product.regularPrice,
+            salePrice: product.salePrice,
+            stockStatus: product.stockStatus,
+          }))}
+        />
       </Reveal>
 
       <HomeFinder products={products.map(toPublicProduct)} />
