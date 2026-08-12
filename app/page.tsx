@@ -13,7 +13,6 @@ import {
 } from "./components/Icons";
 import { JsonLd } from "./components/JsonLd";
 import { ProductCard } from "./components/ProductCard";
-import { ProductUseReveal } from "./components/ProductUseReveal";
 import { CategoryStoryCard } from "./components/CategoryStoryCard";
 import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
@@ -182,10 +181,6 @@ export default async function Home() {
             </div>
           </div>
         </section>
-      </Reveal>
-
-      <Reveal>
-        <ProductUseReveal />
       </Reveal>
 
       <Reveal>
