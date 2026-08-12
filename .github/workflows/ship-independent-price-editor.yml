@@ -1,0 +1,49 @@
+name: Ship independent price editor
+
+on:
+  push:
+    branches:
+      - fix/ship-independent-price-editor-20260813
+
+permissions:
+  contents: write
+
+jobs:
+  port-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/ship-independent-price-editor-20260813
+          fetch-depth: 0
+
+      - name: Port independent price API and editor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git cherry-pick e92d9e26c1dff7281250502c4129bfe9cd0297ab
+          git cherry-pick 0ab6054362ca8b702fa3bb3e86e79e5cd91b6b45
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Remove one-off workflow
+        run: rm .github/workflows/ship-independent-price-editor.yml
+
+      - name: Commit and push tested port
+        run: |
+          git add -- .github/workflows/ship-independent-price-editor.yml
+          git commit -m "chore: remove one-off price editor workflow"
+          git push origin HEAD:fix/ship-independent-price-editor-20260813
