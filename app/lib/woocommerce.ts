@@ -620,6 +620,55 @@ export async function createProductsBatch(
   return (response.data.create ?? []).map(mapProduct);
 }
 
+export async function setProductPricesBatch(
+  updates: Array<{ id: number; priceToman: number }>,
+): Promise<CmsProduct[]> {
+  if (!updates.length) return [];
+  if (updates.length > 100) {
+    throw new WooCommerceError(
+      "در هر همگام‌سازی حداکثر قیمت ۱۰۰ محصول قابل ثبت است.",
+      400,
+      "product_price_batch_too_large",
+    );
+  }
+
+  const ids = new Set<number>();
+  for (const update of updates) {
+    if (
+      !Number.isSafeInteger(update.id) ||
+      update.id <= 0 ||
+      !Number.isSafeInteger(update.priceToman) ||
+      update.priceToman <= 0 ||
+      ids.has(update.id)
+    ) {
+      throw new WooCommerceError(
+        "اطلاعات قیمت‌گذاری گروهی معتبر نیست.",
+        400,
+        "invalid_product_price_batch",
+      );
+    }
+    ids.add(update.id);
+  }
+
+  const response = await wooRequest<{ update: WooProduct[] }>(
+    "products/batch",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        update: updates.map((update) => ({
+          id: update.id,
+          regular_price: String(update.priceToman),
+          sale_price: "",
+        })),
+      }),
+    },
+    undefined,
+    PRODUCT_BATCH_TIMEOUT_MS,
+  );
+
+  return (response.data.update ?? []).map(mapProduct);
+}
+
 export async function updateProduct(
   id: number,
   input: CmsProductInput,

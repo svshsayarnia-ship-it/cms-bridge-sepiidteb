@@ -152,6 +152,59 @@ export const catalogCategories: Category[] = [
   },
 ];
 
+/**
+ * Initial market baselines for products that do not yet have a WooCommerce
+ * price. Live WooCommerce prices always take precedence over these values.
+ */
+export const marketBaselinePrices: Record<string, number> = {
+  "neurafill-deep-lidocaine": 2_450_000,
+  "arasti-white": 2_100_000,
+  "zishel-rose-glam": 6_400_000,
+  "sofiderm-derm-plus": 3_000_000,
+  "regenfill-deep": 8_460_000,
+  "regenfill-lido": 8_810_000,
+  "regenfill-volume": 8_770_000,
+  "ejal-40": 3_700_000,
+  "mesoheal-plus": 4_500_000,
+  "xitritall-hydro": 4_500_000,
+  "reyoungel-revital-bioha": 3_500_000,
+  "vitten-hydro-plus": 6_100_000,
+  "roytrin-skin-booster": 2_500_000,
+  "nabota-150": 890_000,
+  "siax-100": 4_800_000,
+  "siax-200": 8_000_000,
+  "neuronox-50": 1_100_000,
+  "neuronox-100": 2_000_000,
+  myobloc: 900_000,
+  antitall: 900_000,
+  dysport: 3_000_000,
+  "fusion-f-lift-face": 3_850_000,
+  "fusion-f-mesomatrix": 6_700_000,
+  "dermaheal-hsr": 1_200_000,
+  "mesolike-top-age-pro": 980_000,
+  "mesolike-lift": 950_000,
+  "medicube-pdrn": 4_500_000,
+  "fusion-f-radiance": 2_280_000,
+  "fusion-f-melaclear": 3_500_000,
+  "fusion-f-vitamin-c": 1_900_000,
+  "fusion-f-melirutin": 1_750_000,
+  "revitacare-532": 3_600_000,
+  "mesolike-whitening-shine": 900_000,
+  "mesolike-glutathione": 900_000,
+  "dermaheal-sb": 1_200_000,
+  "genosys-sws": 1_790_000,
+  "fusion-f-eye-contour": 3_000_000,
+  "mesolike-eye-top": 950_000,
+  "fusion-f-hair": 4_200_000,
+  "fusion-f-hair-men": 9_200_000,
+  "revitacare-haircare": 2_560_000,
+  "dermaheal-hl": 1_200_000,
+  "mesolike-hair": 900_000,
+  "mesolike-hair-men": 950_000,
+  "genosys-hr3": 1_790_000,
+  "mesolike-dutasteride": 5_150_000,
+};
+
 const legacySeeds: ProductSeed[] = [
   {
     slug: "neuramis-deep-lidocaine",
@@ -778,6 +831,7 @@ function makeProduct(seed: ProductSeed): Product {
     ["گروه محصول", seed.type],
     ["برند", seed.brand],
   ];
+  const baselinePrice = marketBaselinePrices[seed.slug];
   if (seed.volume) specs.push(["حجم یا واحد مشاهده‌شده", seed.volume]);
   if (seed.country) specs.push(["کشور درج‌شده در بازار", seed.country]);
   if (seed.detail) specs.push(["ویژگی درج‌شده", seed.detail]);
@@ -809,8 +863,12 @@ function makeProduct(seed: ProductSeed): Product {
           : `تصویر مفهومی گروه ${category.title}`),
     position: "50%",
     volume: seed.volume,
-    priceToman: seed.priceToman,
-    priceNote: seed.priceNote,
+    priceToman: seed.priceToman ?? baselinePrice,
+    priceNote:
+      seed.priceNote ??
+      (baselinePrice
+        ? "قیمت پایهٔ بازار؛ قیمت زندهٔ فروشگاه و بررسی‌های روزانه بر آن اولویت دارند."
+        : undefined),
     sourceStatus,
     warning: seed.warning,
     summary:

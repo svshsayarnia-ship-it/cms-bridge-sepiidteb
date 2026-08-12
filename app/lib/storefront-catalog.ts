@@ -353,7 +353,16 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
       await fetchAllWooProducts();
 
     const mappedProducts = wooProducts
-      .filter(isPublicWooProduct)
+      .filter((product) => {
+        const fallback = fallbackBySlug.get(product.slug);
+        return (
+          isPublicWooProduct(product) ||
+          (Boolean(product.slug) &&
+            product.status === "publish" &&
+            product.catalogVisibility !== "hidden" &&
+            isPublicStaticProduct(fallback))
+        );
+      })
       .filter(
         (product) =>
           !Object.hasOwn(currentInventoryLegacyAliases, product.slug),

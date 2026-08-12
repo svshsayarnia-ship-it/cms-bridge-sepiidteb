@@ -18,6 +18,7 @@ import {
   getProduct,
   listAllProductsForPricing,
   listCategories,
+  setProductPricesBatch,
   updateProductPricingState,
   WooCommerceError,
 } from "./woocommerce";
@@ -208,6 +209,7 @@ export type MarketPricingScanSummary = {
   startedAt: string;
   finishedAt: string;
   catalogProductsAdded: number;
+  baselinePricesApplied: number;
   checkedProducts: number;
   proposalsCreated: number;
   pricesApplied: number;
@@ -219,8 +221,25 @@ export type MarketPricingScanSummary = {
 async function synchronizeCatalogProductsForPricing(): Promise<{
   products: CmsProduct[];
   added: number;
+  baselinePricesApplied: number;
 }> {
   const existing = await listAllProductsForPricing();
+  const catalogBySlug = new Map(
+    catalogProducts.map((product) => [product.slug, product]),
+  );
+  const missingPriceUpdates = existing.flatMap((product) => {
+    const baselinePrice = catalogBySlug.get(product.slug)?.priceToman;
+    return !currentPrice(product) && baselinePrice
+      ? [{ id: product.id, priceToman: baselinePrice }]
+      : [];
+  });
+  const priceUpdates = await setProductPricesBatch(missingPriceUpdates);
+  const updatedById = new Map(
+    priceUpdates.map((product) => [product.id, product]),
+  );
+  const pricedExisting = existing.map(
+    (product) => updatedById.get(product.id) ?? product,
+  );
   const existingSlugs = new Set(existing.map((product) => product.slug));
   const missing = catalogProducts.filter(
     (product) =>
@@ -229,7 +248,14 @@ async function synchronizeCatalogProductsForPricing(): Promise<{
   );
 
   if (!missing.length) {
-    return { products: existing, added: 0 };
+    if (priceUpdates.length) {
+      revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
+    }
+    return {
+      products: pricedExisting,
+      added: 0,
+      baselinePricesApplied: priceUpdates.length,
+    };
   }
 
   const categories = await listCategories({
@@ -271,8 +297,9 @@ async function synchronizeCatalogProductsForPricing(): Promise<{
 
   revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
   return {
-    products: [...existing, ...created],
+    products: [...pricedExisting, ...created],
     added: created.length,
+    baselinePricesApplied: priceUpdates.length,
   };
 }
 
@@ -875,6 +902,7 @@ export async function runMarketPricingScan(
     startedAt,
     finishedAt: new Date().toISOString(),
     catalogProductsAdded: synchronized.added,
+    baselinePricesApplied: synchronized.baselinePricesApplied,
     checkedProducts: results.filter((result) => result !== "skipped").length,
     proposalsCreated: results.filter((result) => result === "proposal").length,
     pricesApplied: results.filter((result) => result === "applied").length,
