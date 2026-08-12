@@ -14,7 +14,7 @@ import {
 import { JsonLd } from "./components/JsonLd";
 import { ProductCard } from "./components/ProductCard";
 import { ProductUseReveal } from "./components/ProductUseReveal";
-import { CategoryHoverVisual } from "./components/CategoryHoverVisual";
+import { CategoryStoryCard } from "./components/CategoryStoryCard";
 import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
@@ -171,24 +171,13 @@ export default async function Home() {
             </div>
             <div className="sb-category-grid">
               {categories.map((category, index) => (
-                <Link
-                  className="sb-category-card"
-                  href={`/shop/${category.slug}`}
+                <CategoryStoryCard
+                  index={index}
                   key={category.slug}
-                >
-                  <CategoryHoverVisual
-                    slug={category.slug}
-                    title={category.title}
-                    en={category.en}
-                  />
-                  <div className="sb-category-card__content">
-                    <span>۰{index + 1}</span>
-                    <div>
-                      <h3>{category.title}</h3>
-                    </div>
-                    <ArrowIcon />
-                  </div>
-                </Link>
+                  slug={category.slug}
+                  title={category.title}
+                  en={category.en}
+                />
               ))}
             </div>
           </div>
