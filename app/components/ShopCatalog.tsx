@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type {
   Category,
 } from "../data";
 import type { PublicProduct } from "../lib/public-product";
 import { getCompactBrandLabel } from "../lib/public-copy";
+import { isHighVolumeFiller } from "../lib/product-volume";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
+
+const subscribeToLocation = (onChange: () => void) => {
+  window.addEventListener("popstate", onChange);
+  return () => window.removeEventListener("popstate", onChange);
+};
+const getServerHighVolumePreference = () => false;
+const getHighVolumePreferenceFromUrl = () =>
+  new URLSearchParams(window.location.search).get("volume") === "high";
 
 export function ShopCatalog({
   items,
@@ -21,10 +36,21 @@ export function ShopCatalog({
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [category, setCategory] = useState(initialCategory ?? "all");
+  const [highVolumeOverride, setHighVolumeOverride] = useState<boolean | null>(
+    null,
+  );
   const [sort, setSort] = useState("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const highVolumeFromUrl = useSyncExternalStore(
+    subscribeToLocation,
+    getHighVolumePreferenceFromUrl,
+    getServerHighVolumePreference,
+  );
+  const highVolumeOnly =
+    highVolumeOverride ??
+    (initialCategory === "fillers" && highVolumeFromUrl);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -107,10 +133,12 @@ export function ShopCatalog({
         brand === "all" ||
         getCompactBrandLabel(item.brand) === brand;
       const matchesCategory = category === "all" || item.category === category;
+      const matchesVolume = !highVolumeOnly || isHighVolumeFiller(item);
       return (
         matchesQuery &&
         matchesBrand &&
-        matchesCategory
+        matchesCategory &&
+        matchesVolume
       );
     });
 
@@ -126,14 +154,30 @@ export function ShopCatalog({
       );
     }
     return result;
-  }, [brand, category, items, query, sort]);
+  }, [brand, category, highVolumeOnly, items, query, sort]);
 
   const reset = () => {
     setQuery("");
     setBrand("all");
     setCategory(initialCategory ?? "all");
+    setHighVolumeOverride(false);
     setSort("featured");
   };
+
+  const showVolumeFilter =
+    initialCategory === "fillers" || category === "fillers";
+  const fillerCounts = useMemo(() => {
+    let total = 0;
+    let highVolume = 0;
+
+    for (const item of items) {
+      if (item.category !== "fillers") continue;
+      total += 1;
+      if (isHighVolumeFiller(item)) highVolume += 1;
+    }
+
+    return { total, highVolume };
+  }, [items]);
 
   const filters = (
     <>
@@ -163,7 +207,10 @@ export function ShopCatalog({
               type="radio"
               name="category"
               checked={category === "all"}
-              onChange={() => setCategory("all")}
+              onChange={() => {
+                setCategory("all");
+                setHighVolumeOverride(false);
+              }}
             />
             همه دسته‌ها
             <small>{items.length}</small>
@@ -174,7 +221,10 @@ export function ShopCatalog({
                 type="radio"
                 name="category"
                 checked={category === item.slug}
-                onChange={() => setCategory(item.slug)}
+                onChange={() => {
+                  setCategory(item.slug);
+                  if (item.slug !== "fillers") setHighVolumeOverride(false);
+                }}
               />
               {item.title}
               <small>
@@ -182,6 +232,35 @@ export function ShopCatalog({
               </small>
             </label>
           ))}
+        </fieldset>
+      )}
+      {showVolumeFilter && (
+        <fieldset className="sb-catalog__fieldset sb-catalog__fieldset--volume">
+          <legend>حجم هر سرنگ یا ویال</legend>
+          <label>
+            <input
+              type="radio"
+              name="filler-volume"
+              checked={!highVolumeOnly}
+              onChange={() => setHighVolumeOverride(false)}
+            />
+            همه حجم‌ها
+            <small>{fillerCounts.total}</small>
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="filler-volume"
+              checked={highVolumeOnly}
+              onChange={() => setHighVolumeOverride(true)}
+            />
+            بیشتر از ۲ میلی‌لیتر
+            <small>{fillerCounts.highVolume}</small>
+          </label>
+          <p>
+            فقط محصولاتی که حجم درج‌شدهٔ هر سرنگ یا ویال آن‌ها بیشتر از ۲
+            میلی‌لیتر است.
+          </p>
         </fieldset>
       )}
       <fieldset className="sb-catalog__fieldset">

@@ -20,21 +20,6 @@ function CategorySubject({ slug }: Pick<CategoryHoverVisualProps, "slug">) {
         </svg>
       );
 
-    case "body-fillers":
-      return (
-        <svg viewBox="0 0 260 190" role="presentation">
-          <g className="sb-category-subject__motion-a">
-            <path d="M18 101h37m-23-21v42M55 83h127c8 0 14 6 14 14v8c0 8-6 14-14 14H55zM196 94h24v14h-24zM220 101h27" />
-            <path d="M80 83v36m28-36v36m28-36v36m28-36v36" />
-          </g>
-          <g className="sb-category-subject__motion-b">
-            <rect className="sb-category-subject__solid" x="149" y="31" width="67" height="93" rx="6" />
-            <path d="M162 52h41m-41 14h41m-41 35h41" />
-            <circle className="sb-category-subject__accent" cx="182" cy="84" r="12" />
-          </g>
-        </svg>
-      );
-
     case "skin-boosters":
       return (
         <svg viewBox="0 0 260 190" role="presentation">
@@ -153,13 +138,20 @@ export function CategoryHoverVisual({
       aria-hidden="true"
     >
       <span className="sb-category-visual__grid" />
+      <span className="sb-category-visual__wash" />
       <span className="sb-category-visual__halo" />
       <span className="sb-category-visual__subject">
         <CategorySubject slug={slug} />
       </span>
       <span className="sb-category-visual__seal">SB</span>
       <span className="sb-category-visual__label">{en}</span>
-      <span className="sb-category-visual__prompt">مشاهده دسته</span>
+      <span className="sb-category-visual__destination">
+        <span>
+          <small>ورود به دسته</small>
+          <strong>{title}</strong>
+        </span>
+        <i>↙</i>
+      </span>
       <span className="sb-sr-only">ورود به دستهٔ {title}</span>
     </div>
   );
