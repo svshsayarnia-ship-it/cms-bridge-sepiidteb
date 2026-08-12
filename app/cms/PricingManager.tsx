@@ -39,6 +39,10 @@ function persianDate(value: string): string {
   }).format(new Date(value));
 }
 
+function sanitizePriceInput(value: string): string {
+  return value.replace(/[^0-9]/g, "");
+}
+
 const PROVIDER_HELP: Record<MarketProvider, string> = {
   sayancenter: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه سایان به‌صورت خودکار انجام می‌شود.",
   rokateb: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه روکاطب به‌صورت خودکار انجام می‌شود.",
@@ -58,6 +62,8 @@ export function PricingManager() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [regularPriceDraft, setRegularPriceDraft] = useState("");
+  const [salePriceDraft, setSalePriceDraft] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +119,11 @@ export function PricingManager() {
     [dashboard],
   );
   const selected = dashboard?.products.find((product) => product.id === selectedId) ?? null;
+
+  useEffect(() => {
+    setRegularPriceDraft(selected?.regularPrice ?? "");
+    setSalePriceDraft(selected?.salePrice ?? "");
+  }, [selected?.id, selected?.regularPrice, selected?.salePrice]);
 
   function replaceProduct(product: MarketPricingProduct) {
     setDashboard((current) =>
@@ -243,6 +254,90 @@ export function PricingManager() {
 
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
+
+      <details className="spb-pricing-panel" open>
+        <summary>
+          <span>ویرایش سریع قیمت</span>
+          <b>مستقل</b>
+        </summary>
+        <div className="spb-pricing-source-editor">
+          <label>
+            <span>محصول</span>
+            <select
+              value={selectedId ?? ""}
+              onChange={(event) => setSelectedId(Number(event.target.value))}
+            >
+              {dashboard?.products.map((product) => (
+                <option value={product.id} key={product.id}>{product.name}</option>
+              ))}
+            </select>
+          </label>
+
+          {selected && (
+            <>
+              <div className="spb-source-grid">
+                <div className="spb-source-card">
+                  <label>
+                    <strong>قیمت عادی</strong>
+                    <input
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={regularPriceDraft}
+                      placeholder="مثلاً 4500000"
+                      onChange={(event) =>
+                        setRegularPriceDraft(sanitizePriceInput(event.target.value))
+                      }
+                    />
+                  </label>
+                  <small>برای حذف قیمت، کادر را کاملاً خالی بگذار.</small>
+                </div>
+                <div className="spb-source-card">
+                  <label>
+                    <strong>قیمت فروش ویژه</strong>
+                    <input
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={salePriceDraft}
+                      placeholder="اختیاری"
+                      onChange={(event) =>
+                        setSalePriceDraft(sanitizePriceInput(event.target.value))
+                      }
+                    />
+                  </label>
+                  <small>این ذخیره به تکمیل سئو، تصویر، منبع یا بازبین وابسته نیست.</small>
+                </div>
+              </div>
+              <div className="spb-pricing-source-editor__footer">
+                <div>
+                  <strong>قیمت فعلی: {money(currentPrice(selected))}</strong>
+                  <span>فقط همین دو فیلد روی ووکامرس ذخیره می‌شوند.</span>
+                  <small>بقیه اطلاعات محصول بدون تغییر می‌مانند.</small>
+                </div>
+                <button
+                  type="button"
+                  className="spb-button is-primary"
+                  disabled={Boolean(busy) || loading}
+                  onClick={() =>
+                    void postAction(
+                      "save-price",
+                      {
+                        productId: selected.id,
+                        regularPrice: regularPriceDraft,
+                        salePrice: salePriceDraft,
+                      },
+                      `قیمت «${selected.name}» ذخیره شد.`,
+                    )
+                  }
+                >
+                  {busy === `save-price-${selected.id}`
+                    ? "در حال ذخیره قیمت..."
+                    : "ذخیره فقط قیمت"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </details>
 
       <details className="spb-pricing-panel" open>
         <summary>
