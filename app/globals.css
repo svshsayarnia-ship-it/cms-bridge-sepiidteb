@@ -9015,6 +9015,32 @@ footer {
   gap: 18px;
 }
 
+.sb-featured-carousel__rotation {
+  min-width: 224px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid rgba(76, 58, 50, 0.14);
+  border-radius: 14px 14px 5px 14px;
+  background: rgba(255, 253, 249, 0.62);
+  box-shadow: 0 12px 30px rgba(67, 48, 40, 0.06);
+  color: rgba(50, 43, 39, 0.64);
+  font-size: 0.6rem;
+  backdrop-filter: blur(12px);
+}
+
+.sb-featured-carousel__rotation time {
+  color: #8d5845;
+  direction: ltr;
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+}
+
 .sb-featured-carousel__intro p {
   margin: 0;
   color: rgba(50, 43, 39, 0.66);
@@ -9473,6 +9499,17 @@ footer {
   white-space: nowrap;
 }
 
+.sb-featured-carousel__rail em {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #9a624c;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sb-featured-carousel__rail i {
   position: absolute;
   right: 0;
@@ -9591,6 +9628,10 @@ footer {
 
   .sb-featured-carousel__intro p {
     font-size: 0.74rem;
+  }
+
+  .sb-featured-carousel__rotation {
+    width: 100%;
   }
 
   .sb-featured-carousel__visual {

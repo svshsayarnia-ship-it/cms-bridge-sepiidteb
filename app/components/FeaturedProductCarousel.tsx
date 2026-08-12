@@ -5,6 +5,7 @@ import Image, { type ImageLoaderProps } from "next/image";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -26,6 +27,7 @@ export type FeaturedCarouselProduct = {
   price: string;
   regularPrice: string;
   salePrice: string;
+  priceToman?: number;
   stockStatus: string;
 };
 
@@ -33,6 +35,9 @@ type Phase = "idle" | "leaving";
 
 const autoplayDelay = 6_000;
 const transitionDelay = 360;
+const rotationInterval = 3 * 60 * 60 * 1_000;
+const iranUtcOffset = 3.5 * 60 * 60 * 1_000;
+const visibleProductCount = 4;
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const numberFormatter = new Intl.NumberFormat("fa-IR", {
   minimumIntegerDigits: 2,
@@ -46,6 +51,63 @@ function formatPrice(value: string) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return "";
   return `${priceFormatter.format(numeric)} تومان`;
+}
+
+function getProductPrice(product: FeaturedCarouselProduct) {
+  return (
+    formatPrice(product.salePrice) ||
+    formatPrice(product.regularPrice || product.price) ||
+    formatPrice(String(product.priceToman ?? ""))
+  );
+}
+
+function getRotationWindow(now: number) {
+  const shiftedNow = now + iranUtcOffset;
+  const seed = Math.floor(shiftedNow / rotationInterval);
+
+  return {
+    seed,
+    remainingMs:
+      (seed + 1) * rotationInterval - shiftedNow,
+  };
+}
+
+function hashRotationKey(value: string) {
+  let hash = 2_166_136_261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+
+  return hash >>> 0;
+}
+
+function selectRotatingProducts(
+  products: FeaturedCarouselProduct[],
+  seed: number,
+) {
+  return Array.from(
+    new Map(products.map((product) => [product.slug, product])).values(),
+  )
+    .sort((first, second) => {
+      const firstScore = hashRotationKey(`${seed}:${first.slug}`);
+      const secondScore = hashRotationKey(`${seed}:${second.slug}`);
+
+      return firstScore - secondScore || first.slug.localeCompare(second.slug);
+    })
+    .slice(0, visibleProductCount);
+}
+
+function formatCountdown(remainingMs: number) {
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1_000));
+  const hours = Math.floor(totalSeconds / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return [hours, minutes, seconds]
+    .map((value) => numberFormatter.format(value))
+    .join(":");
 }
 
 function getDiscountPercent(regularPrice: string, salePrice: string) {
@@ -72,10 +134,22 @@ function cleanVolume(value?: string) {
 }
 
 export function FeaturedProductCarousel({
-  products,
+  products: productPool,
+  initialRotationRemainingMs,
+  initialRotationSeed,
 }: {
   products: FeaturedCarouselProduct[];
+  initialRotationRemainingMs: number;
+  initialRotationSeed: number;
 }) {
+  const [rotationSeed, setRotationSeed] = useState(initialRotationSeed);
+  const [rotationRemainingMs, setRotationRemainingMs] = useState(
+    initialRotationRemainingMs,
+  );
+  const products = useMemo(
+    () => selectRotatingProducts(productPool, rotationSeed),
+    [productPool, rotationSeed],
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const [paused, setPaused] = useState(false);
@@ -83,6 +157,21 @@ export function FeaturedProductCarousel({
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerStart = useRef<number | null>(null);
   const dragged = useRef(false);
+
+  useEffect(() => {
+    const syncRotation = () => {
+      const rotation = getRotationWindow(Date.now());
+      setRotationRemainingMs(rotation.remainingMs);
+      setRotationSeed((currentSeed) =>
+        currentSeed === rotation.seed ? currentSeed : rotation.seed,
+      );
+    };
+
+    syncRotation();
+    const timer = window.setInterval(syncRotation, 1_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const moveTo = useCallback(
     (nextIndex: number) => {
@@ -138,9 +227,11 @@ export function FeaturedProductCarousel({
   const volume = cleanVolume(product.volume);
   const salePrice = formatPrice(product.salePrice);
   const regularPrice = formatPrice(
-    product.regularPrice || product.price,
+    product.regularPrice ||
+      product.price ||
+      String(product.priceToman ?? ""),
   );
-  const livePrice = salePrice || regularPrice;
+  const livePrice = getProductPrice(product);
   const discountPercent = getDiscountPercent(
     product.regularPrice || product.price,
     product.salePrice,
@@ -199,6 +290,13 @@ export function FeaturedProductCarousel({
               مشاهده همه محصولات
               <ArrowIcon />
             </Link>
+            <div
+              className="sb-featured-carousel__rotation"
+              aria-label={`زمان باقی‌مانده تا انتخاب محصولات تازه: ${formatCountdown(rotationRemainingMs)}`}
+            >
+              <span>ترکیب تازه محصولات تا</span>
+              <time>{formatCountdown(rotationRemainingMs)}</time>
+            </div>
           </div>
         </div>
 
@@ -331,7 +429,7 @@ export function FeaturedProductCarousel({
               aria-label={`نمایش ${item.nameFa}`}
               aria-selected={index === currentIndex}
               className={index === currentIndex ? "is-active" : ""}
-              key={item.slug}
+              key={`${rotationSeed}:${item.slug}`}
               onClick={() => moveTo(index)}
               role="tab"
               type="button"
@@ -350,6 +448,7 @@ export function FeaturedProductCarousel({
               <span>
                 <small>{item.brand || item.categoryTitle}</small>
                 <b>{item.nameFa}</b>
+                <em>{getProductPrice(item)}</em>
               </span>
               {index === currentIndex && (
                 <i

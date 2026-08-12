@@ -51,6 +51,9 @@ const faqs = [
 
 export const revalidate = 300;
 
+const featuredRotationIntervalMs = 3 * 60 * 60 * 1_000;
+const iranUtcOffsetMs = 3.5 * 60 * 60 * 1_000;
+
 export default async function Home() {
   const [{ products }, categories, presentation] =
     await Promise.all([
@@ -59,25 +62,28 @@ export default async function Home() {
       getSitePresentation(),
     ]);
 
-  const prioritizedProducts = [
-    ...products.filter(
-      (product) => product.featured,
-    ),
-    ...products.filter(
-      (product) => !product.featured,
-    ),
-  ];
+  const pricedProducts = products.filter((product) => {
+    const visiblePrice = Number(
+      product.salePrice ||
+        product.regularPrice ||
+        product.price ||
+        product.priceToman,
+    );
 
-  const featuredProducts = Array.from(
-    new Map(
-      prioritizedProducts.map(
-        (product) => [
-          product.slug,
-          product,
-        ],
-      ),
-    ).values(),
-  ).slice(0, 4);
+    return Number.isFinite(visiblePrice) && visiblePrice > 0;
+  });
+  const featuredProducts =
+    pricedProducts.length >= 4 ? pricedProducts : products;
+  // A cached page intentionally snapshots the shared three-hour rotation window.
+  // eslint-disable-next-line react-hooks/purity
+  const rotationNow = Date.now();
+  const shiftedRotationNow = rotationNow + iranUtcOffsetMs;
+  const initialRotationSeed = Math.floor(
+    shiftedRotationNow / featuredRotationIntervalMs,
+  );
+  const initialRotationRemainingMs =
+    (initialRotationSeed + 1) * featuredRotationIntervalMs -
+    shiftedRotationNow;
 
   const availableBrands = Array.from(
     new Set(
@@ -184,6 +190,8 @@ export default async function Home() {
 
       <Reveal>
         <FeaturedProductCarousel
+          initialRotationRemainingMs={initialRotationRemainingMs}
+          initialRotationSeed={initialRotationSeed}
           products={featuredProducts.map((product) => ({
             slug: product.slug,
             nameFa: product.nameFa,
@@ -199,6 +207,7 @@ export default async function Home() {
             price: product.price,
             regularPrice: product.regularPrice,
             salePrice: product.salePrice,
+            priceToman: product.priceToman,
             stockStatus: product.stockStatus,
           }))}
         />
