@@ -391,8 +391,16 @@ if (!selected || saving) {
   return;
 }
 
-if (
+const persistedProduct =
+  selected.id > 0
+    ? products.find((product) => product.id === selected.id) ?? null
+    : null;
+const isPublishingForFirstTime =
   selected.status === "publish" &&
+  (selected.id === 0 || persistedProduct?.status !== "publish");
+
+if (
+  isPublishingForFirstTime &&
   !isPublishReady
 ) {
   const missingItems =
