@@ -350,10 +350,10 @@
   gap: 12px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 24px 24px 7px 24px;
-  background:
-    linear-gradient(118deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.79)),
-    var(--category-paper);
-  box-shadow: 0 22px 50px rgba(60, 34, 44, 0.24);
+  background: rgba(255, 253, 252, 0.98);
+  box-shadow:
+    inset 5px 0 0 rgba(var(--category-accent-rgb), 0.18),
+    0 22px 50px rgba(60, 34, 44, 0.26);
   color: var(--category-ink);
   opacity: 0;
   visibility: hidden;
@@ -378,6 +378,7 @@
   font-family: "Estedad Variable", sans-serif;
   font-size: clamp(0.72rem, 0.92vw, 0.94rem);
   font-weight: 720;
+  color: var(--category-ink);
   line-height: 1.55;
   text-overflow: ellipsis;
   white-space: nowrap;
