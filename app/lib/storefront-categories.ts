@@ -85,7 +85,7 @@ async function loadStorefrontCategories(): Promise<
 const getCachedStorefrontCategories =
   unstable_cache(
     loadStorefrontCategories,
-    ["storefront-categories-v2"],
+    ["storefront-categories-v3"],
     {
       revalidate: 300,
       tags: [

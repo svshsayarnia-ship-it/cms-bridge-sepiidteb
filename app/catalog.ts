@@ -20,7 +20,7 @@ export const catalogGroups: CatalogGroup[] = [
     en: "PROFESSIONAL INJECTABLES",
     description:
       "فیلرها، اسکین‌بوسترها، مزوژل‌ها و فرآورده‌های بوتولینوم در مسیرهای جدا و قابل‌مقایسه.",
-    categorySlugs: ["fillers", "body-fillers", "skin-boosters", "botulinum-toxins"],
+    categorySlugs: ["fillers", "skin-boosters", "botulinum-toxins"],
   },
   {
     slug: "mesotherapy-cocktails",
@@ -56,19 +56,6 @@ export const catalogCategories: Category[] = [
       "مقایسه فیلرها و ژل‌های حرفه‌ای بر اساس نام دقیق مدل، حجم درج‌شده و نوع بسته‌بندی.",
     guide:
       "ناحیه، تکنیک و تناسب محصول باید توسط پزشک تعیین شود؛ اطلاعات بازار مرجع نهایی نیست.",
-    image: "/images/drive/category-fillers.webp",
-    position: "50%",
-  },
-  {
-    slug: "body-fillers",
-    title: "فیلرهای حجم بالا",
-    en: "HIGH-VOLUME FILLERS",
-    group: "injectables",
-    groupTitle: "محصولات تزریقی زیبایی",
-    description:
-      "محصولات دارای سرنگ یا ویال حجم بالا؛ جدا از فیلرهای یک تا دو میلی‌لیتری تا حجم بسته با غلظت یا نام مدل اشتباه نشود.",
-    guide:
-      "حجم بالا به معنی مناسب‌بودن برای هر کاربرد نیست؛ نام مدل، حجم واقعی و اصالت همان بسته پیش از سفارش بررسی می‌شود.",
     image: "/images/drive/category-fillers.webp",
     position: "50%",
   },
@@ -680,7 +667,6 @@ const seeds: ProductSeed[] = [
 
 const shortBenefits: Record<string, string> = {
   fillers: "مقایسه مدل، حجم و بسته‌بندی فیلر",
-  "body-fillers": "مقایسه حجم واقعی، مدل و واحد بسته",
   "skin-boosters": "مقایسه حرفه‌ای کیفیت پوست و آبرسانی",
   "botulinum-toxins": "استعلام اصالت، واحد و شرایط نگهداری",
   "rejuvenation-cocktails": "عنوان رایج بازار: جوان‌سازی و کیفیت پوست",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
@@ -35,6 +35,15 @@ export async function generateMetadata({
   params: Promise<{ category: string }>;
 }): Promise<Metadata> {
   const { category: slug } = await params;
+
+  if (slug === "body-fillers") {
+    return {
+      title: "فیلرهای بیشتر از ۲ میلی‌لیتر",
+      robots: { index: false, follow: true },
+      alternates: { canonical: "/shop/fillers" },
+    };
+  }
+
   const category =
     await getStorefrontCategoryBySlug(
       slug,
@@ -75,6 +84,10 @@ export default async function CategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category: slug } = await params;
+
+  if (slug === "body-fillers") {
+    redirect("/shop/fillers?volume=high");
+  }
 
   const [categories, { products }] =
     await Promise.all([

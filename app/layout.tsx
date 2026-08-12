@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
+import "./category-hovers.css";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";

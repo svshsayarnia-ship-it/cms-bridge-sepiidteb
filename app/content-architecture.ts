@@ -268,7 +268,7 @@ export const guides: GuidePage[] = [
           "اگر بازگشت موجودی محتمل باشد، صفحه با وضعیت روشن حفظ می‌شود تا مشخصات و راه‌های جایگزین قابل مشاهده بماند.",
       },
     ],
-    categorySlugs: ["fillers", "body-fillers"],
+    categorySlugs: ["fillers"],
     productSlugs: ["neuramis-deep-lidocaine", "revofil-ultra", "eptq-1ml"],
     articleSlugs: ["neuramis-vs-revofil-guide", "verify-dermal-filler-authenticity"],
     concernSlugs: ["volume-loss"],

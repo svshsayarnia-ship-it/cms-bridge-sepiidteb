@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
+  catalogCategories,
   catalogProducts,
   getGroupForCategory,
 } from "../catalog";
@@ -115,13 +116,20 @@ function mapWooProduct(
   const primaryCategory =
     product.categories?.[0];
 
-  const categorySlug =
+  const sourceCategorySlug =
     primaryCategory?.slug ||
     fallback?.category ||
     "products";
 
+  const categorySlug =
+    sourceCategorySlug === "body-fillers"
+      ? "fillers"
+      : sourceCategorySlug;
+
   const categoryTitle =
-    primaryCategory?.name ||
+    (sourceCategorySlug === "body-fillers"
+      ? catalogCategories.find((item) => item.slug === "fillers")?.title
+      : primaryCategory?.name) ||
     fallback?.categoryTitle ||
     "محصولات";
 
@@ -405,7 +413,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 const getCachedStorefrontCatalog =
   unstable_cache(
     loadStorefrontCatalog,
-    ["storefront-catalog-v2"],
+    ["storefront-catalog-v3"],
     {
       revalidate: 300,
       tags: [STOREFRONT_CATALOG_TAG],

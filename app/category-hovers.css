@@ -1,0 +1,356 @@
+/*
+ * Category artwork v2 — intentionally isolated from the legacy global bundle.
+ * This file loads last so the feminine/modern interaction is deterministic in
+ * production even when an older global CSS chunk is retained by the CDN.
+ */
+
+.sb-category-card {
+  overflow: clip;
+  border-color: rgba(111, 87, 96, 0.14);
+  background: #fffdfc;
+  box-shadow: 0 10px 30px rgba(74, 54, 61, 0.055);
+  transition:
+    transform 300ms var(--sb-ease),
+    border-color 220ms ease,
+    box-shadow 300ms ease;
+}
+
+.sb-category-card:hover,
+.sb-category-card:focus-visible {
+  border-color: rgba(164, 112, 132, 0.42);
+  box-shadow: 0 24px 58px rgba(92, 65, 75, 0.15);
+  transform: translateY(-5px);
+}
+
+.sb-category-card .sb-category-visual {
+  --category-accent: #ad7889;
+  --category-accent-rgb: 173, 120, 137;
+  position: relative;
+  aspect-ratio: 1;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 14%, rgba(255, 255, 255, 0.98), transparent 28%),
+    radial-gradient(circle at 84% 82%, rgba(var(--category-accent-rgb), 0.13), transparent 34%),
+    linear-gradient(145deg, #fffdfc 0%, #f7eff1 100%);
+}
+
+.sb-category-card .sb-category-visual[data-category="skin-boosters"] {
+  --category-accent: #829b94;
+  --category-accent-rgb: 130, 155, 148;
+}
+
+.sb-category-card .sb-category-visual[data-category="botulinum-toxins"] {
+  --category-accent: #9182a2;
+  --category-accent-rgb: 145, 130, 162;
+}
+
+.sb-category-card .sb-category-visual[data-category="rejuvenation-cocktails"] {
+  --category-accent: #b17f86;
+  --category-accent-rgb: 177, 127, 134;
+}
+
+.sb-category-card .sb-category-visual[data-category="brightening-cocktails"] {
+  --category-accent: #b09562;
+  --category-accent-rgb: 176, 149, 98;
+}
+
+.sb-category-card .sb-category-visual[data-category="eye-cocktails"] {
+  --category-accent: #8295aa;
+  --category-accent-rgb: 130, 149, 170;
+}
+
+.sb-category-card .sb-category-visual[data-category="hair-cocktails"] {
+  --category-accent: #7f8d79;
+  --category-accent-rgb: 127, 141, 121;
+}
+
+.sb-category-card .sb-category-visual[data-category="hyaluronidase-products"] {
+  --category-accent: #9a7f91;
+  --category-accent-rgb: 154, 127, 145;
+}
+
+.sb-category-card .sb-category-visual__grid,
+.sb-category-card .sb-category-visual__wash,
+.sb-category-card .sb-category-visual__halo,
+.sb-category-card .sb-category-visual__subject,
+.sb-category-card .sb-category-visual__seal,
+.sb-category-card .sb-category-visual__label,
+.sb-category-card .sb-category-visual__destination {
+  position: absolute;
+}
+
+.sb-category-card .sb-category-visual__grid {
+  z-index: -1;
+  inset: 9%;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.14);
+  border-radius: 44% 56% 58% 42% / 48% 42% 58% 52%;
+  background-image:
+    linear-gradient(rgba(var(--category-accent-rgb), 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--category-accent-rgb), 0.045) 1px, transparent 1px);
+  background-size: 22% 22%;
+  transform: rotate(-7deg) scale(1.16);
+  transition: transform 700ms var(--sb-ease), opacity 360ms ease;
+}
+
+.sb-category-card .sb-category-visual__wash {
+  z-index: -1;
+  top: 8%;
+  left: 6%;
+  width: 44%;
+  aspect-ratio: 1;
+  border-radius: 63% 37% 55% 45% / 48% 62% 38% 52%;
+  background: rgba(var(--category-accent-rgb), 0.09);
+  filter: blur(1px);
+  transform: rotate(-18deg);
+  transition: transform 720ms var(--sb-ease), background 420ms ease;
+}
+
+.sb-category-card .sb-category-visual__halo {
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 67%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.32);
+  border-radius: 48% 52% 44% 56% / 56% 44% 54% 46%;
+  box-shadow:
+    0 0 0 18px rgba(var(--category-accent-rgb), 0.045),
+    0 0 52px rgba(var(--category-accent-rgb), 0.18);
+  transform: translate(-50%, -50%) scale(0.82);
+  transition: transform 650ms var(--sb-ease), box-shadow 650ms ease;
+}
+
+.sb-category-card .sb-category-visual__subject {
+  z-index: 1;
+  inset: 7% 6% 13%;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 16px 18px rgba(47, 42, 37, 0.14));
+  transform: rotate(-3deg) scale(0.94);
+  transform-origin: center;
+  transition: transform 640ms var(--sb-ease), filter 640ms ease;
+}
+
+.sb-category-card .sb-category-visual__subject > svg {
+  width: 100% !important;
+  min-width: 100%;
+  height: 100% !important;
+  max-width: none;
+  overflow: visible;
+  fill: none;
+  stroke: rgba(69, 56, 62, 0.7);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sb-category-card .sb-category-visual__subject :is(path, rect, circle) {
+  vector-effect: non-scaling-stroke;
+}
+
+.sb-category-card .sb-category-subject__solid {
+  fill: rgba(255, 252, 251, 0.93);
+}
+
+.sb-category-card .sb-category-subject__accent {
+  fill: rgba(var(--category-accent-rgb), 0.25);
+  stroke: rgba(var(--category-accent-rgb), 0.74);
+}
+
+.sb-category-card .sb-category-subject__motion-a,
+.sb-category-card .sb-category-subject__motion-b,
+.sb-category-card .sb-category-subject__signal {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 620ms var(--sb-ease), opacity 420ms ease;
+}
+
+.sb-category-card .sb-category-subject__signal {
+  opacity: 0.74;
+}
+
+.sb-category-card .sb-category-visual__seal {
+  z-index: 2;
+  top: 17%;
+  right: 15%;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.55);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--category-accent);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.51rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  transition: transform 520ms var(--sb-ease), background 320ms ease;
+}
+
+.sb-category-card .sb-category-visual__label {
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  max-width: calc(100% - 28px);
+  overflow: hidden;
+  color: rgba(74, 57, 65, 0.6);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: clamp(0.47rem, 0.56vw, 0.6rem);
+  font-weight: 690;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 250ms ease, transform 380ms var(--sb-ease);
+}
+
+.sb-category-card .sb-category-visual__destination {
+  z-index: 4;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  min-height: 68px;
+  padding: 11px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.32);
+  border-radius: 16px;
+  background: rgba(255, 251, 250, 0.92);
+  box-shadow: 0 15px 34px rgba(78, 55, 64, 0.12);
+  color: #493b40;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.96);
+  backdrop-filter: blur(12px);
+  transition:
+    opacity 240ms ease,
+    transform 420ms var(--sb-ease),
+    visibility 0s linear 420ms;
+}
+
+.sb-category-card .sb-category-visual__destination > span {
+  display: grid;
+  gap: 2px;
+}
+
+.sb-category-card .sb-category-visual__destination small {
+  color: var(--category-accent);
+  font-size: 0.55rem;
+  font-weight: 720;
+}
+
+.sb-category-card .sb-category-visual__destination strong {
+  overflow: hidden;
+  font-family: "Estedad Variable", sans-serif;
+  font-size: clamp(0.68rem, 0.82vw, 0.82rem);
+  font-weight: 640;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-category-card .sb-category-visual__destination i {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--category-accent);
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 1rem;
+  font-style: normal;
+}
+
+.sb-category-card:hover .sb-category-visual__grid,
+.sb-category-card:focus-visible .sb-category-visual__grid {
+  opacity: 0.58;
+  transform: rotate(2deg) scale(1.28);
+}
+
+.sb-category-card:hover .sb-category-visual__wash,
+.sb-category-card:focus-visible .sb-category-visual__wash {
+  background: rgba(var(--category-accent-rgb), 0.16);
+  transform: translate(120%, 48%) rotate(18deg) scale(1.18);
+}
+
+.sb-category-card:hover .sb-category-visual__halo,
+.sb-category-card:focus-visible .sb-category-visual__halo {
+  box-shadow:
+    0 0 0 25px rgba(var(--category-accent-rgb), 0.06),
+    0 0 72px rgba(var(--category-accent-rgb), 0.25);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.sb-category-card:hover .sb-category-visual__subject,
+.sb-category-card:focus-visible .sb-category-visual__subject {
+  filter: drop-shadow(0 21px 24px rgba(47, 42, 37, 0.18));
+  transform: rotate(0) translateY(-14px) scale(0.92);
+}
+
+.sb-category-card:hover .sb-category-subject__motion-a,
+.sb-category-card:focus-visible .sb-category-subject__motion-a {
+  transform: translate3d(-3px, -4px, 0) rotate(-1.5deg);
+}
+
+.sb-category-card:hover .sb-category-subject__motion-b,
+.sb-category-card:focus-visible .sb-category-subject__motion-b {
+  transform: translate3d(4px, -2px, 0) rotate(2deg);
+}
+
+.sb-category-card:hover .sb-category-subject__signal,
+.sb-category-card:focus-visible .sb-category-subject__signal {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.sb-category-card:hover .sb-category-visual__seal,
+.sb-category-card:focus-visible .sb-category-visual__seal {
+  background: rgba(255, 255, 255, 0.92);
+  transform: rotate(20deg) scale(1.08);
+}
+
+.sb-category-card:hover .sb-category-visual__label,
+.sb-category-card:focus-visible .sb-category-visual__label {
+  opacity: 0.25;
+  transform: translateY(-5px);
+}
+
+.sb-category-card:hover .sb-category-visual__destination,
+.sb-category-card:focus-visible .sb-category-visual__destination {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  transition-delay: 0s;
+}
+
+.sb-catalog__fieldset--volume {
+  margin-inline: -9px;
+  padding: 16px 9px 10px;
+  border: 1px solid rgba(173, 120, 137, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255, 251, 250, 0.98), rgba(173, 120, 137, 0.07));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.sb-catalog__fieldset--volume legend {
+  padding-inline: 6px;
+  color: #765263;
+}
+
+.sb-catalog__fieldset--volume > p {
+  margin: 2px 26px 0 0;
+  color: var(--sb-muted);
+  font-size: 0.58rem;
+  line-height: 1.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-category-card,
+  .sb-category-card .sb-category-visual * {
+    transition-duration: 0.01ms !important;
+  }
+}
