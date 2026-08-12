@@ -17,7 +17,12 @@ export type PublicProduct = Pick<
   | "position"
   | "volume"
   | "shortBenefit"
->;
+  | "priceToman"
+> & {
+  price?: string;
+  regularPrice?: string;
+  salePrice?: string;
+};
 
 const placeholderImagePattern =
   /(?:category-|editorial-detail|placeholder|default-product|product-placeholder)/iu;
@@ -42,7 +47,12 @@ export function toPublicProduct(
     | "position"
     | "volume"
     | "shortBenefit"
-  >,
+    | "priceToman"
+  > & {
+    price?: string;
+    regularPrice?: string;
+    salePrice?: string;
+  },
 ): PublicProduct {
   return {
     slug: product.slug,
@@ -58,6 +68,10 @@ export function toPublicProduct(
     position: product.position,
     volume: product.volume,
     shortBenefit: product.shortBenefit,
+    priceToman: product.priceToman,
+    price: product.price,
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
   };
 }
 

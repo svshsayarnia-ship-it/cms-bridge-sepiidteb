@@ -167,7 +167,8 @@ export function PricingManager() {
       if (result.product) replaceProduct(result.product);
       if (result.summary) {
         setNotice(
-          `${successMessage} ${result.summary.pricesApplied} قیمت اعمال شد، ` +
+          `${successMessage} ${result.summary.catalogProductsAdded} کالای سایت به ووکامرس افزوده شد، ` +
+            `${result.summary.pricesApplied} قیمت اعمال شد، ` +
             `${result.summary.proposalsCreated} پیشنهاد ساخته شد، ` +
             `${result.summary.insufficientProducts} محصول داده کافی نداشت و ` +
             `${result.summary.failedProducts} بررسی ناموفق بود.`,

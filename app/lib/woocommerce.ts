@@ -62,6 +62,7 @@ type WooRequestResult<T> = {
 
 const DEFAULT_WOO_TIMEOUT_MS = 20_000;
 const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
+const PRODUCT_BATCH_TIMEOUT_MS = 90_000;
 
 export class WooCommerceError extends Error {
   constructor(
@@ -567,6 +568,56 @@ export async function createProduct(input: CmsProductInput): Promise<CmsProduct>
     body: JSON.stringify(productPayload(input)),
   });
   return mapProduct(response.data);
+}
+
+export async function createProductsBatch(
+  inputs: CmsProductInput[],
+): Promise<CmsProduct[]> {
+  if (!inputs.length) return [];
+  if (inputs.length > 100) {
+    throw new WooCommerceError(
+      "در هر همگام‌سازی حداکثر ۱۰۰ محصول قابل ایجاد است.",
+      400,
+      "product_batch_too_large",
+    );
+  }
+
+  const slugs = new Set<string>();
+  const skus = new Set<string>();
+  for (const input of inputs) {
+    const slug = input.slug.trim();
+    const sku = input.sku.trim();
+    if (!input.name.trim() || !slug) {
+      throw new WooCommerceError(
+        "نام و نامک همه محصولات همگام‌سازی‌شده الزامی است.",
+        400,
+        "invalid_catalog_product",
+      );
+    }
+    if (slugs.has(slug) || (sku && skus.has(sku))) {
+      throw new WooCommerceError(
+        `محصول تکراری «${input.name}» در کاتالوگ پیدا شد.`,
+        409,
+        "duplicate_catalog_product",
+      );
+    }
+    slugs.add(slug);
+    if (sku) skus.add(sku);
+  }
+
+  const response = await wooRequest<{ create: WooProduct[] }>(
+    "products/batch",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        create: inputs.map(productPayload),
+      }),
+    },
+    undefined,
+    PRODUCT_BATCH_TIMEOUT_MS,
+  );
+
+  return (response.data.create ?? []).map(mapProduct);
 }
 
 export async function updateProduct(

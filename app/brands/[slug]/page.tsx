@@ -171,7 +171,7 @@ export default async function BrandPage({
             <span className="sb-eyebrow">مدل‌ها</span>
             <h2>نام و حجم را پیش از استعلام مقایسه کنید</h2>
             <p>
-              برای دیدن تصویر، قیمت و موجودی هر گزینه وارد صفحه محصول شوید.
+              قیمت هر گزینه روی کارت محصول دیده می‌شود؛ صفحه محصول جزئیات و موجودی را نشان می‌دهد.
             </p>
           </div>
           <div className="sb-brand-page__table" role="region" aria-label={`مدل‌های ${brand.name}`}>

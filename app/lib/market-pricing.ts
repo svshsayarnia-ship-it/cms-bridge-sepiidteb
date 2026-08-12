@@ -14,8 +14,10 @@ import {
 import { STOREFRONT_CATALOG_TAG } from "./storefront-catalog";
 import {
   approveProductPricingProposal,
+  createProductsBatch,
   getProduct,
   listAllProductsForPricing,
+  listCategories,
   updateProductPricingState,
   WooCommerceError,
 } from "./woocommerce";
@@ -205,6 +207,7 @@ export type MarketPricingDashboard = {
 export type MarketPricingScanSummary = {
   startedAt: string;
   finishedAt: string;
+  catalogProductsAdded: number;
   checkedProducts: number;
   proposalsCreated: number;
   pricesApplied: number;
@@ -212,6 +215,66 @@ export type MarketPricingScanSummary = {
   failedProducts: number;
   skippedProducts: number;
 };
+
+async function synchronizeCatalogProductsForPricing(): Promise<{
+  products: CmsProduct[];
+  added: number;
+}> {
+  const existing = await listAllProductsForPricing();
+  const existingSlugs = new Set(existing.map((product) => product.slug));
+  const missing = catalogProducts.filter(
+    (product) =>
+      product.publishedInCatalog !== false &&
+      !existingSlugs.has(product.slug),
+  );
+
+  if (!missing.length) {
+    return { products: existing, added: 0 };
+  }
+
+  const categories = await listCategories({
+    requestTimeoutMs: 30_000,
+    requestMaxAttempts: 3,
+  });
+  const categoryIds = new Map(
+    categories.map((category) => [category.slug, category.id]),
+  );
+  const created = await createProductsBatch(
+    missing.map((product) => ({
+      name: product.nameFa,
+      slug: product.slug,
+      sku: `SPB-${product.slug}`,
+      status: "publish" as const,
+      catalogVisibility: "visible" as const,
+      featured: false,
+      description: product.summary,
+      shortDescription: product.shortBenefit,
+      seoTitle: `خرید ${product.nameFa} | قیمت و مشخصات`,
+      metaDescription: product.summary,
+      focusKeyword: product.nameFa,
+      sourceName: product.sourceName ?? "",
+      sourceUrl: product.sourceUrl ?? "",
+      reviewerName: "",
+      reviewerRole: "",
+      reviewedAt: product.reviewedAt ?? "",
+      regularPrice: product.priceToman ? String(product.priceToman) : "",
+      salePrice: "",
+      manageStock: false,
+      stockQuantity: null,
+      stockStatus: "instock" as const,
+      categoryIds: categoryIds.has(product.category)
+        ? [categoryIds.get(product.category)!]
+        : [],
+      images: [],
+    })),
+  );
+
+  revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
+  return {
+    products: [...existing, ...created],
+    added: created.length,
+  };
+}
 
 function toLatinDigits(value: string): string {
   const persian = "۰۱۲۳۴۵۶۷۸۹";
@@ -798,7 +861,8 @@ export async function runMarketPricingScan(
   mode: MarketPricingScanMode = "review",
 ): Promise<MarketPricingScanSummary> {
   const startedAt = new Date().toISOString();
-  const products = await listAllProductsForPricing();
+  const synchronized = await synchronizeCatalogProductsForPricing();
+  const products = synchronized.products;
   const results = await mapWithConcurrency(products, 3, async (product) => {
     try {
       return await scanProduct(product, mode);
@@ -810,6 +874,7 @@ export async function runMarketPricingScan(
   return {
     startedAt,
     finishedAt: new Date().toISOString(),
+    catalogProductsAdded: synchronized.added,
     checkedProducts: results.filter((result) => result !== "skipped").length,
     proposalsCreated: results.filter((result) => result === "proposal").length,
     pricesApplied: results.filter((result) => result === "applied").length,

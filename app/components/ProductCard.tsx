@@ -10,6 +10,17 @@ import {
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
+const priceFormatter = new Intl.NumberFormat("fa-IR");
+
+function numericPrice(value?: string | number): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
+}
+
+function formatPrice(value: number): string {
+  return `${priceFormatter.format(value)} تومان`;
+}
+
 export function ProductCard({
   product,
   priority = false,
@@ -28,6 +39,12 @@ export function ProductCard({
     `تصویر ${product.nameFa}`;
   const brand = getCompactBrandLabel(product.brand);
   const packagingLabel = getPublicPackagingLabel(product.volume);
+  const salePrice = numericPrice(product.salePrice);
+  const regularPrice = numericPrice(
+    product.regularPrice || product.price,
+  );
+  const visiblePrice =
+    salePrice || regularPrice || numericPrice(product.priceToman);
 
   return (
     <article className="sb-product-card">
@@ -91,6 +108,22 @@ export function ProductCard({
         )}
 
         <div className="sb-product-card__footer">
+          <div
+            className={`sb-product-card__price${visiblePrice ? "" : " is-pending"}`}
+            aria-label={`قیمت ${product.nameFa}`}
+          >
+            <span>{salePrice ? "قیمت ویژه" : "قیمت"}</span>
+            {visiblePrice ? (
+              <div>
+                <strong>{formatPrice(visiblePrice)}</strong>
+                {salePrice && regularPrice && salePrice < regularPrice
+                  ? <del>{formatPrice(regularPrice)}</del>
+                  : null}
+              </div>
+            ) : (
+              <strong>در حال بررسی بازار</strong>
+            )}
+          </div>
           <Link
             className="sb-product-card__cta"
             href={href}
