@@ -72,7 +72,10 @@ export function PricingManager() {
     try {
       const data = await pricingApi<MarketPricingDashboard>();
       setDashboard(data);
-      setSelectedId((current) => current ?? data.products[0]?.id ?? null);
+      setSelectedId(
+        (current) =>
+          current ?? data.editableProducts[0]?.id ?? data.products[0]?.id ?? null,
+      );
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "دریافت پیشنهادهای قیمت ناموفق بود.");
     } finally {
@@ -88,7 +91,7 @@ export function PricingManager() {
         const data = await pricingApi<MarketPricingDashboard>();
         if (cancelled) return;
         setDashboard(data);
-        setSelectedId(data.products[0]?.id ?? null);
+        setSelectedId(data.editableProducts[0]?.id ?? data.products[0]?.id ?? null);
       } catch (loadError) {
         if (!cancelled) {
           setError(
@@ -119,7 +122,8 @@ export function PricingManager() {
       ).length ?? 0,
     [dashboard],
   );
-  const selected = dashboard?.products.find((product) => product.id === selectedId) ?? null;
+  const selected =
+    dashboard?.editableProducts.find((product) => product.id === selectedId) ?? null;
   const selectedPriceDraft = selected ? priceDrafts[selected.id] : undefined;
   const regularPriceDraft =
     selectedPriceDraft?.regularPrice ?? selected?.regularPrice ?? "";
@@ -148,6 +152,9 @@ export function PricingManager() {
         ? {
             ...current,
             products: current.products.map((item) =>
+              item.id === product.id ? product : item,
+            ),
+            editableProducts: current.editableProducts.map((item) =>
               item.id === product.id ? product : item,
             ),
           }
@@ -284,7 +291,7 @@ export function PricingManager() {
               value={selectedId ?? ""}
               onChange={(event) => setSelectedId(Number(event.target.value))}
             >
-              {dashboard?.products.map((product) => (
+              {dashboard?.editableProducts.map((product) => (
                 <option value={product.id} key={product.id}>{product.name}</option>
               ))}
             </select>

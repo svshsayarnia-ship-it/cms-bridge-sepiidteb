@@ -18,6 +18,7 @@ import {
   getProduct,
   listAllProductsForPricing,
   listCategories,
+  listProducts,
   setProductPricesBatch,
   updateProductPricingState,
   WooCommerceError,
@@ -202,6 +203,7 @@ export type MarketPricingProduct = Pick<
 
 export type MarketPricingDashboard = {
   products: MarketPricingProduct[];
+  editableProducts: MarketPricingProduct[];
   generatedAt: string;
 };
 
@@ -867,19 +869,49 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-export async function getMarketPricingDashboard(): Promise<MarketPricingDashboard> {
-  const products = await listAllProductsForPricing();
+function toMarketPricingProduct(product: CmsProduct): MarketPricingProduct {
   return {
-    products: products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      sku: product.sku,
-      price: product.price,
-      regularPrice: product.regularPrice,
-      salePrice: product.salePrice,
-      pricing: product.pricing,
-    })),
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku,
+    price: product.price,
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
+    pricing: product.pricing,
+  };
+}
+
+async function listAllProductsForManualPriceEditing(): Promise<CmsProduct[]> {
+  const products: CmsProduct[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await listProducts({
+      page,
+      perPage: 100,
+      status: "all",
+      requestTimeoutMs: 30_000,
+      requestMaxAttempts: 3,
+    });
+    products.push(...response.products);
+    totalPages = Math.max(1, response.totalPages);
+    page += 1;
+  } while (page <= totalPages && page <= 20);
+
+  return products;
+}
+
+export async function getMarketPricingDashboard(): Promise<MarketPricingDashboard> {
+  const [products, editableProducts] = await Promise.all([
+    listAllProductsForPricing(),
+    listAllProductsForManualPriceEditing(),
+  ]);
+
+  return {
+    products: products.map(toMarketPricingProduct),
+    editableProducts: editableProducts.map(toMarketPricingProduct),
     generatedAt: new Date().toISOString(),
   };
 }
