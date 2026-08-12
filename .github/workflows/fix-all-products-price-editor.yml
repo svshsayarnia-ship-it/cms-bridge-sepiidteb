@@ -1,0 +1,99 @@
+name: Fix all products price editor
+
+on:
+  push:
+    branches:
+      - fix/show-all-products-price-editor-20260813
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/show-all-products-price-editor-20260813
+          fetch-depth: 0
+
+      - name: Patch price editor catalog source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          market = Path('app/lib/market-pricing.ts')
+          text = market.read_text()
+
+          old = '''  listAllProductsForPricing,\n  listCategories,\n  setProductPricesBatch,'''
+          new = '''  listAllProductsForPricing,\n  listCategories,\n  listProducts,\n  setProductPricesBatch,'''
+          assert old in text, 'woocommerce import anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''export type MarketPricingDashboard = {\n  products: MarketPricingProduct[];\n  generatedAt: string;\n};'''
+          new = '''export type MarketPricingDashboard = {\n  products: MarketPricingProduct[];\n  editableProducts: MarketPricingProduct[];\n  generatedAt: string;\n};'''
+          assert old in text, 'dashboard type anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''export async function getMarketPricingDashboard(): Promise<MarketPricingDashboard> {\n  const products = await listAllProductsForPricing();\n  return {\n    products: products.map((product) => ({\n      id: product.id,\n      name: product.name,\n      slug: product.slug,\n      sku: product.sku,\n      price: product.price,\n      regularPrice: product.regularPrice,\n      salePrice: product.salePrice,\n      pricing: product.pricing,\n    })),\n    generatedAt: new Date().toISOString(),\n  };\n}'''
+          new = '''function toMarketPricingProduct(product: CmsProduct): MarketPricingProduct {\n  return {\n    id: product.id,\n    name: product.name,\n    slug: product.slug,\n    sku: product.sku,\n    price: product.price,\n    regularPrice: product.regularPrice,\n    salePrice: product.salePrice,\n    pricing: product.pricing,\n  };\n}\n\nasync function listAllProductsForManualPriceEditing(): Promise<CmsProduct[]> {\n  const products: CmsProduct[] = [];\n  let page = 1;\n  let totalPages = 1;\n\n  do {\n    const response = await listProducts({\n      page,\n      perPage: 100,\n      status: \"all\",\n      requestTimeoutMs: 30_000,\n      requestMaxAttempts: 3,\n    });\n    products.push(...response.products);\n    totalPages = Math.max(1, response.totalPages);\n    page += 1;\n  } while (page <= totalPages && page <= 20);\n\n  return products;\n}\n\nexport async function getMarketPricingDashboard(): Promise<MarketPricingDashboard> {\n  const [products, editableProducts] = await Promise.all([\n    listAllProductsForPricing(),\n    listAllProductsForManualPriceEditing(),\n  ]);\n\n  return {\n    products: products.map(toMarketPricingProduct),\n    editableProducts: editableProducts.map(toMarketPricingProduct),\n    generatedAt: new Date().toISOString(),\n  };\n}'''
+          assert old in text, 'dashboard function anchor not found'
+          text = text.replace(old, new, 1)
+          market.write_text(text)
+
+          manager = Path('app/cms/PricingManager.tsx')
+          text = manager.read_text()
+
+          old = '''      setDashboard(data);\n      setSelectedId((current) => current ?? data.products[0]?.id ?? null);'''
+          new = '''      setDashboard(data);\n      setSelectedId(\n        (current) =>\n          current ?? data.editableProducts[0]?.id ?? data.products[0]?.id ?? null,\n      );'''
+          assert old in text, 'load selected anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''        setDashboard(data);\n        setSelectedId(data.products[0]?.id ?? null);'''
+          new = '''        setDashboard(data);\n        setSelectedId(data.editableProducts[0]?.id ?? data.products[0]?.id ?? null);'''
+          assert old in text, 'initialize selected anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''  const selected = dashboard?.products.find((product) => product.id === selectedId) ?? null;'''
+          new = '''  const selected =\n    dashboard?.editableProducts.find((product) => product.id === selectedId) ?? null;'''
+          assert old in text, 'selected product anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''            products: current.products.map((item) =>\n              item.id === product.id ? product : item,\n            ),'''
+          new = '''            products: current.products.map((item) =>\n              item.id === product.id ? product : item,\n            ),\n            editableProducts: current.editableProducts.map((item) =>\n              item.id === product.id ? product : item,\n            ),'''
+          assert old in text, 'replaceProduct anchor not found'
+          text = text.replace(old, new, 1)
+
+          old = '''              {dashboard?.products.map((product) => (\n                <option value={product.id} key={product.id}>{product.name}</option>\n              ))}'''
+          new = '''              {dashboard?.editableProducts.map((product) => (\n                <option value={product.id} key={product.id}>{product.name}</option>\n              ))}'''
+          assert old in text, 'dropdown anchor not found'
+          text = text.replace(old, new, 1)
+
+          manager.write_text(text)
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Remove one-off workflow
+        run: rm .github/workflows/fix-all-products-price-editor.yml
+
+      - name: Commit tested fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/market-pricing.ts app/cms/PricingManager.tsx .github/workflows/fix-all-products-price-editor.yml
+          git commit -m "fix: show all CMS products in price editor"
+          git push origin HEAD:fix/show-all-products-price-editor-20260813
