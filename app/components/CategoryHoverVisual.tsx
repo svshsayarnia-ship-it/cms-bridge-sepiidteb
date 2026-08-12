@@ -4,6 +4,20 @@ type CategoryHoverVisualProps = {
   en: string;
 };
 
+const categoryEditorial: Record<
+  string,
+  { index: string; note: string; monogram: string }
+> = {
+  fillers: { index: "01", note: "فرم‌دهی و حجم", monogram: "F" },
+  "skin-boosters": { index: "02", note: "آبرسانی و کیفیت پوست", monogram: "S" },
+  "botulinum-toxins": { index: "03", note: "کنترل خطوط", monogram: "B" },
+  "rejuvenation-cocktails": { index: "04", note: "بازسازی و شادابی", monogram: "R" },
+  "brightening-cocktails": { index: "05", note: "روشنایی و یکنواختی", monogram: "L" },
+  "eye-cocktails": { index: "06", note: "مراقبت ظریف دور چشم", monogram: "E" },
+  "hair-cocktails": { index: "07", note: "تقویت مو و پوست سر", monogram: "H" },
+  "hyaluronidase-products": { index: "08", note: "اصلاح و بازگشت", monogram: "Y" },
+};
+
 function CategorySubject({ slug }: Pick<CategoryHoverVisualProps, "slug">) {
   switch (slug) {
     case "fillers":
@@ -131,6 +145,12 @@ export function CategoryHoverVisual({
   title,
   en,
 }: CategoryHoverVisualProps) {
+  const editorial = categoryEditorial[slug] ?? {
+    index: "08",
+    note: "انتخاب تخصصی",
+    monogram: "SB",
+  };
+
   return (
     <div
       className="sb-category-visual"
@@ -139,18 +159,24 @@ export function CategoryHoverVisual({
     >
       <span className="sb-category-visual__grid" />
       <span className="sb-category-visual__wash" />
+      <span className="sb-category-visual__orb sb-category-visual__orb--one" />
+      <span className="sb-category-visual__orb sb-category-visual__orb--two" />
       <span className="sb-category-visual__halo" />
+      <span className="sb-category-visual__meta">
+        <b>{editorial.index}</b>
+        <em>{editorial.note}</em>
+      </span>
       <span className="sb-category-visual__subject">
         <CategorySubject slug={slug} />
       </span>
-      <span className="sb-category-visual__seal">SB</span>
+      <span className="sb-category-visual__seal">{editorial.monogram}</span>
       <span className="sb-category-visual__label">{en}</span>
       <span className="sb-category-visual__destination">
         <span>
-          <small>ورود به دسته</small>
+          <small>مشاهده محصولات این دسته</small>
           <strong>{title}</strong>
         </span>
-        <i>↙</i>
+        <i>←</i>
       </span>
       <span className="sb-sr-only">ورود به دستهٔ {title}</span>
     </div>
