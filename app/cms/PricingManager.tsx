@@ -62,8 +62,9 @@ export function PricingManager() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [regularPriceDraft, setRegularPriceDraft] = useState("");
-  const [salePriceDraft, setSalePriceDraft] = useState("");
+  const [priceDrafts, setPriceDrafts] = useState<
+    Record<number, { regularPrice: string; salePrice: string }>
+  >({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,11 +120,27 @@ export function PricingManager() {
     [dashboard],
   );
   const selected = dashboard?.products.find((product) => product.id === selectedId) ?? null;
+  const selectedPriceDraft = selected ? priceDrafts[selected.id] : undefined;
+  const regularPriceDraft =
+    selectedPriceDraft?.regularPrice ?? selected?.regularPrice ?? "";
+  const salePriceDraft =
+    selectedPriceDraft?.salePrice ?? selected?.salePrice ?? "";
 
-  useEffect(() => {
-    setRegularPriceDraft(selected?.regularPrice ?? "");
-    setSalePriceDraft(selected?.salePrice ?? "");
-  }, [selected?.id, selected?.regularPrice, selected?.salePrice]);
+  function editPriceDraft(
+    patch: Partial<{ regularPrice: string; salePrice: string }>,
+  ) {
+    if (!selected) return;
+    setPriceDrafts((current) => ({
+      ...current,
+      [selected.id]: {
+        regularPrice:
+          current[selected.id]?.regularPrice ?? selected.regularPrice ?? "",
+        salePrice:
+          current[selected.id]?.salePrice ?? selected.salePrice ?? "",
+        ...patch,
+      },
+    }));
+  }
 
   function replaceProduct(product: MarketPricingProduct) {
     setDashboard((current) =>
@@ -285,7 +302,7 @@ export function PricingManager() {
                       value={regularPriceDraft}
                       placeholder="مثلاً 4500000"
                       onChange={(event) =>
-                        setRegularPriceDraft(sanitizePriceInput(event.target.value))
+                        editPriceDraft({ regularPrice: sanitizePriceInput(event.target.value) })
                       }
                     />
                   </label>
@@ -300,7 +317,7 @@ export function PricingManager() {
                       value={salePriceDraft}
                       placeholder="اختیاری"
                       onChange={(event) =>
-                        setSalePriceDraft(sanitizePriceInput(event.target.value))
+                        editPriceDraft({ salePrice: sanitizePriceInput(event.target.value) })
                       }
                     />
                   </label>
