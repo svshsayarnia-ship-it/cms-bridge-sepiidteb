@@ -1,518 +1,416 @@
-/* Category cards v4: a visibly new feminine/editorial system for hover and touch. */
+/* Category stories v5 — approved face transformation pattern × natural Boho. */
 
 .sb-category-grid {
-  gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .sb-category-card {
-  --category-accent: #a94f70;
-  --category-accent-rgb: 169, 79, 112;
-  --category-ink: #4d2635;
-  --category-paper: #f8e9ee;
+  --category-accent: #a45f48;
+  --category-accent-rgb: 164, 95, 72;
+  --category-dark: #54372e;
+  --category-paper: #f6eee5;
+  --category-soft: #ead7c5;
   position: relative;
   overflow: clip;
-  border: 0;
-  border-radius: 30px 30px 10px 30px;
-  background: #fffdfc;
-  box-shadow:
-    0 0 0 1px rgba(85, 52, 64, 0.1),
-    0 18px 45px rgba(77, 38, 53, 0.09);
-  transition: transform 520ms var(--sb-ease), box-shadow 520ms ease;
+  display: grid;
+  grid-template-rows: auto 42px auto auto;
+  border: 1px solid rgba(83, 57, 47, 0.14);
+  border-radius: 22px 22px 8px 22px;
+  background: #fffdfa;
+  box-shadow: 0 15px 38px rgba(74, 48, 38, 0.08);
+  color: var(--category-dark);
+  transition: transform 420ms var(--sb-ease), border-color 260ms ease, box-shadow 420ms ease;
 }
 
 .sb-category-card:hover,
-.sb-category-card:focus-visible {
+.sb-category-card:focus-visible,
+.sb-category-card--previewed {
   z-index: 2;
-  box-shadow:
-    0 0 0 1px rgba(var(--category-accent-rgb), 0.38),
-    0 34px 80px rgba(77, 38, 53, 0.2);
-  transform: translateY(-9px) rotate(-0.35deg);
+  border-color: rgba(var(--category-accent-rgb), 0.44);
+  box-shadow: 0 27px 65px rgba(75, 48, 37, 0.17);
+  transform: translateY(-6px);
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="skin-boosters"]) {
-  --category-accent: #3f7c73;
-  --category-accent-rgb: 63, 124, 115;
-  --category-ink: #234e49;
-  --category-paper: #e1f0ec;
+.sb-category-card:has(.sb-category-story[data-category="skin-boosters"]) {
+  --category-accent: #718169;
+  --category-accent-rgb: 113, 129, 105;
+  --category-dark: #3d4c38;
+  --category-paper: #f0f2e9;
+  --category-soft: #dbe2d2;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="botulinum-toxins"]) {
-  --category-accent: #6f5793;
-  --category-accent-rgb: 111, 87, 147;
-  --category-ink: #3f3157;
-  --category-paper: #ece6f5;
+.sb-category-card:has(.sb-category-story[data-category="botulinum-toxins"]) {
+  --category-accent: #a17a35;
+  --category-accent-rgb: 161, 122, 53;
+  --category-dark: #5b4622;
+  --category-paper: #f7f0df;
+  --category-soft: #eadcb9;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="rejuvenation-cocktails"]) {
-  --category-accent: #a94955;
-  --category-accent-rgb: 169, 73, 85;
-  --category-ink: #5c2930;
-  --category-paper: #f6e4e6;
+.sb-category-card:has(.sb-category-story[data-category="rejuvenation-cocktails"]) {
+  --category-accent: #a35e58;
+  --category-accent-rgb: 163, 94, 88;
+  --category-dark: #5b3633;
+  --category-paper: #f7eae5;
+  --category-soft: #ead2ca;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="brightening-cocktails"]) {
-  --category-accent: #9a7427;
-  --category-accent-rgb: 154, 116, 39;
-  --category-ink: #5d461a;
-  --category-paper: #f5edd7;
+.sb-category-card:has(.sb-category-story[data-category="brightening-cocktails"]) {
+  --category-accent: #9b7941;
+  --category-accent-rgb: 155, 121, 65;
+  --category-dark: #584624;
+  --category-paper: #f7f1e3;
+  --category-soft: #eadfbe;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="eye-cocktails"]) {
-  --category-accent: #4f7397;
-  --category-accent-rgb: 79, 115, 151;
-  --category-ink: #2c465f;
-  --category-paper: #e3ebf3;
+.sb-category-card:has(.sb-category-story[data-category="eye-cocktails"]) {
+  --category-accent: #81765f;
+  --category-accent-rgb: 129, 118, 95;
+  --category-dark: #4d4537;
+  --category-paper: #f2eee6;
+  --category-soft: #dfd7c7;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="hair-cocktails"]) {
-  --category-accent: #59754f;
-  --category-accent-rgb: 89, 117, 79;
-  --category-ink: #34452f;
-  --category-paper: #e6eee1;
+.sb-category-card:has(.sb-category-story[data-category="hair-cocktails"]) {
+  --category-accent: #965b68;
+  --category-accent-rgb: 150, 91, 104;
+  --category-dark: #56353d;
+  --category-paper: #f6e9eb;
+  --category-soft: #e6cfd4;
 }
 
-.sb-category-card:has(.sb-category-visual[data-category="hyaluronidase-products"]) {
-  --category-accent: #805574;
-  --category-accent-rgb: 128, 85, 116;
-  --category-ink: #4e3447;
-  --category-paper: #eee3eb;
+.sb-category-card:has(.sb-category-story[data-category="hyaluronidase-products"]) {
+  --category-accent: #826b5d;
+  --category-accent-rgb: 130, 107, 93;
+  --category-dark: #4d3f37;
+  --category-paper: #f3ece7;
+  --category-soft: #dfd2c8;
 }
 
-.sb-category-card .sb-category-visual {
+.sb-category-card__copy {
+  min-height: 78px;
+  padding: 15px 16px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  background:
+    radial-gradient(circle at 8% 14%, rgba(var(--category-accent-rgb), 0.1), transparent 32%),
+    #fffdfa;
+}
+
+.sb-category-card__copy > div {
+  min-width: 0;
+}
+
+.sb-category-card__copy h3 {
+  margin: 0;
+  color: var(--category-dark);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: clamp(0.82rem, 1vw, 0.98rem);
+  font-weight: 760;
+  line-height: 1.55;
+}
+
+.sb-category-card__copy small {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--category-accent);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: clamp(0.43rem, 0.5vw, 0.55rem);
+  font-weight: 720;
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sb-category-card__number {
+  min-width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.3);
+  border-radius: 50% 50% 18% 50%;
+  background: var(--category-paper);
+  color: var(--category-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.sb-category-card__cta {
+  min-height: 42px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 45%),
+    var(--category-accent);
+  color: #fff;
+  transition: filter 260ms ease;
+}
+
+.sb-category-card__cta b {
+  font-size: 0.58rem;
+  font-weight: 720;
+}
+
+.sb-category-card__cta svg {
+  width: 13px;
+  transition: transform 360ms var(--sb-ease);
+}
+
+.sb-category-card:hover .sb-category-card__cta,
+.sb-category-card:focus-visible .sb-category-card__cta,
+.sb-category-card--previewed .sb-category-card__cta {
+  filter: saturate(1.08) brightness(0.94);
+}
+
+.sb-category-card:hover .sb-category-card__cta svg,
+.sb-category-card:focus-visible .sb-category-card__cta svg,
+.sb-category-card--previewed .sb-category-card__cta svg {
+  transform: translateX(-4px);
+}
+
+.sb-category-story {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 1.42;
+  margin: 11px 11px 0;
   isolation: isolate;
   overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.78), transparent 46%),
-    linear-gradient(145deg, #fffdfc 0 22%, var(--category-paper) 100%);
+  border: 1px solid rgba(96, 68, 53, 0.13);
+  border-radius: 16px 16px 5px 16px;
+  background: var(--category-paper);
+  box-shadow: 0 10px 28px rgba(72, 50, 39, 0.08);
 }
 
-.sb-category-card .sb-category-visual[data-category="skin-boosters"] {
-  --category-accent: #3f7c73;
-  --category-accent-rgb: 63, 124, 115;
-  --category-ink: #234e49;
-  --category-paper: #e1f0ec;
-}
-
-.sb-category-card .sb-category-visual[data-category="botulinum-toxins"] {
-  --category-accent: #6f5793;
-  --category-accent-rgb: 111, 87, 147;
-  --category-ink: #3f3157;
-  --category-paper: #ece6f5;
-}
-
-.sb-category-card .sb-category-visual[data-category="rejuvenation-cocktails"] {
-  --category-accent: #a94955;
-  --category-accent-rgb: 169, 73, 85;
-  --category-ink: #5c2930;
-  --category-paper: #f6e4e6;
-}
-
-.sb-category-card .sb-category-visual[data-category="brightening-cocktails"] {
-  --category-accent: #9a7427;
-  --category-accent-rgb: 154, 116, 39;
-  --category-ink: #5d461a;
-  --category-paper: #f5edd7;
-}
-
-.sb-category-card .sb-category-visual[data-category="eye-cocktails"] {
-  --category-accent: #4f7397;
-  --category-accent-rgb: 79, 115, 151;
-  --category-ink: #2c465f;
-  --category-paper: #e3ebf3;
-}
-
-.sb-category-card .sb-category-visual[data-category="hair-cocktails"] {
-  --category-accent: #59754f;
-  --category-accent-rgb: 89, 117, 79;
-  --category-ink: #34452f;
-  --category-paper: #e6eee1;
-}
-
-.sb-category-card .sb-category-visual[data-category="hyaluronidase-products"] {
-  --category-accent: #805574;
-  --category-accent-rgb: 128, 85, 116;
-  --category-ink: #4e3447;
-  --category-paper: #eee3eb;
-}
-
-.sb-category-card .sb-category-visual__grid,
-.sb-category-card .sb-category-visual__wash,
-.sb-category-card .sb-category-visual__orb,
-.sb-category-card .sb-category-visual__halo,
-.sb-category-card .sb-category-visual__meta,
-.sb-category-card .sb-category-visual__subject,
-.sb-category-card .sb-category-visual__seal,
-.sb-category-card .sb-category-visual__label,
-.sb-category-card .sb-category-visual__destination {
+.sb-category-story__paper,
+.sb-category-story__frame,
+.sb-category-story__state,
+.sb-category-story__hint,
+.sb-category-story__sun,
+.sb-category-card .sb-category-story__botanical {
   position: absolute;
 }
 
-/* Editorial border rather than the old graph-paper circle. */
-.sb-category-card .sb-category-visual__grid {
-  z-index: -3;
-  inset: 18px;
-  border-block: 1px solid rgba(var(--category-accent-rgb), 0.23);
-  background:
-    linear-gradient(90deg, rgba(var(--category-accent-rgb), 0.18) 1px, transparent 1px) 22% 0 / 33% 100%,
-    linear-gradient(90deg, transparent 0 96%, rgba(var(--category-accent-rgb), 0.16) 96% 100%);
-  opacity: 0.72;
-  transform: none;
-  transition: inset 720ms var(--sb-ease), opacity 360ms ease;
-}
-
-/* Oversized satin block makes the redesign unmistakable. */
-.sb-category-card .sb-category-visual__wash {
-  z-index: -4;
-  top: -16%;
-  left: -22%;
-  width: 72%;
-  height: 136%;
-  border-radius: 46% 54% 45% 55% / 28% 40% 60% 72%;
-  background:
-    linear-gradient(168deg, rgba(var(--category-accent-rgb), 0.36), rgba(var(--category-accent-rgb), 0.06) 72%);
-  filter: none;
-  transform: rotate(9deg);
-  transition: transform 900ms var(--sb-ease), width 900ms var(--sb-ease);
-}
-
-.sb-category-card .sb-category-visual__orb {
-  z-index: -1;
-  aspect-ratio: 1;
-  border: 1px solid rgba(var(--category-accent-rgb), 0.36);
-  background: rgba(255, 255, 255, 0.48);
-  box-shadow: inset 0 0 0 7px rgba(255, 255, 255, 0.22);
-  transition: transform 820ms var(--sb-ease), border-radius 820ms var(--sb-ease);
-}
-
-.sb-category-card .sb-category-visual__orb--one {
-  top: 9%;
-  left: 8%;
-  width: 24%;
-  border-radius: 66% 34% 64% 36% / 38% 62% 38% 62%;
-  transform: rotate(-22deg);
-}
-
-.sb-category-card .sb-category-visual__orb--two {
-  right: 7%;
-  bottom: 9%;
-  width: 12%;
-  border-radius: 50%;
-  background: rgba(var(--category-accent-rgb), 0.28);
-}
-
-/* The illustration is framed like a cosmetic campaign cut-out, not a central icon. */
-.sb-category-card .sb-category-visual__halo {
-  z-index: -2;
-  top: 15%;
-  right: 8%;
-  bottom: 17%;
-  left: 27%;
-  border: 1px solid rgba(var(--category-accent-rgb), 0.42);
-  border-radius: 48% 52% 20% 80% / 62% 34% 66% 38%;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.5) 62%, transparent 63%);
-  box-shadow:
-    18px 25px 0 rgba(var(--category-accent-rgb), 0.09),
-    0 30px 65px rgba(var(--category-accent-rgb), 0.19);
-  transform: rotate(-4deg);
-  transition: inset 800ms var(--sb-ease), transform 800ms var(--sb-ease), box-shadow 700ms ease;
-}
-
-.sb-category-card .sb-category-visual__meta {
-  z-index: 4;
-  top: 19px;
-  right: 20px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 9px;
-  color: var(--category-ink);
-}
-
-.sb-category-card .sb-category-visual__meta b {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.35rem, 3.4vw, 3.5rem);
-  font-weight: 400;
-  line-height: 0.84;
-  letter-spacing: -0.08em;
-}
-
-.sb-category-card .sb-category-visual__meta em {
-  max-width: 84px;
-  padding-right: 9px;
-  border-right: 1px solid rgba(var(--category-accent-rgb), 0.46);
-  color: var(--category-accent);
-  font-family: "Vazirmatn Variable", sans-serif;
-  font-size: clamp(0.51rem, 0.62vw, 0.66rem);
-  font-style: normal;
-  font-weight: 760;
-  line-height: 1.55;
-}
-
-.sb-category-card .sb-category-visual__subject {
+.sb-category-story__frame {
+  inset: 0;
   z-index: 1;
-  inset: 16% -2% 15% 18%;
-  display: grid;
-  place-items: center;
-  filter: drop-shadow(0 25px 24px rgba(53, 31, 39, 0.18));
-  transform: translate(3%, 4%) rotate(-2deg) scale(1.08);
-  transform-origin: 58% 48%;
-  transition: transform 780ms var(--sb-ease), filter 650ms ease, opacity 420ms ease;
+  background-image: var(--category-story-image);
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: auto;
+  transition: opacity 560ms var(--sb-ease), transform 720ms var(--sb-ease), clip-path 720ms var(--sb-ease), filter 560ms ease;
 }
 
-.sb-category-card .sb-category-visual__subject > svg {
-  width: 100% !important;
-  min-width: 100%;
-  height: 100% !important;
-  max-width: none;
-  overflow: visible;
-  fill: none;
-  stroke: var(--category-ink);
-  stroke-width: 2.15;
+.sb-category-story__frame--before {
+  background-position: 17% center;
+}
+
+.sb-category-story__frame--process {
+  z-index: 2;
+  background-position: 50% center;
+  clip-path: circle(10% at 50% 54%);
+  filter: sepia(0.12) saturate(0.86);
+  opacity: 0;
+  transform: scale(1.06);
+}
+
+.sb-category-story__frame--after {
+  z-index: 3;
+  background-position: 83% center;
+  clip-path: inset(0 100% 0 0 round 16px);
+  opacity: 0;
+  transform: scale(1.035);
+  filter: sepia(0.06) saturate(0.9);
+}
+
+.sb-category-story__paper {
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.12), transparent 24%),
+    repeating-radial-gradient(circle at 40% 40%, rgba(91, 61, 47, 0.025) 0 0.7px, transparent 0.8px 3px);
+  mix-blend-mode: multiply;
+  opacity: 0.52;
+}
+
+.sb-category-story__botanical {
+  right: -7px;
+  bottom: -18px;
+  z-index: 5;
+  width: 70px;
+  fill: rgba(var(--category-accent-rgb), 0.09);
+  stroke: rgba(var(--category-accent-rgb), 0.48);
+  stroke-width: 1.1;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.sb-category-card .sb-category-visual__subject :is(path, rect, circle) {
-  vector-effect: non-scaling-stroke;
-}
-
-.sb-category-card .sb-category-subject__solid {
-  fill: rgba(255, 253, 252, 0.98);
-}
-
-.sb-category-card .sb-category-subject__accent {
-  fill: rgba(var(--category-accent-rgb), 0.4);
-  stroke: var(--category-accent);
-}
-
-.sb-category-card .sb-category-subject__motion-a,
-.sb-category-card .sb-category-subject__motion-b,
-.sb-category-card .sb-category-subject__signal {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 760ms var(--sb-ease), opacity 420ms ease;
-}
-
-.sb-category-card .sb-category-subject__signal {
-  opacity: 0.88;
-}
-
-/* Large fashion-editorial monogram replaces the tiny circular badge. */
-.sb-category-card .sb-category-visual__seal {
-  z-index: -1;
-  left: 4%;
-  bottom: 3%;
-  width: auto;
-  height: auto;
-  border: 0;
-  background: none;
-  color: rgba(var(--category-accent-rgb), 0.2);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(5.5rem, 9vw, 9rem);
-  font-style: italic;
-  font-weight: 400;
-  line-height: 0.75;
-  transition: color 500ms ease, transform 800ms var(--sb-ease);
-}
-
-.sb-category-card .sb-category-visual__label {
-  z-index: 3;
-  left: 14px;
-  top: 23%;
-  right: auto;
-  bottom: auto;
-  max-width: 150px;
-  color: rgba(56, 39, 46, 0.56);
-  font-family: "Estedad Variable", sans-serif;
-  font-size: clamp(0.44rem, 0.52vw, 0.58rem);
-  font-weight: 760;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  transform: rotate(-90deg) translateX(-100%);
-  transform-origin: top left;
-  white-space: nowrap;
-  transition: opacity 300ms ease, transform 620ms var(--sb-ease);
-}
-
-.sb-category-card .sb-category-visual__destination {
-  z-index: 6;
-  right: 14px;
-  bottom: 14px;
-  left: 14px;
-  min-height: 82px;
-  padding: 13px 15px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 24px 24px 7px 24px;
-  background: rgba(255, 253, 252, 0.98);
-  box-shadow:
-    inset 5px 0 0 rgba(var(--category-accent-rgb), 0.18),
-    0 22px 50px rgba(60, 34, 44, 0.26);
-  color: var(--category-ink);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(35px) scale(0.91);
-  backdrop-filter: blur(18px);
-  transition: opacity 260ms ease, transform 560ms var(--sb-ease), visibility 0s linear 560ms;
-}
-
-.sb-category-card .sb-category-visual__destination > span {
-  display: grid;
-  gap: 2px;
-}
-
-.sb-category-card .sb-category-visual__destination small {
-  color: var(--category-accent);
-  font-size: 0.56rem;
-  font-weight: 780;
-}
-
-.sb-category-card .sb-category-visual__destination strong {
-  overflow: hidden;
-  font-family: "Estedad Variable", sans-serif;
-  font-size: clamp(0.72rem, 0.92vw, 0.94rem);
-  font-weight: 720;
-  color: var(--category-ink);
-  line-height: 1.55;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sb-category-card .sb-category-visual__destination i {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 50% 50% 18% 50%;
-  background: var(--category-ink);
-  box-shadow: 0 10px 24px rgba(var(--category-accent-rgb), 0.32);
-  color: #fff;
-  font-family: sans-serif;
-  font-size: 1.1rem;
-  font-style: normal;
-  transition: border-radius 420ms ease, transform 420ms var(--sb-ease);
-}
-
-.sb-category-card:hover .sb-category-visual__grid,
-.sb-category-card:focus-visible .sb-category-visual__grid {
-  inset: 10px;
-  opacity: 1;
-}
-
-.sb-category-card:hover .sb-category-visual__wash,
-.sb-category-card:focus-visible .sb-category-visual__wash {
-  width: 116%;
-  transform: translateX(28%) rotate(-4deg);
-}
-
-.sb-category-card:hover .sb-category-visual__orb--one,
-.sb-category-card:focus-visible .sb-category-visual__orb--one {
-  border-radius: 50%;
-  transform: translate(18%, 8%) rotate(18deg) scale(1.18);
-}
-
-.sb-category-card:hover .sb-category-visual__orb--two,
-.sb-category-card:focus-visible .sb-category-visual__orb--two {
-  transform: translate(-55%, -35%) scale(1.32);
-}
-
-.sb-category-card:hover .sb-category-visual__halo,
-.sb-category-card:focus-visible .sb-category-visual__halo {
-  top: 9%;
-  right: 4%;
-  bottom: 25%;
-  left: 36%;
-  box-shadow:
-    28px 32px 0 rgba(var(--category-accent-rgb), 0.14),
-    0 36px 76px rgba(var(--category-accent-rgb), 0.28);
-  transform: rotate(5deg);
-}
-
-.sb-category-card:hover .sb-category-visual__subject,
-.sb-category-card:focus-visible .sb-category-visual__subject {
-  filter: drop-shadow(0 30px 28px rgba(53, 31, 39, 0.24));
   opacity: 0.76;
-  transform: translate(16%, -10%) rotate(3deg) scale(0.83);
+  transition: opacity 320ms ease, transform 720ms var(--sb-ease);
 }
 
-.sb-category-card:hover .sb-category-subject__motion-a,
-.sb-category-card:focus-visible .sb-category-subject__motion-a {
-  transform: translate3d(-7px, -8px, 0) rotate(-3deg);
-}
-
-.sb-category-card:hover .sb-category-subject__motion-b,
-.sb-category-card:focus-visible .sb-category-subject__motion-b {
-  transform: translate3d(9px, -4px, 0) rotate(4deg);
-}
-
-.sb-category-card:hover .sb-category-subject__signal,
-.sb-category-card:focus-visible .sb-category-subject__signal {
-  opacity: 1;
-  transform: scale(1.08);
-}
-
-.sb-category-card:hover .sb-category-visual__seal,
-.sb-category-card:focus-visible .sb-category-visual__seal {
-  color: rgba(255, 255, 255, 0.38);
-  transform: translate(12%, -8%) rotate(-9deg) scale(1.12);
-}
-
-.sb-category-card:hover .sb-category-visual__label,
-.sb-category-card:focus-visible .sb-category-visual__label {
-  opacity: 0;
-  transform: rotate(-90deg) translateX(-112%);
-}
-
-.sb-category-card:hover .sb-category-visual__destination,
-.sb-category-card:focus-visible .sb-category-visual__destination {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  transition-delay: 0s;
-}
-
-.sb-category-card:hover .sb-category-visual__destination i,
-.sb-category-card:focus-visible .sb-category-visual__destination i {
+.sb-category-story__sun {
+  left: 12px;
+  bottom: 12px;
+  z-index: 5;
+  width: 31px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.5);
   border-radius: 50%;
-  transform: translateX(-4px) rotate(-4deg);
+  box-shadow:
+    0 -8px 0 -7px rgba(var(--category-accent-rgb), 0.55),
+    0 8px 0 -7px rgba(var(--category-accent-rgb), 0.55),
+    8px 0 0 -7px rgba(var(--category-accent-rgb), 0.55),
+    -8px 0 0 -7px rgba(var(--category-accent-rgb), 0.55);
+  opacity: 0.62;
+  transition: opacity 320ms ease, transform 720ms var(--sb-ease);
 }
 
-.sb-category-card .sb-category-card__content {
-  min-height: 88px;
-  padding: 14px 17px;
-  border-top: 1px solid rgba(var(--category-accent-rgb), 0.13);
-  background:
-    linear-gradient(92deg, rgba(var(--category-accent-rgb), 0.13) 0 6px, transparent 6px),
-    #fffdfc;
-}
-
-.sb-category-card .sb-category-card__content > span {
-  color: var(--category-accent);
-}
-
-.sb-category-card .sb-category-card__content h3 {
-  color: var(--category-ink);
+.sb-category-story__state {
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.78);
+  color: var(--category-dark);
+  font-size: 0.5rem;
   font-weight: 720;
+  backdrop-filter: blur(8px);
+  transition: opacity 300ms ease, transform 420ms var(--sb-ease);
+}
+
+.sb-category-story__state--after {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.sb-category-story__hint {
+  right: 10px;
+  bottom: 9px;
+  z-index: 6;
+  max-width: calc(100% - 66px);
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: rgba(255, 253, 249, 0.76);
+  color: rgba(67, 47, 39, 0.76);
+  font-size: 0.47rem;
+  font-weight: 620;
+  backdrop-filter: blur(8px);
+  transition: opacity 280ms ease, transform 420ms var(--sb-ease);
+}
+
+.sb-category-card:hover .sb-category-story__frame--before,
+.sb-category-card:focus-visible .sb-category-story__frame--before,
+.sb-category-card--previewed .sb-category-story__frame--before {
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+.sb-category-card:hover .sb-category-story__frame--process,
+.sb-category-card:focus-visible .sb-category-story__frame--process,
+.sb-category-card--previewed .sb-category-story__frame--process {
+  clip-path: circle(68% at 50% 54%);
+  opacity: 0.3;
+  transform: scale(1);
+}
+
+.sb-category-card:hover .sb-category-story__frame--after,
+.sb-category-card:focus-visible .sb-category-story__frame--after,
+.sb-category-card--previewed .sb-category-story__frame--after {
+  clip-path: inset(0 0 0 0 round 16px);
+  opacity: 1;
+  transform: scale(1);
+  filter: sepia(0) saturate(1);
+  transition-delay: 110ms;
+}
+
+.sb-category-card:hover .sb-category-story__state--before,
+.sb-category-card:focus-visible .sb-category-story__state--before,
+.sb-category-card--previewed .sb-category-story__state--before,
+.sb-category-card:hover .sb-category-story__hint,
+.sb-category-card:focus-visible .sb-category-story__hint,
+.sb-category-card--previewed .sb-category-story__hint {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+.sb-category-card:hover .sb-category-story__state--after,
+.sb-category-card:focus-visible .sb-category-story__state--after,
+.sb-category-card--previewed .sb-category-story__state--after {
+  opacity: 1;
+  transform: none;
+}
+
+.sb-category-card:hover .sb-category-story__botanical,
+.sb-category-card:focus-visible .sb-category-story__botanical,
+.sb-category-card--previewed .sb-category-story__botanical {
+  opacity: 1;
+  transform: translate(-9px, -6px) rotate(-7deg) scale(1.12);
+}
+
+.sb-category-card:hover .sb-category-story__sun,
+.sb-category-card:focus-visible .sb-category-story__sun,
+.sb-category-card--previewed .sb-category-story__sun {
+  opacity: 0.9;
+  transform: rotate(90deg) scale(1.08);
+}
+
+.sb-category-card__footer {
+  min-height: 82px;
+  padding: 11px 12px 12px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.sb-category-card__footer p {
+  margin: 0;
+  color: var(--category-dark);
+  font-size: 0.64rem;
+  font-weight: 720;
+}
+
+.sb-category-card__footer ul {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  list-style: none;
+}
+
+.sb-category-card__footer li {
+  padding: 4px 7px;
+  border: 1px solid rgba(var(--category-accent-rgb), 0.18);
+  border-radius: 999px;
+  background: var(--category-paper);
+  color: rgba(71, 52, 43, 0.72);
+  font-size: 0.48rem;
+  line-height: 1.2;
 }
 
 .sb-catalog__fieldset--volume {
   margin-inline: -9px;
   padding: 16px 9px 10px;
-  border: 1px solid rgba(169, 79, 112, 0.24);
+  border: 1px solid rgba(164, 95, 72, 0.24);
   border-radius: 14px;
-  background: linear-gradient(145deg, rgba(255, 251, 250, 0.98), rgba(169, 79, 112, 0.08));
+  background: linear-gradient(145deg, rgba(255, 251, 247, 0.98), rgba(164, 95, 72, 0.08));
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
 }
 
 .sb-catalog__fieldset--volume legend {
   padding-inline: 6px;
-  color: #765263;
+  color: #765345;
 }
 
 .sb-catalog__fieldset--volume > p {
@@ -522,94 +420,129 @@
   line-height: 1.75;
 }
 
-/* Touch screens have no hover: the destination is permanently visible. */
-@media (hover: none), (pointer: coarse) {
-  .sb-category-card .sb-category-visual__subject {
-    inset: 12% -4% 24% 15%;
-    transform: translate(4%, -1%) rotate(-2deg) scale(1.03);
-  }
-
-  .sb-category-card .sb-category-visual__halo {
-    bottom: 24%;
-  }
-
-  .sb-category-card .sb-category-visual__label {
-    opacity: 0;
-  }
-
-  .sb-category-card .sb-category-visual__destination {
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    min-height: 74px;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    transition-delay: 0s;
+@media (max-width: 1100px) {
+  .sb-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-/* Mobile deliberately changes from two tiny cards to one legible editorial card. */
+/* The approved mobile layout uses two compact equal cards, as in the reference. */
 @media (max-width: 720px) {
   .sb-category-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .sb-category-card {
-    border-radius: 26px 26px 8px 26px;
+    grid-template-rows: auto 34px auto auto;
+    border-radius: 15px 15px 6px 15px;
   }
 
-  .sb-category-card .sb-category-visual__meta {
-    top: 18px;
-    right: 18px;
+  .sb-category-card:hover,
+  .sb-category-card:focus-visible,
+  .sb-category-card--previewed {
+    transform: none;
   }
 
-  .sb-category-card .sb-category-visual__meta b {
-    font-size: clamp(2.45rem, 13vw, 3.4rem);
+  .sb-category-card__copy {
+    min-height: 67px;
+    padding: 10px 9px 8px;
+    gap: 6px;
   }
 
-  .sb-category-card .sb-category-visual__meta em {
-    max-width: 105px;
-    font-size: clamp(0.56rem, 2.6vw, 0.7rem);
+  .sb-category-card__copy h3 {
+    font-size: clamp(0.63rem, 3vw, 0.78rem);
+    line-height: 1.55;
   }
 
-  .sb-category-card .sb-category-visual__subject {
-    inset: 13% -2% 23% 16%;
+  .sb-category-card__copy small {
+    font-size: clamp(0.36rem, 1.7vw, 0.44rem);
   }
 
-  .sb-category-card .sb-category-visual__seal {
-    font-size: clamp(7rem, 35vw, 10rem);
+  .sb-category-card__number {
+    min-width: 25px;
+    height: 25px;
+    font-size: 0.58rem;
   }
 
-  .sb-category-card .sb-category-visual__destination {
-    min-height: 82px;
-    padding: 13px 15px;
-    grid-template-columns: minmax(0, 1fr) 46px;
+  .sb-category-card__cta {
+    min-height: 34px;
+    padding-inline: 9px;
   }
 
-  .sb-category-card .sb-category-visual__destination small {
-    font-size: clamp(0.56rem, 2.5vw, 0.68rem);
+  .sb-category-card__cta b {
+    font-size: 0.48rem;
   }
 
-  .sb-category-card .sb-category-visual__destination strong {
-    font-size: clamp(0.78rem, 3.6vw, 1rem);
+  .sb-category-card__cta svg {
+    width: 11px;
   }
 
-  .sb-category-card .sb-category-visual__destination i {
-    width: 46px;
-    height: 46px;
+  .sb-category-story {
+    aspect-ratio: 1.36;
+    margin: 7px 7px 0;
+    border-radius: 10px 10px 4px 10px;
   }
 
-  .sb-category-card .sb-category-card__content {
-    min-height: 82px;
-    padding: 13px 16px;
+  .sb-category-story__state {
+    top: 6px;
+    right: 6px;
+    padding: 3px 5px;
+    font-size: 0.38rem;
+  }
+
+  .sb-category-story__hint {
+    right: 6px;
+    bottom: 5px;
+    max-width: calc(100% - 43px);
+    padding: 3px 5px;
+    font-size: 0.34rem;
+  }
+
+  .sb-category-card .sb-category-story__botanical {
+    width: 48px;
+  }
+
+  .sb-category-story__sun {
+    left: 7px;
+    bottom: 7px;
+    width: 22px;
+  }
+
+  .sb-category-card__footer {
+    min-height: 75px;
+    padding: 8px 7px 9px;
+    gap: 6px;
+  }
+
+  .sb-category-card__footer p {
+    font-size: 0.49rem;
+    line-height: 1.45;
+  }
+
+  .sb-category-card__footer ul {
+    gap: 3px;
+  }
+
+  .sb-category-card__footer li {
+    padding: 3px 5px;
+    font-size: 0.36rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .sb-category-grid {
+    gap: 8px;
+  }
+
+  .sb-category-card__footer li:nth-child(3) {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sb-category-card,
-  .sb-category-card .sb-category-visual * {
+  .sb-category-card * {
     transition-duration: 0.01ms !important;
   }
 }
