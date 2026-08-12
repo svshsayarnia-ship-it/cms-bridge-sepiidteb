@@ -43,6 +43,80 @@ const AUTO_DISCOVERY_BASE: Partial<Record<MarketProvider, string>> = {
 // Direct product pages are curated because Torob search pages are not crawled.
 // A missing entry is intentional: no automatic match is safer than a wrong pack/model.
 const CURATED_TOROB_URLS: Record<string, string> = {
+  "arasti-white":
+    "https://torob.com/p/de8f3365-d391-499e-9b33-211b08d602a2/فیلر-آراستی-وایت-لیدوکائین/",
+  "zishel-rose-glam":
+    "https://torob.com/p/4f3a0532-b1f1-4db0-a80f-bfa9d806afac/زیشل-رز-گلم-10cc/",
+  "regenfill-deep":
+    "https://torob.com/p/a43438bc-8c43-4fdd-9e8a-889e6305268a/رجنفیل-دیپ-11-سی-سی/",
+  "regenfill-lido":
+    "https://torob.com/p/6d2cfb77-913d-4c65-a463-a1156c295bdc/فیلر-کلاژن-پپتاید-دار-لیدو-رجنفیل-11-سی-سی/",
+  "regenfill-volume":
+    "https://torob.com/p/ea0b7841-0967-478a-9e47-26ecdc830d69/رجینفیل-والیوم-regenfill-volume-11-cc/",
+  "ejal-40":
+    "https://torob.com/p/0b0ee99a-1c54-41e8-87c5-6d2ce1764769/مزوژل-ایجال-40-ظرفیت-2-میلی-لیتر/",
+  "mesoheal-plus":
+    "https://torob.com/p/057f8f99-05bc-4e0e-b15d-770fd82cc8ae/مزوژل-جوانساز-کروفارما-مزوهیل-پلاس/",
+  "xitritall-hydro":
+    "https://torob.com/p/9036aaf9-4e4a-4b5c-a8d9-44618e0c56d6/زیتریتال-هیدرو-xitritall-hydro/",
+  "reyoungel-revital-bioha":
+    "https://torob.com/p/afef9bbc-e6f7-48c6-8e97-4b4a34b96761/مزوژل-ریانژل-رویتال-revital-reyoungel/",
+  "vitten-hydro-plus":
+    "https://torob.com/p/e47e429c-9945-412e-b71e-62a26427999b/کوکتل-ویتن-هیدرو-پلاس-هیالورونیک-اسید/",
+  "roytrin-skin-booster":
+    "https://torob.com/p/0991aa25-8ca2-476d-96dd-33d0b9cfbeeb/مزوژل-جوانساز-رویترین-اسکین-بوستر/",
+  "nabota-150":
+    "https://torob.com/p/0f824f27-0891-4ed3-88ef-07d1f83f3474/بوتاکس-نابوتا-150-واحدی/",
+  "siax-100":
+    "https://torob.com/p/dd0bf9a1-06b6-4ef4-b33c-5dcc29cfb858/بوتاکس-سیاکس-100-کره-100-واحد/",
+  "siax-200":
+    "https://torob.com/p/b96631a7-4421-4f0b-8e04-a0af6e45ffa0/بوتاکس-سیاکس-200-واحدی-siax-botox/",
+  "neuronox-100":
+    "https://torob.com/p/cdacb952-3075-4ece-91f4-91668a275fe4/نورونوکس-100/",
+  myobloc:
+    "https://torob.com/p/c37ebc23-3610-4090-acef-6882614f9866/بوتاکس-مایوبلاک-فرانسه/",
+  "fusion-f-lift-face":
+    "https://torob.com/p/70b12b34-29e6-46b2-9d9f-04a40549a761/کوکتل-مزوتراپی-جوانساز-فیوژن-f-lift-face/",
+  "fusion-f-mesomatrix":
+    "https://torob.com/p/a65c5069-de6d-461a-b018-20a7f8b55818/کوکتل-مزوتراپی-f-mesomatrix-حجم-5-میلی-لیتر/",
+  "dermaheal-hsr":
+    "https://torob.com/p/2a7e9b2b-32a8-48ec-80ea-7327941c796b/کوکتل-جوانسازی-پوست-درماهیل-hsr-حجم-5-میلی-لیتر/",
+  "mesolike-top-age-pro":
+    "https://torob.com/p/124b03de-2674-4cca-b081-7eb4bad26f8a/کوکتل-جوانساز-مزولایک-top-age-pro/",
+  "mesolike-lift":
+    "https://torob.com/p/ac6ec775-fff9-4230-be31-a8edd8d438e2/کوکتل-لیفت-مزولایک-حجم-10-میلی-لیتر/",
+  "fusion-f-radiance":
+    "https://torob.com/p/4cde4ed5-ad5a-48f6-b2da-dce23d76a5c9/کوکتل-مزوتراپی-ضد-لک-و-روشن-کننده-فیوژن-f-radiance/",
+  "fusion-f-melaclear":
+    "https://torob.com/p/e77d15d3-e8ec-44d4-b4e4-a9a5f781509f/کوکتل-مزوتراپی-فیوژن-ضدلک-شدید-f-melaclear/",
+  "fusion-f-vitamin-c":
+    "https://torob.com/p/6cb36f5b-5842-4fd7-8e66-3395fc540130/کوکتل-ویتامین-سی-فیوژن-f-vitamin-c/",
+  "fusion-f-melirutin":
+    "https://torob.com/p/f23e58f4-d324-40d3-af26-1ee1dad77fb7/کوکتل-مزوتراپی-فیوژن-f-melirutin-حجم-10-میل/",
+  "revitacare-532":
+    "https://torob.com/p/3bf58bc7-ab7e-4710-a633-05a06b08a88c/کوکتل-مزوتراپی-رویتاکر-532-اصل-فرانسه/",
+  "mesolike-whitening-shine":
+    "https://torob.com/p/02ea88a5-f382-4cb6-9222-00199ff1fbea/کوکتل-روشن-کننده-و-ضد-لک-مزولایک-whitening-shine-حجم-10-میل/",
+  "mesolike-glutathione":
+    "https://torob.com/p/58a393c4-93fb-4fc6-bbcf-a5181e84e868/کوکتل-گلوتاتیون-مزولایک-10-میلی-لیتر-ضد-لک/",
+  "dermaheal-sb":
+    "https://torob.com/p/472e87cd-3bef-4c02-891b-a4da3304b074/کوکتل-ضد-لک-و-روشن-کننده-درماهیل-sb-حجم-5-میلی-لیتر/",
+  "genosys-sws":
+    "https://torob.com/p/6d459935-2447-4cea-a9bc-de3f944175d3/کوکتل-ضد-لک-و-روشن-کننده-ژنوسیس-sws-حجم-2-میلی-لیتر/",
+  "fusion-f-hair-men":
+    "https://torob.com/p/73201c2d-b796-4519-a2e9-28b582a3dd7b/کوکتل-مزوتراپی-فیوژن-مدل-f-hair-men/",
+  "revitacare-haircare":
+    "https://torob.com/p/71bdead0-9457-4878-b93a-01859adfd3a1/کوکتل-مزوتراپی-رویتاکر-هیرکر/",
+  "dermaheal-hl":
+    "https://torob.com/p/dcb7fb9a-5d08-419f-8c68-52bf3bd4347b/کوکتل-تقویت-مو-درماهیل-hl-حجم-5-میلی-لیتر-ضد-ریزش/",
+  "mesolike-hair":
+    "https://torob.com/p/13f6084b-0904-4336-a335-ee51748aafb2/کوکتل-ضد-ریزش-مو-مزولایک-حجم-10-میلی-لیتر/",
+  "mesolike-hair-men":
+    "https://torob.com/p/0e85c7a0-501d-4067-88f6-571e887b3f64/کوکتل-مزولایک-هیرمن-مخصوص-آقایان-10-میلی-لیتر/",
+  "genosys-hr3":
+    "https://torob.com/p/7a628deb-3656-4d32-871d-5212369a61e8/کوکتل-تقویت-و-درمان-ریزش-مو-ژنوسیس-مدل-hr3-حجم-5-میلی-لیتر/",
+  "mesolike-dutasteride":
+    "https://torob.com/p/508af223-a4ab-4548-a4ce-16ef36cd5b23/کوکتل-دوتاستراید-مزولایک-حجم-10-میلی-لیتر/",
   "alcarisa-family":
     "https://torob.com/p/00687382-3baa-4b79-a4e0-099c7c89673b/الکاریسا/",
   "revofil-ultra":
@@ -114,6 +188,7 @@ type StoreApiProduct = {
 type ParsedPage = {
   name: string;
   pricesToman: number[];
+  sellerPricesToman: number[];
   inStock: boolean;
 };
 
@@ -278,6 +353,7 @@ function jsonLdBlocks(html: string): unknown[] {
 
 function extractPage(html: string): ParsedPage {
   const prices: number[] = [];
+  const sellerPrices: number[] = [];
   let name = "";
   let inStock = true;
   let structuredAvailabilityFound = false;
@@ -350,9 +426,24 @@ function extractPage(html: string): ParsedPage {
     inStock = !/OutOfStock|ناموجود|اتمام موجودی/iu.test(availabilityScope);
   }
 
+  const sellerHeadingIndex = html.search(/فروشنده(?:‌|\s)*ها/iu);
+  if (sellerHeadingIndex >= 0) {
+    let sellerScope = html.slice(sellerHeadingIndex, sellerHeadingIndex + 180_000);
+    const sellerCutoff = sellerScope.search(/لیست\s+تغییرات\s+قیمت/iu);
+    if (sellerCutoff > 0) sellerScope = sellerScope.slice(0, sellerCutoff);
+    const sellerText = toLatinDigits(stripTags(sellerScope));
+    const sellerPricePattern = /([0-9][0-9.,٬،٫\s]{3,18})\s*تومان/giu;
+    for (const match of sellerText.matchAll(sellerPricePattern)) {
+      const price = priceToToman(match[1], "IRT");
+      if (price) sellerPrices.push(price);
+      if (sellerPrices.length >= 8) break;
+    }
+  }
+
   return {
     name,
     pricesToman: [...new Set(prices)].sort((a, b) => a - b),
+    sellerPricesToman: sellerPrices,
     inStock,
   };
 }
@@ -392,7 +483,7 @@ function validateSourceUrl(provider: MarketProvider, value: string): string {
 async function sampleFromUrl(
   product: CmsProduct,
   source: MarketSourceConfig,
-): Promise<MarketPriceSample> {
+): Promise<MarketPriceSample[]> {
   if (source.provider === "digikala" && process.env.DIGIKALA_PRICE_ACCESS_ENABLED !== "true") {
     throw new Error("دسترسی رسمی API یا افیلیت دیجی‌کالا هنوز فعال نشده است.");
   }
@@ -409,16 +500,25 @@ async function sampleFromUrl(
   }
   if (!page.inStock) throw new Error("محصول در این منبع ناموجود است.");
 
-  return {
+  const checkedAt = new Date().toISOString();
+  const offerPrices =
+    source.provider === "torob" && page.sellerPricesToman.length >= MIN_VALID_SOURCES
+      ? page.sellerPricesToman.slice(0, 4)
+      : [Math.round(median(page.pricesToman))];
+
+  return offerPrices.map((priceToman, index) => ({
     provider: source.provider,
-    sourceLabel: MARKET_PROVIDER_LABELS[source.provider],
+    sourceLabel:
+      source.provider === "torob" && offerPrices.length > 1
+        ? `${MARKET_PROVIDER_LABELS[source.provider]} · فروشنده ${index + 1}`
+        : MARKET_PROVIDER_LABELS[source.provider],
     url,
     productName: page.name,
-    priceToman: Math.round(median(page.pricesToman)),
-    checkedAt: new Date().toISOString(),
+    priceToman,
+    checkedAt,
     inStock: true,
     matchScore: score,
-  };
+  }));
 }
 
 function discoveryQuery(product: CmsProduct): string {
@@ -537,7 +637,7 @@ async function scanProduct(
         continue;
       }
       if (!source.url) continue;
-      samples.push(await sampleFromUrl(product, source));
+      samples.push(...(await sampleFromUrl(product, source)));
     } catch (error) {
       errors.push(
         `${MARKET_PROVIDER_LABELS[provider]}: ${
@@ -552,7 +652,12 @@ async function scanProduct(
   }
 
   const unique = Array.from(
-    new Map(samples.map((sample) => [sample.provider, sample])).values(),
+    new Map(
+      samples.map((sample) => [
+        `${sample.provider}:${sample.sourceLabel}:${sample.priceToman}`,
+        sample,
+      ]),
+    ).values(),
   );
   const center = unique.length ? median(unique.map((sample) => sample.priceToman)) : 0;
   const included = unique.filter(
@@ -571,7 +676,7 @@ async function scanProduct(
       lastStatus: errors.length && !included.length ? "error" : "insufficient",
       lastMessage:
         included.length > 0
-          ? `فقط ${included.length} قیمت معتبر پیدا شد؛ حداقل ${MIN_VALID_SOURCES} منبع لازم است.`
+          ? `فقط ${included.length} قیمت فروشنده معتبر پیدا شد؛ حداقل ${MIN_VALID_SOURCES} نمونه لازم است.`
           : errors.slice(0, 3).join(" | ") || "قیمت معتبر کافی پیدا نشد.",
     });
     return errors.length && !included.length ? "failed" : "insufficient";
@@ -610,7 +715,7 @@ async function scanProduct(
     note:
       excluded.length > 0
         ? `${excluded.length} قیمت پرت از میانگین حذف شد.`
-        : "میانگین از قیمت‌های معتبر و غیرتکراری محاسبه شد.",
+        : "میانگین از قیمت‌های معتبر فروشنده‌ها محاسبه شد.",
   };
 
   if (mode === "initial-apply" && !product.pricing.initialAppliedAt) {
@@ -633,7 +738,7 @@ async function scanProduct(
       lastCheckedAt: checkedAt,
       initialAppliedAt: checkedAt,
       lastStatus: "approved",
-      lastMessage: `قیمت اولیه با مجوز مدیر از میانگین ${included.length} منبع معتبر اعمال شد.`,
+      lastMessage: `قیمت اولیه با مجوز مدیر از میانگین ${included.length} قیمت فروشنده معتبر اعمال شد.`,
     };
     await approveProductPricingProposal(product.id, proposed, pricing);
     revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
@@ -647,7 +752,7 @@ async function scanProduct(
     history: oldHistory,
     lastCheckedAt: checkedAt,
     lastStatus: "pending",
-    lastMessage: `پیشنهاد جدید از ${included.length} منبع معتبر آماده تأیید است.`,
+    lastMessage: `پیشنهاد جدید از ${included.length} قیمت فروشنده معتبر آماده تأیید است.`,
   });
   return "proposal";
 }

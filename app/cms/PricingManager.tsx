@@ -212,7 +212,7 @@ export function PricingManager() {
             onClick={() => {
               if (
                 window.confirm(
-                  "قیمت اولیه کالاهایی که حداقل سه منبع معتبر دارند مستقیماً روی ووکامرس اعمال شود؟ این مجوز برای هر کالا فقط یک بار استفاده می‌شود.",
+                  "قیمت اولیه کالاهایی که حداقل سه قیمت معتبر از فروشنده‌های هم‌واحد دارند مستقیماً روی ووکامرس اعمال شود؟ این مجوز برای هر کالا فقط یک بار استفاده می‌شود.",
                 )
               ) {
                 void postAction(
@@ -232,7 +232,7 @@ export function PricingManager() {
 
       <div className="spb-pricing-stats">
         <div><strong>{pending.length}</strong><span>منتظر تأیید شما</span></div>
-        <div><strong>{configuredCount}</strong><span>محصول با لینک اختصاصی</span></div>
+        <div><strong>{configuredCount}</strong><span>محصول با لینک اختصاصی منبع</span></div>
         <div><strong>{dashboard?.products.length ?? 0}</strong><span>محصول منتشرشده</span></div>
         <div>
           <strong>۹:۰۰ و ۱۵:۰۰</strong>
