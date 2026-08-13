@@ -11,75 +11,13 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-targeted-fix:
-    name: Apply targeted price/image fix
-    if: github.event_name == 'pull_request' && github.head_ref == 'fix/price-image-consistency'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout PR head branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-      - name: Apply targeted source edits
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          changed = False
-
-          # Quick Price Edit: discard the stale local draft after a successful save.
-          path = Path('app/cms/PricingManager.tsx')
-          text = path.read_text()
-          old = '''      if (result.product) replaceProduct(result.product);\n'''
-          new = '''      if (result.product) {\n        const updatedProduct = result.product;\n        replaceProduct(updatedProduct);\n\n        if (action === "save-price") {\n          setPriceDrafts((current) => {\n            const next = { ...current };\n            delete next[updatedProduct.id];\n            return next;\n          });\n        }\n      }\n'''
-          if old in text:
-              path.write_text(text.replace(old, new, 1))
-              changed = True
-
-          # Storefront cards: verified local catalog imagery wins over unrelated live media.
-          path = Path('app/lib/storefront-catalog.ts')
-          text = path.read_text()
-          old = '''  const liveImage = product.images?.find(\n    (image) => Boolean(image.src),\n  );\n'''
-          new = '''  const verifiedFallbackImage =\n    fallback?.imageVerified === true &&\n    isPublicImageSrc(fallback.image)\n      ? {\n          src: fallback.image,\n          alt: fallback.imageAlt ?? "",\n        }\n      : null;\n\n  const liveImage =\n    verifiedFallbackImage ??\n    product.images?.find((image) => Boolean(image.src));\n'''
-          if old in text:
-              path.write_text(text.replace(old, new, 1))
-              changed = True
-
-          # Product detail: use the same verified fallback as the cards.
-          path = Path('app/product/[slug]/page.tsx')
-          text = path.read_text()
-          old = '''function getLiveProductImage(\n  cmsProduct: CmsProduct | null,\n): { src: string; alt: string } | null {\n  if (!cmsProduct) {\n    return null;\n  }\n\n  const image = cmsProduct.images?.[0];\n\n  if (!image?.src) {\n    return null;\n  }\n\n  return {\n    src: image.src,\n    alt: image.alt || cmsProduct.name || "",\n  };\n}\n'''
-          new = '''function getLiveProductImage(\n  cmsProduct: CmsProduct | null,\n  fallback?: Product | null,\n): { src: string; alt: string } | null {\n  if (fallback?.imageVerified === true && isPublicImageSrc(fallback.image)) {\n    return {\n      src: fallback.image,\n      alt: fallback.imageAlt || cmsProduct?.name || fallback.nameFa || "",\n    };\n  }\n\n  if (!cmsProduct) {\n    return null;\n  }\n\n  const image = cmsProduct.images?.find((item) => isPublicImageSrc(item.src));\n\n  if (!image?.src) {\n    return null;\n  }\n\n  return {\n    src: image.src,\n    alt: image.alt || cmsProduct.name || "",\n  };\n}\n'''
-          if old in text:
-              text = text.replace(old, new, 1)
-              text = text.replace('const image = getLiveProductImage(cmsProduct);', 'const image = getLiveProductImage(cmsProduct, fallback);', 1)
-              text = text.replace('const liveImage = getLiveProductImage(liveProduct);', 'const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);')
-              path.write_text(text)
-              changed = True
-
-          if changed:
-              print('targeted fixes applied')
-          else:
-              print('targeted fixes already applied; nothing to commit')
-          PY
-
-      - name: Commit targeted source edits
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app/cms/PricingManager.tsx app/lib/storefront-catalog.ts 'app/product/[slug]/page.tsx'
-          git diff --cached --quiet && exit 0
-          git commit -m 'fix: sync saved prices and verified product images'
-          git push origin HEAD:${{ github.head_ref }}
-
   validate:
     name: Lint and Build
     runs-on: ubuntu-latest
