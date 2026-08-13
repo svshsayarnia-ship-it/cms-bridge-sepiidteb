@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import {
@@ -54,6 +54,27 @@ function priceValue(value: unknown, label: string): string {
   }
 
   return String(parsed);
+}
+
+function assertPricePersisted(
+  product: Awaited<ReturnType<typeof getProduct>>,
+  regularPrice: string,
+  salePrice: string,
+) {
+  if (product.regularPrice !== regularPrice || product.salePrice !== salePrice) {
+    throw new WooCommerceError(
+      "قیمت در ووکامرس با مقدار ثبت‌شده یکسان نیست؛ ذخیره نهایی تأیید نشد.",
+      502,
+      "price_persistence_mismatch",
+    );
+  }
+}
+
+function invalidatePricePages(slug: string) {
+  revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
+  revalidatePath("/", "layout");
+  revalidatePath("/shop");
+  if (slug) revalidatePath(`/product/${slug}`);
 }
 
 export async function GET(request: Request) {
@@ -122,7 +143,12 @@ export async function POST(request: Request) {
         expectedModifiedGmt: current.dateModifiedGmt || undefined,
       });
 
-      revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
+      // Never report success unless WooCommerce itself returned the exact values requested.
+      assertPricePersisted(product, regularPrice, salePrice);
+
+      // Invalidate both the tagged catalog and route-level caches so the new price is visible immediately.
+      invalidatePricePages(product.slug || current.slug);
+
       return Response.json({ product });
     }
 
