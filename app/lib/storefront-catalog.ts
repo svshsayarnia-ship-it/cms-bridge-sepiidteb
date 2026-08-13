@@ -17,6 +17,7 @@ import {
 } from "./public-copy";
 import {
   isPublicCmsProduct,
+  isPublicImageSrc,
   isPublicStaticProduct,
 } from "./public-product";
 import { listProducts } from "./woocommerce";
