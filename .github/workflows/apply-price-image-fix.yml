@@ -1,0 +1,66 @@
+name: Apply price and image consistency fix
+
+on:
+  push:
+    branches:
+      - fix/price-image-consistency
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # 1) Clear the local quick-price draft after a successful save.
+          path = Path('app/cms/PricingManager.tsx')
+          text = path.read_text()
+          old = '''      if (result.product) replaceProduct(result.product);\n'''
+          new = '''      if (result.product) {\n        const updatedProduct = result.product;\n        replaceProduct(updatedProduct);\n\n        if (action === "save-price") {\n          setPriceDrafts((current) => {\n            const next = { ...current };\n            delete next[updatedProduct.id];\n            return next;\n          });\n        }\n      }\n'''
+          if old not in text:
+              raise SystemExit('PricingManager target not found')
+          path.write_text(text.replace(old, new, 1))
+
+          # 2) Use an explicitly verified local catalog image as the public source of truth.
+          path = Path('app/lib/storefront-catalog.ts')
+          text = path.read_text()
+          old = '''  const liveImage = product.images?.find(\n    (image) => Boolean(image.src),\n  );\n'''
+          new = '''  const verifiedFallbackImage =\n    fallback?.imageVerified === true &&\n    isPublicImageSrc(fallback.image)\n      ? {\n          src: fallback.image,\n          alt: fallback.imageAlt ?? "",\n        }\n      : null;\n\n  const liveImage =\n    verifiedFallbackImage ??\n    product.images?.find((image) => Boolean(image.src));\n'''
+          if old not in text:
+              raise SystemExit('storefront image target not found')
+          path.write_text(text.replace(old, new, 1))
+
+          # 3) Keep product detail image selection aligned with the same verified fallback.
+          path = Path('app/product/[slug]/page.tsx')
+          text = path.read_text()
+          old = '''function getLiveProductImage(\n  cmsProduct: CmsProduct | null,\n): { src: string; alt: string } | null {\n  if (!cmsProduct) {\n    return null;\n  }\n\n  const image = cmsProduct.images?.[0];\n\n  if (!image?.src) {\n    return null;\n  }\n\n  return {\n    src: image.src,\n    alt: image.alt || cmsProduct.name || "",\n  };\n}\n'''
+          new = '''function getLiveProductImage(\n  cmsProduct: CmsProduct | null,\n  fallback?: Product | null,\n): { src: string; alt: string } | null {\n  if (fallback?.imageVerified === true && isPublicImageSrc(fallback.image)) {\n    return {\n      src: fallback.image,\n      alt: fallback.imageAlt || cmsProduct?.name || fallback.nameFa || "",\n    };\n  }\n\n  if (!cmsProduct) {\n    return null;\n  }\n\n  const image = cmsProduct.images?.find((item) => isPublicImageSrc(item.src));\n\n  if (!image?.src) {\n    return null;\n  }\n\n  return {\n    src: image.src,\n    alt: image.alt || cmsProduct.name || "",\n  };\n}\n'''
+          if old not in text:
+              raise SystemExit('product image function target not found')
+          text = text.replace(old, new, 1)
+          text = text.replace('const image = getLiveProductImage(cmsProduct);', 'const image = getLiveProductImage(cmsProduct, fallback);', 1)
+          text = text.replace('const liveImage = getLiveProductImage(liveProduct);', 'const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);')
+          path.write_text(text)
+          PY
+
+      - name: Validate TypeScript and build
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm run build
+
+      - name: Commit fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/cms/PricingManager.tsx app/lib/storefront-catalog.ts 'app/product/[slug]/page.tsx'
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: sync saved prices and verified product images'
+          git push
