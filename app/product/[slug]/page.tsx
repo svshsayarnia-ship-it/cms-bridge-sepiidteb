@@ -125,12 +125,20 @@ function getLiveProductPricing(
 
 function getLiveProductImage(
   cmsProduct: CmsProduct | null,
+  fallback?: Product | null,
 ): { src: string; alt: string } | null {
+  if (fallback?.imageVerified === true && isPublicImageSrc(fallback.image)) {
+    return {
+      src: fallback.image,
+      alt: fallback.imageAlt || cmsProduct?.name || fallback.nameFa || "",
+    };
+  }
+
   if (!cmsProduct) {
     return null;
   }
 
-  const image = cmsProduct.images?.[0];
+  const image = cmsProduct.images?.find((item) => isPublicImageSrc(item.src));
 
   if (!image?.src) {
     return null;
@@ -146,7 +154,7 @@ function buildCmsOnlyProduct(
   fallback?: Product,
 ): Product {
   const category = cmsProduct.categories?.[0];
-  const image = getLiveProductImage(cmsProduct);
+  const image = getLiveProductImage(cmsProduct, fallback);
 
   const summary =
     getPublicSummary(
@@ -451,7 +459,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const liveImage = getLiveProductImage(liveProduct);
+  const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
 
   const title = buildTransactionalProductTitle(
     product,
@@ -557,7 +565,7 @@ const storefrontProducts =
       : undefined;
 
 const livePricing = getLiveProductPricing(liveProduct);
-const liveImage = getLiveProductImage(liveProduct);
+const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
 
 const schemaDescription =
   getPublicSummary(product.summary) || product.nameFa;

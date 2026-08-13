@@ -199,7 +199,18 @@ export function PricingManager() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action, ...payload }),
       });
-      if (result.product) replaceProduct(result.product);
+      if (result.product) {
+        const updatedProduct = result.product;
+        replaceProduct(updatedProduct);
+
+        if (action === "save-price") {
+          setPriceDrafts((current) => {
+            const next = { ...current };
+            delete next[updatedProduct.id];
+            return next;
+          });
+        }
+      }
       if (result.summary) {
         setNotice(
           `${successMessage} ${result.summary.catalogProductsAdded} کالای سایت به ووکامرس افزوده شد، ` +
