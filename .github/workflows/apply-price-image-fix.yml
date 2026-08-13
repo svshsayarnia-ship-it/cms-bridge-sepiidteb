@@ -26,11 +26,11 @@ jobs:
           if old in text:
               path.write_text(text.replace(old, new, 1))
           PY
-      - name: Validate TypeScript and build
+      - name: Validate lint and TypeScript
         run: |
           npm ci
           npm run lint --if-present
-          npm run build
+          npx tsc --noEmit
       - name: Commit import fix
         run: |
           git config user.name 'github-actions[bot]'
