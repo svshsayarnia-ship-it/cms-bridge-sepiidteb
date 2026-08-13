@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - fix/price-image-consistency
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 permissions:
   contents: write
