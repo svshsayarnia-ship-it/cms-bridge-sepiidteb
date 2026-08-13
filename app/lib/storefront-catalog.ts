@@ -17,6 +17,7 @@ import {
 } from "./public-copy";
 import {
   isPublicCmsProduct,
+  isPublicImageSrc,
   isPublicStaticProduct,
 } from "./public-product";
 import { listProducts } from "./woocommerce";
@@ -136,9 +137,18 @@ function mapWooProduct(
   const group =
     getGroupForCategory(categorySlug);
 
-  const liveImage = product.images?.find(
-    (image) => Boolean(image.src),
-  );
+  const verifiedFallbackImage =
+    fallback?.imageVerified === true &&
+    isPublicImageSrc(fallback.image)
+      ? {
+          src: fallback.image,
+          alt: fallback.imageAlt ?? "",
+        }
+      : null;
+
+  const liveImage =
+    verifiedFallbackImage ??
+    product.images?.find((image) => Boolean(image.src));
 
   const descriptionText = plainText(
     product.shortDescription ||
