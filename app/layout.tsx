@@ -3,15 +3,15 @@ import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
+import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
 import { getStorefrontCategories } from "./lib/storefront-categories";
-import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getSitePresentation } from "./lib/site-presentation";
-import { toPublicProduct } from "./lib/public-product";
+import { isPublicStaticProduct, toPublicProduct } from "./lib/public-product";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -63,14 +63,17 @@ export const metadata: Metadata = {
   },
 };
 
+const headerProducts = catalogProducts
+  .filter(isPublicStaticProduct)
+  .map(toPublicProduct);
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [categories, catalog, presentation] = await Promise.all([
+  const [categories, presentation] = await Promise.all([
     getStorefrontCategories(),
-    getStorefrontCatalog(),
     getSitePresentation(),
   ]);
 
@@ -79,7 +82,7 @@ export default async function RootLayout({
       <body>
         <SiteHeader
           categories={categories}
-          products={catalog.products.map(toPublicProduct)}
+          products={headerProducts}
           presentation={presentation.header}
         />
         {children}
