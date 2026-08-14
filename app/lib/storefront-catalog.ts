@@ -23,7 +23,7 @@ import { listProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
 const MAX_CATALOG_PAGES = 500;
-const PUBLIC_WOO_TIMEOUT_MS = 6_000;
+const PUBLIC_WOO_TIMEOUT_MS = 30_000;
 const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
@@ -222,7 +222,11 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
     const uniqueProducts = Array.from(new Map([...mappedProducts, ...publishedCodeProducts].map((product) => [product.slug, product])).values());
 
     return { products: uniqueProducts, connected: true, source: "woocommerce" };
-  } catch {
+  } catch (error) {
+    console.error(
+      "[storefront-catalog] WooCommerce load failed; using migration fallback.",
+      error,
+    );
     return {
       products: catalogProducts.filter((product) => isPublicStaticProduct(product)).map(mapFallbackProduct),
       connected: false,
