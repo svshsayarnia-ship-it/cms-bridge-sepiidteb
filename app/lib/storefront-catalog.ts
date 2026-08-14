@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import {
   catalogCategories,
@@ -223,6 +224,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
     return { products: uniqueProducts, connected: true, source: "woocommerce" };
   } catch (error) {
+    unstable_rethrow(error);
     console.error(
       "[storefront-catalog] WooCommerce load failed; using migration fallback.",
       error,
