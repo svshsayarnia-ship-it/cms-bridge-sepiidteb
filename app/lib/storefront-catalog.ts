@@ -1,6 +1,6 @@
 import "server-only";
 
-import { unstable_rethrow } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import {
   catalogCategories,
@@ -204,6 +204,8 @@ async function fetchAllWooProducts(): Promise<CmsProduct[]> {
 }
 
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
+  await connection();
+
   const fallbackBySlug = new Map(catalogProducts.map((product) => [product.slug, product]));
   try {
     const wooProducts = await fetchAllWooProducts();
@@ -224,7 +226,6 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
     return { products: uniqueProducts, connected: true, source: "woocommerce" };
   } catch (error) {
-    unstable_rethrow(error);
     console.error(
       "[storefront-catalog] WooCommerce load failed; using migration fallback.",
       error,
