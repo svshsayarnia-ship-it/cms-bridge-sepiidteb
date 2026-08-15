@@ -37,7 +37,10 @@ import {
   WooCommerceError,
 } from "../../lib/woocommerce";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
-import { getRuntimeStorefrontProduct } from "../../lib/storefront-runtime-cache";
+import {
+  getRuntimeStorefrontProduct,
+  rememberRuntimeStorefrontProducts,
+} from "../../lib/storefront-runtime-cache";
 
 export const revalidate = 300;
 
@@ -83,14 +86,23 @@ const getLiveProduct = cache(async (
   if (snapshot) return snapshot;
 
   try {
-    return await getCmsProductBySlug(slug, {
+    const product = await getCmsProductBySlug(slug, {
       // The authenticated WooCommerce endpoint contains the custom SEO and
       // E-E-A-T fields that the public Store API does not expose. A saved CMS
       // snapshot is still preferred, so this slower fallback is only used
-      // before the first confirmed CMS write or after a cache loss.
-      requestTimeoutMs: 20_000,
+      // before the first confirmed CMS write or after a cache loss. The source
+      // has occasionally taken longer than the normal CMS read limit, so a
+      // cold product page is allowed one bounded recovery read and then seeds
+      // the runtime cache for every following request.
+      requestTimeoutMs: 35_000,
       requestMaxAttempts: 1,
     });
+
+    if (product) {
+      await rememberRuntimeStorefrontProducts([product]);
+    }
+
+    return product;
   } catch (error) {
     if (error instanceof WooCommerceError) {
       console.warn("[storefront-product] live WooCommerce read failed", {
