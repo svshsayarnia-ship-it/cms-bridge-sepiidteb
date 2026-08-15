@@ -250,6 +250,8 @@ body h4 {
   --category-stage: linear-gradient(145deg, #fff, var(--category-soft));
   --category-motif: radial-gradient(circle at 82% 18%, rgba(var(--category-accent-rgb), .16), transparent 29%);
   --category-stage-art: url("/images/product-stages/fillers.webp");
+  --product-cutout-floor: 70%;
+  --product-stage-floor: 78.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="fillers"] {
@@ -260,6 +262,7 @@ body h4 {
   --category-stage: radial-gradient(ellipse at 16% 86%, rgba(173,102,117,.22), transparent 34%), radial-gradient(ellipse at 82% 12%, rgba(229,185,174,.4), transparent 30%), linear-gradient(145deg, #fffaf9, #f5e3e7);
   --category-motif: radial-gradient(ellipse at 14% 32%, transparent 0 16%, rgba(180,111,124,.17) 16.4% 16.9%, transparent 17.3%), radial-gradient(ellipse at 87% 76%, transparent 0 22%, rgba(180,111,124,.13) 22.4% 22.9%, transparent 23.3%);
   --category-stage-art: url("/images/product-stages/fillers.webp");
+  --product-stage-floor: 78.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="skin-boosters"] {
@@ -270,6 +273,7 @@ body h4 {
   --category-stage: radial-gradient(circle at 75% 20%, rgba(112,184,177,.26), transparent 28%), radial-gradient(circle at 18% 84%, rgba(177,215,202,.32), transparent 34%), linear-gradient(150deg, #fbfffe, #e6f3f0);
   --category-motif: radial-gradient(circle at 21% 27%, rgba(255,255,255,.8) 0 3%, rgba(94,145,138,.16) 3.4% 4%, transparent 4.4%), radial-gradient(circle at 84% 74%, rgba(255,255,255,.72) 0 5%, rgba(94,145,138,.14) 5.4% 6%, transparent 6.4%);
   --category-stage-art: url("/images/product-stages/skin-boosters.webp");
+  --product-stage-floor: 83.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="botulinum-toxins"] {
@@ -280,6 +284,7 @@ body h4 {
   --category-stage: radial-gradient(circle at 82% 18%, rgba(142,119,191,.2), transparent 27%), linear-gradient(145deg, #fff 0%, #f8f6fd 52%, #ece7f8 100%);
   --category-motif: radial-gradient(circle, rgba(125,105,168,.16) 0 1.2px, transparent 1.5px) 0 0 / 15px 15px, linear-gradient(128deg, transparent 0 67%, rgba(125,105,168,.13) 67.2% 67.8%, transparent 68%);
   --category-stage-art: url("/images/product-stages/botulinum-toxins.webp");
+  --product-stage-floor: 75.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="rejuvenation-cocktails"] {
@@ -290,6 +295,7 @@ body h4 {
   --category-stage: radial-gradient(circle at 50% 105%, rgba(174,73,56,.22), transparent 42%), linear-gradient(145deg, #fff9f5, #f2d9d2);
   --category-motif: repeating-conic-gradient(from 210deg at 10% 90%, rgba(166,79,69,.11) 0deg 1deg, transparent 1deg 13deg);
   --category-stage-art: url("/images/product-stages/rejuvenation-cocktails.webp");
+  --product-stage-floor: 77.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="brightening-cocktails"] {
@@ -300,6 +306,7 @@ body h4 {
   --category-stage: radial-gradient(circle at 76% 18%, rgba(255,212,107,.36), transparent 30%), linear-gradient(145deg, #fffef8, #fff0c8);
   --category-motif: repeating-conic-gradient(from 8deg at 85% 18%, rgba(176,131,45,.12) 0deg 1.2deg, transparent 1.2deg 14deg);
   --category-stage-art: url("/images/product-stages/brightening-cocktails.webp");
+  --product-stage-floor: 71.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="eye-cocktails"] {
@@ -310,6 +317,7 @@ body h4 {
   --category-stage: radial-gradient(ellipse at 20% 45%, rgba(94,121,178,.22), transparent 34%), linear-gradient(145deg, #fbfcff, #e5eaf5);
   --category-motif: radial-gradient(ellipse at 15% 50%, transparent 0 17%, rgba(88,111,157,.18) 17.4% 17.9%, transparent 18.3%), radial-gradient(circle at 82% 18%, rgba(88,111,157,.14) 0 2%, transparent 2.4%);
   --category-stage-art: url("/images/product-stages/eye-cocktails.webp");
+  --product-stage-floor: 75.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="hair-cocktails"] {
@@ -320,6 +328,7 @@ body h4 {
   --category-stage: radial-gradient(ellipse at 12% 88%, rgba(85,107,68,.24), transparent 36%), linear-gradient(145deg, #fcfdf9, #e4ebdc);
   --category-motif: repeating-radial-gradient(ellipse at 12% 110%, transparent 0 18px, rgba(101,116,83,.12) 19px 20px, transparent 21px 36px);
   --category-stage-art: url("/images/product-stages/hair-cocktails.webp");
+  --product-stage-floor: 77.5%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="hyaluronidase-products"] {
@@ -330,6 +339,7 @@ body h4 {
   --category-stage: radial-gradient(circle at 80% 22%, rgba(126,178,202,.26), transparent 28%), linear-gradient(145deg, #fcfeff, #e2eef3);
   --category-motif: radial-gradient(circle at 16% 28%, transparent 0 5%, rgba(104,143,164,.16) 5.4% 5.9%, transparent 6.3%), radial-gradient(circle at 86% 72%, transparent 0 9%, rgba(104,143,164,.13) 9.4% 10%, transparent 10.4%);
   --category-stage-art: url("/images/product-stages/hyaluronidase-products.webp");
+  --product-stage-floor: 80.5%;
 }
 
 .sb-product-card__visual,
@@ -361,9 +371,9 @@ body h4 {
   position: absolute;
   z-index: 0;
   right: 7%;
-  bottom: 7%;
+  bottom: calc(100% - var(--product-stage-floor));
   left: 7%;
-  height: 12%;
+  height: 8%;
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(42,34,29,.11), transparent 68%);
   filter: blur(14px);
@@ -377,6 +387,7 @@ body h4 {
   z-index: 1;
   background: transparent !important;
   filter: drop-shadow(0 16px 14px rgba(39,32,28,.15));
+  transform: translateY(calc(var(--product-stage-floor) - var(--product-cutout-floor)));
 }
 
 .sb-product-card__badge,
@@ -385,6 +396,7 @@ body h4 {
 
 .sb-product-card:hover .sb-product-card__visual > img {
   filter: drop-shadow(0 21px 18px rgba(39,32,28,.2));
+  transform: translateY(calc(var(--product-stage-floor) - var(--product-cutout-floor))) scale(1.015);
 }
 
 .sb-featured-carousel__slide .sb-featured-carousel__visual {
@@ -395,6 +407,15 @@ body h4 {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+.sb-featured-carousel__slide .sb-featured-carousel__visual img {
+  transform: translateY(calc(var(--product-stage-floor) - var(--product-cutout-floor)));
+}
+
+.sb-featured-carousel__slide .sb-featured-carousel__visual:hover img,
+.sb-featured-carousel__slide .sb-featured-carousel__visual:focus-visible img {
+  transform: translateY(calc(var(--product-stage-floor) - var(--product-cutout-floor) - 8px)) scale(1.045);
 }
 
 .sb-featured-carousel__slide .sb-featured-carousel__visual::before {
