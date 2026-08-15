@@ -7,7 +7,10 @@ import {
   errorResponse,
   listProducts,
 } from "@/app/lib/woocommerce";
-import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
+import {
+  rememberStorefrontProduct,
+  rememberStorefrontProducts,
+} from "@/app/lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +20,15 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    return Response.json(
-      await listProducts({
-        page: Number(url.searchParams.get("page") ?? 1),
-        perPage: Number(url.searchParams.get("perPage") ?? 30),
-        search: url.searchParams.get("search") ?? "",
-        status: url.searchParams.get("status") ?? "all",
-      }),
-    );
+    const result = await listProducts({
+      page: Number(url.searchParams.get("page") ?? 1),
+      perPage: Number(url.searchParams.get("perPage") ?? 30),
+      search: url.searchParams.get("search") ?? "",
+      status: url.searchParams.get("status") ?? "all",
+    });
+
+    await rememberStorefrontProducts(result.products);
+    return Response.json(result);
   } catch (error) {
     return errorResponse(error);
   }

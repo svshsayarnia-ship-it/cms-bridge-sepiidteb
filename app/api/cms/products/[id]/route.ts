@@ -53,7 +53,9 @@ export async function GET(request: Request, context: Context) {
   if (denied) return denied;
 
   try {
-    return Response.json({ product: await getProduct(await productId(context)) });
+    const product = await getProduct(await productId(context));
+    await rememberStorefrontProduct(product);
+    return Response.json({ product });
   } catch (error) {
     return errorResponse(error);
   }

@@ -29,11 +29,20 @@ export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots>
 }
 
 export async function rememberStorefrontProduct(product: CmsProduct) {
-  const slug = product.slug.trim();
-  if (!slug) return;
+  await rememberStorefrontProducts([product]);
+}
+
+export async function rememberStorefrontProducts(products: CmsProduct[]) {
+  const incoming = Object.fromEntries(
+    products
+      .map((product) => [product.slug.trim(), product] as const)
+      .filter(([slug]) => Boolean(slug)),
+  );
+
+  if (Object.keys(incoming).length === 0) return;
 
   const current = await getStorefrontProductSnapshots();
-  snapshotSeed = { ...current, [slug]: product };
+  snapshotSeed = { ...current, ...incoming };
 
   try {
     revalidateTag(SNAPSHOT_TAG, { expire: 0 });
