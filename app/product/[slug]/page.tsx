@@ -76,14 +76,54 @@ function getPublicSummary(value: string) {
     ) ?? "").trim();
 }
 
+function storefrontSlugCandidates(slug: string) {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) return [];
+
+  const candidates = [cleanSlug];
+  const withoutDuplicateSuffix = cleanSlug.replace(/-\d+$/, "");
+
+  if (withoutDuplicateSuffix !== cleanSlug) {
+    candidates.push(withoutDuplicateSuffix);
+  } else {
+    // WordPress appends a numeric suffix when a product's original slug is
+    // already occupied. The public product URL stays canonical, while CMS can
+    // safely expose the actual WooCommerce slug (for example `product-2`).
+    for (let suffix = 2; suffix <= 9; suffix += 1) {
+      candidates.push(`${cleanSlug}-${suffix}`);
+    }
+  }
+
+  return candidates;
+}
+
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
-  const runtimeProduct = await getRuntimeStorefrontProduct(slug);
-  if (runtimeProduct) return runtimeProduct;
+  const slugCandidates = storefrontSlugCandidates(slug);
 
-  const snapshot = (await getStorefrontProductSnapshots())[slug];
-  if (snapshot) return snapshot;
+  for (const candidate of slugCandidates) {
+    const runtimeProduct = await getRuntimeStorefrontProduct(candidate);
+    if (runtimeProduct) {
+      console.info("[storefront-product] runtime product resolved", {
+        requestedSlug: slug,
+        resolvedSlug: runtimeProduct.slug,
+      });
+      return runtimeProduct;
+    }
+  }
+
+  const snapshots = await getStorefrontProductSnapshots();
+  const snapshot = slugCandidates
+    .map((candidate) => snapshots[candidate])
+    .find(Boolean);
+  if (snapshot) {
+    console.info("[storefront-product] snapshot product resolved", {
+      requestedSlug: slug,
+      resolvedSlug: snapshot.slug,
+    });
+    return snapshot;
+  }
 
   try {
     const product = await getCmsProductBySlug(slug, {
