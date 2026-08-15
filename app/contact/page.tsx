@@ -7,7 +7,7 @@ import { buildSeoMetadata } from "../lib/seo";
 export const metadata = buildSeoMetadata({
   title: "تماس با سپید بیوتی",
   description:
-    "تماس مستقیم برای استعلام موجودی، مشخصات بسته، خرید کلینیکی و پیگیری سفارش Sepiid Beauty.",
+    "برای بررسی موجودی، جزئیات بسته، سفارش کلینیکی و پیگیری خرید با تیم سپید بیوتی در تماس باشید.",
   path: "/contact",
   imageAlt: "تماس و پشتیبانی سپید بیوتی",
 });
@@ -25,17 +25,16 @@ export default function ContactPage() {
             <span className="sb-eyebrow">CONTACT / SUPPORT</span>
             <h1>یک شماره واقعی، برای سؤال واقعی.</h1>
             <p>
-              نام دقیق محصول، تعداد و شهر مقصد را بنویسید تا استعلام سریع‌تر و
-              دقیق‌تر انجام شود.
+              نام کامل محصول، مدل، تعداد و شهر مقصد را در همان پیام اول بفرستید تا جواب دقیق‌تری درباره موجودی و شرایط سفارش بگیرید.
             </p>
             <Link className="sb-btn sb-btn--dark" href={whatsappHref()}>
-              شروع گفت‌وگو در واتساپ
+              گفت‌وگو در واتساپ
               <ArrowIcon />
             </Link>
           </div>
           <div className="sb-contact-hero__card">
             <PhoneIcon />
-            <span>پشتیبانی و استعلام</span>
+            <span>پاسخ‌گویی سپید بیوتی</span>
             <a href="tel:+989037251266">۰۹۰۳۷۲۵۱۲۶۶</a>
             <p>
               <ClockIcon />
@@ -51,21 +50,21 @@ export default function ContactPage() {
             {
               no: "۰۱",
               title: "واتساپ",
-              text: "برای استعلام محصول، تصویر یا فهرست چندقلمی.",
+              text: "برای موجودی یک محصول یا ارسال فهرست چندقلمی.",
               href: whatsappHref(),
               label: "ارسال پیام",
             },
             {
               no: "۰۲",
               title: "تماس تلفنی",
-              text: "برای هماهنگی سریع، پیگیری یا سؤال قبل از پرداخت.",
+              text: "برای پیگیری سفارش یا سؤال قبل از نهایی‌کردن خرید.",
               href: "tel:+989037251266",
               label: "تماس مستقیم",
             },
             {
               no: "۰۳",
               title: "تلگرام",
-              text: "مسیر جایگزین برای ارسال فهرست یا پیام.",
+              text: "مسیر جایگزین برای فرستادن پیام یا فهرست محصولات.",
               href: "https://t.me/+989037251266",
               label: "باز کردن تلگرام",
             },
@@ -87,13 +86,13 @@ export default function ContactPage() {
         <div className="sb-shell sb-contact-checklist__grid">
           <div>
             <span className="sb-eyebrow sb-eyebrow--gold">BEFORE MESSAGE</span>
-            <h2>برای پاسخ دقیق‌تر، این چهار مورد را بفرستید.</h2>
+            <h2>برای جواب سریع‌تر، این چهار مورد را همان ابتدا بفرستید.</h2>
           </div>
           <ol>
             <li>نام کامل محصول و مدل</li>
             <li>تعداد موردنیاز</li>
             <li>شهر مقصد و زمان تقریبی</li>
-            <li>اگر کلینیک هستید، نام مرکز</li>
+            <li>برای سفارش کلینیکی، نام مرکز</li>
           </ol>
         </div>
       </section>
