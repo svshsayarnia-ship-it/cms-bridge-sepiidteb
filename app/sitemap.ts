@@ -11,7 +11,7 @@ import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
 const fallbackLastModified = new Date(
-  "2026-08-11",
+  "2026-08-16",
 );
 
 function getProductLastModified(
@@ -50,7 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productRoutes =
     catalog.products.map((product) => ({
       url: `${siteOrigin}/product/${product.slug}`,
-          lastModified: product.live
+      lastModified: product.live
         ? getProductLastModified(
             product.dateModifiedGmt ||
               product.reviewedAt,
