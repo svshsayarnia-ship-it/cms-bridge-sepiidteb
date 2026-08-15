@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -17,9 +19,48 @@ import {
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 import { buildSeoMetadata } from "../../lib/seo";
+import { getProductCutoutSrc } from "../../lib/product-image";
 import { toPublicProduct } from "../../lib/public-product";
 
 export const revalidate = 300;
+
+const priceFormatter = new Intl.NumberFormat("fa-IR");
+
+type PriceSource = {
+  salePrice?: string | number;
+  regularPrice?: string | number;
+  price?: string | number;
+  priceToman?: string | number;
+};
+
+function numericPrice(value?: string | number): number | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const normalized =
+    typeof value === "string"
+      ? value.replace(/[\s,٬]/gu, "")
+      : value;
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) && parsed > 0
+    ? Math.round(parsed)
+    : null;
+}
+
+function visiblePrice(product: PriceSource): number | null {
+  return (
+    numericPrice(product.salePrice) ??
+    numericPrice(product.regularPrice) ??
+    numericPrice(product.price) ??
+    numericPrice(product.priceToman)
+  );
+}
+
+function formatPrice(value: number): string {
+  return `${priceFormatter.format(value)} تومان`;
+}
 
 export function generateStaticParams() {
   return catalogCategories.map(
@@ -70,8 +111,8 @@ export async function generateMetadata({
   }
 
   return buildSeoMetadata({
-    title: `${category.title}؛ بررسی محصولات`,
-    description: category.description,
+    title: `خرید و قیمت ${category.title}`,
+    description: `مشاهده قیمت و مقایسه محصولات ${category.title}. ${category.description}`,
     path: `/shop/${category.slug}`,
     image: category.image,
     imageAlt: category.title,
@@ -109,6 +150,23 @@ export default async function CategoryPage({
     (product) =>
       product.category === category.slug,
   );
+  const pricedItems = items
+    .map((product) => ({
+      product,
+      price: visiblePrice(product),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        product: (typeof items)[number];
+        price: number;
+      } => entry.price !== null,
+    );
+  const featuredEntry = pricedItems[0] ?? null;
+  const startingPrice = pricedItems.length
+    ? Math.min(...pricedItems.map((entry) => entry.price))
+    : null;
 
   const group = getGroupForCategory(
     category.slug,
@@ -140,34 +198,102 @@ export default async function CategoryPage({
         />
       </div>
 
-      <section className="sb-category-hero">
-        <div className="sb-shell sb-category-hero__grid">
-          <div>
+      <section className="sb-category-hero sb-category-commerce-hero">
+        <div className="sb-shell sb-category-commerce-hero__grid">
+          <div className="sb-category-commerce-hero__copy">
             <span className="sb-eyebrow">
               {category.en}
             </span>
 
-            <h1>{category.title}</h1>
+            <h1>خرید و قیمت {category.title}</h1>
 
             <p>{category.description}</p>
 
-            <div className="sb-category-hero__notice">
-              <span>راهنمای تصمیم</span>
-              <p>{category.guide}</p>
+            <div
+              className="sb-category-commerce-hero__signals"
+              aria-label="اطلاعات خرید این دسته"
+            >
+              <span>
+                <small>محصولات این دسته</small>
+                <strong>{priceFormatter.format(items.length)} محصول</strong>
+              </span>
+
+              {startingPrice ? (
+                <span>
+                  <small>شروع قیمت</small>
+                  <strong>{formatPrice(startingPrice)}</strong>
+                </span>
+              ) : null}
+
+              <Link href="#category-products">
+                مشاهده قیمت‌ها
+                <ArrowIcon />
+              </Link>
             </div>
           </div>
 
           <div
-            className="sb-category-hero__image"
+            className="sb-category-commerce-hero__visual"
             style={{
-              backgroundImage: `url(${category.image})`,
+              backgroundImage: `linear-gradient(180deg, rgba(255,255,255,.06), rgba(31,27,25,.2)), url(${category.image})`,
               backgroundPosition: `${category.position} center`,
             }}
-            role="img"
-            aria-label={`تصویر نمایشی ${category.title}`}
+            role="group"
+            aria-label={`هویت بصری و محصول قیمت‌دار ${category.title}`}
           >
-            <span>SEPIID EDITORIAL / {category.en}</span>
-            <strong>{category.title}</strong>
+            <span className="sb-category-commerce-hero__editorial-label">
+              SEPIID EDITORIAL / {category.en}
+            </span>
+
+            {featuredEntry ? (
+              <Link
+                href={productHref(featuredEntry.product)}
+                className="sb-category-commerce-hero__featured"
+                aria-label={`مشاهده ${featuredEntry.product.nameFa} با قیمت ${formatPrice(featuredEntry.price)}`}
+              >
+                <span className="sb-category-commerce-hero__product-image">
+                  <img
+                    src={getProductCutoutSrc(featuredEntry.product.image)}
+                    alt={
+                      featuredEntry.product.imageAlt ||
+                      `تصویر ${featuredEntry.product.nameFa}`
+                    }
+                    width="520"
+                    height="520"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                  />
+                </span>
+
+                <span className="sb-category-commerce-hero__product-copy">
+                  <small>یک محصول از این دسته</small>
+                  <strong>{featuredEntry.product.nameFa}</strong>
+                  {featuredEntry.product.volume ? (
+                    <span>{featuredEntry.product.volume}</span>
+                  ) : null}
+                  <b>{formatPrice(featuredEntry.price)}</b>
+                  <em>
+                    مشاهده محصول
+                    <ArrowIcon />
+                  </em>
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="#category-products"
+                className="sb-category-commerce-hero__featured sb-category-commerce-hero__featured--fallback"
+              >
+                <span className="sb-category-commerce-hero__product-copy">
+                  <small>فهرست این دسته</small>
+                  <strong>{category.title}</strong>
+                  <em>
+                    مشاهده محصولات و قیمت‌ها
+                    <ArrowIcon />
+                  </em>
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -201,7 +327,7 @@ export default async function CategoryPage({
         </div>
       </div>
 
-      <section className="sb-section sb-catalog-section">
+      <section id="category-products" className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
             items={items.map(toPublicProduct)}
@@ -223,6 +349,10 @@ export default async function CategoryPage({
           </div>
 
           <div>
+            <p className="sb-category-seo__lead">
+              {category.guide}
+            </p>
+
             <p>
               ابتدا هدف و مخاطب محصول را مشخص
               کنید؛ سپس نام کامل مدل، ترکیب
@@ -254,7 +384,7 @@ export default async function CategoryPage({
         data={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: category.title,
+          name: `خرید و قیمت ${category.title}`,
           description:
             category.description,
 

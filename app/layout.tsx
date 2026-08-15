@@ -3,6 +3,7 @@ import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
+import "./category-commerce-hero.css";
 import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
