@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       parseProductInput(await request.json()),
     );
 
-    await rememberStorefrontProduct(product);
+    await rememberStorefrontProduct(product, { requirePersistence: true });
 
     revalidateTag(
       STOREFRONT_CATALOG_TAG,

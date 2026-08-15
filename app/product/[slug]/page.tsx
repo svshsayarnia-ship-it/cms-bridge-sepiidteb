@@ -33,7 +33,7 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
-  getStorefrontProductBySlug as getCmsProductBySlug,
+  getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
@@ -80,7 +80,12 @@ const getLiveProduct = cache(async (
 
   try {
     return await getCmsProductBySlug(slug, {
-      requestTimeoutMs: 3_000,
+      // The authenticated WooCommerce endpoint contains the custom SEO and
+      // E-E-A-T fields that the public Store API does not expose. A saved CMS
+      // snapshot is still preferred, so this slower fallback is only used
+      // before the first confirmed CMS write or after a cache loss.
+      requestTimeoutMs: 12_000,
+      requestMaxAttempts: 1,
     });
   } catch (error) {
     if (error instanceof WooCommerceError) {
@@ -142,6 +147,15 @@ function getLiveProductImage(
   cmsProduct: CmsProduct | null,
   fallback?: Product | null,
 ): { src: string; alt: string } | null {
+  const image = cmsProduct?.images?.find((item) => isPublicImageSrc(item.src));
+
+  if (image?.src) {
+    return {
+      src: image.src,
+      alt: image.alt || cmsProduct?.name || fallback?.nameFa || "",
+    };
+  }
+
   if (fallback?.imageVerified === true && isPublicImageSrc(fallback.image)) {
     return {
       src: fallback.image,
@@ -149,20 +163,7 @@ function getLiveProductImage(
     };
   }
 
-  if (!cmsProduct) {
-    return null;
-  }
-
-  const image = cmsProduct.images?.find((item) => isPublicImageSrc(item.src));
-
-  if (!image?.src) {
-    return null;
-  }
-
-  return {
-    src: image.src,
-    alt: image.alt || cmsProduct.name || "",
-  };
+  return null;
 }
 function buildCmsOnlyProduct(
   cmsProduct: CmsProduct,
@@ -476,14 +477,17 @@ export async function generateMetadata({
 
   const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
 
-  const title = buildTransactionalProductTitle(
-    product,
-    staticProduct,
-    liveProduct,
-    variantId,
-  );
+  const title =
+    plainText(liveProduct?.seoTitle || "") ||
+    buildTransactionalProductTitle(
+      product,
+      staticProduct,
+      liveProduct,
+      variantId,
+    );
 
   const description =
+    plainText(liveProduct?.metaDescription || "") ||
     getPublicSummary(
       liveProduct?.shortDescription ||
         liveProduct?.description ||
@@ -654,8 +658,8 @@ const hasProductOffer = Boolean(
         product={productExperience}
         liveImage={liveImage}
         livePricing={livePricing}
-        liveShortDescription=""
-        liveDescription=""
+        liveShortDescription={liveProduct?.shortDescription || ""}
+        liveDescription={liveProduct?.description || ""}
         brandHref={brandHref}
         initialVariantId={initialVariantId}
       />

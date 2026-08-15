@@ -27,16 +27,39 @@ async function productId(context: Context): Promise<number> {
   return value;
 }
 
-function assertPricePersisted(
+function comparableHtml(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function assertProductPersisted(
   product: Awaited<ReturnType<typeof getProduct>>,
-  regularPrice: string,
-  salePrice: string,
+  input: ReturnType<typeof parseProductInput>,
 ) {
-  if (product.regularPrice !== regularPrice || product.salePrice !== salePrice) {
+  const checks: Array<[string, boolean]> = [
+    ["نام محصول", product.name === input.name],
+    ["نامک", product.slug === input.slug.trim()],
+    ["وضعیت انتشار", product.status === input.status],
+    ["نمایش در فروشگاه", product.catalogVisibility === input.catalogVisibility],
+    ["توضیح کوتاه", comparableHtml(product.shortDescription) === comparableHtml(input.shortDescription)],
+    ["توضیحات کامل", comparableHtml(product.description) === comparableHtml(input.description)],
+    ["عنوان سئو", product.seoTitle === input.seoTitle],
+    ["توضیحات متا", product.metaDescription === input.metaDescription],
+    ["کلمه کلیدی", product.focusKeyword === input.focusKeyword],
+    ["نام منبع", product.sourceName === input.sourceName],
+    ["لینک منبع", product.sourceUrl === input.sourceUrl],
+    ["قیمت عادی", product.regularPrice === input.regularPrice.trim()],
+    ["قیمت فروش", product.salePrice === input.salePrice.trim()],
+  ];
+
+  const mismatchedFields = checks
+    .filter(([, matches]) => !matches)
+    .map(([field]) => field);
+
+  if (mismatchedFields.length > 0) {
     throw new WooCommerceError(
-      "قیمت در ووکامرس با مقدار ثبت‌شده یکسان نیست؛ ذخیره نهایی تأیید نشد.",
+      `وردپرس مقدار ذخیره‌شده را برای این بخش‌ها تأیید نکرد: ${mismatchedFields.join("، ")}.`,
       502,
-      "price_persistence_mismatch",
+      "product_persistence_mismatch",
     );
   }
 }
@@ -54,7 +77,7 @@ export async function GET(request: Request, context: Context) {
 
   try {
     const product = await getProduct(await productId(context));
-    await rememberStorefrontProduct(product);
+    await rememberStorefrontProduct(product, { requirePersistence: true });
     return Response.json({ product });
   } catch (error) {
     return errorResponse(error);
@@ -76,14 +99,10 @@ export async function PUT(request: Request, context: Context) {
       input,
     );
 
-    // Read the product back from WooCommerce so the CMS only reports success
-    // when the exact price values are persisted in the source of truth.
+    // Read the product back from WooCommerce so success means every editor
+    // field, not only price, was persisted by the source of truth.
     const product = await getProduct(id);
-    assertPricePersisted(
-      product,
-      input.regularPrice.trim(),
-      input.salePrice.trim(),
-    );
+    assertProductPersisted(product, input);
 
     await rememberStorefrontProduct(product);
 

@@ -149,7 +149,7 @@ export async function POST(request: Request) {
 
       // The public site can keep serving this confirmed value if WooCommerce
       // later becomes slow or unavailable for reads.
-      await rememberStorefrontProduct(product);
+      await rememberStorefrontProduct(product, { requirePersistence: true });
 
       // Invalidate both the tagged catalog and route-level caches so the new price is visible immediately.
       invalidatePricePages(product.slug || current.slug);

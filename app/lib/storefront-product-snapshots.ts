@@ -28,11 +28,21 @@ export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots>
   return snapshotCache()();
 }
 
-export async function rememberStorefrontProduct(product: CmsProduct) {
-  await rememberStorefrontProducts([product]);
+type RememberOptions = {
+  requirePersistence?: boolean;
+};
+
+export async function rememberStorefrontProduct(
+  product: CmsProduct,
+  options: RememberOptions = {},
+) {
+  await rememberStorefrontProducts([product], options);
 }
 
-export async function rememberStorefrontProducts(products: CmsProduct[]) {
+export async function rememberStorefrontProducts(
+  products: CmsProduct[],
+  { requirePersistence = false }: RememberOptions = {},
+) {
   const incoming = Object.fromEntries(
     products
       .map((product) => [product.slug.trim(), product] as const)
@@ -46,7 +56,31 @@ export async function rememberStorefrontProducts(products: CmsProduct[]) {
 
   try {
     revalidateTag(SNAPSHOT_TAG, { expire: 0 });
-    await snapshotCache()();
+    const persisted = await snapshotCache()();
+    const failedSlugs = Object.entries(incoming)
+      .filter(([slug, product]) => {
+        const saved = persisted[slug];
+        return !saved || saved.id !== product.id || saved.dateModifiedGmt !== product.dateModifiedGmt;
+      })
+      .map(([slug]) => slug);
+
+    if (failedSlugs.length > 0 && requirePersistence) {
+      throw new Error(
+        `همگام‌سازی فوری ویترین برای «${failedSlugs.join("، ")}» تأیید نشد.`,
+      );
+    }
+
+    if (failedSlugs.length > 0) {
+      console.warn("[storefront-snapshots] write not confirmed", {
+        slugs: failedSlugs,
+      });
+      return;
+    }
+
+    console.info("[storefront-snapshots] write confirmed", {
+      count: Object.keys(incoming).length,
+      slugs: Object.keys(incoming),
+    });
   } finally {
     snapshotSeed = null;
   }
