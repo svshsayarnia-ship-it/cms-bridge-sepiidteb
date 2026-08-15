@@ -21,19 +21,16 @@ import {
   isPublicStaticProduct,
 } from "./public-product";
 import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
-import { listStorefrontProducts } from "./woocommerce";
+import { getRuntimeStorefrontProducts } from "./storefront-runtime-cache";
 
-const PRODUCTS_PER_PAGE = 100;
-const MAX_CATALOG_PAGES = 500;
-// Public rendering should degrade to the local catalog quickly. Confirmed CMS
-// writes are served from the snapshot cache, so waiting 12 seconds for an
-// unavailable WordPress origin adds latency without improving freshness.
-const PUBLIC_WOO_TIMEOUT_MS = 3_000;
 const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
-export type StorefrontCatalogSource = "woocommerce" | "price-snapshot" | "migration-fallback";
+export type StorefrontCatalogSource =
+  | "runtime-cache"
+  | "price-snapshot"
+  | "migration-fallback";
 
 export type StorefrontProduct = Product & {
   wooId: number | null;
@@ -111,7 +108,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     : fallback?.priceToman;
 
   return {
-    slug: product.slug,
+    slug: fallback?.slug || product.slug,
     nameFa: product.name || fallback?.nameFa || product.slug,
     nameEn: fallback?.nameEn ?? "",
     brand: getEnglishBrandLabel(product.brands?.[0]?.name || fallback?.brand || "") || fallback?.brand || "",
@@ -191,22 +188,27 @@ function mapFallbackProduct(product: Product): StorefrontProduct {
   };
 }
 
-async function fetchAllWooProducts(): Promise<CmsProduct[]> {
-  const products: CmsProduct[] = [];
-  let page = 1;
-  let totalPages = 1;
-  do {
-    const response = await listStorefrontProducts({
-      page,
-      perPage: PRODUCTS_PER_PAGE,
-      requestTimeoutMs: PUBLIC_WOO_TIMEOUT_MS,
-    });
-    products.push(...response.products);
-    totalPages = Math.max(1, response.totalPages);
-    if (totalPages > MAX_CATALOG_PAGES) throw new Error("WooCommerce catalog pagination exceeded the safe limit.");
-    page += 1;
-  } while (page <= totalPages);
-  return products;
+function modifiedAt(product: CmsProduct) {
+  const value = Date.parse(product.dateModifiedGmt || "");
+  return Number.isFinite(value) ? value : 0;
+}
+
+function publicFallbackForProduct(
+  product: CmsProduct,
+  fallbackBySlug: Map<string, Product>,
+): Product | undefined {
+  const exact = fallbackBySlug.get(product.slug);
+  if (exact) return exact;
+
+  const canonicalSlug = product.slug.replace(/-\d+$/, "");
+  return fallbackBySlug.get(canonicalSlug);
+}
+
+function publicSlugForProduct(
+  product: CmsProduct,
+  fallbackBySlug: Map<string, Product>,
+) {
+  return publicFallbackForProduct(product, fallbackBySlug)?.slug || product.slug;
 }
 
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
@@ -214,63 +216,73 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
   const fallbackBySlug = new Map(catalogProducts.map((product) => [product.slug, product]));
   const snapshots = await getStorefrontProductSnapshots();
-  const snapshotProducts = Object.values(snapshots)
-    .filter((product) => {
-      const fallback = fallbackBySlug.get(product.slug);
-      return isPublicWooProduct(product) ||
-        (Boolean(product.slug) && product.status === "publish" && product.catalogVisibility !== "hidden" && isPublicStaticProduct(fallback));
-    })
-    .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug))
-    .map((product) => mapWooProduct(product, fallbackBySlug.get(product.slug)));
+  const runtimeProducts = await getRuntimeStorefrontProducts([
+    ...catalogProducts.map((product) => product.slug),
+    ...Object.keys(snapshots),
+  ]);
 
-  if (snapshotProducts.length > 0) {
-    const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
-    const fallbackProducts = catalogProducts
-      .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
-      .map(mapFallbackProduct);
+  const cachedBySlug = new Map<string, CmsProduct>();
+  for (const product of [...Object.values(snapshots), ...runtimeProducts]) {
+    const fallback = publicFallbackForProduct(product, fallbackBySlug);
+    if (
+      !(isPublicWooProduct(product) ||
+        (Boolean(product.slug) &&
+          product.status === "publish" &&
+          product.catalogVisibility !== "hidden" &&
+          isPublicStaticProduct(fallback)))
+    ) {
+      continue;
+    }
 
+    const publicSlug = publicSlugForProduct(product, fallbackBySlug);
+    if (Object.hasOwn(currentInventoryLegacyAliases, publicSlug)) continue;
+
+    const current = cachedBySlug.get(publicSlug);
+    if (!current || modifiedAt(product) >= modifiedAt(current)) {
+      cachedBySlug.set(publicSlug, product);
+    }
+  }
+
+  const cachedProducts = Array.from(cachedBySlug.entries()).map(([slug, product]) =>
+    mapWooProduct(product, fallbackBySlug.get(slug)),
+  );
+  const cachedSlugs = new Set(cachedProducts.map((product) => product.slug));
+  const fallbackProducts = catalogProducts
+    .filter((product) => isPublicStaticProduct(product) && !cachedSlugs.has(product.slug))
+    .map(mapFallbackProduct);
+
+  const products = Array.from(
+    new Map([...cachedProducts, ...fallbackProducts].map((product) => [product.slug, product])).values(),
+  );
+
+  if (runtimeProducts.length > 0) {
     return {
-      products: Array.from(new Map([...snapshotProducts, ...fallbackProducts].map((product) => [product.slug, product])).values()),
-      connected: false,
+      products,
+      connected: true,
+      source: "runtime-cache",
+    };
+  }
+
+  if (Object.keys(snapshots).length > 0) {
+    return {
+      products,
+      connected: true,
       source: "price-snapshot",
     };
   }
 
-  try {
-    const wooProducts = await fetchAllWooProducts();
-    const mappedProducts = wooProducts
-      .filter((product) => {
-        const fallback = fallbackBySlug.get(product.slug);
-        return isPublicWooProduct(product) ||
-          (Boolean(product.slug) && product.status === "publish" && product.catalogVisibility !== "hidden" && isPublicStaticProduct(fallback));
-      })
-      .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug))
-      .map((product) => mapWooProduct(product, fallbackBySlug.get(product.slug)));
-
-    const publicWooSlugs = new Set(mappedProducts.map((product) => product.slug));
-    const publishedCodeProducts = catalogProducts
-      .filter((product) => isPublicStaticProduct(product) && !publicWooSlugs.has(product.slug))
-      .map(mapFallbackProduct);
-    const uniqueProducts = Array.from(new Map([...mappedProducts, ...publishedCodeProducts].map((product) => [product.slug, product])).values());
-
-    return { products: uniqueProducts, connected: true, source: "woocommerce" };
-  } catch (error) {
-    console.error(
-      "[storefront-catalog] WooCommerce load failed; using migration fallback.",
-      error,
-    );
-    return {
-      products: catalogProducts.filter((product) => isPublicStaticProduct(product)).map(mapFallbackProduct),
-      connected: false,
-      source: "migration-fallback",
-    };
-  }
+  return {
+    products,
+    connected: false,
+    source: "migration-fallback",
+  };
 }
 
-// IMPORTANT: prices must not be served from a 5-minute persistent cache.
-// Quick Price Edit writes directly to WooCommerce; the storefront must read the
-// current WooCommerce price on the next request. React cache still deduplicates
-// repeated reads within the same server render.
+// Public rendering intentionally avoids direct WooCommerce reads. Confirmed
+// CMS writes are persisted into Runtime Cache and the Next Data Cache, then
+// overlaid on the local catalog. This keeps prices fresh after CMS saves while
+// preventing a slow or unavailable WordPress origin from blocking Home, Shop,
+// category, brand, guide, sitemap, or metadata rendering.
 export const getStorefrontCatalog = cache(loadStorefrontCatalog);
 
 export async function getStorefrontProducts(): Promise<StorefrontProduct[]> {
