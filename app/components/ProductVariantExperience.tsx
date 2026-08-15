@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Product, ProductVariant } from "../data";
+import { getProductCutoutSrc } from "../lib/product-image";
 import { getPublicPackagingLabel } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
@@ -34,6 +35,7 @@ export type ProductExperienceProduct = Pick<
   | "nameFa"
   | "nameEn"
   | "brand"
+  | "category"
   | "categoryTitle"
   | "image"
   | "imageAlt"
@@ -50,6 +52,7 @@ export type ProductExperienceProduct = Pick<
 type ProductVariantExperienceProps = {
   product: ProductExperienceProduct;
   liveImage: { src: string; alt: string } | null;
+  catalogImage?: { src: string; alt: string } | null;
   livePricing: Pricing | null;
   liveShortDescription: string;
   liveDescription: string;
@@ -150,6 +153,7 @@ function getVisibleSpecs(specs: Array<[string, string]>) {
 export function ProductVariantExperience({
   product,
   liveImage,
+  catalogImage,
   livePricing,
   liveShortDescription,
   liveDescription,
@@ -183,8 +187,10 @@ export function ProductVariantExperience({
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
-  const displayImage = selectedVariant?.image ?? liveImage?.src ?? product.image;
-  const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
+  const displayImage = getProductCutoutSrc(
+    selectedVariant?.image ?? catalogImage?.src ?? liveImage?.src ?? product.image,
+  );
+  const displayImageAlt = selectedVariant?.imageAlt ?? catalogImage?.alt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
   const isEditorialFamilyImage =
     (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
     !liveImage?.src;
@@ -211,7 +217,7 @@ export function ProductVariantExperience({
 
   return (
     <>
-      <section className="sb-product-detail">
+      <section className="sb-product-detail" data-category={product.category}>
         <div className="sb-shell sb-product-detail__grid">
           <div className="sb-product-gallery">
             <div className="sb-product-gallery__main">

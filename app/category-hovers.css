@@ -51,9 +51,9 @@
 }
 
 .sb-category-card:has(.sb-category-visual[data-category="botulinum-toxins"]) {
-  --category-accent: #a75f42;
-  --category-accent-rgb: 167, 95, 66;
-  --category-ink: #4c3a32;
+  --category-accent: #7d69a8;
+  --category-accent-rgb: 125, 105, 168;
+  --category-ink: #403752;
 }
 
 .sb-category-card:has(.sb-category-visual[data-category="rejuvenation-cocktails"]) {

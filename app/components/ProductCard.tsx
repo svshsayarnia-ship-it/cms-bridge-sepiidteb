@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { productHref } from "../catalog";
 import type { PublicProduct } from "../lib/public-product";
+import { getProductCutoutSrc } from "../lib/product-image";
 import {
   getCompactBrandLabel,
   getPublicPackagingLabel,
@@ -33,7 +34,7 @@ export function ProductCard({
     ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
     .trim();
 
-  const imageSrc = product.image;
+  const imageSrc = getProductCutoutSrc(product.image);
   const imageAlt =
     product.imageAlt ||
     `تصویر ${product.nameFa}`;
@@ -47,7 +48,7 @@ export function ProductCard({
     salePrice || regularPrice || numericPrice(product.priceToman);
 
   return (
-    <article className="sb-product-card">
+    <article className="sb-product-card" data-category={product.category}>
       <Link
         className="sb-product-card__visual"
         href={href}

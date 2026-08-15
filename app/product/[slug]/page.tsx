@@ -28,6 +28,10 @@ import {
   isPublicStaticProduct,
 } from "../../lib/public-product";
 import {
+  getProductCutoutSrc,
+  hasLocalProductCutout,
+} from "../../lib/product-image";
+import {
   getCompactBrandLabel,
   getEnglishBrandLabel,
   toPublicCopy,
@@ -412,6 +416,7 @@ function getProductExperience(
     nameFa: product.nameFa,
     nameEn: product.nameEn,
     brand: getCompactBrandLabel(product.brand),
+    category: product.category,
     categoryTitle: product.categoryTitle,
     image: product.image,
     imageAlt: product.imageAlt,
@@ -679,6 +684,12 @@ const storefrontProducts = products;
 
 const livePricing = getLiveProductPricing(liveProduct);
 const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
+const catalogImage = staticProduct && hasLocalProductCutout(staticProduct.image)
+  ? {
+      src: getProductCutoutSrc(staticProduct.image),
+      alt: staticProduct.imageAlt || `تصویر ${staticProduct.nameFa}`,
+    }
+  : null;
 
 const schemaDescription =
   getPublicSummary(product.summary) || product.nameFa;
@@ -749,6 +760,7 @@ const hasProductOffer = Boolean(
       <ProductVariantExperience
         product={productExperience}
         liveImage={liveImage}
+        catalogImage={catalogImage}
         livePricing={livePricing}
         liveShortDescription={liveProduct?.shortDescription || ""}
         liveDescription={liveProduct?.description || ""}

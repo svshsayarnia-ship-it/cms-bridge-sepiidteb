@@ -10,6 +10,7 @@ import {
   type Category,
 } from "../data";
 import type { PublicProduct } from "../lib/public-product";
+import { getProductCutoutSrc } from "../lib/product-image";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -453,7 +454,7 @@ export function SiteHeader({
                     <div
                       className="sb-search-results__image"
                       style={{
-                        backgroundImage: `url(${product.image})`,
+                        backgroundImage: `url(${getProductCutoutSrc(product.image)})`,
                         backgroundPosition: `${product.position} center`,
                       }}
                     />

@@ -115,7 +115,7 @@ export default async function CategoryPage({
   );
 
   return (
-    <main id="main-content">
+    <main id="main-content" className="sb-category-page" data-category={category.slug}>
       <div className="sb-shell">
         <Breadcrumbs
           items={[
@@ -165,7 +165,10 @@ export default async function CategoryPage({
             }}
             role="img"
             aria-label={`تصویر نمایشی ${category.title}`}
-          />
+          >
+            <span>SEPIID EDITORIAL / {category.en}</span>
+            <strong>{category.title}</strong>
+          </div>
         </div>
       </section>
 

@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 
+import { getProductCutoutSrc } from "../lib/product-image";
 import { ArrowIcon, ChevronIcon } from "./Icons";
 
 export type FeaturedCarouselProduct = {
@@ -17,6 +18,7 @@ export type FeaturedCarouselProduct = {
   nameFa: string;
   nameEn: string;
   brand: string;
+  category: string;
   categoryTitle: string;
   badge?: string;
   image: string;
@@ -313,6 +315,7 @@ export function FeaturedProductCarousel({
             className={`sb-featured-carousel__slide${
               phase === "leaving" ? " sb-featured-carousel__slide--leaving" : ""
             }`}
+            data-category={product.category}
             key={product.slug}
             aria-live="polite"
           >
@@ -376,7 +379,7 @@ export function FeaturedProductCarousel({
                 loader={storefrontImageLoader}
                 loading={currentIndex === 0 ? "eager" : "lazy"}
                 sizes="(max-width: 820px) 92vw, 52vw"
-                src={product.image}
+                src={getProductCutoutSrc(product.image)}
                 unoptimized
                 width="1254"
               />
@@ -441,7 +444,7 @@ export function FeaturedProductCarousel({
                 loader={storefrontImageLoader}
                 loading="lazy"
                 sizes="58px"
-                src={item.image}
+                src={getProductCutoutSrc(item.image)}
                 unoptimized
                 width="88"
               />

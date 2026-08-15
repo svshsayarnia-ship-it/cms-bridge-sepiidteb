@@ -11,7 +11,7 @@ type CategoryHoverVisualProps = {
 const categoryArtwork: Record<string, string> = {
   fillers: "/images/categories/boho-fillers.webp",
   "skin-boosters": "/images/categories/boho-skin-boosters.webp",
-  "botulinum-toxins": "/images/categories/boho-botox.webp",
+  "botulinum-toxins": "/images/categories/boho-botox-v2.webp",
   "rejuvenation-cocktails": "/images/categories/boho-rejuvenation.webp",
   "brightening-cocktails": "/images/categories/boho-brightening.webp",
   "eye-cocktails": "/images/categories/boho-eye.webp",

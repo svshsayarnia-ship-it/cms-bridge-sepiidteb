@@ -56,7 +56,7 @@ export const catalogCategories: Category[] = [
       "مقایسه فیلرها و ژل‌های حرفه‌ای بر اساس نام دقیق مدل، حجم درج‌شده و نوع بسته‌بندی.",
     guide:
       "ناحیه، تکنیک و تناسب محصول باید توسط پزشک تعیین شود؛ اطلاعات بازار مرجع نهایی نیست.",
-    image: "/images/drive/category-fillers.webp",
+    image: "/images/categories/boho-fillers.webp",
     position: "50%",
   },
   {
@@ -69,7 +69,7 @@ export const catalogCategories: Category[] = [
       "محصولات حرفه‌ای مرتبط با کیفیت و رطوبت پوست، با تفکیک مشخصات قطعی از داده‌های رایج بازار.",
     guide:
       "مزوژل، اسکین‌بوستر و فیلر مترادف نیستند؛ محصول و پروتکل باید جداگانه بررسی شود.",
-    image: "/images/drive/category-skinbooster.webp",
+    image: "/images/categories/boho-skin-boosters.webp",
     position: "50%",
   },
   {
@@ -82,7 +82,7 @@ export const catalogCategories: Category[] = [
       "نمایه فرآورده‌های بوتولینوم با تأکید بر نام دقیق، واحد، اصالت و بررسی مستقل زنجیره سرد.",
     guide:
       "شرایط نگهداری، شماره بچ، مجوز و صلاحیت مصرف‌کننده حرفه‌ای پیش از عرضه باید تأیید شود.",
-    image: "/images/drive/category-botox.webp",
+    image: "/images/categories/boho-botox-v2.webp",
     position: "50%",
   },
   {
@@ -95,7 +95,7 @@ export const catalogCategories: Category[] = [
       "محصولات دارای عنوان‌های رایج جوان‌سازی، آبرسانی و بهبود ظاهر پوست برای مقایسه حرفه‌ای.",
     guide:
       "این عنوان‌ها دسته‌بندی بازار هستند و نباید به‌عنوان وعده نتیجه یا توصیه عمومی خوانده شوند.",
-    image: "/images/drive/product-fusion.webp",
+    image: "/images/categories/boho-rejuvenation.webp",
     position: "50%",
   },
   {
@@ -108,7 +108,7 @@ export const catalogCategories: Category[] = [
       "مقایسه محصولات دارای عنوان‌های روشن‌کننده و یکنواخت‌کننده رنگ پوست بر اساس اطلاعات بسته.",
     guide:
       "ترکیبات، منع مصرف و روش حرفه‌ای هر محصول باید از بروشور رسمی همان مدل بررسی شود.",
-    image: "/images/drive/category-skin.webp",
+    image: "/images/categories/boho-brightening.webp",
     position: "50%",
   },
   {
@@ -121,7 +121,7 @@ export const catalogCategories: Category[] = [
       "محصولات حرفه‌ای مرتبط با پوست اطراف چشم با اطلاعات محتاطانه و مسیر استعلام دقیق.",
     guide:
       "ناحیه اطراف چشم حساس است و انتخاب محصول و پروتکل فقط باید توسط فرد واجد صلاحیت انجام شود.",
-    image: "/images/drive/category-mesotherapy.webp",
+    image: "/images/categories/boho-eye.webp",
     position: "50%",
   },
   {
@@ -134,7 +134,7 @@ export const catalogCategories: Category[] = [
       "نمایه کوکتل‌های حرفه‌ای مو و پوست سر، همراه با هشدار روشن درباره ضرورت تشخیص علت ریزش.",
     guide:
       "عنوان ضدریزش تضمین نتیجه نیست؛ علت ریزش و تناسب پروتکل باید ابتدا ارزیابی شود.",
-    image: "/images/product-hair-care-v2.webp",
+    image: "/images/categories/boho-hair.webp",
     position: "50%",
   },
   {
@@ -147,7 +147,7 @@ export const catalogCategories: Category[] = [
       "مقایسه آنزیم‌ها بر اساس نام سازنده، قدرت درج‌شده، تعداد ویال یا آمپول و کشور بسته‌بندی.",
     guide:
       "این دسته برای مصرف عمومی یا خانگی نیست؛ قدرت و روش آماده‌سازی هر برند باید از برگه همان بسته خوانده شود.",
-    image: "/images/drive/category-supplies.webp",
+    image: "/images/categories/boho-hyaluronidase.webp",
     position: "50%",
   },
 ];

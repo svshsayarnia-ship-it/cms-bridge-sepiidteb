@@ -197,6 +197,7 @@ export default async function Home() {
             nameFa: product.nameFa,
             nameEn: product.nameEn,
             brand: getCompactBrandLabel(product.brand),
+            category: product.category,
             categoryTitle: product.categoryTitle,
             badge: product.badge,
             image: product.image,
