@@ -20,6 +20,7 @@ import {
 import type { Product } from "../../data";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
+import { merchantReturnPolicyReference } from "../../lib/merchant-policy";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
@@ -609,6 +610,7 @@ const variantSchemas = variants
             priceCurrency: "IRR",
             availability: schemaAvailability,
             itemCondition: "https://schema.org/NewCondition",
+            ...merchantReturnPolicyReference,
           },
         }
       : {}),
@@ -704,14 +706,9 @@ const hasProductOffer = Boolean(
               "@type": "Brand",
               name: getCompactBrandLabel(product.brand),
             },
-            category: product.categoryTitle,
             description: schemaDescription,
             image: absoluteImage(image),
             url: `${siteOrigin}/product/${product.slug}`,
-            audience: {
-              "@type": "Audience",
-              audienceType: product.audience,
-            },
             sku: liveProduct?.sku || product.slug,
             ...(schemaPrice
               ? {
@@ -722,6 +719,7 @@ const hasProductOffer = Boolean(
                     priceCurrency: "IRR",
                     availability: schemaAvailability,
                     itemCondition: "https://schema.org/NewCondition",
+                    ...merchantReturnPolicyReference,
                   },
                 }
               : {}),

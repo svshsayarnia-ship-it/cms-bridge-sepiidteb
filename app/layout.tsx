@@ -9,6 +9,10 @@ import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { siteOrigin } from "./lib/site-url";
+import {
+  merchantOrganizationId,
+  merchantReturnPolicy,
+} from "./lib/merchant-policy";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
 import { isPublicStaticProduct, toPublicProduct } from "./lib/public-product";
@@ -92,6 +96,7 @@ export default async function RootLayout({
           data={{
             "@context": "https://schema.org",
             "@type": "OnlineStore",
+            "@id": merchantOrganizationId,
             name: "Sepiid Beauty",
             alternateName: "سپید بیوتی",
             url: siteOrigin,
@@ -101,6 +106,7 @@ export default async function RootLayout({
             areaServed: "IR",
             description:
               "مرجع انتخاب و استعلام محصولات حرفه‌ای زیبایی با اطلاعات شفاف و مسیر بررسی اصالت.",
+            hasMerchantReturnPolicy: merchantReturnPolicy,
             contactPoint: {
               "@type": "ContactPoint",
               telephone: "+989037251266",
