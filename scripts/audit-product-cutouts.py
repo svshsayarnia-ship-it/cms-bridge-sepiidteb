@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when a storefront cutout can crop, float or miss the shared floor."""
+"""Fail when a storefront cutout can crop, float or carry a baked backdrop."""
 
 from __future__ import annotations
 
@@ -15,8 +15,10 @@ EXPECTED_FLOOR_Y = 980
 MAX_WIDTH = 1060
 MAX_HEIGHT = 780
 TOLERANCE = 2
-FAMILY_SIZE_TOLERANCE = 0.08
+FAMILY_SIZE_TOLERANCE = 0.05
 MAX_CENTER_OFFSET = 3
+MIN_TRANSPARENT_FRACTION = 0.55
+MAX_CORNER_ALPHA = 4
 
 
 def main() -> None:
@@ -33,7 +35,27 @@ def main() -> None:
                 failures.append(f"{path.relative_to(ROOT)}: canvas={image.size}")
                 continue
 
-            alpha = image.getchannel("A").point(lambda value: 255 if value >= 12 else 0)
+            raw_alpha = image.getchannel("A")
+            alpha_histogram = raw_alpha.histogram()
+            transparent_fraction = alpha_histogram[0] / (image.width * image.height)
+            if transparent_fraction < MIN_TRANSPARENT_FRACTION:
+                failures.append(
+                    f"{path.relative_to(ROOT)}: transparent canvas="
+                    f"{transparent_fraction:.1%}, possible baked backdrop",
+                )
+
+            corners = (
+                raw_alpha.getpixel((0, 0)),
+                raw_alpha.getpixel((image.width - 1, 0)),
+                raw_alpha.getpixel((0, image.height - 1)),
+                raw_alpha.getpixel((image.width - 1, image.height - 1)),
+            )
+            if max(corners) > MAX_CORNER_ALPHA:
+                failures.append(
+                    f"{path.relative_to(ROOT)}: non-transparent canvas corner {corners}",
+                )
+
+            alpha = raw_alpha.point(lambda value: 255 if value >= 12 else 0)
             bbox = alpha.getbbox()
             if not bbox:
                 failures.append(f"{path.relative_to(ROOT)}: empty alpha")

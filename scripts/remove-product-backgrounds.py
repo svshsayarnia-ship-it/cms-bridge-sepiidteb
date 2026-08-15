@@ -25,6 +25,7 @@ DRIVE_ROOT = ROOT / "public/images/drive"
 CANVAS_SIZE = 1400
 CONTENT_MAX_WIDTH = 1060
 CONTENT_MAX_HEIGHT = 780
+MAX_UPSCALE_FACTOR = 1.5
 # Every cutout uses the same virtual floor.  Category CSS moves that floor to
 # the top of the photographed pedestal, which keeps bottles, boxes and syringes
 # aligned without distorting their native proportions.
@@ -231,7 +232,11 @@ def normalize_cutout(
     scale = min(
         CONTENT_MAX_WIDTH / cutout.width,
         CONTENT_MAX_HEIGHT / cutout.height,
-        4.5,
+        # A large synthetic upscale softens type, creates edge halos and makes
+        # a cutout look stretched even when its aspect ratio is technically
+        # preserved.  Sources that need more enlargement must be replaced by a
+        # higher-resolution pack shot instead of being blurred into compliance.
+        MAX_UPSCALE_FACTOR,
     )
     target = (
         max(1, round(cutout.width * scale)),
@@ -243,7 +248,10 @@ def normalize_cutout(
     # A restrained sharpening pass restores label legibility after resizing
     # without inventing or redrawing any packaging detail.
     rgb = cutout.convert("RGB")
-    if sharpen:
+    # Sharpen only after a downscale.  Sharpening an enlarged low-resolution
+    # source cannot recover real detail and tends to create brittle AI-looking
+    # contours around white cartons and clear glass.
+    if sharpen and scale <= 1:
         rgb = ImageEnhance.Sharpness(rgb).enhance(1.08)
         rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.65, percent=45, threshold=4))
     rgb.putalpha(cutout.getchannel("A"))
