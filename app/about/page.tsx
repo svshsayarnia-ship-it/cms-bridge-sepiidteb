@@ -7,7 +7,7 @@ import { buildSeoMetadata } from "../lib/seo";
 export const metadata = buildSeoMetadata({
   title: "درباره Sepiid Beauty",
   description:
-    "استاندارد سپید برای انتخاب آگاهانه، بررسی قابل‌پیگیری و پشتیبانی انسانی در خرید محصولات حرفه‌ای زیبایی.",
+    "سپید بیوتی برای شناخت روشن‌تر محصولات حرفه‌ای زیبایی ساخته شده است؛ با تمرکز بر مدل، بسته‌بندی، قیمت و پاسخ‌گویی انسانی.",
   path: "/about",
   imageAlt: "درباره سپید بیوتی",
 });
@@ -21,14 +21,13 @@ export default function AboutPage() {
       <section className="sb-about-hero">
         <div className="sb-shell sb-about-hero__grid">
           <div>
-            <span className="sb-eyebrow">ABOUT / BEAUTY SEPIID</span>
-            <h1>زیبایی حرفه‌ای، بدون انتخاب‌های مبهم.</h1>
+            <span className="sb-eyebrow">ABOUT / SEPIID BEAUTY</span>
+            <h1>سپید بیوتی برای انتخاب روشن‌تر ساخته شده است.</h1>
             <p>
-              سپید بیوتی یک فروشگاه صرف نیست؛ یک سیستم تصمیم‌یار است که اطلاعات
-              محصول، فرایند خرید و مرز تصمیم پزشکی را از هم جدا و شفاف می‌کند.
+              بازار محصولات حرفه‌ای زیبایی پر از نام‌های مشابه، مدل‌های متعدد و بسته‌هایی است که همیشه به‌سادگی قابل مقایسه نیستند. ما این جزئیات را کنار هم می‌آوریم تا قبل از خرید بدانید دقیقاً کدام محصول را می‌بینید.
             </p>
             <Link className="sb-btn sb-btn--dark" href="/shop">
-              مشاهده فروشگاه
+              مشاهده محصولات
               <ArrowIcon />
             </Link>
           </div>
@@ -46,27 +45,27 @@ export default function AboutPage() {
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">THE SEPIID STANDARD</span>
-              <h2>سه اصل، در تمام تجربه سایت</h2>
+              <h2>سه چیزی که باید قبل از خرید روشن باشد</h2>
             </div>
           </div>
           <div>
             <article>
               <ShieldIcon />
               <span>۰۱</span>
-              <h3>اعتماد قابل بررسی</h3>
-              <p>جزئیات بسته، تاریخ و بچ‌کد جای ادعاهای مبهم را می‌گیرند.</p>
+              <h3>دقیقاً کدام محصول؟</h3>
+              <p>نام مدل، حجم و نوع بسته را واضح می‌نویسیم تا محصول مشابه با گزینه دیگری اشتباه نشود.</p>
             </article>
             <article>
               <PackageIcon />
               <span>۰۲</span>
-              <h3>خرید قابل پیگیری</h3>
-              <p>از استعلام تا تحویل، مسیر و مسئول پاسخ‌گویی روشن است.</p>
+              <h3>قیمت برای کدام بسته؟</h3>
+              <p>اگر قیمت برای سرنگ، ویال یا جعبه کامل باشد، همان‌جا مشخص می‌کنیم.</p>
             </article>
             <article>
               <HeadsetIcon />
               <span>۰۳</span>
-              <h3>محتوای مسئولانه</h3>
-              <p>منبع، تاریخ بازبینی و محدودیت آموزشی روی مقاله دیده می‌شود.</p>
+              <h3>اگر سؤال ماند چه؟</h3>
+              <p>برای موجودی و جزئیات سفارش، مسیر تماس مستقیم و پاسخ‌گویی انسانی در دسترس است.</p>
             </article>
           </div>
         </div>
@@ -76,8 +75,7 @@ export default function AboutPage() {
         <div className="sb-shell">
           <span>Sepiid Beauty</span>
           <blockquote>
-            «هدف ما فروش بیشتر به هر قیمت نیست؛ انتخاب روشن‌تر، خرید قابل‌پیگیری‌تر
-            و گفت‌وگوی حرفه‌ای‌تر است.»
+            «قرار نیست با توضیحات مبهم محصول بفروشیم؛ کار ما این است که قبل از خرید، تصویر روشن‌تری از چیزی که انتخاب می‌کنید داشته باشید.»
           </blockquote>
           <Link className="sb-text-link sb-text-link--light" href="/contact">
             گفت‌وگو با تیم سپید
