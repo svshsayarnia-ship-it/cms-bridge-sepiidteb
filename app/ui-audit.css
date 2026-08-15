@@ -251,7 +251,7 @@ body h4 {
   --category-motif: radial-gradient(circle at 82% 18%, rgba(var(--category-accent-rgb), .16), transparent 29%);
   --category-stage-art: url("/images/product-stages/fillers.webp");
   --product-cutout-floor: 70%;
-  --product-stage-floor: 78.5%;
+  --product-stage-floor: 79.3%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="fillers"] {
@@ -262,7 +262,7 @@ body h4 {
   --category-stage: radial-gradient(ellipse at 16% 86%, rgba(173,102,117,.22), transparent 34%), radial-gradient(ellipse at 82% 12%, rgba(229,185,174,.4), transparent 30%), linear-gradient(145deg, #fffaf9, #f5e3e7);
   --category-motif: radial-gradient(ellipse at 14% 32%, transparent 0 16%, rgba(180,111,124,.17) 16.4% 16.9%, transparent 17.3%), radial-gradient(ellipse at 87% 76%, transparent 0 22%, rgba(180,111,124,.13) 22.4% 22.9%, transparent 23.3%);
   --category-stage-art: url("/images/product-stages/fillers.webp");
-  --product-stage-floor: 78.5%;
+  --product-stage-floor: 79.3%;
 }
 
 :is(.sb-product-card, .sb-product-detail, .sb-category-page, .sb-featured-carousel__slide)[data-category="skin-boosters"] {
