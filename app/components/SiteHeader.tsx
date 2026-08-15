@@ -30,11 +30,13 @@ const navItems = [
 ];
 
 function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: string }) {
+  const resolvedTagline = tagline || "سپید بیوتی · انتخاب حرفه‌ای";
+
   return (
     <Link
       className={`sb-brand ${light ? "sb-brand--light" : ""}`}
       href="/"
-      title={tagline}
+      title={resolvedTagline}
       aria-label="Sepiid Beauty، صفحه اصلی"
     >
       <span className="sb-brand__mark">
@@ -48,8 +50,7 @@ function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: stri
       </span>
       <span>
         <strong>Sepiid Beauty</strong>
-        {tagline && <small>{tagline}</small>}
-        <small>سپید بیوتی · انتخاب حرفه‌ای</small>
+        <small>{resolvedTagline}</small>
       </span>
     </Link>
   );
@@ -186,46 +187,52 @@ export function SiteHeader({
         first.focus();
       }
     };
-    const closeAtDesktop = () => {
-      if (window.matchMedia("(min-width: 821px)").matches) setMobileOpen(false);
-    };
+
     document.addEventListener("keydown", trapFocus);
-    window.addEventListener("resize", closeAtDesktop);
     return () => {
       window.clearTimeout(focusTimer);
       document.removeEventListener("keydown", trapFocus);
-      window.removeEventListener("resize", closeAtDesktop);
       document.body.style.overflow = previousOverflow;
       trigger?.focus();
     };
   }, [mobileOpen]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setMobileOpen(false);
-      setCategoriesOpen(false);
-      setSearchOpen(false);
-    }, 0);
-    return () => window.clearTimeout(timeout);
+    setMobileOpen(false);
+    setCategoriesOpen(false);
+    setSearchOpen(false);
   }, [pathname]);
+
+  const groupedCategories = useMemo(
+    () =>
+      catalogGroups
+        .map((group) => ({
+          ...group,
+          categories: categories.filter((category) =>
+            group.categorySlugs.includes(category.slug),
+          ),
+        }))
+        .filter((group) => group.categories.length > 0),
+    [categories],
+  );
+
+  const searchSuggestion = searchResults[0];
 
   return (
     <>
-      <a className="sb-skip-link" href="#main-content">
-        رفتن به محتوای اصلی
-      </a>
       <div className="sb-trustbar">
         <div className="sb-shell sb-trustbar__inner">
           <p>
             <i />
-            بررسی بسته‌بندی، بچ‌کد و شرایط تحویل پیش از ارسال
+            {presentation.trustPrimary}
           </p>
           <div>
-            <span>ارسال هماهنگ‌شده به سراسر ایران</span>
+            <span>{presentation.trustSecondary}</span>
             <a href="tel:+989037251266">۰۹۰۳۷۲۵۱۲۶۶</a>
           </div>
         </div>
       </div>
+
       <header className="sb-header">
         <div className="sb-shell sb-header__primary">
           <BrandMark tagline={presentation.brandTagline} />
@@ -233,11 +240,11 @@ export function SiteHeader({
           <button
             className="sb-header-search"
             type="button"
-            onClick={openSearch}
             aria-label="باز کردن جستجوی محصولات"
+            onClick={openSearch}
           >
             <SearchIcon />
-            <span>جستجو میان محصولات و برندها</span>
+            <span>{presentation.searchPlaceholder}</span>
             <kbd>/</kbd>
           </button>
 
@@ -245,14 +252,17 @@ export function SiteHeader({
             <Link className="sb-header__account" href="/account">
               ورود / عضویت
             </Link>
-            <Link className="sb-btn sb-btn--ghost sb-header__consult" href={whatsappHref()}>
+            <a
+              className="sb-btn sb-btn--ghost sb-header__consult"
+              href={whatsappHref}
+            >
               {presentation.consultationLabel}
-            </Link>
+            </a>
             <button
               className="sb-icon-btn sb-mobile-search-btn"
               type="button"
-              onClick={openSearch}
               aria-label="جستجوی محصولات"
+              onClick={openSearch}
             >
               <SearchIcon />
             </button>
@@ -260,62 +270,34 @@ export function SiteHeader({
               ref={mobileMenuTrigger}
               className="sb-icon-btn sb-mobile-menu-btn"
               type="button"
-              onClick={() => setMobileOpen((value) => !value)}
               aria-expanded={mobileOpen}
               aria-controls="mobile-navigation"
               aria-label={mobileOpen ? "بستن منو" : "باز کردن منو"}
+              onClick={() => setMobileOpen((current) => !current)}
             >
               {mobileOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
           </div>
         </div>
 
-        {(pathname.startsWith("/shop") || pathname.startsWith("/brands")) && (
-          <div className="sb-header__mobile-search sb-shell">
-            <button type="button" onClick={openSearch}>
-              <SearchIcon />
-              جستجو میان محصولات
-            </button>
-          </div>
-        )}
-{mobileOpen && (
-  <button
-    className="sb-mobile-menu-backdrop"
-    type="button"
-    aria-label="بستن منوی موبایل"
-    onClick={() => {
-      setMobileOpen(false);
-      setCategoriesOpen(false);
-    }}
-  />
-)}
         <div
           ref={mobilePanel}
           id="mobile-navigation"
           className={`sb-header__nav-wrap ${mobileOpen ? "sb-header__nav-wrap--open" : ""}`}
         >
-          <nav
-            className="sb-shell sb-nav"
-            aria-label="منوی اصلی"
-            onClick={(event) => {
-              if ((event.target as HTMLElement).closest("a")) setMobileOpen(false);
-            }}
-          >
-            <div
-              className="sb-nav__categories"
-              onMouseEnter={() => setCategoriesOpen(true)}
-              onMouseLeave={() => setCategoriesOpen(false)}
-            >
+          <nav className="sb-shell sb-nav" aria-label="منوی اصلی">
+            <div className="sb-nav__categories">
               <button
                 type="button"
-                onClick={() => setCategoriesOpen((value) => !value)}
                 aria-expanded={categoriesOpen}
                 aria-controls="catalog-mega-menu"
+                onClick={() => setCategoriesOpen((current) => !current)}
               >
                 <MenuIcon />
                 دسته‌بندی محصولات
                 <ChevronIcon />
               </button>
+
               <div
                 id="catalog-mega-menu"
                 className={`sb-mega-menu ${categoriesOpen ? "sb-mega-menu--open" : ""}`}
@@ -325,40 +307,37 @@ export function SiteHeader({
                     <span>SHOP / CATEGORIES</span>
                     <h2>از نیاز شروع کنید، نه از نام محصول.</h2>
                     <p>
-                      مسیرهای دسته‌بندی برای شناخت بهتر ساخته شده‌اند؛ انتخاب پزشکی
-                      همچنان به ارزیابی فرد واجد صلاحیت نیاز دارد.
+                      مسیرهای دسته‌بندی برای شناخت بهتر ساخته شده‌اند؛ انتخاب پزشکی همچنان به ارزیابی فرد واجد صلاحیت نیاز دارد.
                     </p>
                     <Link href="/shop">
                       مشاهده همه محصولات
                       <ArrowIcon />
                     </Link>
                   </div>
+
                   <div className="sb-mega-menu__links">
-                    {catalogGroups.slice(0, 2).map((group) => (
+                    {groupedCategories.map((group) => (
                       <section className="sb-mega-menu__group" key={group.slug}>
                         <Link href={`/shop/group/${group.slug}`}>
                           <strong>{group.title}</strong>
                           <small>{group.en}</small>
                         </Link>
                         <div>
-                          {categories
-                            .filter((category) =>
-                              group.categorySlugs.includes(category.slug),
-                            )
-                            .map((category) => (
-                              <Link href={`/shop/${category.slug}`} key={category.slug}>
-                                <span>•</span>
-                                <div>
-                                  <strong>{category.title}</strong>
-                                  <small>{category.en}</small>
-                                </div>
-                                <ArrowIcon />
-                              </Link>
-                            ))}
+                          {group.categories.map((category) => (
+                            <Link href={`/shop/${category.slug}`} key={category.slug}>
+                              <span>•</span>
+                              <div>
+                                <strong>{category.title}</strong>
+                                <small>{category.en}</small>
+                              </div>
+                              <ArrowIcon />
+                            </Link>
+                          ))}
                         </div>
                       </section>
                     ))}
                   </div>
+
                   <figure className="sb-mega-menu__visual">
                     <img
                       src="/images/drive/category-skinbooster.webp"
@@ -373,110 +352,110 @@ export function SiteHeader({
             </div>
 
             <div className="sb-nav__links">
-              {(presentation.navigation.length ? presentation.navigation : navItems).map((item) => {
-                const active =
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(`${item.href}/`));
-                return (
-                  <Link
-                    className={active ? "sb-nav__link--active" : ""}
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    key={item.href}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {navItems.map((item) => (
+                <Link
+                  className={pathname === item.href ? "is-active" : ""}
+                  href={item.href}
+                  key={item.href}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
-            <Link className="sb-nav__phone" href="tel:+989037251266">
+
+            <a className="sb-nav__phone" href="tel:+989037251266">
               پشتیبانی:
               <b>۰۹۰۳۷۲۵۱۲۶۶</b>
-            </Link>
+            </a>
           </nav>
         </div>
       </header>
 
       {searchOpen && (
-        <div
-          className="sb-search-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="search-title"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) setSearchOpen(false);
-          }}
-        >
-          <div className="sb-search-modal__panel" ref={searchPanel}>
-            <div className="sb-search-modal__top">
+        <div className="sb-search-overlay" role="presentation" onMouseDown={() => setSearchOpen(false)}>
+          <section
+            ref={searchPanel}
+            className="sb-search-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="جستجوی محصولات"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="sb-search-panel__head">
               <div>
-                <span>SEARCH / جستجو</span>
-                <h2 id="search-title">محصول یا برند موردنظر را پیدا کنید.</h2>
+                <span>SEARCH / SEPIID</span>
+                <strong>محصول، برند یا دسته را جستجو کنید.</strong>
               </div>
               <button
-                className="sb-icon-btn"
                 type="button"
-                onClick={() => setSearchOpen(false)}
                 aria-label="بستن جستجو"
+                onClick={() => setSearchOpen(false)}
               >
                 <CloseIcon />
               </button>
             </div>
-
-            <div className="sb-search-modal__field">
+            <label className="sb-search-panel__field">
               <SearchIcon />
-              <span className="sb-sr-only">عبارت جستجو</span>
               <input
                 ref={searchInput}
-                aria-label="عبارت جستجو"
+                type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="مثلاً جالپرو، فیلر یا Neuramis"
+                placeholder={presentation.searchPlaceholder}
+                autoComplete="off"
               />
               {query && (
                 <button type="button" onClick={() => setQuery("")}>
-                  پاک‌کردن
+                  پاک کردن
                 </button>
               )}
-            </div>
+            </label>
 
-            <div className="sb-search-modal__meta">
-              <span aria-live="polite">
-                {query ? `${searchResults.length} نتیجه` : "پیشنهادهای محبوب"}
-              </span>
-              <small>جستجو در نام فارسی، انگلیسی، برند و دسته</small>
-            </div>
+            {searchSuggestion && !query && (
+              <div className="sb-search-panel__suggestion">
+                <span>پیشنهاد سریع</span>
+                <Link href={productHref(searchSuggestion.slug)}>
+                  <img
+                    src={getProductCutoutSrc(searchSuggestion.image)}
+                    alt=""
+                    width="96"
+                    height="96"
+                  />
+                  <div>
+                    <small>{searchSuggestion.brand}</small>
+                    <strong>{searchSuggestion.nameFa}</strong>
+                  </div>
+                  <ArrowIcon />
+                </Link>
+              </div>
+            )}
 
-            <div className="sb-search-results">
-              {searchResults.length ? (
+            <div className="sb-search-panel__results">
+              {searchResults.length > 0 ? (
                 searchResults.map((product) => (
-                  <Link href={productHref(product)} key={product.slug}>
-                    <div
-                      className="sb-search-results__image"
-                      style={{
-                        backgroundImage: `url(${getProductCutoutSrc(product.image)})`,
-                        backgroundPosition: `${product.position} center`,
-                      }}
+                  <Link href={productHref(product.slug)} key={product.slug}>
+                    <img
+                      src={getProductCutoutSrc(product.image)}
+                      alt=""
+                      width="88"
+                      height="88"
                     />
                     <div>
-                      <span>{product.categoryTitle}</span>
+                      <span>{product.brand}</span>
                       <strong>{product.nameFa}</strong>
-                      <small>{product.nameEn}</small>
+                      <small>{product.categoryTitle}</small>
                     </div>
                     <ArrowIcon />
                   </Link>
                 ))
               ) : (
-                <div className="sb-search-results__empty">
+                <div className="sb-search-panel__empty">
                   <strong>نتیجه‌ای پیدا نشد.</strong>
-                  <p>نام برند یا دسته را امتحان کنید، یا از پشتیبانی استعلام بگیرید.</p>
-                  <Link href={whatsappHref(`سلام، محصول «${query}» را استعلام می‌کنم.`)}>
-                    استعلام از پشتیبانی
-                  </Link>
+                  <p>نام برند یا بخشی از نام محصول را امتحان کنید.</p>
                 </div>
               )}
             </div>
-          </div>
+          </section>
         </div>
       )}
     </>
