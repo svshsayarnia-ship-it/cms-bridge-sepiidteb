@@ -1,6 +1,7 @@
 /* Category commerce hero
    Keeps each category's existing visual identity while making transactional
-   intent, a real product and a real price visible before the catalog grid. */
+   intent, a real product and a real price visible before the catalog grid.
+   Production sync marker: 2026-08-15. */
 
 .sb-category-page .sb-category-commerce-hero {
   padding-block: clamp(24px, 3.7vw, 48px);
