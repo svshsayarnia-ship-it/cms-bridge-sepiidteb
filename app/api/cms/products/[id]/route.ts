@@ -104,7 +104,7 @@ export async function PUT(request: Request, context: Context) {
     const product = await getProduct(id);
     assertProductPersisted(product, input);
 
-    await rememberStorefrontProduct(product);
+    await rememberStorefrontProduct(product, { requirePersistence: true });
 
     invalidatePricePages(product.slug || updatedProduct.slug);
 

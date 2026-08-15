@@ -66,6 +66,12 @@ export async function rememberStorefrontProducts(
     });
   }
 
+  if (requirePersistence && !runtimeSynced) {
+    throw new Error(
+      `همگام‌سازی فوری ویترین برای «${Object.keys(incoming).join("، ")}» تأیید نشد.`,
+    );
+  }
+
   const current = await getStorefrontProductSnapshots();
   snapshotSeed = { ...current, ...incoming };
 
@@ -78,12 +84,6 @@ export async function rememberStorefrontProducts(
         return !saved || saved.id !== product.id || saved.dateModifiedGmt !== product.dateModifiedGmt;
       })
       .map(([slug]) => slug);
-
-    if (failedSlugs.length > 0 && requirePersistence && !runtimeSynced) {
-      throw new Error(
-        `همگام‌سازی فوری ویترین برای «${failedSlugs.join("، ")}» تأیید نشد.`,
-      );
-    }
 
     if (failedSlugs.length > 0) {
       console.warn("[storefront-snapshots] write not confirmed", {

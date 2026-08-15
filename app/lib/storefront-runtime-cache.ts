@@ -55,13 +55,28 @@ export async function rememberRuntimeStorefrontProducts(products: CmsProduct[]) 
   if (validProducts.length === 0) return;
 
   await Promise.all(
-    validProducts.map((product) =>
-      cache().set(productKey(product.slug), product, {
+    validProducts.map(async (product) => {
+      const productCache = cache();
+      await productCache.set(productKey(product.slug), product, {
         ttl: PRODUCT_TTL_SECONDS,
         tags: ["storefront-products", productTag(product.slug)],
         name: "cms-product",
-      }),
-    ),
+      });
+
+      // The Runtime Cache client deliberately converts transport failures into
+      // cache misses. Read the value back so CMS success always means the
+      // storefront can immediately retrieve the exact saved product.
+      const persisted = await productCache.get(productKey(product.slug));
+      if (
+        !isCmsProduct(persisted) ||
+        persisted.id !== product.id ||
+        persisted.dateModifiedGmt !== product.dateModifiedGmt
+      ) {
+        throw new Error(
+          `ذخیرهٔ اجرایی محصول «${product.slug}» تأیید نشد.`,
+        );
+      }
+    }),
   );
 }
 

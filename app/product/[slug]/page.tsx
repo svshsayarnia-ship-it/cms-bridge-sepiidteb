@@ -99,7 +99,14 @@ const getLiveProduct = cache(async (
     });
 
     if (product) {
-      await rememberRuntimeStorefrontProducts([product]);
+      try {
+        await rememberRuntimeStorefrontProducts([product]);
+      } catch (cacheError) {
+        console.warn("[storefront-product] cold cache warm failed", {
+          slug,
+          error: cacheError instanceof Error ? cacheError.message : String(cacheError),
+        });
+      }
     }
 
     return product;
