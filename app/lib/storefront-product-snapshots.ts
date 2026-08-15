@@ -89,6 +89,12 @@ export async function rememberStorefrontProducts(
       console.warn("[storefront-snapshots] write not confirmed", {
         slugs: failedSlugs,
       });
+
+      if (requirePersistence) {
+        throw new Error(
+          `ذخیرهٔ Snapshot ویترین برای «${failedSlugs.join("، ")}» تأیید نشد.`,
+        );
+      }
       return;
     }
 
