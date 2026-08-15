@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product, ProductVariant } from "../data";
 import { getProductCutoutSrc } from "../lib/product-image";
-import { getPublicPackagingLabel } from "../lib/public-copy";
+import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
 type Pricing = {
@@ -65,7 +65,7 @@ const priceFormatter = new Intl.NumberFormat("fa-IR");
 function formatStaticPrice(value?: number) {
   return value && value > 0
     ? `${priceFormatter.format(value)} تومان`
-    : "استعلام همان روز";
+    : "بررسی قیمت امروز";
 }
 
 function buildInquiryLink(name: string, volume?: string) {
@@ -73,28 +73,38 @@ function buildInquiryLink(name: string, volume?: string) {
   return `https://wa.me/989037251266?text=${encodeURIComponent(message)}`;
 }
 
-const internalProductTerms = /سازنده|تولیدکننده|کشور|تطبیق|تأیید|تایید|بررسی|فهرست|گزارش|مرجع|بچ‌کد|پلمب/u;
+const internalProductTerms = /تطبیق|تأیید|تایید|فهرست|گزارش|مرجع|بچ‌کد|پلمب/u;
 
 function conciseProductCopy(value: string, supplierTerms: string[]) {
-  const plain = value
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const plain = toPublicCopy(
+    value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 
   if (!plain) return "";
 
-  const firstSentence = plain.split(/(?<=[.!؟])\s+/u)[0] ?? plain;
+  const sentences = plain
+    .split(/(?<=[.!؟])\s+/u)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
 
-  if (
-    internalProductTerms.test(firstSentence) ||
-    supplierTerms.some((term) => term && firstSentence.toLowerCase().includes(term.toLowerCase()))
-  ) {
-    return "";
-  }
+  const editorialSentences = sentences.filter(
+    (sentence) =>
+      !internalProductTerms.test(sentence) &&
+      !supplierTerms.some(
+        (term) => term && sentence.toLowerCase().includes(term.toLowerCase()),
+      ),
+  );
 
-  return firstSentence.length > 180
-    ? `${firstSentence.slice(0, 177).trimEnd()}…`
-    : firstSentence;
+  const selected = (editorialSentences.length ? editorialSentences : sentences)
+    .slice(0, 2)
+    .join(" ");
+
+  return selected.length > 260
+    ? `${selected.slice(0, 257).trimEnd()}…`
+    : selected;
 }
 
 function getSupplierTerms(brand: string) {
@@ -137,7 +147,7 @@ function getVisibleSpecs(specs: Array<[string, string]>) {
   return specs.flatMap(([label, value]) => {
     const displayLabel = visibleSpecLabels.get(label);
 
-    const cleanValue = value
+    const cleanValue = toPublicCopy(value)
       .replace(/(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست\s+موجودی).*$/u, "")
       .trim();
 
@@ -175,6 +185,7 @@ export function ProductVariantExperience({
     !hasVariants && liveShortDescription ? liveShortDescription : displaySummary,
     getSupplierTerms(product.brand),
   );
+  const editorialDescription = toPublicCopy(liveDescription);
   const selectedSpecLabels = new Set(
     selectedVariant?.specs.map(([label]) => label) ?? [],
   );
@@ -197,11 +208,11 @@ export function ProductVariantExperience({
   const pricing = livePricing ?? (hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
-        note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت و موجودی امروز",
+        note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت امروز",
       }
     : {
         label: formatStaticPrice(product.priceToman),
-        note: product.priceNote ?? "قیمت و موجودی امروز",
+        note: product.priceNote ?? "قیمت امروز",
       });
   const inquiryLink = buildInquiryLink(displayName, displayVolume);
 
@@ -239,7 +250,7 @@ export function ProductVariantExperience({
             </div>
             {isEditorialFamilyImage && (
               <p className="sb-product-gallery__image-note">
-                تصویر ادیتوریال هم‌خانواده است؛ بسته دقیق هنگام استعلام تطبیق می‌شود.
+                نمای ادیتوریال خانواده محصول است؛ مدل دقیق روی بسته پیش از سفارش مشخص می‌شود.
               </p>
             )}
           </div>
@@ -261,7 +272,7 @@ export function ProductVariantExperience({
             {hasVariants && (
               <div className="sb-product-variants">
                 <div className="sb-product-variants__head">
-                  <strong>انتخاب مدل</strong>
+                  <strong>مدل موردنظر</strong>
                   <span>
                     {displayVolume}
                     {packagingLabel ? ` · ${packagingLabel}` : ""}
@@ -291,29 +302,29 @@ export function ProductVariantExperience({
 
             <div className="sb-product-summary__order">
               <div>
-                <span>قیمت</span>
+                <span>قیمت فعلی</span>
                 <strong>{pricing.label}</strong>
-                <small>{pricing.note}</small>
+                <small>{toPublicCopy(pricing.note)}</small>
               </div>
               <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
-                استعلام موجودی و قیمت
+                بررسی موجودی امروز
                 <ArrowIcon />
               </Link>
             </div>
             <p className="sb-product-summary__notice">
-              ویژه استفاده حرفه‌ای
+              محصول حرفه‌ای
             </p>
           </div>
         </div>
       </section>
 
-      {liveDescription && (
+      {editorialDescription && (
         <section className="sb-section sb-product-description" id="description">
           <div className="sb-shell sb-product-description__grid">
             <div className="sb-product-description__heading">
-              <h2>توضیحات محصول</h2>
+              <h2>درباره {displayName}</h2>
             </div>
-            <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: liveDescription }} />
+            <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: editorialDescription }} />
           </div>
         </section>
       )}
@@ -322,7 +333,7 @@ export function ProductVariantExperience({
         <section className="sb-section sb-product-info-section" id="specs">
           <div className="sb-shell sb-product-info-section__grid">
             <div>
-              <h2>مشخصات محصول</h2>
+              <h2>بسته و مشخصات</h2>
             </div>
             <dl className="sb-spec-table">
               {visibleSpecs.map(([label, value]) => (
@@ -335,7 +346,7 @@ export function ProductVariantExperience({
 
       <div className="sb-product-mobile-cta">
         <div><span>{displayName}</span><strong>{pricing.label}</strong></div>
-        <Link href={inquiryLink}>استعلام قیمت</Link>
+        <Link href={inquiryLink}>بررسی موجودی</Link>
       </div>
     </>
   );
