@@ -12,6 +12,7 @@ import {
   getGroupForCategory,
   productHref,
 } from "../../catalog";
+import { getEditorialCategoryCopy } from "../../lib/editorial-category-copy";
 import {
   getStorefrontCategories,
   getStorefrontCategoryBySlug,
@@ -94,6 +95,11 @@ export async function generateMetadata({
     return {};
   }
 
+  const editorial = getEditorialCategoryCopy(
+    category.slug,
+    category.description,
+    category.guide,
+  );
   const { products } = await getStorefrontCatalog();
 
   if (
@@ -112,7 +118,7 @@ export async function generateMetadata({
 
   return buildSeoMetadata({
     title: `خرید و قیمت ${category.title}`,
-    description: `مشاهده قیمت و مقایسه محصولات ${category.title}. ${category.description}`,
+    description: `مشاهده قیمت و مقایسه محصولات ${category.title}. ${editorial.intro}`,
     path: `/shop/${category.slug}`,
     image: category.image,
     imageAlt: category.title,
@@ -146,6 +152,11 @@ export default async function CategoryPage({
     notFound();
   }
 
+  const editorial = getEditorialCategoryCopy(
+    category.slug,
+    category.description,
+    category.guide,
+  );
   const items = products.filter(
     (product) =>
       product.category === category.slug,
@@ -207,26 +218,26 @@ export default async function CategoryPage({
 
             <h1>خرید و قیمت {category.title}</h1>
 
-            <p>{category.description}</p>
+            <p>{editorial.intro}</p>
 
             <div
               className="sb-category-commerce-hero__signals"
               aria-label="اطلاعات خرید این دسته"
             >
               <span>
-                <small>محصولات این دسته</small>
+                <small>محصولات قابل مقایسه</small>
                 <strong>{priceFormatter.format(items.length)} محصول</strong>
               </span>
 
               {startingPrice ? (
                 <span>
-                  <small>شروع قیمت</small>
+                  <small>قیمت از</small>
                   <strong>{formatPrice(startingPrice)}</strong>
                 </span>
               ) : null}
 
               <Link href="#category-products">
-                مشاهده قیمت‌ها
+                دیدن محصولات و قیمت‌ها
                 <ArrowIcon />
               </Link>
             </div>
@@ -267,14 +278,14 @@ export default async function CategoryPage({
                 </span>
 
                 <span className="sb-category-commerce-hero__product-copy">
-                  <small>یک محصول از این دسته</small>
+                  <small>یک گزینه برای شروع مقایسه</small>
                   <strong>{featuredEntry.product.nameFa}</strong>
                   {featuredEntry.product.volume ? (
                     <span>{featuredEntry.product.volume}</span>
                   ) : null}
                   <b>{formatPrice(featuredEntry.price)}</b>
                   <em>
-                    مشاهده محصول
+                    جزئیات این محصول
                     <ArrowIcon />
                   </em>
                 </span>
@@ -285,10 +296,10 @@ export default async function CategoryPage({
                 className="sb-category-commerce-hero__featured sb-category-commerce-hero__featured--fallback"
               >
                 <span className="sb-category-commerce-hero__product-copy">
-                  <small>فهرست این دسته</small>
+                  <small>محصولات این دسته</small>
                   <strong>{category.title}</strong>
                   <em>
-                    مشاهده محصولات و قیمت‌ها
+                    دیدن محصولات و قیمت‌ها
                     <ArrowIcon />
                   </em>
                 </span>
@@ -300,7 +311,7 @@ export default async function CategoryPage({
 
       <div className="sb-subcategory-nav">
         <div className="sb-shell">
-          <span>دسته‌های دیگر:</span>
+          <span>دسته‌های مرتبط:</span>
 
           {categories
             .filter(
@@ -343,37 +354,21 @@ export default async function CategoryPage({
               SEPIID GUIDE
             </span>
 
-            <h2>
-              چطور این دسته را بررسی کنید؟
-            </h2>
+            <h2>{editorial.guideTitle}</h2>
           </div>
 
           <div>
             <p className="sb-category-seo__lead">
-              {category.guide}
+              {editorial.guideLead}
             </p>
 
-            <p>
-              ابتدا هدف و مخاطب محصول را مشخص
-              کنید؛ سپس نام کامل مدل، ترکیب
-              درج‌شده و روش استفاده سازنده را
-              بخوانید. عنوان بازاری یا محبوبیت،
-              جای این بررسی را نمی‌گیرد.
-            </p>
-
-            <p>
-              برای سفارش، مشخصات بسته موجود،
-              تاریخ، بچ‌کد و شرایط تحویل را
-              استعلام کنید. اگر اطلاعات ناسازگار
-              یا ناخوانا بود، خرید یا استفاده را
-              متوقف کنید.
-            </p>
+            <p>{editorial.guideBody}</p>
 
             <Link
               className="sb-text-link"
               href="/guides"
             >
-              مشاهده راهنماهای کامل
+              راهنماهای خرید و انتخاب
               <ArrowIcon />
             </Link>
           </div>
@@ -385,8 +380,7 @@ export default async function CategoryPage({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: `خرید و قیمت ${category.title}`,
-          description:
-            category.description,
+          description: editorial.intro,
 
           mainEntity: {
             "@type": "ItemList",
