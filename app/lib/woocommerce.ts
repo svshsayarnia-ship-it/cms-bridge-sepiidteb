@@ -44,6 +44,32 @@ type WooProduct = {
   meta_data: WooMetaData[];
 };
 
+type WooStorePrice = {
+  currency_minor_unit: number;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+};
+
+type WooStoreProduct = {
+  id: number;
+  name: string;
+  slug: string;
+  sku?: string;
+  type?: string;
+  permalink: string;
+  description?: string;
+  short_description?: string;
+  on_sale?: boolean;
+  prices: WooStorePrice;
+  images?: WooImage[];
+  categories?: WooCategoryRef[];
+  brands?: WooBrandRef[];
+  is_featured?: boolean;
+  is_in_stock?: boolean;
+  stock_status?: CmsProduct["stockStatus"];
+};
+
 type WooCategory = {
   id: number;
   name: string;
@@ -121,10 +147,92 @@ function apiUrl(path: string, query?: URLSearchParams): URL {
 
   return url;
 }
+
+function storeApiUrl(path: string, query?: URLSearchParams): URL {
+  const { storeUrl } = config();
+  const cleanPath = path.replace(/^\//, "");
+  const url = new URL(`${storeUrl}/wp-json/wc/store/v1/${cleanPath}`);
+
+  if (query) {
+    query.forEach((value, key) => url.searchParams.set(key, value));
+  }
+
+  return url;
+}
+
 function wait(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+async function wooStoreRequest<T>(
+  path: string,
+  query?: URLSearchParams,
+  timeoutMs = 12_000,
+): Promise<WooRequestResult<T>> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const requestUrl = storeApiUrl(path, query);
+    requestUrl.searchParams.set("_sepiid_cache_bust", String(Date.now()));
+
+    const response = await fetch(requestUrl, {
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "cache-control": "no-cache, no-store, max-age=0",
+        pragma: "no-cache",
+      },
+      signal: controller.signal,
+    });
+    const text = await response.text();
+
+    let data: unknown = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+    }
+
+    if (!response.ok) {
+      const error = data as { message?: string; code?: string } | null;
+      throw new WooCommerceError(
+        error?.message || `Store API ووکامرس با خطای ${response.status} پاسخ داد.`,
+        response.status,
+        error?.code || "woo_store_api_error",
+      );
+    }
+
+    return {
+      data: data as T,
+      headers: response.headers,
+      status: response.status,
+    };
+  } catch (error) {
+    if (error instanceof WooCommerceError) throw error;
+
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new WooCommerceError(
+        "زمان اتصال فروشگاه WooCommerce تمام شد.",
+        504,
+        "woo_store_timeout",
+      );
+    }
+
+    throw new WooCommerceError(
+      error instanceof Error
+        ? error.message
+        : "اتصال به Store API ووکامرس ناموفق بود.",
+      502,
+      "woo_store_connection_failed",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 async function wooRequest<T>(
   path: string,
@@ -354,6 +462,66 @@ reviewedAt: getProductMeta(
   };
 }
 
+function mapStorePrice(value: string | undefined, minorUnit: number): string {
+  const amount = Number(value);
+  const unit = Number.isSafeInteger(minorUnit)
+    ? Math.max(0, Math.min(minorUnit, 6))
+    : 0;
+
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+
+  const normalized = amount / 10 ** unit;
+  return String(normalized);
+}
+
+function mapStoreProduct(product: WooStoreProduct): CmsProduct {
+  const minorUnit = product.prices?.currency_minor_unit ?? 0;
+  const currentPrice = mapStorePrice(product.prices?.price, minorUnit);
+  const regularPrice =
+    mapStorePrice(product.prices?.regular_price, minorUnit) || currentPrice;
+  const salePrice = product.on_sale
+    ? mapStorePrice(product.prices?.sale_price, minorUnit)
+    : "";
+
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku ?? "",
+    type: product.type ?? "simple",
+    status: "publish",
+    catalogVisibility: "visible",
+    featured: product.is_featured === true,
+    description: product.description ?? "",
+    shortDescription: product.short_description ?? "",
+    seoTitle: "",
+    metaDescription: "",
+    focusKeyword: "",
+    sourceName: "",
+    sourceUrl: "",
+    reviewerName: "",
+    reviewerRole: "",
+    reviewedAt: "",
+    price: currentPrice,
+    regularPrice,
+    salePrice,
+    manageStock: false,
+    stockQuantity: null,
+    stockStatus:
+      product.stock_status === "onbackorder"
+        ? "onbackorder"
+        : product.is_in_stock === false || product.stock_status === "outofstock"
+          ? "outofstock"
+          : "instock",
+    categories: product.categories ?? [],
+    brands: product.brands ?? [],
+    images: (product.images ?? []).map(mapImage),
+    permalink: product.permalink,
+    dateModifiedGmt: "",
+    pricing: parsePricingState(""),
+  };
+}
+
 function productPayload(input: CmsProductInput) {
   return {
     name: input.name.trim(),
@@ -442,6 +610,55 @@ export async function listProducts(params: {
     total: Number(response.headers.get("x-wp-total") ?? response.data.length),
     totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
   };
+}
+
+export async function listStorefrontProducts(params: {
+  page?: number;
+  perPage?: number;
+  requestTimeoutMs?: number;
+} = {}): Promise<CmsProductsResponse> {
+  const page = Math.max(1, params.page ?? 1);
+  const perPage = Math.max(1, Math.min(100, params.perPage ?? 100));
+  const response = await wooStoreRequest<WooStoreProduct[]>(
+    "products",
+    new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+      orderby: "modified",
+      order: "desc",
+      catalog_visibility: "visible",
+    }),
+    params.requestTimeoutMs,
+  );
+
+  return {
+    products: response.data.map(mapStoreProduct),
+    page,
+    total: Number(response.headers.get("x-wp-total") ?? response.data.length),
+    totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
+  };
+}
+
+export async function getStorefrontProductBySlug(
+  slug: string,
+  options: { requestTimeoutMs?: number } = {},
+): Promise<CmsProduct | null> {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) return null;
+
+  try {
+    const response = await wooStoreRequest<WooStoreProduct>(
+      `products/${encodeURIComponent(cleanSlug)}`,
+      undefined,
+      options.requestTimeoutMs,
+    );
+    return mapStoreProduct(response.data);
+  } catch (error) {
+    if (error instanceof WooCommerceError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getProduct(id: number): Promise<CmsProduct> {

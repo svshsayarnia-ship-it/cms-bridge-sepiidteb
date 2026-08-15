@@ -34,7 +34,7 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
-  getProductBySlug as getCmsProductBySlug,
+  getStorefrontProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
 
@@ -77,8 +77,7 @@ const getLiveProduct = cache(async (
 ): Promise<CmsProduct | null> => {
   try {
     return await getCmsProductBySlug(slug, {
-      requestTimeoutMs: 5_000,
-      requestMaxAttempts: 1,
+      requestTimeoutMs: 12_000,
     });
   } catch (error) {
     if (error instanceof WooCommerceError) {
@@ -88,6 +87,18 @@ const getLiveProduct = cache(async (
     throw error;
   }
 });
+
+function isUsableLiveProduct(
+  cmsProduct: CmsProduct | null,
+  staticProduct: Product | null | undefined,
+) {
+  return Boolean(
+    cmsProduct &&
+      cmsProduct.status === "publish" &&
+      cmsProduct.catalogVisibility !== "hidden" &&
+      (isPublicCmsProduct(cmsProduct) || isPublicStaticProduct(staticProduct)),
+  );
+}
 
 function getLiveProductPricing(
   cmsProduct: CmsProduct | null,
@@ -444,7 +455,7 @@ export async function generateMetadata({
     };
   }
 
-  const liveProduct = isPublicCmsProduct(cmsProduct)
+  const liveProduct = isUsableLiveProduct(cmsProduct, staticProduct)
     ? cmsProduct
     : null;
 
@@ -519,7 +530,7 @@ if (
   notFound();
 }
 
-const liveProduct = isPublicCmsProduct(cmsProduct)
+const liveProduct = isUsableLiveProduct(cmsProduct, staticProduct)
   ? cmsProduct
   : null;
 

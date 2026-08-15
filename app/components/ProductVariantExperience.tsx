@@ -188,15 +188,15 @@ export function ProductVariantExperience({
   const isEditorialFamilyImage =
     (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
     !liveImage?.src;
-  const pricing = hasVariants
+  const pricing = livePricing ?? (hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
         note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت و موجودی امروز",
       }
-    : livePricing ?? {
+    : {
         label: formatStaticPrice(product.priceToman),
         note: product.priceNote ?? "قیمت و موجودی امروز",
-      };
+      });
   const inquiryLink = buildInquiryLink(displayName, displayVolume);
 
   function selectVariant(id: string) {
