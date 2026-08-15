@@ -9,6 +9,10 @@ import {
   updateProduct,
   WooCommerceError,
 } from "@/app/lib/woocommerce";
+import {
+  forgetStorefrontProduct,
+  rememberStorefrontProduct,
+} from "@/app/lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +83,8 @@ export async function PUT(request: Request, context: Context) {
       input.salePrice.trim(),
     );
 
+    await rememberStorefrontProduct(product);
+
     invalidatePricePages(product.slug || updatedProduct.slug);
 
     return Response.json({ product });
@@ -96,6 +102,7 @@ export async function DELETE(request: Request, context: Context) {
       await productId(context),
     );
 
+    await forgetStorefrontProduct(product.slug);
     invalidatePricePages(product.slug);
 
     return Response.json({ product });

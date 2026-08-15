@@ -37,6 +37,7 @@ import {
   getStorefrontProductBySlug as getCmsProductBySlug,
   WooCommerceError,
 } from "../../lib/woocommerce";
+import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
 
 export const revalidate = 300;
 
@@ -75,6 +76,9 @@ function getPublicSummary(value: string) {
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
+  const snapshot = (await getStorefrontProductSnapshots())[slug];
+  if (snapshot) return snapshot;
+
   try {
     return await getCmsProductBySlug(slug, {
       requestTimeoutMs: 12_000,

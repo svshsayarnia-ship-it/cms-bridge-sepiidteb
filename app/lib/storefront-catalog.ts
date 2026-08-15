@@ -20,6 +20,7 @@ import {
   isPublicImageSrc,
   isPublicStaticProduct,
 } from "./public-product";
+import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
 import { listStorefrontProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
@@ -29,7 +30,7 @@ const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
-export type StorefrontCatalogSource = "woocommerce" | "migration-fallback";
+export type StorefrontCatalogSource = "woocommerce" | "price-snapshot" | "migration-fallback";
 
 export type StorefrontProduct = Product & {
   wooId: number | null;
@@ -101,6 +102,10 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
   const descriptionText = plainText(product.shortDescription || product.description || "");
   const summary = descriptionText || fallback?.summary || "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);
+  const livePrice = Number(product.salePrice || product.regularPrice || product.price);
+  const priceToman = Number.isSafeInteger(livePrice) && livePrice > 0
+    ? livePrice
+    : fallback?.priceToman;
 
   return {
     slug: product.slug,
@@ -119,7 +124,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     imageApproved: Boolean(liveImage?.src) || Boolean(fallback?.imageApproved),
     position: fallback?.position || "50%",
     volume: fallback?.volume,
-    priceToman: fallback?.priceToman,
+    priceToman,
     priceNote: fallback?.priceNote,
     sourceStatus: fallback?.sourceStatus || toPublicCopy(product.sourceName) || "اطلاعات محصول در زمان استعلام بازبینی می‌شود",
     warning: fallback?.warning,
@@ -205,6 +210,29 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   await connection();
 
   const fallbackBySlug = new Map(catalogProducts.map((product) => [product.slug, product]));
+  const snapshots = await getStorefrontProductSnapshots();
+  const snapshotProducts = Object.values(snapshots)
+    .filter((product) => {
+      const fallback = fallbackBySlug.get(product.slug);
+      return isPublicWooProduct(product) ||
+        (Boolean(product.slug) && product.status === "publish" && product.catalogVisibility !== "hidden" && isPublicStaticProduct(fallback));
+    })
+    .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug))
+    .map((product) => mapWooProduct(product, fallbackBySlug.get(product.slug)));
+
+  if (snapshotProducts.length > 0) {
+    const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
+    const fallbackProducts = catalogProducts
+      .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
+      .map(mapFallbackProduct);
+
+    return {
+      products: Array.from(new Map([...snapshotProducts, ...fallbackProducts].map((product) => [product.slug, product])).values()),
+      connected: false,
+      source: "price-snapshot",
+    };
+  }
+
   try {
     const wooProducts = await fetchAllWooProducts();
     const mappedProducts = wooProducts

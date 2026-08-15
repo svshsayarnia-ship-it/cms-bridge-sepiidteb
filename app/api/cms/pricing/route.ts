@@ -14,6 +14,7 @@ import {
   updateProduct,
   WooCommerceError,
 } from "@/app/lib/woocommerce";
+import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -145,6 +146,10 @@ export async function POST(request: Request) {
 
       // Never report success unless WooCommerce itself returned the exact values requested.
       assertPricePersisted(product, regularPrice, salePrice);
+
+      // The public site can keep serving this confirmed value if WooCommerce
+      // later becomes slow or unavailable for reads.
+      await rememberStorefrontProduct(product);
 
       // Invalidate both the tagged catalog and route-level caches so the new price is visible immediately.
       invalidatePricePages(product.slug || current.slug);

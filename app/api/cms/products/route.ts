@@ -7,6 +7,7 @@ import {
   errorResponse,
   listProducts,
 } from "@/app/lib/woocommerce";
+import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,8 @@ export async function POST(request: Request) {
     const product = await createProduct(
       parseProductInput(await request.json()),
     );
+
+    await rememberStorefrontProduct(product);
 
     revalidateTag(
       STOREFRONT_CATALOG_TAG,

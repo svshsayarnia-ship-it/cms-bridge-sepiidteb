@@ -647,12 +647,17 @@ export async function getStorefrontProductBySlug(
   if (!cleanSlug) return null;
 
   try {
-    const response = await wooStoreRequest<WooStoreProduct>(
-      `products/${encodeURIComponent(cleanSlug)}`,
-      undefined,
+    const response = await wooStoreRequest<WooStoreProduct[]>(
+      "products",
+      new URLSearchParams({
+        slug: cleanSlug,
+        per_page: "1",
+        catalog_visibility: "visible",
+      }),
       options.requestTimeoutMs,
     );
-    return mapStoreProduct(response.data);
+    const [product] = response.data;
+    return product ? mapStoreProduct(product) : null;
   } catch (error) {
     if (error instanceof WooCommerceError && error.status === 404) {
       return null;
