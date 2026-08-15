@@ -21,14 +21,12 @@ import {
   isPublicStaticProduct,
 } from "./public-product";
 import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
-import { getRuntimeStorefrontProducts } from "./storefront-runtime-cache";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
 export type StorefrontCatalogSource =
-  | "runtime-cache"
   | "price-snapshot"
   | "migration-fallback";
 
@@ -188,11 +186,6 @@ function mapFallbackProduct(product: Product): StorefrontProduct {
   };
 }
 
-function modifiedAt(product: CmsProduct) {
-  const value = Date.parse(product.dateModifiedGmt || "");
-  return Number.isFinite(value) ? value : 0;
-}
-
 function publicFallbackForProduct(
   product: CmsProduct,
   fallbackBySlug: Map<string, Product>,
@@ -204,66 +197,33 @@ function publicFallbackForProduct(
   return fallbackBySlug.get(canonicalSlug);
 }
 
-function publicSlugForProduct(
-  product: CmsProduct,
-  fallbackBySlug: Map<string, Product>,
-) {
-  return publicFallbackForProduct(product, fallbackBySlug)?.slug || product.slug;
-}
-
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   await connection();
 
   const fallbackBySlug = new Map(catalogProducts.map((product) => [product.slug, product]));
   const snapshots = await getStorefrontProductSnapshots();
-  const runtimeProducts = await getRuntimeStorefrontProducts([
-    ...catalogProducts.map((product) => product.slug),
-    ...Object.keys(snapshots),
-  ]);
+  const mappedSnapshots = Object.values(snapshots)
+    .filter((product) => {
+      const fallback = publicFallbackForProduct(product, fallbackBySlug);
+      return isPublicWooProduct(product) ||
+        (Boolean(product.slug) && product.status === "publish" && product.catalogVisibility !== "hidden" && isPublicStaticProduct(fallback));
+    })
+    .map((product) => mapWooProduct(product, publicFallbackForProduct(product, fallbackBySlug)))
+    .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug));
 
-  const cachedBySlug = new Map<string, CmsProduct>();
-  for (const product of [...Object.values(snapshots), ...runtimeProducts]) {
-    const fallback = publicFallbackForProduct(product, fallbackBySlug);
-    if (
-      !(isPublicWooProduct(product) ||
-        (Boolean(product.slug) &&
-          product.status === "publish" &&
-          product.catalogVisibility !== "hidden" &&
-          isPublicStaticProduct(fallback)))
-    ) {
-      continue;
-    }
-
-    const publicSlug = publicSlugForProduct(product, fallbackBySlug);
-    if (Object.hasOwn(currentInventoryLegacyAliases, publicSlug)) continue;
-
-    const current = cachedBySlug.get(publicSlug);
-    if (!current || modifiedAt(product) >= modifiedAt(current)) {
-      cachedBySlug.set(publicSlug, product);
-    }
-  }
-
-  const cachedProducts = Array.from(cachedBySlug.entries()).map(([slug, product]) =>
-    mapWooProduct(product, fallbackBySlug.get(slug)),
+  const snapshotProducts = Array.from(
+    new Map(mappedSnapshots.map((product) => [product.slug, product])).values(),
   );
-  const cachedSlugs = new Set(cachedProducts.map((product) => product.slug));
+  const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
   const fallbackProducts = catalogProducts
-    .filter((product) => isPublicStaticProduct(product) && !cachedSlugs.has(product.slug))
+    .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
     .map(mapFallbackProduct);
 
   const products = Array.from(
-    new Map([...cachedProducts, ...fallbackProducts].map((product) => [product.slug, product])).values(),
+    new Map([...snapshotProducts, ...fallbackProducts].map((product) => [product.slug, product])).values(),
   );
 
-  if (runtimeProducts.length > 0) {
-    return {
-      products,
-      connected: true,
-      source: "runtime-cache",
-    };
-  }
-
-  if (Object.keys(snapshots).length > 0) {
+  if (snapshotProducts.length > 0) {
     return {
       products,
       connected: true,
@@ -278,11 +238,10 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   };
 }
 
-// Public rendering intentionally avoids direct WooCommerce reads. Confirmed
-// CMS writes are persisted into Runtime Cache and the Next Data Cache, then
-// overlaid on the local catalog. This keeps prices fresh after CMS saves while
-// preventing a slow or unavailable WordPress origin from blocking Home, Shop,
-// category, brand, guide, sitemap, or metadata rendering.
+// Public rendering intentionally performs no WooCommerce network request.
+// Confirmed CMS writes populate the storefront snapshot and invalidate affected
+// routes; if WordPress is slow or unavailable, the public site still renders
+// immediately from the last confirmed snapshot plus the local migration data.
 export const getStorefrontCatalog = cache(loadStorefrontCatalog);
 
 export async function getStorefrontProducts(): Promise<StorefrontProduct[]> {
