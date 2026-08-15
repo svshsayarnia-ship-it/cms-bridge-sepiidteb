@@ -744,11 +744,14 @@ const editorialFamilyImages: Record<string, string> = {
 };
 
 function marketReferenceImage(
-  sourcePath: string,
+  assetName: string,
   imageAlt: string,
 ): Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind"> {
   return {
-    image: `https://image.torob.com/base/images/${sourcePath}_/0x512.jpg`,
+    // Market research starts with Torob, but the reviewed product image is
+    // stored with the storefront. This prevents a third-party hotlink failure
+    // from turning a relevant pack shot back into a blank or editorial card.
+    image: `/images/products/market-reference/${assetName}.webp`,
     imageAlt,
     imageVerified: false,
     imageKind: "market-reference",
@@ -760,23 +763,23 @@ const officialImageOverrides: Record<
   Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind">
 > = {
   "mesoheal-plus": marketReferenceImage(
-    "wV/u1/wVu1z8_Cgg66pPGo.jpg",
+    "mesoheal-plus",
     "نمای بسته مزوژل مزوهیل پلاس",
   ),
   "xitritall-hydro": marketReferenceImage(
-    "Ar/IL/ArILG3hcn4M56glr.jpg",
+    "xitritall-hydro",
     "نمای بسته مزوژل زیتریتال هیدرو",
   ),
   "reyoungel-revital-bioha": marketReferenceImage(
-    "8_/oU/8_oURZeC8AXpuGX1.jpg",
+    "reyoungel-revital-bioha",
     "نمای بازار از بسته مزوژل رویتال ۲ سی‌سی",
   ),
   "vitten-hydro-plus": marketReferenceImage(
-    "Zl/OD/ZlODOJfCu4QRmbt4.jpg",
+    "vitten-hydro-plus",
     "نمای بسته مزوژل ویتن هیدرو پلاس",
   ),
   "roytrin-skin-booster": marketReferenceImage(
-    "bQ/FK/bQFKH81c1YNdMCAI.jpg",
+    "roytrin-skin-booster",
     "نمای بسته مزوژل رویترین اسکین‌بوستر",
   ),
   "neuramis-volume-lidocaine": {
@@ -858,11 +861,11 @@ const officialImageOverrides: Record<
     imageKind: "market-reference",
   },
   "neuronox-50": marketReferenceImage(
-    "3y/PR/3yPRNR8aU4kWvI-7.jpg",
+    "neuronox-reference",
     "نمای مرجع بسته نورونوکس؛ واحد محصول هنگام استعلام تطبیق می‌شود",
   ),
   "neuronox-100": marketReferenceImage(
-    "3y/PR/3yPRNR8aU4kWvI-7.jpg",
+    "neuronox-reference",
     "نمای بسته نورونوکس ۱۰۰ واحد",
   ),
   myobloc: {
@@ -890,7 +893,7 @@ const officialImageOverrides: Record<
     imageKind: "market-reference",
   },
   "medicube-pdrn": marketReferenceImage(
-    "Il/l0/Ill0chER1ryL3fnT.webp",
+    "medicube-pdrn",
     "نمای ویال مدی‌کیوب PDRN",
   ),
   "fusion-f-mesomatrix": {
@@ -942,51 +945,51 @@ const officialImageOverrides: Record<
     imageKind: "market-reference",
   },
   "revitacare-532": marketReferenceImage(
-    "Oz/WD/OzWDCC5eOOt-_p8o.jpg",
+    "revitacare-532",
     "نمای بسته کوکتل رویتاکر ۵۳۲",
   ),
   "mesolike-whitening-shine": marketReferenceImage(
-    "of/pV/ofpVdFXDyUstgloj.jpg",
+    "mesolike-whitening-shine",
     "نمای بسته کوکتل مزولایک وایتنینگ شاین",
   ),
   "mesolike-glutathione": marketReferenceImage(
-    "Aq/I8/AqI8fNajbkr0P2Yr.jpg",
+    "mesolike-glutathione",
     "نمای بسته کوکتل مزولایک گلوتاتیون",
   ),
   "dermaheal-sb": marketReferenceImage(
-    "8P/e-/8Pe-ghcQuWorZU9F.jpg",
+    "dermaheal-sb",
     "نمای بسته کوکتل درماهیل SB",
   ),
   "genosys-sws": marketReferenceImage(
-    "Aw/oQ/AwoQl3a3us9By02g.jpg",
+    "genosys-sws",
     "نمای بسته کوکتل ژنوسیس SWS",
   ),
   "mesolike-eye-top": marketReferenceImage(
-    "0q/iB/0qiB_6VX169Sh1xn.webp",
+    "mesolike-eye-top",
     "نمای بسته کوکتل مزولایک آی تاپ",
   ),
   "revitacare-haircare": marketReferenceImage(
-    "Hm/Bo/HmBotONcwLzlnMHB.jpg",
+    "revitacare-haircare",
     "نمای بسته کوکتل رویتاکر هیرکر",
   ),
   "dermaheal-hl": marketReferenceImage(
-    "Ji/UC/JiUCj7N6C7knVEJ1.jpg",
+    "dermaheal-hl",
     "نمای بسته کوکتل درماهیل HL",
   ),
   "mesolike-hair": marketReferenceImage(
-    "e_/-4/e_-4pHM31aseAnnz.jpg",
+    "mesolike-hair",
     "نمای بسته کوکتل ضدریزش مو مزولایک",
   ),
   "mesolike-hair-men": marketReferenceImage(
-    "og/TJ/ogTJQUy1BJ67RAdC.jpg",
+    "mesolike-hair-men",
     "نمای بسته کوکتل مزولایک هیرمن",
   ),
   "genosys-hr3": marketReferenceImage(
-    "-Z/GG/-ZGGBP0VtHzYaHd2.jpg",
+    "genosys-hr3",
     "نمای بسته کوکتل ژنوسیس HR3",
   ),
   "mesolike-dutasteride": marketReferenceImage(
-    "Jo/9f/Jo9fC0FLH8cHwjyf.jpg",
+    "mesolike-dutasteride",
     "نمای بسته کوکتل مزولایک دوتاستراید",
   ),
   "fusion-f-hair-men": {
