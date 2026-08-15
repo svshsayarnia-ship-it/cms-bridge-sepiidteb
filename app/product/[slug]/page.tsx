@@ -97,30 +97,54 @@ function storefrontSlugCandidates(slug: string) {
   return candidates;
 }
 
+function latestProduct(products: CmsProduct[]) {
+  return products.reduce<CmsProduct | null>((latest, product) => {
+    if (!latest) return product;
+
+    const latestModified = Date.parse(latest.dateModifiedGmt || "");
+    const productModified = Date.parse(product.dateModifiedGmt || "");
+
+    if (
+      Number.isFinite(productModified) &&
+      (!Number.isFinite(latestModified) || productModified > latestModified)
+    ) {
+      return product;
+    }
+
+    return latest;
+  }, null);
+}
+
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
   const slugCandidates = storefrontSlugCandidates(slug);
 
-  for (const candidate of slugCandidates) {
-    const runtimeProduct = await getRuntimeStorefrontProduct(candidate);
-    if (runtimeProduct) {
-      console.info("[storefront-product] runtime product resolved", {
-        requestedSlug: slug,
-        resolvedSlug: runtimeProduct.slug,
-      });
-      return runtimeProduct;
-    }
+  const runtimeProduct = latestProduct(
+    (await Promise.all(
+      slugCandidates.map((candidate) => getRuntimeStorefrontProduct(candidate)),
+    )).filter((product): product is CmsProduct => Boolean(product)),
+  );
+  if (runtimeProduct) {
+    console.info("[storefront-product] runtime product resolved", {
+      requestedSlug: slug,
+      resolvedSlug: runtimeProduct.slug,
+      dateModifiedGmt: runtimeProduct.dateModifiedGmt,
+    });
+    return runtimeProduct;
   }
 
   const snapshots = await getStorefrontProductSnapshots();
-  const snapshot = slugCandidates
-    .map((candidate) => snapshots[candidate])
-    .find(Boolean);
+  const snapshot = latestProduct(
+    slugCandidates
+      .map((candidate) => snapshots[candidate])
+      .filter((product): product is CmsProduct => Boolean(product)),
+  );
   if (snapshot) {
     console.info("[storefront-product] snapshot product resolved", {
       requestedSlug: slug,
       resolvedSlug: snapshot.slug,
+      dateModifiedGmt: snapshot.dateModifiedGmt,
     });
     return snapshot;
   }
