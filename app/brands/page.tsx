@@ -13,7 +13,7 @@ export const revalidate = 300;
 export const metadata = buildSeoMetadata({
   title: "برندهای محصولات حرفه‌ای زیبایی",
   description:
-    "نمایه برندهای موجود در Sepiid Beauty و دسترسی مستقیم به صفحات مستقل محصولات و دسته‌های مرتبط.",
+    "برندهای موجود در سپید بیوتی را ببینید و مدل‌ها، حجم‌ها و قیمت محصولات هر برند را کنار هم مقایسه کنید.",
   path: "/brands",
   imageAlt: "برندهای محصولات حرفه‌ای زیبایی",
 });
@@ -31,18 +31,12 @@ function createBrandAnchor(
 }
 
 export default async function BrandsPage() {
-  const { products } =
-    await getStorefrontCatalog();
+  const { products } = await getStorefrontCatalog();
 
-  const productsByBrand = new Map<
-    string,
-    typeof products
-  >();
+  const productsByBrand = new Map<string, typeof products>();
 
   for (const product of products) {
-    const brand = getCompactBrandLabel(
-      product.brand,
-    );
+    const brand = getCompactBrandLabel(product.brand);
 
     if (!brand) continue;
 
@@ -52,18 +46,13 @@ export default async function BrandsPage() {
     ]);
   }
 
-  const brands = Array.from(
-    productsByBrand.entries(),
-  )
+  const brands = Array.from(productsByBrand.entries())
     .sort(([first], [second]) =>
       first.localeCompare(second, "en"),
     )
     .map(([brand, brandProducts], index) => ({
       name: brand,
-      anchor: createBrandAnchor(
-        brand,
-        index,
-      ),
+      anchor: createBrandAnchor(brand, index),
       products: brandProducts,
       page: getBrandPageForLabel(brand),
     }));
@@ -71,25 +60,17 @@ export default async function BrandsPage() {
   return (
     <main id="main-content">
       <div className="sb-shell">
-        <Breadcrumbs
-          items={[{ label: "برندها" }]}
-        />
+        <Breadcrumbs items={[{ label: "برندها" }]} />
       </div>
 
       <section className="sb-page-hero sb-brands-hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">
-            BRANDS / INDEX
-          </span>
+          <span className="sb-eyebrow">BRANDS / INDEX</span>
 
-          <h1>
-            برندهای محصولات حرفه‌ای زیبایی
-          </h1>
+          <h1>محصولات را برندبه‌برند مقایسه کنید.</h1>
 
           <p>
-            محصولات هر برند را جدا ببینید و سپس
-            مدل، گروه، اطلاعات بسته و نیاز
-            حرفه‌ای را با هم تطبیق دهید.
+            اگر نام برند را می‌دانید اما بین مدل‌هایش مردد هستید، از همین‌جا شروع کنید. محصولات هر برند جدا شده‌اند تا حجم، نوع بسته و قیمت مدل‌ها را کنار هم ببینید.
           </p>
 
           {brands.length > 0 && (
@@ -104,10 +85,7 @@ export default async function BrandsPage() {
                     {brand.name}
                   </Link>
                 ) : (
-                  <a
-                    href={`#${brand.anchor}`}
-                    key={brand.name}
-                  >
+                  <a href={`#${brand.anchor}`} key={brand.name}>
                     {brand.name}
                   </a>
                 )
@@ -121,14 +99,10 @@ export default async function BrandsPage() {
         <div className="sb-shell">
           {brands.length > 0 ? (
             brands.map((brand, index) => {
-              const firstProduct =
-                brand.products[0];
+              const firstProduct = brand.products[0];
 
               return (
-                <section
-                  id={brand.anchor}
-                  key={brand.name}
-                >
+                <section id={brand.anchor} key={brand.name}>
                   <header>
                     <span>
                       {new Intl.NumberFormat(
@@ -142,38 +116,30 @@ export default async function BrandsPage() {
 
                     <div>
                       <h2>{brand.name}</h2>
-
-                      <p>
-                        {brand.products.length} محصول
-                        در کاتالوگ فعلی
-                      </p>
+                      <p>{brand.products.length} محصول برای مقایسه</p>
                     </div>
 
                     {brand.page &&
                     brand.products.length >= brand.page.minProductCount ? (
                       <Link href={`/brands/${brand.page.slug}`}>
-                        صفحه برند
+                        دیدن همه مدل‌ها
                         <ArrowIcon />
                       </Link>
                     ) : firstProduct ? (
-                      <Link
-                        href={`/shop/${firstProduct.category}`}
-                      >
-                        دسته مرتبط
+                      <Link href={`/shop/${firstProduct.category}`}>
+                        دیدن دسته مرتبط
                         <ArrowIcon />
                       </Link>
                     ) : null}
                   </header>
 
                   <div className="sb-product-grid sb-product-grid--three">
-                    {brand.products.map(
-                      (product) => (
-                        <ProductCard
-                          product={product}
-                          key={product.slug}
-                        />
-                      ),
-                    )}
+                    {brand.products.map((product) => (
+                      <ProductCard
+                        product={product}
+                        key={product.slug}
+                      />
+                    ))}
                   </div>
                 </section>
               );
@@ -181,20 +147,9 @@ export default async function BrandsPage() {
           ) : (
             <div className="sb-catalog__empty">
               <span>۰ برند</span>
-
-              <h2>
-                هنوز برند قابل نمایشی ثبت نشده است.
-              </h2>
-
-              <p>
-                پس از انتشار نخستین محصول، نمایه
-                برندها در این قسمت نمایش داده می‌شود.
-              </p>
-
-              <Link
-                className="sb-text-link"
-                href="/shop"
-              >
+              <h2>هنوز محصولی برای نمایش در بخش برندها نداریم.</h2>
+              <p>به محض اضافه‌شدن محصولات، برندها در همین بخش قابل مقایسه خواهند بود.</p>
+              <Link className="sb-text-link" href="/shop">
                 مشاهده همه محصولات
                 <ArrowIcon />
               </Link>
