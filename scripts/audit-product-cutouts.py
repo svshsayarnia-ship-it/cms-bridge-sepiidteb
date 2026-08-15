@@ -15,6 +15,8 @@ EXPECTED_FLOOR_Y = 980
 MAX_WIDTH = 1060
 MAX_HEIGHT = 780
 TOLERANCE = 2
+FAMILY_SIZE_TOLERANCE = 0.08
+MAX_CENTER_OFFSET = 3
 
 
 def main() -> None:
@@ -48,12 +50,16 @@ def main() -> None:
                 failures.append(f"{label}: content={width}x{height}")
             if min(left, top, EXPECTED_CANVAS[0] - right) < 12:
                 failures.append(f"{label}: unsafe canvas margin bbox={bbox}")
+            center_x = (left + right) / 2
+            if abs(center_x - EXPECTED_CANVAS[0] / 2) > MAX_CENTER_OFFSET:
+                failures.append(f"{label}: horizontal center={center_x:.1f}")
 
     eptq = [
         CUTOUT_ROOT / "eptq/eptq-s100.webp",
         CUTOUT_ROOT / "eptq/eptq-s300.webp",
         CUTOUT_ROOT / "eptq/eptq-s500.webp",
     ]
+    eptq_sizes: list[tuple[int, int]] = []
     for path in eptq:
         with Image.open(path).convert("RGBA") as image:
             bbox = image.getchannel("A").point(
@@ -61,6 +67,53 @@ def main() -> None:
             ).getbbox()
             if bbox and (bbox[2] - bbox[0]) <= (bbox[3] - bbox[1]):
                 failures.append(f"{path.relative_to(ROOT)}: EPTQ variant is not landscape")
+            if bbox:
+                eptq_sizes.append((bbox[2] - bbox[0], bbox[3] - bbox[1]))
+
+    if len(eptq_sizes) == len(eptq):
+        widths = [width for width, _ in eptq_sizes]
+        heights = [height for _, height in eptq_sizes]
+        if (max(widths) - min(widths)) / max(widths) > FAMILY_SIZE_TOLERANCE:
+            failures.append(f"EPTQ widths are inconsistent: {widths}")
+        if (max(heights) - min(heights)) / max(heights) > FAMILY_SIZE_TOLERANCE:
+            failures.append(f"EPTQ heights are inconsistent: {heights}")
+
+    neuramis_ten_pack_sizes: list[tuple[int, int]] = []
+    for relative in (
+        "neuramis-deep-10-pack.webp",
+        "neuramis-lido-10-pack.webp",
+    ):
+        path = CUTOUT_ROOT / relative
+        if not path.exists():
+            failures.append(f"{path.relative_to(ROOT)}: required storefront cutout is missing")
+            continue
+        with Image.open(path).convert("RGBA") as image:
+            bbox = image.getchannel("A").point(
+                lambda value: 255 if value >= 12 else 0,
+            ).getbbox()
+            if bbox:
+                neuramis_ten_pack_sizes.append(
+                    (bbox[2] - bbox[0], bbox[3] - bbox[1]),
+                )
+
+    if len(neuramis_ten_pack_sizes) == 2:
+        for dimension, values in (
+            ("widths", [size[0] for size in neuramis_ten_pack_sizes]),
+            ("heights", [size[1] for size in neuramis_ten_pack_sizes]),
+        ):
+            if (max(values) - min(values)) / max(values) > FAMILY_SIZE_TOLERANCE:
+                failures.append(f"Neuramis 10-pack {dimension} are inconsistent: {values}")
+
+    rabianca = CUTOUT_ROOT / "rabianca-70ml.webp"
+    if not rabianca.exists():
+        failures.append(f"{rabianca.relative_to(ROOT)}: required storefront cutout is missing")
+    else:
+        with Image.open(rabianca).convert("RGBA") as image:
+            bbox = image.getchannel("A").point(
+                lambda value: 255 if value >= 12 else 0,
+            ).getbbox()
+            if bbox and (bbox[3] - bbox[1]) <= (bbox[2] - bbox[0]):
+                failures.append(f"{rabianca.relative_to(ROOT)}: vial is not upright")
 
     if failures:
         print("Product image audit failed:")

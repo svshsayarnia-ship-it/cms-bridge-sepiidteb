@@ -836,12 +836,6 @@ const officialImageOverrides: Record<
     imageVerified: false,
     imageKind: "market-reference",
   },
-  rabianca: {
-    image: "/images/products/sourced/rabianca.webp",
-    imageAlt: "نمای بسته بادی رابیانکا ۷۰ سی‌سی",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
   "nabota-150": {
     image: "/images/products/sourced/nabota-150.webp",
     imageAlt: "نمای بسته بوتاکس نابوتا ۱۵۰ واحد",
@@ -1027,8 +1021,15 @@ function makeProduct(seed: ProductSeed): Product {
     imageOverride?.imageVerified ??
     seed.imageVerified ??
     false;
-  const variants = seed.variants?.map((variant) =>
-    ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
+  const variants = seed.variants?.map((variant) => {
+    if (
+      variant.imageKind === "editorial-family" &&
+      variant.imageApproved === true
+    ) {
+      return variant;
+    }
+
+    return ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
       ? {
           ...variant,
           imageAlt: `نمای مرجع بسته ${variant.nameFa}؛ حجم و جزئیات بسته هنگام استعلام تطبیق می‌شود`,
@@ -1036,8 +1037,8 @@ function makeProduct(seed: ProductSeed): Product {
           imageKind: "market-reference" as const,
           imageApproved: true,
         }
-      : variant,
-  );
+      : variant;
+  });
   const sourceStatus = seed.sourceStatus ?? (seed.warning
     ? "نیازمند تطبیق پیش از انتشار قطعی"
     : "اطلاعات اولیه بازار؛ در انتظار تطبیق رسمی");
