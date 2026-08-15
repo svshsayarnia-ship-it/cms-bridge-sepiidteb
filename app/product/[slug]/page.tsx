@@ -18,7 +18,6 @@ import {
   products,
 } from "../../data";
 import type { Product } from "../../data";
-import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { merchantReturnPolicyReference } from "../../lib/merchant-policy";
 import type { CmsProduct } from "../../lib/cms-types";
@@ -81,7 +80,7 @@ const getLiveProduct = cache(async (
 
   try {
     return await getCmsProductBySlug(slug, {
-      requestTimeoutMs: 12_000,
+      requestTimeoutMs: 3_000,
     });
   } catch (error) {
     if (error instanceof WooCommerceError) {
@@ -550,8 +549,10 @@ if (!product) {
   notFound();
 }
 
-const storefrontProducts =
-  await getStorefrontProducts();
+// Related cards are editorial discovery content. Keeping them local prevents a
+// second WooCommerce request from holding the entire product page open while
+// the primary product price is already available from its live snapshot.
+const storefrontProducts = products;
 
   const related = storefrontProducts
   .filter(

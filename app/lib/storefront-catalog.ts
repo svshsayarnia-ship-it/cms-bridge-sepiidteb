@@ -25,7 +25,10 @@ import { listStorefrontProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
 const MAX_CATALOG_PAGES = 500;
-const PUBLIC_WOO_TIMEOUT_MS = 12_000;
+// Public rendering should degrade to the local catalog quickly. Confirmed CMS
+// writes are served from the snapshot cache, so waiting 12 seconds for an
+// unavailable WordPress origin adds latency without improving freshness.
+const PUBLIC_WOO_TIMEOUT_MS = 3_000;
 const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
