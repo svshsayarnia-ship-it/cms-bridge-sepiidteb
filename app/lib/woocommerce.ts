@@ -143,6 +143,8 @@ async function wooRequest<T>(
   }
 
   headers.set("accept", "application/json");
+  headers.set("cache-control", "no-cache, no-store, max-age=0");
+  headers.set("pragma", "no-cache");
 
   if ((process.env.WOOCOMMERCE_AUTH_MODE ?? "basic") !== "query") {
     headers.set(
@@ -167,7 +169,15 @@ async function wooRequest<T>(
     }, timeoutMs);
 
     try {
-      const response = await fetch(apiUrl(path, query), {
+      const requestUrl = apiUrl(path, query);
+      if (method === "GET" || method === "HEAD") {
+        requestUrl.searchParams.set(
+          "_sepiid_cache_bust",
+          `${Date.now()}-${attempt}`,
+        );
+      }
+
+      const response = await fetch(requestUrl, {
         ...options,
         headers,
         signal: controller.signal,
