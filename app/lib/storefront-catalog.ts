@@ -20,11 +20,11 @@ import {
   isPublicImageSrc,
   isPublicStaticProduct,
 } from "./public-product";
-import { listProducts } from "./woocommerce";
+import { listStorefrontProducts } from "./woocommerce";
 
 const PRODUCTS_PER_PAGE = 100;
 const MAX_CATALOG_PAGES = 500;
-const PUBLIC_WOO_TIMEOUT_MS = 30_000;
+const PUBLIC_WOO_TIMEOUT_MS = 12_000;
 const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
@@ -188,12 +188,10 @@ async function fetchAllWooProducts(): Promise<CmsProduct[]> {
   let page = 1;
   let totalPages = 1;
   do {
-    const response = await listProducts({
+    const response = await listStorefrontProducts({
       page,
       perPage: PRODUCTS_PER_PAGE,
-      status: "all",
       requestTimeoutMs: PUBLIC_WOO_TIMEOUT_MS,
-      requestMaxAttempts: 1,
     });
     products.push(...response.products);
     totalPages = Math.max(1, response.totalPages);
