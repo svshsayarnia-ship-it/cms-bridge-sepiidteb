@@ -29,6 +29,23 @@ body h1 {
   line-height: 1.38;
 }
 
+/* A single quiet natural stage keeps real product packs coherent across
+   Fusion, botulinum, filler and mesotherapy pages without fabricating a
+   product-specific editorial image.  This file is loaded after globals.css
+   so legacy cached presentation rules cannot replace the shared stage. */
+.sb-product-card__visual,
+.sb-product-gallery__main {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 250, 242, 0.08)),
+    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover,
+    #f7f5f2;
+}
+
+.sb-product-card__visual > img,
+.sb-product-gallery__main img {
+  background: transparent;
+}
+
 body h2 {
   font-weight: 680;
   line-height: 1.48;
