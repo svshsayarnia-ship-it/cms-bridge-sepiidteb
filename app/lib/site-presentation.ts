@@ -119,7 +119,7 @@ const EDITORIAL_IDENTITY_COPY = {
       qualitySubtitle: DEFAULT_SITE_PRESENTATION.home.hero.qualitySubtitle,
     },
   },
-} satisfies Partial<SitePresentation>;
+};
 
 function restoreCanonicalKeys(value: unknown, template: unknown): unknown {
   if (Array.isArray(value)) {
@@ -162,7 +162,7 @@ function mergePresentation(rawValue: Partial<SitePresentation> | null): SitePres
     home: {
       hero: {
         ...merged.home.hero,
-        ...EDITORIAL_IDENTITY_COPY.home?.hero,
+        ...EDITORIAL_IDENTITY_COPY.home.hero,
       },
     },
   };
