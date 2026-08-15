@@ -12,7 +12,7 @@ import {
   getBrandPage,
 } from "../../content-architecture";
 import { articles } from "../../data";
-import { getCompactBrandLabel } from "../../lib/public-copy";
+import { getCompactBrandLabel, toPublicCopy } from "../../lib/public-copy";
 import { buildSeoMetadata } from "../../lib/seo";
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
@@ -68,7 +68,7 @@ export async function generateMetadata({
 
   return buildSeoMetadata({
     title: brand.title,
-    description: brand.description,
+    description: toPublicCopy(brand.description),
     path: `/brands/${brand.slug}`,
     imageAlt: brand.title,
   });
@@ -110,7 +110,7 @@ export default async function BrandPage({
           {
             name: product.nameFa,
             englishName: product.nameEn,
-            volume: product.volume ?? "در صفحه محصول",
+            volume: product.volume ?? "جزئیات در صفحه محصول",
             href: `/product/${product.slug}`,
           },
         ],
@@ -119,6 +119,10 @@ export default async function BrandPage({
   const relatedArticles = articles.filter((article) =>
     brand.articleSlugs.includes(article.slug),
   );
+  const publicFaq = brand.faq.map((item) => ({
+    question: toPublicCopy(item.question),
+    answer: toPublicCopy(item.answer),
+  }));
 
   return (
     <main id="main-content">
@@ -135,10 +139,10 @@ export default async function BrandPage({
         <div className="sb-shell">
           <span className="sb-eyebrow">BRAND / {brand.name}</span>
           <h1>{brand.title}</h1>
-          <p>{brand.intro}</p>
+          <p>{toPublicCopy(brand.intro)}</p>
           <div className="sb-brand-page__stats">
-            <span>{brandProducts.length} صفحه محصول</span>
-            <span>{modelRows.length} مدل قابل مشاهده</span>
+            <span>{brandProducts.length} محصول</span>
+            <span>{modelRows.length} مدل و بسته</span>
           </div>
         </div>
       </header>
@@ -147,7 +151,7 @@ export default async function BrandPage({
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <h2>محصولات منتشرشده {brand.name}</h2>
+              <h2>محصولات {brand.name}</h2>
             </div>
             <Link className="sb-text-link" href="/brands">
               همه برندها
@@ -168,10 +172,10 @@ export default async function BrandPage({
       <section className="sb-section sb-brand-page__models">
         <div className="sb-shell sb-brand-page__models-grid">
           <div>
-            <span className="sb-eyebrow">مدل‌ها</span>
-            <h2>نام و حجم را پیش از استعلام مقایسه کنید</h2>
+            <span className="sb-eyebrow">مدل‌ها و بسته‌ها</span>
+            <h2>نام مدل و حجم را کنار هم ببینید</h2>
             <p>
-              قیمت هر گزینه روی کارت محصول دیده می‌شود؛ صفحه محصول جزئیات و موجودی را نشان می‌دهد.
+              اگر یک برند چند مدل دارد، فقط نام برند را مبنا قرار ندهید. حجم، نوع بسته و قیمت همان گزینه را باز کنید تا دو محصول متفاوت با هم اشتباه نشوند.
             </p>
           </div>
           <div className="sb-brand-page__table" role="region" aria-label={`مدل‌های ${brand.name}`}>
@@ -180,7 +184,7 @@ export default async function BrandPage({
                 <tr>
                   <th scope="col">مدل</th>
                   <th scope="col">حجم یا بسته</th>
-                  <th scope="col">مشاهده</th>
+                  <th scope="col">جزئیات</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,9 +194,9 @@ export default async function BrandPage({
                       <strong>{model.name}</strong>
                       <small>{model.englishName}</small>
                     </td>
-                    <td>{model.volume}</td>
+                    <td>{toPublicCopy(model.volume)}</td>
                     <td>
-                      <Link href={model.href}>صفحه محصول</Link>
+                      <Link href={model.href}>مشاهده محصول</Link>
                     </td>
                   </tr>
                 ))}
@@ -204,10 +208,10 @@ export default async function BrandPage({
 
       <section className="sb-brand-page__checks">
         <div className="sb-shell">
-          <h2>چک‌لیست کوتاه خرید</h2>
+          <h2>قبل از خرید این برند</h2>
           <ul>
             {brand.buyingChecks.map((check) => (
-              <li key={check}>{check}</li>
+              <li key={check}>{toPublicCopy(check)}</li>
             ))}
           </ul>
           <div>
@@ -225,9 +229,9 @@ export default async function BrandPage({
         <div className="sb-shell sb-faq-section__grid">
           <div>
             <span className="sb-eyebrow">پرسش‌های رایج</span>
-            <h2>پیش از سفارش</h2>
+            <h2>سؤال‌هایی که قبل از خرید پیش می‌آید</h2>
           </div>
-          <FaqList items={brand.faq} />
+          <FaqList items={publicFaq} />
         </div>
       </section>
 
@@ -236,7 +240,7 @@ export default async function BrandPage({
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <h2>مقاله‌های مرتبط با {brand.name}</h2>
+                <h2>برای شناخت بهتر {brand.name}</h2>
               </div>
             </div>
             <div className="sb-article-grid">
@@ -253,7 +257,7 @@ export default async function BrandPage({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: brand.title,
-          description: brand.description,
+          description: toPublicCopy(brand.description),
           url: `${siteOrigin}/brands/${brand.slug}`,
           mainEntity: {
             "@type": "ItemList",
@@ -271,7 +275,7 @@ export default async function BrandPage({
         data={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          mainEntity: brand.faq.map((item) => ({
+          mainEntity: publicFaq.map((item) => ({
             "@type": "Question",
             name: item.question,
             acceptedAnswer: {
