@@ -15,7 +15,6 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
-from rembg import new_session, remove
 from scipy import ndimage
 
 
@@ -24,8 +23,23 @@ PRODUCT_ROOT = ROOT / "public/images/products"
 CUTOUT_ROOT = PRODUCT_ROOT / "cutouts"
 DRIVE_ROOT = ROOT / "public/images/drive"
 CANVAS_SIZE = 1400
-CONTENT_SIZE = 1160
-MAIN_COMPONENT_ONLY = {"nabota-150", "mesolike-hair", "f-vitamin-c"}
+CONTENT_MAX_WIDTH = 1060
+CONTENT_MAX_HEIGHT = 780
+# Every cutout uses the same virtual floor.  Category CSS moves that floor to
+# the top of the photographed pedestal, which keeps bottles, boxes and syringes
+# aligned without distorting their native proportions.
+CONTENT_FLOOR_Y = 980
+MAIN_COMPONENT_ONLY = {
+    "nabota-150",
+    "mesolike-hair",
+    "f-vitamin-c",
+    # S100 and S300 use a clean pack-only photograph.  Keeping the S500 box as
+    # the main component gives the whole variant family the same visual grammar.
+    "eptq-s500",
+    "eptq-1ml",
+}
+LANDSCAPE_IF_PORTRAIT = {"eptq-s500", "eptq-1ml"}
+EPTQ_PACK_ONLY = {"eptq-s500", "eptq-1ml"}
 
 
 def source_files() -> list[Path]:
@@ -113,6 +127,84 @@ def keep_largest_component(image: Image.Image) -> Image.Image:
     return image
 
 
+def keep_eptq_pack_only(cutout: Image.Image) -> Image.Image:
+    """Remove the separate S500 syringe while preserving the complete box.
+
+    The approved S500 reference is a portrait arrangement.  Once rotated, the
+    pack occupies the full-width upper band and the syringe sits in a much
+    narrower lower band.  Detecting that width break is safer than a fixed crop
+    and remains idempotent after the pack-only result has been generated.
+    """
+    if cutout.width / max(cutout.height, 1) >= 2:
+        return cutout
+
+    alpha = np.asarray(cutout.getchannel("A")) >= 18
+    row_coverage = alpha.sum(axis=1)
+    peak = int(row_coverage.max(initial=0))
+    if peak == 0:
+        return cutout
+
+    narrow = row_coverage < peak * 0.4
+    search_start = round(cutout.height * 0.45)
+    run = 8
+    cut_y = next(
+        (
+            y
+            for y in range(search_start, cutout.height - run)
+            if bool(narrow[y : y + run].all())
+        ),
+        None,
+    )
+    if cut_y is None:
+        return cutout
+
+    pack = cutout.crop((0, 0, cutout.width, cut_y))
+    pack_bbox = pack.getchannel("A").point(
+        lambda value: 255 if value >= 12 else 0,
+    ).getbbox()
+    return pack.crop(pack_bbox) if pack_bbox else cutout
+
+
+def erase_eptq_syringe_overlap(cutout: Image.Image) -> Image.Image:
+    """Clean the two blue handle fragments that overlap the S500 box edge."""
+    rgba = np.asarray(cutout.convert("RGBA")).copy()
+    red, green, blue, alpha = [rgba[:, :, index] for index in range(4)]
+    blue_pixels = (
+        (alpha >= 12)
+        & (blue >= 80)
+        & (blue > red * 1.25)
+        & (blue > green * 1.10)
+    )
+    labels, count = ndimage.label(blue_pixels)
+    objects = ndimage.find_objects(labels)
+    erase = np.zeros_like(blue_pixels)
+
+    for label_id in range(1, count + 1):
+        component = objects[label_id - 1]
+        if component is None:
+            continue
+        ys, _ = component
+        if ys.stop >= cutout.height - 1 and ys.start > cutout.height * 0.70:
+            erase |= labels == label_id
+
+    if not erase.any():
+        return cutout
+
+    erase = ndimage.binary_dilation(erase, iterations=5)
+    original_alpha = rgba[:, :, 3].copy()
+    for y, x in zip(*np.where(erase)):
+        source_y = y - 1
+        while source_y >= 0 and erase[source_y, x]:
+            source_y -= 1
+        if source_y >= 0 and original_alpha[source_y, x] >= 12:
+            rgba[y, x, :3] = rgba[source_y, x, :3]
+        else:
+            rgba[y, x, :3] = (242, 242, 240)
+        rgba[y, x, 3] = original_alpha[y, x]
+
+    return Image.fromarray(rgba, mode="RGBA")
+
+
 def normalize_cutout(
     image: Image.Image,
     *,
@@ -130,7 +222,17 @@ def normalize_cutout(
         raise ValueError("background removal produced an empty alpha channel")
 
     cutout = image.crop(bbox)
-    scale = min(CONTENT_SIZE / cutout.width, CONTENT_SIZE / cutout.height, 4.5)
+    if asset_stem in LANDSCAPE_IF_PORTRAIT and cutout.height > cutout.width:
+        cutout = cutout.rotate(90, expand=True)
+    if asset_stem in EPTQ_PACK_ONLY:
+        cutout = keep_eptq_pack_only(cutout)
+        cutout = erase_eptq_syringe_overlap(cutout)
+
+    scale = min(
+        CONTENT_MAX_WIDTH / cutout.width,
+        CONTENT_MAX_HEIGHT / cutout.height,
+        4.5,
+    )
     target = (
         max(1, round(cutout.width * scale)),
         max(1, round(cutout.height * scale)),
@@ -148,12 +250,16 @@ def normalize_cutout(
 
     canvas = Image.new("RGBA", (CANVAS_SIZE, CANVAS_SIZE), (0, 0, 0, 0))
     x = (CANVAS_SIZE - rgb.width) // 2
-    y = (CANVAS_SIZE - rgb.height) // 2
+    y = CONTENT_FLOOR_Y - rgb.height
     canvas.alpha_composite(rgb, (x, y))
     return canvas
 
 
 def process(source: Path, destination: Path, session: object) -> None:
+    # Imported lazily so the deterministic ``--clean-existing`` normalization
+    # can run in CI or a design workstation without downloading the matte model.
+    from rembg import remove
+
     with Image.open(source) as original:
         rgba = original.convert("RGBA")
         if source.stem == "regenfill-lido":
@@ -227,6 +333,8 @@ def main() -> None:
             completed += 1
         print(f"cleaned={completed}", flush=True)
         return
+
+    from rembg import new_session
 
     session = new_session("birefnet-general-lite")
     files = source_files()
