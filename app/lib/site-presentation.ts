@@ -53,7 +53,7 @@ export type SitePresentation = {
 
 export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
   header: {
-    brandTagline: "سپید بیوتی · انتخاب روشن‌تر",
+    brandTagline: "",
     consultationLabel: "بررسی موجودی",
     navigation: [
       { href: "/shop", label: "فروشگاه" },
