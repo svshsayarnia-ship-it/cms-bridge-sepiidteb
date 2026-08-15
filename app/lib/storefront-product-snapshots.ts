@@ -2,6 +2,10 @@ import "server-only";
 
 import { revalidateTag, unstable_cache } from "next/cache";
 import type { CmsProduct } from "./cms-types";
+import {
+  forgetRuntimeStorefrontProduct,
+  rememberRuntimeStorefrontProducts,
+} from "./storefront-runtime-cache";
 
 const SNAPSHOT_TAG = "storefront-product-snapshots";
 const SNAPSHOT_KEY = ["storefront-product-snapshots-v1"];
@@ -51,6 +55,17 @@ export async function rememberStorefrontProducts(
 
   if (Object.keys(incoming).length === 0) return;
 
+  let runtimeSynced = false;
+  try {
+    await rememberRuntimeStorefrontProducts(Object.values(incoming));
+    runtimeSynced = true;
+  } catch (error) {
+    console.error("[storefront-snapshots] runtime cache write failed", {
+      slugs: Object.keys(incoming),
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   const current = await getStorefrontProductSnapshots();
   snapshotSeed = { ...current, ...incoming };
 
@@ -64,7 +79,7 @@ export async function rememberStorefrontProducts(
       })
       .map(([slug]) => slug);
 
-    if (failedSlugs.length > 0 && requirePersistence) {
+    if (failedSlugs.length > 0 && requirePersistence && !runtimeSynced) {
       throw new Error(
         `همگام‌سازی فوری ویترین برای «${failedSlugs.join("، ")}» تأیید نشد.`,
       );
@@ -80,6 +95,7 @@ export async function rememberStorefrontProducts(
     console.info("[storefront-snapshots] write confirmed", {
       count: Object.keys(incoming).length,
       slugs: Object.keys(incoming),
+      runtimeSynced,
     });
   } finally {
     snapshotSeed = null;
@@ -89,6 +105,15 @@ export async function rememberStorefrontProducts(
 export async function forgetStorefrontProduct(slug: string) {
   const normalizedSlug = slug.trim();
   if (!normalizedSlug) return;
+
+  try {
+    await forgetRuntimeStorefrontProduct(normalizedSlug);
+  } catch (error) {
+    console.error("[storefront-snapshots] runtime cache delete failed", {
+      slug: normalizedSlug,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   const current = await getStorefrontProductSnapshots();
   if (!current[normalizedSlug]) return;

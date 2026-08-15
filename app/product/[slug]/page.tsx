@@ -37,6 +37,7 @@ import {
   WooCommerceError,
 } from "../../lib/woocommerce";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
+import { getRuntimeStorefrontProduct } from "../../lib/storefront-runtime-cache";
 
 export const revalidate = 300;
 
@@ -75,6 +76,9 @@ function getPublicSummary(value: string) {
 const getLiveProduct = cache(async (
   slug: string,
 ): Promise<CmsProduct | null> => {
+  const runtimeProduct = await getRuntimeStorefrontProduct(slug);
+  if (runtimeProduct) return runtimeProduct;
+
   const snapshot = (await getStorefrontProductSnapshots())[slug];
   if (snapshot) return snapshot;
 
@@ -84,11 +88,16 @@ const getLiveProduct = cache(async (
       // E-E-A-T fields that the public Store API does not expose. A saved CMS
       // snapshot is still preferred, so this slower fallback is only used
       // before the first confirmed CMS write or after a cache loss.
-      requestTimeoutMs: 12_000,
+      requestTimeoutMs: 20_000,
       requestMaxAttempts: 1,
     });
   } catch (error) {
     if (error instanceof WooCommerceError) {
+      console.warn("[storefront-product] live WooCommerce read failed", {
+        slug,
+        code: error.code,
+        status: error.status,
+      });
       return null;
     }
 
