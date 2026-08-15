@@ -35,9 +35,7 @@ export function ProductCard({
     .trim();
 
   const imageSrc = getProductCutoutSrc(product.image);
-  const imageAlt =
-    product.imageAlt ||
-    `تصویر ${product.nameFa}`;
+  const imageAlt = product.imageAlt || `تصویر ${product.nameFa}`;
   const brand = getCompactBrandLabel(product.brand);
   const packagingLabel = getPublicPackagingLabel(product.volume);
   const salePrice = numericPrice(product.salePrice);
@@ -59,12 +57,8 @@ export function ProductCard({
           alt={imageAlt}
           width="1254"
           height="1254"
-          loading={
-            priority ? "eager" : "lazy"
-          }
-          fetchPriority={
-            priority ? "high" : "auto"
-          }
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           decoding="async"
         />
 
@@ -113,7 +107,7 @@ export function ProductCard({
             className={`sb-product-card__price${visiblePrice ? "" : " is-pending"}`}
             aria-label={`قیمت ${product.nameFa}`}
           >
-            <span>{salePrice ? "قیمت ویژه" : "قیمت"}</span>
+            <span>{salePrice ? "قیمت ویژه" : "قیمت فعلی"}</span>
             {visiblePrice ? (
               <div>
                 <strong>{formatPrice(visiblePrice)}</strong>
@@ -122,15 +116,15 @@ export function ProductCard({
                   : null}
               </div>
             ) : (
-              <strong>در حال بررسی بازار</strong>
+              <strong>قیمت در صفحه محصول</strong>
             )}
           </div>
           <Link
             className="sb-product-card__cta"
             href={href}
-            aria-label={`مشاهده و استعلام ${product.nameFa}`}
+            aria-label={`مشاهده جزئیات ${product.nameFa}`}
           >
-            <span>مشاهده و استعلام</span>
+            <span>جزئیات محصول</span>
             <ArrowIcon />
           </Link>
         </div>
