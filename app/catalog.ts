@@ -459,7 +459,7 @@ const legacySeeds: ProductSeed[] = [
   { slug: "neuronox-50", nameFa: "نرونوکس ۵۰", nameEn: "Neuronox 50", brand: "Neuronox", category: "botulinum-toxins", type: "سم بوتولینوم", volume: "۵۰ واحد؛ گزارش بازار" },
   { slug: "neuronox-100", nameFa: "نرونوکس ۱۰۰", nameEn: "Neuronox 100", brand: "Neuronox", category: "botulinum-toxins", type: "سم بوتولینوم", volume: "۱۰۰ واحد؛ گزارش بازار" },
   { slug: "myobloc", nameFa: "مایوبلاک", nameEn: "Myobloc", brand: "Myobloc", category: "botulinum-toxins", type: "فرآورده سم بوتولینوم", country: "فرانسه؛ گزارش برخی آگهی‌ها", warning: "کشور، نوع فرآورده و بسته‌بندی رسمی باید تأیید شود." },
-  { slug: "antitall", nameFa: "آنتایتل", nameEn: "Antitall", brand: "Antitall", category: "botulinum-toxins", type: "بوتاکس کره‌ای؛ عنوان بازار", warning: "املای لاتین رسمی، سازنده و مجوز نیازمند بررسی است." },
+  { slug: "antitall", nameFa: "آنتایتل", nameEn: "Antitall", brand: "Antitall", category: "botulinum-toxins", type: "بوتاکس کره‌ای؛ عنوان بازار", warning: "املای لاتین رسمی، سازنده و مجوز نیازمند بررسی است.", publishedInCatalog: false },
   {
     slug: "dysport",
     nameFa: "دیسپورت ۵۰۰ واحد",
@@ -743,10 +743,54 @@ const editorialFamilyImages: Record<string, string> = {
   "hair-cocktails": "/images/products/editorial/hair-family.webp",
 };
 
+function marketReferenceImage(
+  sourcePath: string,
+  imageAlt: string,
+): Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind"> {
+  return {
+    image: `https://image.torob.com/base/images/${sourcePath}_/0x512.jpg`,
+    imageAlt,
+    imageVerified: false,
+    imageKind: "market-reference",
+  };
+}
+
 const officialImageOverrides: Record<
   string,
   Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind">
 > = {
+  "mesoheal-plus": marketReferenceImage(
+    "wV/u1/wVu1z8_Cgg66pPGo.jpg",
+    "نمای بسته مزوژل مزوهیل پلاس",
+  ),
+  "xitritall-hydro": marketReferenceImage(
+    "Ar/IL/ArILG3hcn4M56glr.jpg",
+    "نمای بسته مزوژل زیتریتال هیدرو",
+  ),
+  "reyoungel-revital-bioha": marketReferenceImage(
+    "8_/oU/8_oURZeC8AXpuGX1.jpg",
+    "نمای بازار از بسته مزوژل رویتال ۲ سی‌سی",
+  ),
+  "vitten-hydro-plus": marketReferenceImage(
+    "Zl/OD/ZlODOJfCu4QRmbt4.jpg",
+    "نمای بسته مزوژل ویتن هیدرو پلاس",
+  ),
+  "roytrin-skin-booster": marketReferenceImage(
+    "bQ/FK/bQFKH81c1YNdMCAI.jpg",
+    "نمای بسته مزوژل رویترین اسکین‌بوستر",
+  ),
+  "neuramis-volume-lidocaine": {
+    image: "/images/products/sourced/neuramis-volume-lidocaine.webp",
+    imageAlt: "نمای بسته نورامیس والیوم لیدوکائین",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "neuramis-lidocaine": {
+    image: "/images/products/sourced/neuramis-lidocaine.webp",
+    imageAlt: "نمای بسته نورامیس لیدوکائین",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
   "neurafill-deep-lidocaine": {
     image: "/images/products/sourced/norafill-deep.webp",
     imageAlt: "تصویر بسته نورافیل دیپ لیدوکائین یک میلی‌لیتری",
@@ -765,6 +809,102 @@ const officialImageOverrides: Record<
     imageVerified: true,
     imageKind: "official",
   },
+  "zishel-rose-glam": {
+    image: "/images/products/sourced/zishel-rose-glam.webp",
+    imageAlt: "نمای بسته زیشل رز گلم",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "regenfill-deep": {
+    image: "/images/products/sourced/regenfill-deep.webp",
+    imageAlt: "نمای بسته رجنفیل دیپ",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "regenfill-lido": {
+    image: "/images/products/sourced/regenfill-lido.webp",
+    imageAlt: "نمای بسته رجنفیل لیدو",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "regenfill-volume": {
+    image: "/images/products/sourced/regenfill-volume.webp",
+    imageAlt: "نمای بسته رجنفیل والیوم",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  rabianca: {
+    image: "/images/products/sourced/rabianca.webp",
+    imageAlt: "نمای بسته بادی رابیانکا ۷۰ سی‌سی",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "nabota-150": {
+    image: "/images/products/sourced/nabota-150.webp",
+    imageAlt: "نمای بسته بوتاکس نابوتا ۱۵۰ واحد",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "siax-100": {
+    image: "/images/products/sourced/siax-100.webp",
+    imageAlt: "نمای بسته بوتاکس سیاکس ۱۰۰ واحد",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "siax-200": {
+    image: "/images/products/sourced/siax-200.webp",
+    imageAlt: "نمای بسته بوتاکس سیاکس ۲۰۰ واحد",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "neuronox-50": marketReferenceImage(
+    "3y/PR/3yPRNR8aU4kWvI-7.jpg",
+    "نمای مرجع بسته نورونوکس؛ واحد محصول هنگام استعلام تطبیق می‌شود",
+  ),
+  "neuronox-100": marketReferenceImage(
+    "3y/PR/3yPRNR8aU4kWvI-7.jpg",
+    "نمای بسته نورونوکس ۱۰۰ واحد",
+  ),
+  myobloc: {
+    image: "/images/products/sourced/myobloc.webp",
+    imageAlt: "نمای بسته بوتاکس مایوبلاک",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "dermaheal-hsr": {
+    image: "/images/products/sourced/dermaheal-hsr.webp",
+    imageAlt: "نمای بسته کوکتل درماهیل HSR",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-top-age-pro": {
+    image: "/images/products/sourced/mesolike-top-age-pro.webp",
+    imageAlt: "نمای بسته کوکتل مزولایک تاپ ایج پرو",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-lift": {
+    image: "/images/products/sourced/mesolike-lift.webp",
+    imageAlt: "نمای بسته کوکتل مزولایک لیفت",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "medicube-pdrn": marketReferenceImage(
+    "Il/l0/Ill0chER1ryL3fnT.webp",
+    "نمای ویال مدی‌کیوب PDRN",
+  ),
+  "fusion-f-mesomatrix": {
+    image: "/images/products/sourced/f-mesomatrix.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف مزوماتریکس",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-radiance": {
+    image: "/images/products/sourced/fusion-f-radiance.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف رادیانس",
+    imageVerified: true,
+    imageKind: "official",
+  },
   "fusion-f-lift-face": {
     image: "/images/products/sourced/fusion-lift-face.webp",
     imageAlt: "تصویر ویال فیوژن اف لیفت پلاس فیس",
@@ -777,6 +917,78 @@ const officialImageOverrides: Record<
     imageVerified: true,
     imageKind: "official",
   },
+  "fusion-f-vitamin-c": {
+    image: "/images/products/sourced/f-vitamin-c.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف ویتامین سی",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-melirutin": {
+    image: "/images/products/sourced/f-melirutin.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف ملی‌روتین",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-eye-contour": {
+    image: "/images/products/sourced/f-eye-contour.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف آی کانتور",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-hair": {
+    image: "/images/products/sourced/f-hair.webp",
+    imageAlt: "نمای بسته و ویال فیوژن اف هیر",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "revitacare-532": marketReferenceImage(
+    "Oz/WD/OzWDCC5eOOt-_p8o.jpg",
+    "نمای بسته کوکتل رویتاکر ۵۳۲",
+  ),
+  "mesolike-whitening-shine": marketReferenceImage(
+    "of/pV/ofpVdFXDyUstgloj.jpg",
+    "نمای بسته کوکتل مزولایک وایتنینگ شاین",
+  ),
+  "mesolike-glutathione": marketReferenceImage(
+    "Aq/I8/AqI8fNajbkr0P2Yr.jpg",
+    "نمای بسته کوکتل مزولایک گلوتاتیون",
+  ),
+  "dermaheal-sb": marketReferenceImage(
+    "8P/e-/8Pe-ghcQuWorZU9F.jpg",
+    "نمای بسته کوکتل درماهیل SB",
+  ),
+  "genosys-sws": marketReferenceImage(
+    "Aw/oQ/AwoQl3a3us9By02g.jpg",
+    "نمای بسته کوکتل ژنوسیس SWS",
+  ),
+  "mesolike-eye-top": marketReferenceImage(
+    "0q/iB/0qiB_6VX169Sh1xn.webp",
+    "نمای بسته کوکتل مزولایک آی تاپ",
+  ),
+  "revitacare-haircare": marketReferenceImage(
+    "Hm/Bo/HmBotONcwLzlnMHB.jpg",
+    "نمای بسته کوکتل رویتاکر هیرکر",
+  ),
+  "dermaheal-hl": marketReferenceImage(
+    "Ji/UC/JiUCj7N6C7knVEJ1.jpg",
+    "نمای بسته کوکتل درماهیل HL",
+  ),
+  "mesolike-hair": marketReferenceImage(
+    "e_/-4/e_-4pHM31aseAnnz.jpg",
+    "نمای بسته کوکتل ضدریزش مو مزولایک",
+  ),
+  "mesolike-hair-men": marketReferenceImage(
+    "og/TJ/ogTJQUy1BJ67RAdC.jpg",
+    "نمای بسته کوکتل مزولایک هیرمن",
+  ),
+  "genosys-hr3": marketReferenceImage(
+    "-Z/GG/-ZGGBP0VtHzYaHd2.jpg",
+    "نمای بسته کوکتل ژنوسیس HR3",
+  ),
+  "mesolike-dutasteride": marketReferenceImage(
+    "Jo/9f/Jo9fC0FLH8cHwjyf.jpg",
+    "نمای بسته کوکتل مزولایک دوتاستراید",
+  ),
   "fusion-f-hair-men": {
     image: "/images/products/sourced/fusion-hair-men.webp",
     imageAlt: "تصویر بسته فیوژن اف هیر من و ویال‌های آن",
@@ -816,10 +1028,9 @@ function makeProduct(seed: ProductSeed): Product {
     ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
       ? {
           ...variant,
-          image: editorialFamilyImages.fillers,
-          imageAlt: `تصویر ادیتوریال هم‌خانواده برای ${variant.nameFa}؛ بسته دقیق هنگام استعلام تطبیق می‌شود`,
+          imageAlt: `نمای مرجع بسته ${variant.nameFa}؛ حجم و جزئیات بسته هنگام استعلام تطبیق می‌شود`,
           imageVerified: false,
-          imageKind: "editorial-family" as const,
+          imageKind: "market-reference" as const,
           imageApproved: true,
         }
       : variant,
@@ -852,7 +1063,8 @@ function makeProduct(seed: ProductSeed): Product {
     imageKind: resolvedImageKind,
     imageApproved:
       seed.imageApproved ??
-      (resolvedImageKind === "editorial-family"),
+      (resolvedImageKind === "editorial-family" ||
+        resolvedImageKind === "market-reference"),
     imageAlt:
       imageOverride?.imageAlt ||
       seed.imageAlt ||

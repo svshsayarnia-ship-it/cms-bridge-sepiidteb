@@ -1785,7 +1785,8 @@ contain: paint;
   overflow: clip;
   border-bottom: 1px solid rgba(231, 224, 215, 0.72);
   background:
-    radial-gradient(circle at 50% 42%, rgba(200, 169, 106, 0.11), transparent 54%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 250, 242, 0.08)),
+    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover,
     #f7f5f2;
 }
 
@@ -3070,14 +3071,17 @@ contain: paint;
   overflow: clip;
   border: 1px solid var(--sb-border);
   border-radius: var(--sb-radius-lg);
-  background: var(--sb-surface);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 250, 242, 0.06)),
+    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover,
+    var(--sb-surface);
 }
 
 .sb-product-gallery__main img {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  background: #f7f7f7;
+  background: transparent;
 }
 
 .sb-product-gallery__image-note {
@@ -9280,6 +9284,7 @@ footer {
   border-radius: 36px 0 0 10px;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.56), transparent 48%),
+    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover,
     #f4eee6;
 }
 

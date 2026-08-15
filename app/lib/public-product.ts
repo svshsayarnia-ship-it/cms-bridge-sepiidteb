@@ -93,7 +93,8 @@ export function isPublicStaticProduct(
   return Boolean(
     product?.publishedInCatalog === true &&
       (product.imageVerified === true ||
-        (product.imageKind === "editorial-family" &&
+      ((product.imageKind === "editorial-family" ||
+        product.imageKind === "market-reference") &&
           product.imageApproved === true)) &&
       isPublicImageSrc(product.image),
   );
