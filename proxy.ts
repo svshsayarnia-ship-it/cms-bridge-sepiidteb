@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { catalogProducts } from "./app/catalog";
+import { isApprovedInventorySlug } from "./app/current-inventory";
 import { isPublicStaticProduct } from "./app/lib/public-product";
 
 type WooProductProbe = {
@@ -129,6 +130,13 @@ export async function proxy(request: NextRequest) {
 
   const slug = productSlugFromPath(request.nextUrl.pathname);
   if (!slug) return;
+
+  // SepiidTeb is temporarily the inventory source of truth. A legacy static
+  // seed or a still-published WooCommerce row must never make an unapproved
+  // product URL public again.
+  if (!isApprovedInventorySlug(slug)) {
+    return missingProductResponse(request);
+  }
 
   const staticProduct = staticProducts.get(slug);
 
