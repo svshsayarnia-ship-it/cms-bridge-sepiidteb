@@ -8,6 +8,7 @@ import { getProductCutoutSrc } from "../lib/product-image";
 import {
   getCompactBrandLabel,
   getPublicPackagingLabel,
+  getPublicVolumeLabel,
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 
@@ -30,14 +31,12 @@ export function ProductCard({
   priority?: boolean;
 }) {
   const href = productHref(product);
-  const volume = product.volume
-    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
-    .trim();
+  const volume = getPublicVolumeLabel(product.volume);
 
   const imageSrc = getProductCutoutSrc(product.image);
   const imageAlt = product.imageAlt || `تصویر ${product.nameFa}`;
   const brand = getCompactBrandLabel(product.brand);
-  const packagingLabel = getPublicPackagingLabel(product.volume);
+  const packagingLabel = getPublicPackagingLabel(volume);
   const salePrice = numericPrice(product.salePrice);
   const regularPrice = numericPrice(
     product.regularPrice || product.price,

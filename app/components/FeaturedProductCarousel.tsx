@@ -131,7 +131,11 @@ function getDiscountPercent(regularPrice: string, salePrice: string) {
 
 function cleanVolume(value?: string) {
   return value
-    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
+    ?.replace(
+      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست(?:\s+موجودی)?|در\s+فهرست(?:\s+موجودی)?).*$/u,
+      "",
+    )
+    .replace(/^(?:نسخه‌های|چند نسخه)\s+متفاوت\s+در\s+بازار$/u, "")
     .trim();
 }
 
@@ -239,6 +243,7 @@ export function FeaturedProductCarousel({
     product.salePrice,
   );
   const isOutOfStock = product.stockStatus === "outofstock";
+  const isInStock = product.stockStatus === "instock";
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     pointerStart.current = event.clientX;
@@ -285,7 +290,7 @@ export function FeaturedProductCarousel({
           </div>
           <div className="sb-featured-carousel__intro">
             <p>
-              هر محصول با اطلاعات کوتاه و مسیر مستقیم خرید نمایش داده می‌شود؛
+              هر محصول با اطلاعات کوتاه و مسیر مستقیم بررسی و خرید نمایش داده می‌شود؛
               تخفیف نیز فقط براساس قیمت ثبت‌شدهٔ فروشگاه نشان داده می‌شود.
             </p>
             <Link className="sb-text-link" href="/shop">
@@ -332,17 +337,26 @@ export function FeaturedProductCarousel({
               {product.nameEn && <small>{product.nameEn}</small>}
 
               <p className="sb-featured-carousel__benefit">
-                {product.shortBenefit || product.position}
+                {product.shortBenefit || "مشاهده مشخصات و جزئیات محصول"}
               </p>
 
-              <div className="sb-featured-carousel__facts">
-                {volume && <span>{volume}</span>}
-                {product.position && <span>{product.position}</span>}
-              </div>
+              {volume && (
+                <div className="sb-featured-carousel__facts">
+                  <span>{volume}</span>
+                </div>
+              )}
 
               <div className="sb-featured-carousel__purchase">
                 <div className="sb-featured-carousel__price">
-                  <span>{isOutOfStock ? "وضعیت محصول" : "قیمت فروشگاه"}</span>
+                  <span>
+                    {isOutOfStock
+                      ? "وضعیت محصول"
+                      : salePrice
+                        ? "قیمت ویژه"
+                        : isInStock
+                          ? "قیمت فروشگاه"
+                          : "قیمت ثبت‌شده"}
+                  </span>
                   <strong>
                     {isOutOfStock
                       ? "ناموجود"
@@ -354,7 +368,13 @@ export function FeaturedProductCarousel({
                 </div>
 
                 <Link className="sb-featured-carousel__cta" href={href}>
-                  <span>{isOutOfStock ? "مشاهده محصول" : "مشاهده و خرید"}</span>
+                  <span>
+                    {isOutOfStock
+                      ? "مشاهده محصول"
+                      : isInStock
+                        ? "مشاهده و خرید"
+                        : "مشاهده و استعلام"}
+                  </span>
                   <ArrowIcon />
                 </Link>
               </div>
