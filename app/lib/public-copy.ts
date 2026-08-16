@@ -13,12 +13,22 @@ export function getEnglishBrandLabel(value: string): string {
     .join(" / ");
 }
 
+function canonicalCompactBrandLabel(value: string): string {
+  if (/^fusion(?:\s+meso)?$/iu.test(value)) {
+    return "Fusion";
+  }
+
+  return value;
+}
+
 export function getCompactBrandLabel(
   value: string,
 ): string {
-  return getEnglishBrandLabel(value)
+  const label = getEnglishBrandLabel(value)
     .split("/")[0]
     .trim();
+
+  return canonicalCompactBrandLabel(label);
 }
 
 export function toPublicCopy(value: string): string {
@@ -41,6 +51,20 @@ export function toPublicCopy(value: string): string {
     .replace(/در مرحله استعلام/gu, "پیش از نهایی‌کردن سفارش")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+export function getPublicVolumeLabel(value?: string): string {
+  if (!value) return "";
+
+  const cleanValue = value
+    .replace(
+      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
+      "",
+    )
+    .replace(/^(?:نسخه‌های|چند نسخه)\s+متفاوت\s+در\s+بازار$/u, "")
+    .trim();
+
+  return cleanValue ? toPublicCopy(cleanValue) : "";
 }
 
 export function getPublicSourceUrl(value: string): string {
