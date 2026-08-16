@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { catalogProducts } from "./app/catalog";
+import { isPublicStaticProduct } from "./app/lib/public-product";
 
 type WooProductProbe = {
   slug?: string;
@@ -130,17 +131,11 @@ export async function proxy(request: NextRequest) {
   if (!slug) return;
 
   const staticProduct = staticProducts.get(slug);
-  const hasVerifiedStaticProduct = Boolean(
-    staticProduct?.publishedInCatalog === true &&
-      (staticProduct.imageVerified === true ||
-        (staticProduct.imageKind === "editorial-family" &&
-          staticProduct.imageApproved === true)),
-  );
 
-  // Verified local products can render from the static fallback without an
-  // extra WooCommerce round-trip. Invalid/unknown slugs must be rejected
-  // before the App Router can start streaming a 200 response.
-  if (hasVerifiedStaticProduct) return;
+  // Keep proxy visibility in lockstep with the App Router. Approved local
+  // market-reference images are valid public product images too, so they must
+  // not be rejected before the product page gets a chance to render.
+  if (isPublicStaticProduct(staticProduct)) return;
 
   const remoteStatus = await probeWooProduct(slug);
   if (remoteStatus === true) return;
