@@ -69,8 +69,21 @@ export const metadata: Metadata = {
   },
 };
 
+const approvedCatalogProducts = catalogProducts.filter((product) =>
+  isApprovedInventorySlug(product.slug),
+);
+
+// `data.ts` intentionally exports the same catalog array by reference. Keep
+// that shared public array aligned with the approved inventory as well, so
+// legacy entries cannot reappear in related-product cards or other static
+// discovery surfaces while their migration data remains defined in catalog.ts.
+catalogProducts.splice(
+  0,
+  catalogProducts.length,
+  ...approvedCatalogProducts,
+);
+
 const headerProducts = catalogProducts
-  .filter((product) => isApprovedInventorySlug(product.slug))
   .filter(isPublicStaticProduct)
   .map(toPublicProduct);
 
