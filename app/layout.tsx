@@ -9,6 +9,7 @@ import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeader } from "./components/SiteHeader";
 import { SmartAssistant } from "./components/SmartAssistant";
+import { isApprovedInventorySlug } from "./current-inventory";
 import { siteOrigin } from "./lib/site-url";
 import {
   merchantOrganizationId,
@@ -69,6 +70,7 @@ export const metadata: Metadata = {
 };
 
 const headerProducts = catalogProducts
+  .filter((product) => isApprovedInventorySlug(product.slug))
   .filter(isPublicStaticProduct)
   .map(toPublicProduct);
 
