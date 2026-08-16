@@ -329,7 +329,32 @@ export const currentInventoryLegacyAliases: Record<string, string> = {
   luxiva: "luxiva-mesogel",
 };
 
-const approvedInventorySlugs = new Set(currentInventorySeeds.map((seed) => seed.slug));
+const restoredLegacyInventorySlugs = [
+  "dyston-500",
+  "masport",
+  "fusion-f-lift-face",
+  "fusion-f-mesomatrix",
+  "fusion-f-radiance",
+  "fusion-f-melaclear",
+  "fusion-f-vitamin-c",
+  "fusion-f-melirutin",
+  "fusion-f-eye-contour",
+  "fusion-f-hair",
+  "fusion-f-hair-men",
+  "mesolike-top-age-pro",
+  "mesolike-lift",
+  "mesolike-whitening-shine",
+  "mesolike-glutathione",
+  "mesolike-eye-top",
+  "mesolike-hair",
+  "mesolike-hair-men",
+  "mesolike-dutasteride",
+] as const;
+
+const approvedInventorySlugs = new Set([
+  ...currentInventorySeeds.map((seed) => seed.slug),
+  ...restoredLegacyInventorySlugs,
+]);
 
 export function canonicalInventorySlug(slug: string): string {
   return currentInventoryLegacyAliases[slug] ?? slug;
