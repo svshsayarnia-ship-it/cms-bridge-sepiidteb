@@ -3,29 +3,58 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Breadcrumbs } from "../../components/Breadcrumbs";
-import { ArrowIcon } from "../../components/Icons";
-import { JsonLd } from "../../components/JsonLd";
-import { ShopCatalog } from "../../components/ShopCatalog";
 import {
   catalogCategories,
   getGroupForCategory,
   productHref,
 } from "../../catalog";
+import { Breadcrumbs } from "../../components/Breadcrumbs";
+import { ArrowIcon } from "../../components/Icons";
+import { JsonLd } from "../../components/JsonLd";
+import { ShopCatalog } from "../../components/ShopCatalog";
+import { guides } from "../../content-architecture";
 import { getEditorialCategoryCopy } from "../../lib/editorial-category-copy";
+import { getProductCutoutSrc } from "../../lib/product-image";
+import { toPublicProduct } from "../../lib/public-product";
+import { buildSeoMetadata } from "../../lib/seo";
+import { siteOrigin } from "../../lib/site-url";
+import { getStorefrontCatalog } from "../../lib/storefront-catalog";
 import {
   getStorefrontCategories,
   getStorefrontCategoryBySlug,
 } from "../../lib/storefront-categories";
-import { siteOrigin } from "../../lib/site-url";
-import { getStorefrontCatalog } from "../../lib/storefront-catalog";
-import { buildSeoMetadata } from "../../lib/seo";
-import { getProductCutoutSrc } from "../../lib/product-image";
-import { toPublicProduct } from "../../lib/public-product";
+import styles from "./premium.module.css";
 
 export const revalidate = 300;
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const BOTULINUM_CATEGORY_SLUG = "botulinum-toxins";
+const botulinumGuide = guides.find(
+  (guide) => guide.slug === "botulinum-toxin",
+);
+
+const botulinumComparisonChecks = [
+  {
+    title: "نام دقیق فرآورده",
+    body:
+      "نام برند، مدل و نسخه درج‌شده روی بسته را کامل بخوانید؛ عنوان عمومی «بوتاکس» برای مقایسه دو کالا کافی نیست.",
+  },
+  {
+    title: "تعداد واحد",
+    body:
+      "عدد واحد را فقط در چارچوب همان فرآورده بررسی کنید و واحد دو برند را بدون مرجع رسمی معادل هم نگیرید.",
+  },
+  {
+    title: "بسته‌بندی و بچ",
+    body:
+      "سلامت پلمب، خوانایی تاریخ و شماره بچ و هماهنگی اطلاعات جعبه و ویال را پیش از نهایی‌کردن سفارش بررسی کنید.",
+  },
+  {
+    title: "حمل و نگهداری",
+    body:
+      "شرایط حمل و نگهداری باید با اطلاعات همان محصول هماهنگ باشد؛ یک پاسخ کلی برای همه برندها کافی نیست.",
+  },
+] as const;
 
 type PriceSource = {
   salePrice?: string | number;
@@ -116,9 +145,16 @@ export async function generateMetadata({
     };
   }
 
+  const isBotulinumCategory =
+    category.slug === BOTULINUM_CATEGORY_SLUG;
+
   return buildSeoMetadata({
-    title: `خرید و قیمت ${category.title}`,
-    description: `مشاهده قیمت و مقایسه محصولات ${category.title}. ${editorial.intro}`,
+    title: isBotulinumCategory
+      ? "خرید بوتاکس | قیمت و مقایسه فرآورده‌های بوتولینوم"
+      : `خرید و قیمت ${category.title}`,
+    description: isBotulinumCategory
+      ? "قیمت و مقایسه بوتاکس و فرآورده‌های بوتولینوم بر اساس نام دقیق، تعداد واحد، بسته‌بندی و شرایط نگهداری؛ همراه با راهنمای خرید حرفه‌ای."
+      : `مشاهده قیمت و مقایسه محصولات ${category.title}. ${editorial.intro}`,
     path: `/shop/${category.slug}`,
     image: category.image,
     imageAlt: category.title,
@@ -182,6 +218,12 @@ export default async function CategoryPage({
   const group = getGroupForCategory(
     category.slug,
   );
+  const isBotulinumCategory =
+    category.slug === BOTULINUM_CATEGORY_SLUG;
+  const guideHref =
+    isBotulinumCategory && botulinumGuide
+      ? `/guides/${botulinumGuide.slug}`
+      : "/guides";
 
   return (
     <main id="main-content" className="sb-category-page" data-category={category.slug}>
@@ -241,6 +283,18 @@ export default async function CategoryPage({
                 <ArrowIcon />
               </Link>
             </div>
+
+            {isBotulinumCategory ? (
+              <div
+                className={styles.heroAssurance}
+                aria-label="معیارهای اصلی مقایسه فرآورده‌های بوتولینوم"
+              >
+                <span>نام دقیق فرآورده</span>
+                <span>تعداد واحد</span>
+                <span>بسته‌بندی و بچ</span>
+                <span>حمل و نگهداری</span>
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -338,6 +392,63 @@ export default async function CategoryPage({
         </div>
       </div>
 
+      {isBotulinumCategory ? (
+        <section
+          className={styles.compareSection}
+          aria-labelledby="botulinum-comparison-title"
+        >
+          <div className="sb-shell">
+            <div className={styles.comparePanel}>
+              <div className={styles.compareHead}>
+                <div className={styles.compareHeadCopy}>
+                  <p className={styles.kicker}>SEPIID BUYING CHECK</p>
+                  <h2 id="botulinum-comparison-title">
+                    بوتاکس را با چهار معیار واقعی مقایسه کنید
+                  </h2>
+                  <p>
+                    قیمت زمانی قابل‌مقایسه است که دقیقاً بدانید کدام فرآورده،
+                    با چه تعداد واحد و چه بسته‌بندی‌ای روبه‌روی شماست.
+                  </p>
+                </div>
+
+                <Link
+                  className={`sb-text-link ${styles.compareHeadAction}`}
+                  href={guideHref}
+                >
+                  راهنمای کامل خرید بوتاکس
+                  <ArrowIcon />
+                </Link>
+              </div>
+
+              <div className={styles.compareGrid}>
+                {botulinumComparisonChecks.map((check, index) => (
+                  <article className={styles.compareCard} key={check.title}>
+                    <span className={styles.compareCardIndex}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <strong>{check.title}</strong>
+                    <p>{check.body}</p>
+                  </article>
+                ))}
+              </div>
+
+              <div className={styles.professionalNote}>
+                <span>برای مصرف حرفه‌ای</span>
+                <p>
+                  این صفحه برای مقایسه تجاری محصول است؛ انتخاب، آماده‌سازی و
+                  مصرف هر فرآورده باید بر اساس اطلاعات همان محصول و توسط فرد
+                  واجد صلاحیت انجام شود.
+                </p>
+                <Link href="/professional">
+                  خرید و همکاری حرفه‌ای
+                  <ArrowIcon />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section id="category-products" className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
@@ -366,14 +477,48 @@ export default async function CategoryPage({
 
             <Link
               className="sb-text-link"
-              href="/guides"
+              href={guideHref}
             >
-              راهنماهای خرید و انتخاب
+              {isBotulinumCategory
+                ? "راهنمای خرید و اصالت بوتاکس"
+                : "راهنماهای خرید و انتخاب"}
               <ArrowIcon />
             </Link>
           </div>
         </div>
       </section>
+
+      {isBotulinumCategory && botulinumGuide ? (
+        <section
+          className={styles.faqSection}
+          aria-labelledby="botulinum-faq-title"
+        >
+          <div className={`sb-shell ${styles.faqGrid}`}>
+            <div className={styles.faqHead}>
+              <p className={styles.kicker}>PURCHASE FAQ</p>
+              <h2 id="botulinum-faq-title">
+                سؤال‌های مهم قبل از سفارش بوتاکس
+              </h2>
+              <p>
+                پاسخ‌های کوتاه برای استعلام دقیق‌تر؛ بدون تبدیل صفحه خرید به
+                توصیه پزشکی یا دستور مصرف.
+              </p>
+              <span className={styles.reviewedAt}>
+                بازبینی محتوا: {botulinumGuide.reviewedAt}
+              </span>
+            </div>
+
+            <div className={styles.faqList}>
+              {botulinumGuide.faq.map((item) => (
+                <details className={styles.faqItem} key={item.question}>
+                  <summary>{item.question}</summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <JsonLd
         data={{
@@ -399,6 +544,23 @@ export default async function CategoryPage({
           },
         }}
       />
+
+      {isBotulinumCategory && botulinumGuide ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: botulinumGuide.faq.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+          }}
+        />
+      ) : null}
     </main>
   );
 }
