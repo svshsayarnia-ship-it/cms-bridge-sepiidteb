@@ -11,12 +11,6 @@ function requireSeed(slug: string, seeds: ProductSeed[]): ProductSeed {
   return seed;
 }
 
-function requireVariant(seed: ProductSeed, id: string) {
-  const variant = seed.variants?.find((item) => item.id === id);
-  if (!variant) throw new Error(`Missing inventory variant: ${seed.slug}/${id}`);
-  return variant;
-}
-
 const alcarisa = requireSeed("alcarisa-family", fillerInventorySeeds);
 const revofil = requireSeed("revofil-ultra", fillerInventorySeeds);
 const rabianca = requireSeed("rabianca", fillerInventorySeeds);
@@ -60,18 +54,9 @@ const alcarisaSeed: ProductSeed = {
   variants: [...(alcarisa.variants ?? []), alcarisa28],
 };
 
-const revofilOneMl = requireVariant(revofil, "1ml");
-const revofilSeed: ProductSeed = {
-  ...revofil,
-  nameFa: "رووفیل تک سی‌سی",
-  nameEn: "REVOFIL 1 mL",
-  volume: "۱ میلی‌لیتر",
-  badge: undefined,
-  priceNote: "برای بسته تک‌سی‌سی",
-  summary: "در کاتالوگ فعلی سپیدطب، رووفیل به‌صورت تک‌سی‌سی ثبت شده است. گزینه ۱۰ سی‌سی از ویترین سپید بیوتی حذف شده و سایر تنظیمات بصری صفحه دست‌نخورده می‌ماند.",
-  features: ["حجم کاتالوگ سپیدطب: ۱ میلی‌لیتر", "مدل دقیق روی بسته مبنای تحویل", "فقط گزینه تک‌سی‌سی در ویترین فعلی"],
-  variants: [revofilOneMl],
-};
+// Keep every existing product variant. Inventory filtering may hide whole
+// product families, but it must not collapse a published family to one variant.
+const revofilSeed: ProductSeed = revofil;
 
 const neurafillSeed: ProductSeed = {
   slug: "neurafill-deep-lidocaine",
@@ -257,22 +242,7 @@ const perleuxSeed: ProductSeed = {
   ],
 };
 
-const audreyH = requireVariant(audrey, "h");
-const audreySeed: ProductSeed = {
-  ...audrey,
-  nameFa: "آودری H",
-  nameEn: "AUDREY H",
-  volume: audreyH.volume,
-  badge: undefined,
-  image: audreyH.image,
-  imageAlt: audreyH.imageAlt,
-  imageVerified: audreyH.imageVerified,
-  imageKind: audreyH.imageKind,
-  imageApproved: audreyH.imageApproved,
-  summary: "در کاتالوگ فعلی سپیدطب فقط مدل آودری H ثبت شده است. مدل M از ویترین فعلی سپید بیوتی کنار گذاشته شده و صفحه با همان هویت بصری قبلی باقی می‌ماند.",
-  features: ["فقط مدل H", "حجم ۱۰ میلی‌لیتر", "مطابق کاتالوگ فعلی سپیدطب"],
-  variants: [audreyH],
-};
+const audreySeed: ProductSeed = audrey;
 
 const blankBSeed: ProductSeed = {
   slug: "blank-b",
