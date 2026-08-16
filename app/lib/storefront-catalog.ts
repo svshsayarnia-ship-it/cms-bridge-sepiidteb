@@ -7,7 +7,10 @@ import {
   catalogProducts,
   getGroupForCategory,
 } from "../catalog";
-import { currentInventoryLegacyAliases } from "../current-inventory";
+import {
+  currentInventoryLegacyAliases,
+  isApprovedInventorySlug,
+} from "../current-inventory";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
 import {
@@ -200,7 +203,16 @@ function publicFallbackForProduct(
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   await connection();
 
-  const fallbackBySlug = new Map(catalogProducts.map((product) => [product.slug, product]));
+  // SepiidTeb is the temporary source of truth for which product families may
+  // appear publicly. Keep the large legacy catalog intact for migration and
+  // content references, but never let an old Woo snapshot or legacy seed leak
+  // an unapproved product back into the storefront.
+  const approvedCatalogProducts = catalogProducts.filter((product) =>
+    isApprovedInventorySlug(product.slug),
+  );
+  const fallbackBySlug = new Map(
+    approvedCatalogProducts.map((product) => [product.slug, product]),
+  );
   const snapshots = await getStorefrontProductSnapshots();
   const mappedSnapshots = Object.values(snapshots)
     .filter((product) => {
@@ -209,13 +221,14 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
         (Boolean(product.slug) && product.status === "publish" && product.catalogVisibility !== "hidden" && isPublicStaticProduct(fallback));
     })
     .map((product) => mapWooProduct(product, publicFallbackForProduct(product, fallbackBySlug)))
-    .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug));
+    .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug))
+    .filter((product) => isApprovedInventorySlug(product.slug));
 
   const snapshotProducts = Array.from(
     new Map(mappedSnapshots.map((product) => [product.slug, product])).values(),
   );
   const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
-  const fallbackProducts = catalogProducts
+  const fallbackProducts = approvedCatalogProducts
     .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
     .map(mapFallbackProduct);
 
