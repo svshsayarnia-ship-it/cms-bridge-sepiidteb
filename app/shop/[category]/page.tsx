@@ -392,6 +392,15 @@ export default async function CategoryPage({
         </div>
       </div>
 
+      <section id="category-products" className="sb-section sb-catalog-section">
+        <div className="sb-shell">
+          <ShopCatalog
+            items={items.map(toPublicProduct)}
+            initialCategory={category.slug}
+          />
+        </div>
+      </section>
+
       {isBotulinumCategory ? (
         <section
           className={styles.compareSection}
@@ -448,15 +457,6 @@ export default async function CategoryPage({
           </div>
         </section>
       ) : null}
-
-      <section id="category-products" className="sb-section sb-catalog-section">
-        <div className="sb-shell">
-          <ShopCatalog
-            items={items.map(toPublicProduct)}
-            initialCategory={category.slug}
-          />
-        </div>
-      </section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">
