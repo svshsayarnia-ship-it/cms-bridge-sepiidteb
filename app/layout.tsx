@@ -5,6 +5,7 @@ import "./ui-audit.css";
 import "./category-hovers.css";
 import "./category-commerce-hero.css";
 import "./fusion-product-images.css";
+import "./hyaluronidase-product-images.css";
 import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
