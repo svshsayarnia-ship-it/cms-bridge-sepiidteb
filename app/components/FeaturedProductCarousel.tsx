@@ -69,8 +69,7 @@ function getRotationWindow(now: number) {
 
   return {
     seed,
-    remainingMs:
-      (seed + 1) * rotationInterval - shiftedNow,
+    remainingMs: (seed + 1) * rotationInterval - shiftedNow,
   };
 }
 
@@ -85,10 +84,7 @@ function hashRotationKey(value: string) {
   return hash >>> 0;
 }
 
-function selectRotatingProducts(
-  products: FeaturedCarouselProduct[],
-  seed: number,
-) {
+function selectRotatingProducts(products: FeaturedCarouselProduct[], seed: number) {
   return Array.from(
     new Map(products.map((product) => [product.slug, product])).values(),
   )
@@ -183,8 +179,7 @@ export function FeaturedProductCarousel({
     (nextIndex: number) => {
       if (products.length < 2 || phase !== "idle") return;
 
-      const normalized =
-        (nextIndex + products.length) % products.length;
+      const normalized = (nextIndex + products.length) % products.length;
       if (normalized === currentIndex) return;
 
       setPhase("leaving");
@@ -233,9 +228,7 @@ export function FeaturedProductCarousel({
   const volume = cleanVolume(product.volume);
   const salePrice = formatPrice(product.salePrice);
   const regularPrice = formatPrice(
-    product.regularPrice ||
-      product.price ||
-      String(product.priceToman ?? ""),
+    product.regularPrice || product.price || String(product.priceToman ?? ""),
   );
   const livePrice = getProductPrice(product);
   const discountPercent = getDiscountPercent(
@@ -391,7 +384,6 @@ export function FeaturedProductCarousel({
                 }
               }}
             >
-              <span className="sb-featured-carousel__halo" aria-hidden="true" />
               <Image
                 alt={product.imageAlt || `تصویر ${product.nameFa}`}
                 draggable={false}
