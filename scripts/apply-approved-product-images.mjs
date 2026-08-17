@@ -53,40 +53,64 @@ for (const [slug] of products) {
 const catalogPath = path.join(root, "app", "catalog.ts");
 let source = fs.readFileSync(catalogPath, "utf8");
 const marker = "APPROVED_PRODUCT_IMAGES_BUILD";
+const mapStart = source.indexOf("const officialImageOverrides:");
 
-if (!source.includes(marker)) {
-  const mapStart = source.indexOf("const officialImageOverrides:");
-  if (mapStart < 0) {
-    throw new Error("officialImageOverrides map not found in app/catalog.ts");
-  }
-
-  const opening = source.indexOf("> = {", mapStart);
-  if (opening < 0) {
-    throw new Error("officialImageOverrides opening not found in app/catalog.ts");
-  }
-
-  const lineEnd = source.indexOf("\n", opening);
-  if (lineEnd < 0) {
-    throw new Error("Cannot locate insertion point in app/catalog.ts");
-  }
-
-  const injection = [
-    `  // ${marker}`,
-    ...products.flatMap(([slug, alt]) => [
-      `  "${slug}": {`,
-      `    image: "/images/products/editorial/approved/${slug}.webp",`,
-      `    imageAlt: "${alt}",`,
-      "    imageVerified: false,",
-      '    imageKind: "market-reference",',
-      "  },",
-    ]),
-    "",
-  ].join("\n");
-
-  const insertAt = lineEnd + 1;
-  source = source.slice(0, insertAt) + injection + source.slice(insertAt);
-  fs.writeFileSync(catalogPath, source);
+if (mapStart < 0) {
+  throw new Error("officialImageOverrides map not found in app/catalog.ts");
 }
+
+const opening = source.indexOf("> = {", mapStart);
+if (opening < 0) {
+  throw new Error("officialImageOverrides opening not found in app/catalog.ts");
+}
+
+const lineEnd = source.indexOf("\n", opening);
+if (lineEnd < 0) {
+  throw new Error("Cannot locate officialImageOverrides body");
+}
+
+const bodyStart = lineEnd + 1;
+const mapEnd = source.indexOf("\n};", bodyStart);
+if (mapEnd < 0) {
+  throw new Error("officialImageOverrides closing not found in app/catalog.ts");
+}
+
+let mapBody = source.slice(bodyStart, mapEnd);
+mapBody = mapBody.replace(`  // ${marker}\n`, "");
+
+for (const [slug] of products) {
+  const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const objectEntry = new RegExp(
+    `  "${escapedSlug}": \\{[\\s\\S]*?\\n  \\},\\n`,
+    "u",
+  );
+  const marketEntry = new RegExp(
+    `  "${escapedSlug}": marketReferenceImage\\([\\s\\S]*?\\n  \\),\\n`,
+    "u",
+  );
+
+  mapBody = mapBody.replace(objectEntry, "").replace(marketEntry, "");
+}
+
+const approvedEntries = [
+  `  // ${marker}`,
+  ...products.flatMap(([slug, alt]) => [
+    `  "${slug}": {`,
+    `    image: "/images/products/editorial/approved/${slug}.webp",`,
+    `    imageAlt: "${alt}",`,
+    "    imageVerified: false,",
+    '    imageKind: "market-reference",',
+    "  },",
+  ]),
+  "",
+].join("\n");
+
+source =
+  source.slice(0, bodyStart) +
+  approvedEntries +
+  mapBody +
+  source.slice(mapEnd);
+fs.writeFileSync(catalogPath, source);
 
 console.log(
   `[approved-product-images] prepared ${products.length} product images for storefront build`,
