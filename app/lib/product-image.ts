@@ -23,6 +23,27 @@ const WHITE_CARTON_SOURCE_ASSETS = new Set([
 
 const WHITE_CARTON_MARKER = "preserve-white-carton=1";
 
+function withoutQuery(src: string): string {
+  return src.split("?", 1)[0];
+}
+
+function resolveWhiteCartonSource(src: string): string | null {
+  const cleanSrc = withoutQuery(src);
+
+  if (WHITE_CARTON_SOURCE_ASSETS.has(cleanSrc)) {
+    return cleanSrc;
+  }
+
+  if (cleanSrc.startsWith(CUTOUT_ROOT)) {
+    const sourceCandidate = `${PRODUCT_ROOT}${cleanSrc.slice(CUTOUT_ROOT.length)}`;
+    if (WHITE_CARTON_SOURCE_ASSETS.has(sourceCandidate)) {
+      return sourceCandidate;
+    }
+  }
+
+  return null;
+}
+
 function preserveWhiteCartonSource(src: string): string {
   return `${src}?${WHITE_CARTON_MARKER}`;
 }
@@ -31,12 +52,13 @@ function preserveWhiteCartonSource(src: string): string {
 export function getProductCutoutSrc(src?: string | null): string {
   if (!src) return "";
 
-  if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
-    return TOP_AGE_PRO_CLEAN_CUTOUT;
+  const whiteCartonSource = resolveWhiteCartonSource(src);
+  if (whiteCartonSource) {
+    return preserveWhiteCartonSource(whiteCartonSource);
   }
 
-  if (WHITE_CARTON_SOURCE_ASSETS.has(src)) {
-    return preserveWhiteCartonSource(src);
+  if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
+    return TOP_AGE_PRO_CLEAN_CUTOUT;
   }
 
   if (src.startsWith(CUTOUT_ROOT)) return src;
