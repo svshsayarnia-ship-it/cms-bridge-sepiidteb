@@ -1,5 +1,9 @@
 import type { NextRequest } from "next/server";
-import { catalogProducts } from "./app/catalog";
+import {
+  catalogCategories,
+  catalogGroups,
+  catalogProducts,
+} from "./app/catalog";
 import { isApprovedInventorySlug } from "./app/current-inventory";
 import { articles } from "./app/data";
 import { isPublicStaticProduct } from "./app/lib/public-product";
@@ -11,6 +15,13 @@ type WooProductProbe = {
   images?: Array<{ src?: string }>;
 };
 
+type StaticRouteRule = {
+  pattern: RegExp;
+  allowedSlugs: Set<string>;
+  fallbackHref: string;
+  label: string;
+};
+
 const staticProducts = new Map(
   catalogProducts.map((product) => [product.slug, product]),
 );
@@ -19,26 +30,121 @@ const publicArticleSlugs = new Set(
   articles.map((article) => article.slug),
 );
 
-function productSlugFromPath(pathname: string): string | null {
-  const match = pathname.match(/^\/product\/([^/]+)\/?$/);
-  if (!match) return null;
+const publicCategorySlugs = new Set([
+  ...catalogCategories.map((category) => category.slug),
+  // Compatibility alias handled by the category page and redirected to the
+  // high-volume filter on the canonical fillers URL.
+  "body-fillers",
+]);
 
+const publicGroupSlugs = new Set(
+  catalogGroups.map((group) => group.slug),
+);
+
+// These route families are intentionally editorial/static. Keep the proxy
+// allowlist aligned with the indexable routes emitted by sitemap.ts so an
+// arbitrary slug is rejected before App Router streaming can turn it into a
+// soft 404. Adding a new public brand/guide/concern therefore remains an
+// explicit publishing decision in code.
+const publicBrandSlugs = new Set([
+  "neuramis",
+  "fusion",
+]);
+
+const publicGuideSlugs = new Set([
+  "botulinum-toxin",
+  "dermal-fillers",
+  "mesogels-skin-boosters",
+  "product-authenticity",
+  "hair-mesotherapy",
+]);
+
+const publicConcernSlugs = new Set([
+  "hair-loss",
+  "skin-rejuvenation",
+  "hyperpigmentation",
+  "under-eye",
+  "dynamic-wrinkles",
+  "volume-loss",
+]);
+
+const publicPolicySlugs = new Set([
+  "privacy",
+  "terms",
+  "shipping",
+  "returns",
+  "authenticity",
+]);
+
+const staticRouteRules: StaticRouteRule[] = [
+  {
+    pattern: /^\/shop\/group\/([^/]+)\/?$/,
+    allowedSlugs: publicGroupSlugs,
+    fallbackHref: "/shop",
+    label: "این گروه محصول",
+  },
+  {
+    pattern: /^\/shop\/([^/]+)\/?$/,
+    allowedSlugs: publicCategorySlugs,
+    fallbackHref: "/shop",
+    label: "این دسته‌بندی",
+  },
+  {
+    pattern: /^\/brands\/([^/]+)\/?$/,
+    allowedSlugs: publicBrandSlugs,
+    fallbackHref: "/brands",
+    label: "این صفحه برند",
+  },
+  {
+    pattern: /^\/guides\/([^/]+)\/?$/,
+    allowedSlugs: publicGuideSlugs,
+    fallbackHref: "/guides",
+    label: "این راهنما",
+  },
+  {
+    pattern: /^\/concerns\/([^/]+)\/?$/,
+    allowedSlugs: publicConcernSlugs,
+    fallbackHref: "/guides",
+    label: "این مسیر نیاز",
+  },
+  {
+    pattern: /^\/policies\/([^/]+)\/?$/,
+    allowedSlugs: publicPolicySlugs,
+    fallbackHref: "/",
+    label: "این صفحه سیاست",
+  },
+];
+
+function decodeSlug(value: string): string | null {
   try {
-    return decodeURIComponent(match[1]);
+    return decodeURIComponent(value);
   } catch {
     return null;
   }
 }
 
+function productSlugFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/product\/([^/]+)\/?$/);
+  return match ? decodeSlug(match[1]) : null;
+}
+
 function articleSlugFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/magazine\/([^/]+)\/?$/);
-  if (!match) return null;
+  return match ? decodeSlug(match[1]) : null;
+}
 
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return null;
+function staticRouteFromPath(pathname: string) {
+  for (const rule of staticRouteRules) {
+    const match = pathname.match(rule.pattern);
+    if (!match) continue;
+
+    return {
+      rule,
+      slug: decodeSlug(match[1]),
+    };
   }
+
+  return null;
 }
 
 function missingProductResponse(request: NextRequest) {
@@ -97,6 +203,39 @@ function missingArticleResponse(request: NextRequest) {
       "content-type": "text/html; charset=utf-8",
       "x-robots-tag": "noindex, nofollow",
       "x-sepiid-article-status": "not-public",
+    },
+  });
+}
+
+function missingStaticRouteResponse(
+  request: NextRequest,
+  rule: StaticRouteRule,
+) {
+  const body = `<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>صفحه پیدا نشد | Sepiid Beauty</title>
+  </head>
+  <body>
+    <main>
+      <p>404 / PAGE NOT FOUND</p>
+      <h1>${rule.label} در سپید بیوتی منتشر نشده است.</h1>
+      <p>ممکن است آدرس تغییر کرده باشد یا این مسیر دیگر عمومی نباشد.</p>
+      <a href="${rule.fallbackHref}">بازگشت به مسیر اصلی</a>
+    </main>
+  </body>
+</html>`;
+
+  return new Response(request.method === "HEAD" ? null : body, {
+    status: 404,
+    headers: {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+      "x-robots-tag": "noindex, nofollow",
+      "x-sepiid-route-status": "not-public",
     },
   });
 }
@@ -182,6 +321,17 @@ export async function proxy(request: NextRequest) {
     return;
   }
 
+  const staticRoute = staticRouteFromPath(request.nextUrl.pathname);
+  if (staticRoute) {
+    if (
+      !staticRoute.slug ||
+      !staticRoute.rule.allowedSlugs.has(staticRoute.slug)
+    ) {
+      return missingStaticRouteResponse(request, staticRoute.rule);
+    }
+    return;
+  }
+
   const slug = productSlugFromPath(request.nextUrl.pathname);
   if (!slug) return;
 
@@ -206,5 +356,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/product/:slug", "/magazine/:slug"],
+  matcher: [
+    "/product/:slug",
+    "/magazine/:slug",
+    "/shop/:category",
+    "/shop/group/:group",
+    "/brands/:slug",
+    "/guides/:slug",
+    "/concerns/:slug",
+    "/policies/:slug",
+  ],
 };
