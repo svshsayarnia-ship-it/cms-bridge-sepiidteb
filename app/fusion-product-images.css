@@ -1,0 +1,42 @@
+/* Fusion Meso white-carton preservation
+   ------------------------------------
+   The reviewed source photos keep the complete white retail cartons. A normal
+   alpha-removal pass can erase those carton faces because they are close to the
+   source background. Multiplication removes the flat white photo field without
+   discarding printed edges, labels or shadows. A soft local light field keeps
+   the physical white carton readable over Sepiid Beauty's editorial stages. */
+
+img[src*="preserve-white-carton=1"] {
+  opacity: 1;
+  mix-blend-mode: multiply;
+  filter: contrast(1.035) saturate(1.015);
+}
+
+:where(.sb-product-card__visual, .sb-product-gallery__main):has(
+    > img[src*="preserve-white-carton=1"]
+  )::before {
+  position: absolute;
+  inset: 7% 6% 8%;
+  border-radius: 42%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.9) 48%,
+    rgba(255, 255, 255, 0.42) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(14px);
+  pointer-events: none;
+  content: "";
+}
+
+:where(.sb-product-card__visual, .sb-product-gallery__main)
+  > img[src*="preserve-white-carton=1"] {
+  position: relative;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  img[src*="preserve-white-carton=1"] {
+    mix-blend-mode: normal;
+  }
+}
