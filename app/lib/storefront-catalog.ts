@@ -99,7 +99,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     fallback?.imageVerified === true && isPublicImageSrc(fallback.image)
       ? { src: fallback.image, alt: fallback.imageAlt ?? "" }
       : null;
-  const liveImage = verifiedFallbackImage ?? product.images?.find((image) => Boolean(image.src));
+  const liveImage = product.images?.find((image) => Boolean(image.src)) ?? verifiedFallbackImage;
   const descriptionText = plainText(product.shortDescription || product.description || "");
   const summary = descriptionText || fallback?.summary || "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./cms.css";
+import { CmsRawImagePipeline } from "./CmsRawImagePipeline";
 
 export const metadata: Metadata = {
   title: "مدیریت محصولات",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function CmsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <CmsRawImagePipeline />
+      {children}
+    </>
+  );
 }

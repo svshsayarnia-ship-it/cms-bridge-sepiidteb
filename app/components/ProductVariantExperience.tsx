@@ -199,9 +199,9 @@ export function ProductVariantExperience({
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
   const displayImage = getProductCutoutSrc(
-    selectedVariant?.image ?? catalogImage?.src ?? liveImage?.src ?? product.image,
+    selectedVariant?.image ?? liveImage?.src ?? catalogImage?.src ?? product.image,
   );
-  const displayImageAlt = selectedVariant?.imageAlt ?? catalogImage?.alt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
+  const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? catalogImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
   const isEditorialFamilyImage =
     (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
     !liveImage?.src;
