@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { catalogProducts } from "./app/catalog";
 import { isApprovedInventorySlug } from "./app/current-inventory";
+import { articles } from "./app/data";
 import { isPublicStaticProduct } from "./app/lib/public-product";
 
 type WooProductProbe = {
@@ -14,8 +15,23 @@ const staticProducts = new Map(
   catalogProducts.map((product) => [product.slug, product]),
 );
 
+const publicArticleSlugs = new Set(
+  articles.map((article) => article.slug),
+);
+
 function productSlugFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/product\/([^/]+)\/?$/);
+  if (!match) return null;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+function articleSlugFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/magazine\/([^/]+)\/?$/);
   if (!match) return null;
 
   try {
@@ -51,6 +67,36 @@ function missingProductResponse(request: NextRequest) {
       "content-type": "text/html; charset=utf-8",
       "x-robots-tag": "noindex, nofollow",
       "x-sepiid-product-status": "not-public",
+    },
+  });
+}
+
+function missingArticleResponse(request: NextRequest) {
+  const body = `<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>مقاله پیدا نشد | Sepiid Beauty</title>
+  </head>
+  <body>
+    <main>
+      <p>404 / PAGE NOT FOUND</p>
+      <h1>این مقاله در مجله سپید بیوتی منتشر نشده است.</h1>
+      <p>ممکن است آدرس مقاله تغییر کرده باشد یا محتوا دیگر منتشر نباشد.</p>
+      <a href="/magazine">بازگشت به مجله سپید</a>
+    </main>
+  </body>
+</html>`;
+
+  return new Response(request.method === "HEAD" ? null : body, {
+    status: 404,
+    headers: {
+      "cache-control": "no-store",
+      "content-type": "text/html; charset=utf-8",
+      "x-robots-tag": "noindex, nofollow",
+      "x-sepiid-article-status": "not-public",
     },
   });
 }
@@ -128,6 +174,14 @@ export async function proxy(request: NextRequest) {
     return;
   }
 
+  const articleSlug = articleSlugFromPath(request.nextUrl.pathname);
+  if (articleSlug) {
+    if (!publicArticleSlugs.has(articleSlug)) {
+      return missingArticleResponse(request);
+    }
+    return;
+  }
+
   const slug = productSlugFromPath(request.nextUrl.pathname);
   if (!slug) return;
 
@@ -152,5 +206,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/product/:slug",
+  matcher: ["/product/:slug", "/magazine/:slug"],
 };
