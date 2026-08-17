@@ -25,8 +25,12 @@ const products = [
   ["mesolike-eye-top", "تصویر ادیتوریال مزولایک آی تاپ"],
   ["mesolike-hair-men", "تصویر ادیتوریال مزولایک هیر من"],
   ["mesolike-hair", "تصویر ادیتوریال مزولایک ضدریزش مو"],
-  ["liporase-1500", "تصویر ادیتوریال لیپوریز ۱۵۰۰"],
 ];
+
+// Liporase 1500 intentionally stays on its original reviewed storefront asset
+// (`/images/products/liporase-1500.webp`). The previous image was complete and
+// only needed presentation alignment; replacing its pixels with a regenerated
+// asset damaged the box/vials and must not happen again.
 
 fs.mkdirSync(outputDir, { recursive: true });
 
