@@ -25,22 +25,31 @@ const products = [
   ["mesolike-eye-top", "تصویر ادیتوریال مزولایک آی تاپ"],
   ["mesolike-hair-men", "تصویر ادیتوریال مزولایک هیر من"],
   ["mesolike-hair", "تصویر ادیتوریال مزولایک ضدریزش مو"],
+  ["liporase-1500", "تصویر روتوش‌شده سه ویال لیپوریز ۱۵۰۰ بدون واترمارک"],
 ];
-
-// Liporase 1500 intentionally stays on its original reviewed storefront asset
-// (`/images/products/liporase-1500.webp`). The previous image was complete and
-// only needed presentation alignment; replacing its pixels with a regenerated
-// asset damaged the box/vials and must not happen again.
 
 fs.mkdirSync(outputDir, { recursive: true });
 
 for (const [slug] of products) {
   const payloadPath = path.join(payloadDir, `${slug}.webp.b64`);
-  if (!fs.existsSync(payloadPath)) {
-    throw new Error(`Missing approved image payload: ${payloadPath}`);
+  const chunkPrefix = `${slug}.webp.b64.part`;
+  const chunkFiles = fs
+    .readdirSync(payloadDir)
+    .filter((name) => name.startsWith(chunkPrefix))
+    .sort();
+
+  let encoded;
+  if (chunkFiles.length > 0) {
+    encoded = chunkFiles
+      .map((name) => fs.readFileSync(path.join(payloadDir, name), "utf8").trim())
+      .join("");
+  } else {
+    if (!fs.existsSync(payloadPath)) {
+      throw new Error(`Missing approved image payload: ${payloadPath}`);
+    }
+    encoded = fs.readFileSync(payloadPath, "utf8").trim();
   }
 
-  const encoded = fs.readFileSync(payloadPath, "utf8").trim();
   const bytes = Buffer.from(encoded, "base64");
   const isWebp =
     bytes.length > 12 &&
