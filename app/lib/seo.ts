@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canonicalizePublicProductPath } from "./public-product-url";
 
 export const defaultSocialImage =
   "/images/drive/hero-rejuvenation.webp";
@@ -54,11 +55,12 @@ export function buildSeoMetadata({
   const description = toMetaDescription(
     rawDescription,
   );
+  const canonicalPath = canonicalizePublicProductPath(path);
 
   const sharedOpenGraph = {
     title,
     description,
-    url: path,
+    url: canonicalPath,
     locale: "fa_IR",
     siteName: "Sepiid Beauty",
     images: [
@@ -87,7 +89,7 @@ export function buildSeoMetadata({
     title,
     description,
     alternates: {
-      canonical: path,
+      canonical: canonicalPath,
     },
     openGraph,
     twitter: {
