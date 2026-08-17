@@ -10,11 +10,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/magazine/profhilo-vs-dermal-filler",
-        destination: "/magazine/neuramis-vs-revofil-guide",
-        permanent: true,
-      },
-      {
         source: "/product/neuramis-volume-lidocaine",
         destination: "/product/neuramis-deep-lidocaine",
         permanent: true,
