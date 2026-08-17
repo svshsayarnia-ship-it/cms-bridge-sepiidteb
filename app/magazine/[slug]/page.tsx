@@ -20,6 +20,8 @@ async function getEditableArticle(slug: string) {
     .find((article) => article.slug === slug);
 }
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
 }
