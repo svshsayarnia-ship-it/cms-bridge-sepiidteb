@@ -1,8 +1,12 @@
-.sb-product-detail[data-category="hyaluronidase-products"] {
+.sb-product-detail[data-category="hyaluronidase-products"],
+.sb-product-detail:has(.sb-product-gallery__main img[src*="liporase-1500"]),
+.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) {
   background: linear-gradient(180deg, #f8fbfc 0%, #eef4f5 100%);
 }
 
-.sb-product-detail[data-category="hyaluronidase-products"] .sb-product-gallery__main {
+.sb-product-detail[data-category="hyaluronidase-products"] .sb-product-gallery__main,
+.sb-product-detail:has(.sb-product-gallery__main img[src*="liporase-1500"]) .sb-product-gallery__main,
+.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) .sb-product-gallery__main {
   border-color: rgba(157, 178, 187, 0.55);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(225, 235, 239, 0.08)),
