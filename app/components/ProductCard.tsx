@@ -1,5 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element -- remote/SVG fallback when Next Image optimization is not applicable */
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { productHref } from "../catalog";
@@ -13,6 +14,7 @@ import {
 import { ArrowIcon } from "./Icons";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
 
 function numericPrice(value?: string | number): number | null {
   const parsed = Number(value);
@@ -21,6 +23,10 @@ function numericPrice(value?: string | number): number | null {
 
 function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} تومان`;
+}
+
+function canUseNextImage(src: string): boolean {
+  return src.startsWith("/") && !/\.svg(?:\?|$)/iu.test(src);
 }
 
 export function ProductCard({
@@ -51,15 +57,28 @@ export function ProductCard({
         href={href}
         aria-label={`مشاهده ${product.nameFa}`}
       >
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          width="1254"
-          height="1254"
-          loading={priority ? "eager" : "lazy"}
-          fetchPriority={priority ? "high" : "auto"}
-          decoding="async"
-        />
+        {canUseNextImage(imageSrc) ? (
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            width={1254}
+            height={1254}
+            sizes={productImageSizes}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding="async"
+          />
+        ) : (
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            width="1254"
+            height="1254"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding="async"
+          />
+        )}
 
         {product.imageKind === "editorial-family" && (
           <span className="sb-product-card__identity" aria-hidden="true">
