@@ -8,7 +8,7 @@ import "./fusion-product-images.css";
 import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
-import { SiteHeader } from "./components/SiteHeader";
+import { SiteHeaderServer } from "./components/SiteHeaderServer";
 import { SmartAssistant } from "./components/SmartAssistant";
 import { isApprovedInventorySlug } from "./current-inventory";
 import { siteOrigin } from "./lib/site-url";
@@ -26,6 +26,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
 };
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: {
@@ -101,14 +102,19 @@ export default async function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader
+        <SiteHeaderServer
           categories={categories}
           products={headerProducts}
           presentation={presentation.header}
         />
         {children}
-        <SiteFooter presentation={{ ...presentation.footer, brandTagline: presentation.header.brandTagline }} />
-       { <SmartAssistant /> }
+        <SiteFooter
+          presentation={{
+            ...presentation.footer,
+            brandTagline: presentation.header.brandTagline,
+          }}
+        />
+        <SmartAssistant />
         <JsonLd
           data={{
             "@context": "https://schema.org",
