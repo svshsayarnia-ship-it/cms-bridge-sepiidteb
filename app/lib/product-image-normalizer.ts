@@ -4,8 +4,8 @@ import sharp from "sharp";
 
 const MAX_EDGE = 1800;
 const MIN_VISIBLE_ALPHA = 24;
-const EXISTING_ALPHA_RATIO = 0.12;
-const EXISTING_BORDER_ALPHA_RATIO = 0.65;
+const CUTOUT_ALPHA_RATIO = 0.1;
+const CUTOUT_MAX_VISIBLE_BOUNDS_RATIO = 0.84;
 const MAX_BACKGROUND_REMOVAL_RATIO = 0.94;
 const SQUARE_PADDING_RATIO = 0.075;
 
@@ -14,6 +14,13 @@ type RawImage = {
   width: number;
   height: number;
   channels: 4;
+};
+
+type Bounds = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
 export type NormalizedProductImage = {
@@ -59,27 +66,122 @@ function colorDistanceToRgb(
   return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
-function borderPalette(image: RawImage): Array<readonly [number, number, number]> {
-  const { data, width, height, channels } = image;
-  const palette: Array<readonly [number, number, number]> = [];
-  const samples = 18;
-  const pushPixel = (x: number, y: number) => {
-    const offset = (y * width + x) * channels;
-    palette.push([data[offset], data[offset + 1], data[offset + 2]]);
-  };
+function pixelAlpha(image: RawImage, pixel: number) {
+  return image.data[pixel * image.channels + 3];
+}
 
-  for (let index = 0; index <= samples; index += 1) {
-    const x = Math.round((index * (width - 1)) / samples);
-    const y = Math.round((index * (height - 1)) / samples);
-    pushPixel(x, 0);
-    pushPixel(x, height - 1);
-    pushPixel(0, y);
-    pushPixel(width - 1, y);
+function visibleBounds(image: RawImage): Bounds {
+  const { data, width, height, channels } = image;
+  let left = width;
+  let right = -1;
+  let top = height;
+  let bottom = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = data[(y * width + x) * channels + 3];
+      if (alpha < MIN_VISIBLE_ALPHA) continue;
+      left = Math.min(left, x);
+      right = Math.max(right, x);
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+    }
+  }
+
+  if (right < left || bottom < top) {
+    return { left: 0, top: 0, width, height };
+  }
+
+  return {
+    left,
+    top,
+    width: right - left + 1,
+    height: bottom - top + 1,
+  };
+}
+
+function isExistingProductCutout(image: RawImage, bounds: Bounds): boolean {
+  const { data, width, height, channels } = image;
+  const pixels = width * height;
+  let transparent = 0;
+
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (data[pixel * channels + 3] < 245) transparent += 1;
+  }
+
+  const alphaRatio = transparent / pixels;
+  const visibleBoundsRatio =
+    (bounds.width * bounds.height) / Math.max(1, width * height);
+
+  // A real cutout leaves meaningful transparent canvas around the product.
+  // A framed/editorial photo can have rounded transparent corners or an outer
+  // alpha gutter while the actual photograph still occupies almost the whole
+  // canvas. Those framed images must continue through background removal.
+  return (
+    alphaRatio >= CUTOUT_ALPHA_RATIO &&
+    visibleBoundsRatio <= CUTOUT_MAX_VISIBLE_BOUNDS_RATIO
+  );
+}
+
+function firstVisiblePixel(
+  image: RawImage,
+  startX: number,
+  startY: number,
+  stepX: number,
+  stepY: number,
+): number | null {
+  let x = startX;
+  let y = startY;
+  while (x >= 0 && x < image.width && y >= 0 && y < image.height) {
+    const pixel = y * image.width + x;
+    if (pixelAlpha(image, pixel) >= MIN_VISIBLE_ALPHA) return pixel;
+    x += stepX;
+    y += stepY;
+  }
+  return null;
+}
+
+function visibleEdgeSeeds(image: RawImage) {
+  const seeds = new Set<number>();
+  const xSamples = Math.min(28, Math.max(8, Math.floor(image.width / 60)));
+  const ySamples = Math.min(28, Math.max(8, Math.floor(image.height / 60)));
+
+  for (let index = 0; index <= xSamples; index += 1) {
+    const x = Math.round((index * (image.width - 1)) / xSamples);
+    const top = firstVisiblePixel(image, x, 0, 0, 1);
+    const bottom = firstVisiblePixel(image, x, image.height - 1, 0, -1);
+    if (top !== null) seeds.add(top);
+    if (bottom !== null) seeds.add(bottom);
+  }
+
+  for (let index = 0; index <= ySamples; index += 1) {
+    const y = Math.round((index * (image.height - 1)) / ySamples);
+    const left = firstVisiblePixel(image, 0, y, 1, 0);
+    const right = firstVisiblePixel(image, image.width - 1, y, -1, 0);
+    if (left !== null) seeds.add(left);
+    if (right !== null) seeds.add(right);
+  }
+
+  return [...seeds];
+}
+
+function backgroundPalette(
+  image: RawImage,
+  seeds: number[],
+): Array<readonly [number, number, number]> {
+  const palette: Array<readonly [number, number, number]> = [];
+  for (const pixel of seeds) {
+    const offset = pixel * image.channels;
+    palette.push([
+      image.data[offset],
+      image.data[offset + 1],
+      image.data[offset + 2],
+    ]);
   }
   return palette;
 }
 
-function nearestBorderColorDistance(
+function nearestBackgroundDistance(
   image: RawImage,
   pixel: number,
   palette: Array<readonly [number, number, number]>,
@@ -94,75 +196,52 @@ function nearestBorderColorDistance(
   return nearest;
 }
 
-function hasMeaningfulTransparency(image: RawImage): boolean {
-  const { data, width, height, channels } = image;
-  const pixels = width * height;
-  let transparent = 0;
-  let transparentBorder = 0;
-  let borderPixels = 0;
-
-  for (let pixel = 0; pixel < pixels; pixel += 1) {
-    if (data[pixel * channels + 3] < 245) transparent += 1;
-  }
-
-  const countBorder = (pixel: number) => {
-    borderPixels += 1;
-    if (data[pixel * channels + 3] < 245) transparentBorder += 1;
-  };
-
-  for (let x = 0; x < width; x += 1) {
-    countBorder(x);
-    countBorder((height - 1) * width + x);
-  }
-  for (let y = 1; y < height - 1; y += 1) {
-    countBorder(y * width);
-    countBorder(y * width + width - 1);
-  }
-
-  const canvasRatio = transparent / pixels;
-  const borderRatio = borderPixels > 0 ? transparentBorder / borderPixels : 0;
-
-  // Rounded corners, shadows or a thin transparent frame are not a product
-  // cutout. A source is trusted as already-cut-out only when transparency is
-  // substantial across the canvas or dominates the outer edge.
-  return (
-    canvasRatio >= EXISTING_ALPHA_RATIO ||
-    borderRatio >= EXISTING_BORDER_ALPHA_RATIO
-  );
-}
-
 function removeConnectedBackground(image: RawImage): number {
   const { data, width, height, channels } = image;
   const pixels = width * height;
   const original = Buffer.from(data);
-  const palette = borderPalette(image);
+  const seeds = visibleEdgeSeeds(image);
+  if (seeds.length === 0) return 0;
+
+  const palette = backgroundPalette(image, seeds);
   const visited = new Uint8Array(pixels);
+  const background = new Uint8Array(pixels);
   const queue = new Int32Array(pixels);
   let read = 0;
   let write = 0;
 
+  // Transparent gutters around an editorial frame are already background. Mark
+  // them, but seed the flood from the first visible pixels immediately inside
+  // that gutter so the baked studio/photo background can also be removed.
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (pixelAlpha(image, pixel) < MIN_VISIBLE_ALPHA) {
+      visited[pixel] = 1;
+      background[pixel] = 1;
+    }
+  }
+
   const enqueue = (pixel: number) => {
     if (visited[pixel]) return;
     visited[pixel] = 1;
+    background[pixel] = 1;
     queue[write] = pixel;
     write += 1;
   };
 
-  for (let x = 0; x < width; x += 1) {
-    enqueue(x);
-    enqueue((height - 1) * width + x);
-  }
-  for (let y = 1; y < height - 1; y += 1) {
-    enqueue(y * width);
-    enqueue(y * width + width - 1);
-  }
+  for (const seed of seeds) enqueue(seed);
 
   const canJoinBackground = (from: number, next: number) => {
-    const edgeDistance = nearestBorderColorDistance(image, next, palette);
+    if (pixelAlpha(image, next) < MIN_VISIBLE_ALPHA) return true;
+    const edgeDistance = nearestBackgroundDistance(image, next, palette);
     const localDistance = colorDistance(data, from, next, channels);
+
+    // Two complementary paths: normal studio gradients can drift moderately
+    // from the sampled edge as long as neighbouring pixels remain continuous;
+    // highly textured backdrops must stay very close locally to prevent the
+    // product package from being swallowed by the flood.
     return (
-      (edgeDistance <= 52 && localDistance <= 24) ||
-      (edgeDistance <= 92 && localDistance <= 10)
+      (edgeDistance <= 64 && localDistance <= 30) ||
+      (edgeDistance <= 108 && localDistance <= 12)
     );
   };
 
@@ -190,18 +269,24 @@ function removeConnectedBackground(image: RawImage): number {
     }
   }
 
-  const ratio = write / pixels;
+  let backgroundCount = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (background[pixel]) backgroundCount += 1;
+  }
+  const ratio = backgroundCount / pixels;
+
   if (ratio >= MAX_BACKGROUND_REMOVAL_RATIO) {
     original.copy(data);
     return 0;
   }
 
-  for (let index = 0; index < write; index += 1) {
-    data[queue[index] * channels + 3] = 0;
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (background[pixel]) data[pixel * channels + 3] = 0;
   }
 
-  for (let index = 0; index < write; index += 1) {
-    const pixel = queue[index];
+  // Feather the first foreground pixel around the removed connected region.
+  for (let pixel = 0; pixel < pixels; pixel += 1) {
+    if (!background[pixel]) continue;
     const x = pixel % width;
     const y = Math.floor(pixel / width);
     const neighbours = [
@@ -211,36 +296,13 @@ function removeConnectedBackground(image: RawImage): number {
       y + 1 < height ? pixel + width : -1,
     ];
     for (const neighbour of neighbours) {
-      if (neighbour < 0 || visited[neighbour]) continue;
+      if (neighbour < 0 || background[neighbour]) continue;
       const alphaOffset = neighbour * channels + 3;
-      data[alphaOffset] = Math.min(data[alphaOffset], 210);
+      data[alphaOffset] = Math.min(data[alphaOffset], 218);
     }
   }
+
   return ratio;
-}
-
-function visibleBounds(image: RawImage) {
-  const { data, width, height, channels } = image;
-  let left = width;
-  let right = -1;
-  let top = height;
-  let bottom = -1;
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const alpha = data[(y * width + x) * channels + 3];
-      if (alpha < MIN_VISIBLE_ALPHA) continue;
-      left = Math.min(left, x);
-      right = Math.max(right, x);
-      top = Math.min(top, y);
-      bottom = Math.max(bottom, y);
-    }
-  }
-
-  if (right < left || bottom < top) {
-    return { left: 0, top: 0, width, height };
-  }
-  return { left, top, width: right - left + 1, height: bottom - top + 1 };
 }
 
 export async function normalizeCmsProductImage(
@@ -267,8 +329,9 @@ export async function normalizeCmsProductImage(
     channels: 4,
   };
 
-  const alreadyTransparent = hasMeaningfulTransparency(image);
-  const removalRatio = alreadyTransparent ? 0 : removeConnectedBackground(image);
+  const initialBounds = visibleBounds(image);
+  const alreadyCutout = isExistingProductCutout(image, initialBounds);
+  const removalRatio = alreadyCutout ? 0 : removeConnectedBackground(image);
   const bounds = visibleBounds(image);
   const padding = Math.max(
     18,
