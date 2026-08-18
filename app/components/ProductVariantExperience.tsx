@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
@@ -45,6 +46,10 @@ export type ProductExperienceProduct = Pick<
   | "summary"
   | "specs"
 > & {
+  visualProfile?: ProductVisualProfile;
+  visualScale?: number | null;
+  visualOffsetX?: number;
+  visualOffsetY?: number;
   variants?: ProductExperienceVariant[];
 };
 
@@ -237,6 +242,10 @@ export function ProductVariantExperience({
                   category: product.category,
                   masterImage: displayImage,
                   imageAlt: displayImageAlt,
+                  visualProfile: product.visualProfile,
+                  visualScale: product.visualScale,
+                  visualOffsetX: product.visualOffsetX,
+                  visualOffsetY: product.visualOffsetY,
                 }}
                 variant="detail"
                 priority
