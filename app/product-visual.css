@@ -1,0 +1,109 @@
+/* Permanent Sepiid Beauty product image system.
+   Product assets are rendered only inside ProductVisual. Category art remains
+   sourced from the already-approved --category-* variables on the surrounding UI. */
+
+.product-visual {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  isolation: isolate;
+  background: inherit;
+}
+
+.product-visual__background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: inherit;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+
+.product-visual:not(.product-visual--with-background),
+.product-visual:not(.product-visual--with-background) .product-visual__background {
+  background: transparent !important;
+}
+
+.product-visual__stage {
+  position: absolute;
+  z-index: 1;
+  inset: 7% 7% 8%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: center bottom;
+  transition: transform 220ms ease;
+}
+
+.product-visual__image {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  background: transparent !important;
+  transform-origin: center bottom !important;
+  transform: translate3d(
+      var(--product-visual-offset-x, 0%),
+      var(--product-visual-offset-y, 0%),
+      0
+    )
+    scale(var(--product-visual-scale, 0.87)) !important;
+  filter: drop-shadow(0 16px 14px rgba(39, 32, 28, 0.15)) !important;
+}
+
+.product-visual--detail .product-visual__stage {
+  inset: 7% 7% 8%;
+}
+
+.product-visual--search .product-visual__stage,
+.product-visual--thumbnail .product-visual__stage {
+  inset: 5%;
+}
+
+.product-visual--search .product-visual__image,
+.product-visual--thumbnail .product-visual__image {
+  filter: drop-shadow(0 5px 6px rgba(39, 32, 28, 0.12)) !important;
+}
+
+.sb-product-card:hover .product-visual__stage {
+  transform: scale(1.015);
+}
+
+/* Legacy selectors may still exist during migration. ProductVisual owns image
+   geometry and prevents old per-surface/per-product rules from changing crop,
+   position, blend mode or padding. */
+:where(
+    .sb-product-card__visual,
+    .sb-product-gallery__main,
+    .sb-featured-carousel__visual,
+    .sb-category-commerce-hero__product-image,
+    .sb-search-results__image
+  )
+  .product-visual__image {
+  box-sizing: border-box !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-visual__stage {
+    transition: none;
+  }
+}
