@@ -1,17 +1,14 @@
-/* eslint-disable @next/next/no-img-element -- remote/SVG fallback when Next Image optimization is not applicable */
-
-import Image from "next/image";
 import Link from "next/link";
 
 import { productHref } from "../catalog";
 import type { PublicProduct } from "../lib/public-product";
-import { getProductCutoutSrc } from "../lib/product-image";
 import {
   getCompactBrandLabel,
   getPublicPackagingLabel,
   getPublicVolumeLabel,
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
+import { ProductVisual } from "./product/ProductVisual";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
@@ -25,10 +22,6 @@ function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} تومان`;
 }
 
-function canUseNextImage(src: string): boolean {
-  return src.startsWith("/") && !/\.svg(?:\?|$)/iu.test(src);
-}
-
 export function ProductCard({
   product,
   priority = false,
@@ -38,9 +31,6 @@ export function ProductCard({
 }) {
   const href = productHref(product);
   const volume = getPublicVolumeLabel(product.volume);
-
-  const imageSrc = getProductCutoutSrc(product.image);
-  const imageAlt = product.imageAlt || `تصویر ${product.nameFa}`;
   const brand = getCompactBrandLabel(product.brand);
   const packagingLabel = getPublicPackagingLabel(volume);
   const salePrice = numericPrice(product.salePrice);
@@ -57,28 +47,12 @@ export function ProductCard({
         href={href}
         aria-label={`مشاهده ${product.nameFa}`}
       >
-        {canUseNextImage(imageSrc) ? (
-          <Image
-            src={imageSrc}
-            alt={imageAlt}
-            width={1254}
-            height={1254}
-            sizes={productImageSizes}
-            loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : "auto"}
-            decoding="async"
-          />
-        ) : (
-          <img
-            src={imageSrc}
-            alt={imageAlt}
-            width="1254"
-            height="1254"
-            loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : "auto"}
-            decoding="async"
-          />
-        )}
+        <ProductVisual
+          product={product}
+          variant="card"
+          priority={priority}
+          sizes={productImageSizes}
+        />
 
         {product.imageKind === "editorial-family" && (
           <span className="sb-product-card__identity" aria-hidden="true">
