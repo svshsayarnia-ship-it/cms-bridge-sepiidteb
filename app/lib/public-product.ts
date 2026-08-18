@@ -19,6 +19,8 @@ export type PublicProduct = Pick<
   | "shortBenefit"
   | "priceToman"
 > & {
+  /** Canonical product asset used by every visual surface. */
+  masterImage: string;
   price?: string;
   regularPrice?: string;
   salePrice?: string;
@@ -63,6 +65,7 @@ export function toPublicProduct(
     categoryTitle: product.categoryTitle,
     badge: product.badge,
     image: product.image,
+    masterImage: product.image,
     imageAlt: product.imageAlt,
     imageKind: product.imageKind,
     position: product.position,
