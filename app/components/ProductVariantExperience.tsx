@@ -202,9 +202,11 @@ export function ProductVariantExperience({
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
+  // Prefer the normalized local catalog cutout on the PDP whenever it exists.
+  // Woo media remains the fallback for CMS-only products with no local master.
   const displayImage =
-    selectedVariant?.image ?? liveImage?.src ?? catalogImage?.src ?? product.image;
-  const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? catalogImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
+    selectedVariant?.image || catalogImage?.src || liveImage?.src || product.image;
+  const displayImageAlt = selectedVariant?.imageAlt || catalogImage?.alt || liveImage?.alt || product.imageAlt || `تصویر ${displayName}`;
   const isEditorialFamilyImage =
     (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
     !liveImage?.src;
