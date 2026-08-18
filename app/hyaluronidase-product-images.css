@@ -1,15 +1,31 @@
 .sb-product-detail[data-category="hyaluronidase-products"],
 .sb-product-detail:has(.sb-product-gallery__main img[src*="liporase-1500"]),
-.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) {
+.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]),
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="لیپوریز"]),
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="هایالاز"]) {
   background: linear-gradient(180deg, #f8fbfc 0%, #eef4f5 100%);
 }
 
 .sb-product-detail[data-category="hyaluronidase-products"] .sb-product-gallery__main,
 .sb-product-detail:has(.sb-product-gallery__main img[src*="liporase-1500"]) .sb-product-gallery__main,
-.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) .sb-product-gallery__main {
+.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) .sb-product-gallery__main,
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="لیپوریز"]) .sb-product-gallery__main,
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="هایالاز"]) .sb-product-gallery__main {
+  overflow: hidden;
   border-color: rgba(157, 178, 187, 0.55);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(225, 235, 239, 0.08)),
     url("/images/product-stages/hyaluronidase-products.webp") center / cover no-repeat,
     #e9f0f1;
+}
+
+.sb-product-detail[data-category="hyaluronidase-products"] .sb-product-gallery__main img,
+.sb-product-detail:has(.sb-product-gallery__main img[src*="liporase-1500"]) .sb-product-gallery__main img,
+.sb-product-detail:has(.sb-product-gallery__main img[src*="hyalase-1500"]) .sb-product-gallery__main img,
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="لیپوریز"]) .sb-product-gallery__main img,
+.sb-product-detail:has(.sb-product-gallery__main img[alt*="هایالاز"]) .sb-product-gallery__main img {
+  box-sizing: border-box;
+  object-fit: contain;
+  object-position: center;
+  padding: clamp(12px, 2vw, 24px);
 }
