@@ -1,19 +1,15 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { CmsImage, CmsProduct, CmsProductInput } from "@/app/lib/cms-types";
-import { normalizeCmsProductImage } from "@/app/lib/product-image-normalizer";
+import type { CmsProduct, CmsProductInput } from "@/app/lib/cms-types";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
 import {
   getProductBySlug,
   listCategories,
   updateProduct,
-  uploadMedia,
 } from "@/app/lib/woocommerce";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const maxDuration = 120;
 
 const EXPECTED_TOKEN_HASH =
   "a72c2117824532bad288aad386faf5dcf8cc7bd989a815e552821cae417219e8";
@@ -34,10 +30,9 @@ function isAuthorized(request: Request) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-function withImages(
+function withoutWooImage(
   product: CmsProduct,
   categoryId: number,
-  images: CmsImage[],
 ): CmsProductInput {
   return {
     name: product.name,
@@ -62,7 +57,7 @@ function withImages(
     stockQuantity: product.stockQuantity,
     stockStatus: product.stockStatus,
     categoryIds: [categoryId],
-    images,
+    images: [],
     expectedModifiedGmt: product.dateModifiedGmt || undefined,
   };
 }
@@ -90,66 +85,12 @@ export async function GET(request: Request) {
     );
     if (!category) throw new Error("Hyaluronidase category not found");
 
-    const sourceImage = product.images.find((image) => Boolean(image.src));
-    if (!sourceImage) {
-      const updated = await updateProduct(
-        product.id,
-        withImages(product, category.id, []),
-      );
-      await rememberStorefrontProduct(updated, { requirePersistence: true });
-      return Response.json({
-        ok: true,
-        fallbackUsed: true,
-        product: {
-          id: updated.id,
-          slug: updated.slug,
-          category: updated.categories[0] ?? null,
-          image: null,
-        },
-      });
-    }
-
-    const response = await fetch(sourceImage.src, {
-      cache: "no-store",
-      headers: { accept: "image/*" },
-    });
-    if (!response.ok) {
-      throw new Error(`Unable to fetch Liporase image (${response.status})`);
-    }
-
-    const bytes = await response.arrayBuffer();
-    const contentType =
-      response.headers.get("content-type")?.split(";", 1)[0] || "image/webp";
-    const filename =
-      new URL(sourceImage.src).pathname.split("/").pop() || "liporase.webp";
-    const normalized = await normalizeCmsProductImage(
-      new File([bytes], filename, { type: contentType }),
-    );
-
-    let images: CmsImage[] = [];
-    let fallbackUsed = !normalized.validatedCutout;
-
-    if (normalized.validatedCutout) {
-      const uploaded = await uploadMedia(
-        normalized.file,
-        sourceImage.alt || product.name,
-        crypto.randomUUID(),
-      );
-      images = [
-        {
-          ...uploaded,
-          alt: sourceImage.alt || uploaded.alt || product.name,
-        },
-      ];
-      fallbackUsed = false;
-    }
-
-    // If the current photo cannot be confidently isolated, deliberately clear
-    // Woo media. The storefront then falls back to its approved static cutout
-    // while the category stage remains the sole owner of visual identity.
+    // The current Woo image was produced by the old full-frame CMS workflow.
+    // Clear it deliberately so the storefront uses its approved static product
+    // cutout while the category-specific visual stage owns the background.
     const updated = await updateProduct(
       product.id,
-      withImages(product, category.id, images),
+      withoutWooImage(product, category.id),
     );
     await rememberStorefrontProduct(updated, { requirePersistence: true });
 
@@ -160,17 +101,12 @@ export async function GET(request: Request) {
 
     return Response.json({
       ok: true,
-      fallbackUsed,
+      fallbackUsed: true,
       product: {
         id: updated.id,
         slug: updated.slug,
         category: updated.categories[0] ?? null,
-        image: updated.images[0]?.src ?? null,
-      },
-      normalization: {
-        validatedCutout: normalized.validatedCutout,
-        removedBackground: normalized.removedBackground,
-        removalRatio: normalized.removalRatio,
+        imageCount: updated.images.length,
       },
     });
   } catch (error) {
