@@ -68,7 +68,11 @@ function resolvedProductImage(urlPath) {
 }
 
 const references = new Map();
-const literalPattern = /["'`](\/images\/(?:categories|products|drive)\/[^"'`?\s)]+(?:\?[^"'`\s)]*)?)["'`]/gu;
+// Only concrete image literals are eligible. This deliberately ignores path
+// prefixes and template strings such as `/images/.../${assetName}.webp` because
+// those are runtime builders, not files that can be validated statically.
+const literalPattern =
+  /["'`](\/images\/(?:categories|products|drive)\/[^"'`$\s)]+\.(?:png|jpe?g|webp|gif|svg)(?:\?[^"'`\s)]*)?)["'`]/giu;
 
 for (const file of walk(appRoot)) {
   const source = fs.readFileSync(file, "utf8");
