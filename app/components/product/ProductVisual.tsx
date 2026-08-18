@@ -5,10 +5,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
-import {
-  getProductVisualCategoryConfig,
-  type ProductVisualAnchor,
-} from "../../config/productVisualConfig";
+import { getProductVisualCategoryConfig } from "../../config/productVisualConfig";
 import {
   VISUAL_PROFILES,
   type ProductVisualProfile,
@@ -68,10 +65,6 @@ function finiteOrNull(value: number | null | undefined) {
 
 function canUseNextImage(src: string) {
   return src.startsWith("/") && !/\.svg(?:\?|$)/iu.test(src);
-}
-
-function resolveAnchor(anchor: ProductVisualAnchor) {
-  return anchor === "center-bottom" ? "center bottom" : "center bottom";
 }
 
 function getVariantSizes(variant: ProductVisualVariant) {
