@@ -82,6 +82,18 @@
   filter: drop-shadow(0 5px 6px rgba(39, 32, 28, 0.12)) !important;
 }
 
+.sb-search-results__image.product-visual {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+}
+
+.sb-featured-carousel__rail-visual {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+}
+
 .sb-product-card:hover .product-visual__stage {
   transform: scale(1.015);
 }
