@@ -1,4 +1,5 @@
 import { cmsApiGuard } from "@/app/lib/cms-auth";
+import { normalizeCmsProductImage } from "@/app/lib/product-image-normalizer";
 import { errorResponse, uploadMedia, WooCommerceError } from "@/app/lib/woocommerce";
 
 export const dynamic = "force-dynamic";
@@ -45,12 +46,50 @@ export async function POST(request: Request) {
       );
     }
 
+    let normalized;
+    try {
+      normalized = await normalizeCmsProductImage(file);
+    } catch (normalizationError) {
+      console.warn("[sepiid-media] normalization_failed", {
+        correlationId,
+        elapsedMs: Math.round(performance.now() - startedAt),
+        error:
+          normalizationError instanceof Error
+            ? normalizationError.message
+            : "unknown",
+      });
+      throw new WooCommerceError(
+        "آماده‌سازی خودکار تصویر محصول ناموفق بود. یک تصویر واضح PNG، JPG یا WebP دوباره آپلود کن.",
+        422,
+        "product_image_normalization_failed",
+      );
+    }
+
+    console.info("[sepiid-media] product_image_normalized", {
+      correlationId,
+      inputBytes: file.size,
+      outputBytes: normalized.file.size,
+      removedBackground: normalized.removedBackground,
+      removalRatio: normalized.removalRatio,
+      elapsedMs: Math.round(performance.now() - startedAt),
+    });
+
     const image = await uploadMedia(
-      file,
+      normalized.file,
       String(form.get("alt") ?? ""),
       correlationId,
     );
-    return Response.json({ image }, { status: 201 });
+    return Response.json(
+      {
+        image,
+        normalization: {
+          transparentCutout: true,
+          removedBackground: normalized.removedBackground,
+          removalRatio: normalized.removalRatio,
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return errorResponse(error);
   }
