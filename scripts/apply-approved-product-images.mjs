@@ -12,16 +12,15 @@ const outputDir = path.join(
   "approved",
 );
 
+// Master Spec Rule_02: Fusion products are foreground-only assets. Their
+// normalized transparent cutouts live under public/images/products/cutouts and
+// must never be replaced at build time by baked editorial scenes. Keep this
+// list limited to non-Fusion products that intentionally use editorial assets.
 const products = [
   ["masport", "تصویر ادیتوریال مصپورت ۵۰۰ واحد"],
   ["dyston-500", "تصویر ادیتوریال دیستون ۵۰۰"],
   ["blank-b", "تصویر ادیتوریال بلانک بی"],
-  ["fusion-f-eye-contour", "تصویر ادیتوریال فیوژن اف آی کانتور"],
-  ["fusion-f-mesomatrix", "تصویر ادیتوریال فیوژن اف مزوماتریکس"],
-  ["fusion-f-vitamin-c", "تصویر ادیتوریال فیوژن اف ویتامین سی"],
-  ["fusion-f-melirutin", "تصویر ادیتوریال فیوژن اف ملی‌روتین"],
   ["mesolike-glutathione", "تصویر ادیتوریال مزولایک گلوتاتیون"],
-  ["fusion-f-hair", "تصویر ادیتوریال فیوژن اف هیر"],
   ["mesolike-eye-top", "تصویر ادیتوریال مزولایک آی تاپ"],
   ["mesolike-hair-men", "تصویر ادیتوریال مزولایک هیر من"],
   ["mesolike-hair", "تصویر ادیتوریال مزولایک ضدریزش مو"],
