@@ -15,6 +15,33 @@
   background: transparent;
 }
 
+/* PDP safeguard: globals.css still contains a legacy direct-child span rule
+   for old gallery badges. ProductVisual is also a span, so that selector can
+   accidentally make the whole visual absolute and collapse the gallery.
+   Keep the product visual in normal flow and give the gallery deterministic
+   square geometry without changing any approved category styling. */
+.sb-product-gallery__main {
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+}
+
+.sb-product-gallery__main > .product-visual {
+  position: relative;
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: 1;
+}
+
 .product-visual__background {
   position: absolute;
   inset: 0;
