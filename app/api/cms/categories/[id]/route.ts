@@ -81,13 +81,13 @@ function parseImage(
 
   if (
     !Number.isSafeInteger(id) ||
-    id < 0 ||
-    (id === 0 && !src)
+    id <= 0 ||
+    !src
   ) {
     throw new WooCommerceError(
-      "تصویر دسته‌بندی معتبر نیست.",
+      "تصویر دسته‌بندی باید از بخش آپلود CMS اضافه شود؛ آدرس مستقیم تصویر به WooCommerce ارسال نمی‌شود.",
       400,
-      "invalid_category_image",
+      "cms_managed_media_required",
     );
   }
 
