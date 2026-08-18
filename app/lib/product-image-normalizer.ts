@@ -12,7 +12,7 @@ type RawImage = {
   data: Buffer;
   width: number;
   height: number;
-  channels: number;
+  channels: 4;
 };
 
 export type NormalizedProductImage = {
@@ -99,8 +99,6 @@ function nearestBorderColorDistance(
 
 function hasMeaningfulTransparency(image: RawImage): boolean {
   const { data, width, height, channels } = image;
-  if (channels < 4) return false;
-
   const pixels = width * height;
   let transparent = 0;
   for (let pixel = 0; pixel < pixels; pixel += 1) {
@@ -250,6 +248,7 @@ export async function normalizeCmsProductImage(
       fit: "inside",
       withoutEnlargement: true,
     })
+    .toColourspace("srgb")
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -258,7 +257,7 @@ export async function normalizeCmsProductImage(
     data: decoded.data,
     width: decoded.info.width,
     height: decoded.info.height,
-    channels: decoded.info.channels,
+    channels: 4,
   };
 
   const alreadyTransparent = hasMeaningfulTransparency(image);
@@ -277,7 +276,7 @@ export async function normalizeCmsProductImage(
     raw: {
       width: image.width,
       height: image.height,
-      channels: image.channels,
+      channels: 4,
     },
   }).extract(bounds);
 
