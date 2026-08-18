@@ -83,10 +83,18 @@ export type CmsProductInput = Omit<
   | "categories"
   | "brands"
   | "pricing"
+  | "visualProfile"
+  | "visualScale"
+  | "visualOffsetX"
+  | "visualOffsetY"
 > & {
   id?: number;
   categoryIds: number[];
   expectedModifiedGmt?: string;
+  visualProfile?: ProductVisualProfile;
+  visualScale?: number | null;
+  visualOffsetX?: number;
+  visualOffsetY?: number;
 };
 
 export type CmsProductsResponse = {
