@@ -19,8 +19,8 @@ export type PublicProduct = Pick<
   | "shortBenefit"
   | "priceToman"
 > & {
-  /** Canonical product asset used by every visual surface. */
-  masterImage: string;
+  /** Canonical product asset when the product passed through the public mapper. */
+  masterImage?: string;
   price?: string;
   regularPrice?: string;
   salePrice?: string;
