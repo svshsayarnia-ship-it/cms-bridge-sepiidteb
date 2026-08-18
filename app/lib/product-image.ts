@@ -6,19 +6,27 @@ const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pr
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
 
 // Master Spec Rule_02: Fusion foreground assets must always resolve to the
-// normalized transparent cutout. This also covers WooCommerce-hosted copies of
-// the same filename so a stale Featured Image cannot reintroduce a baked-in
-// background on cards or PDPs while the CMS media library is being cleaned up.
-const MASTER_SPEC_CUTOUT_FILENAMES = new Set([
-  "f-mesomatrix.webp",
-  "fusion-f-radiance.webp",
-  "fusion-lift-face.webp",
-  "fusion-melaclear.webp",
-  "f-vitamin-c.webp",
-  "f-melirutin.webp",
-  "f-eye-contour.webp",
-  "f-hair.webp",
-  "fusion-hair-men.webp",
+// normalized transparent cutout. The aliases cover source photographs,
+// generated editorial filenames and WooCommerce-hosted copies so no entry
+// point can reintroduce a baked background on cards or PDPs.
+const MASTER_SPEC_CUTOUT_ALIASES = new Map<string, string>([
+  ["f-mesomatrix.webp", "f-mesomatrix.webp"],
+  ["fusion-f-mesomatrix.webp", "f-mesomatrix.webp"],
+  ["fusion-f-radiance.webp", "fusion-f-radiance.webp"],
+  ["fusion-lift-face.webp", "fusion-lift-face.webp"],
+  ["fusion-f-lift-face.webp", "fusion-lift-face.webp"],
+  ["fusion-melaclear.webp", "fusion-melaclear.webp"],
+  ["fusion-f-melaclear.webp", "fusion-melaclear.webp"],
+  ["f-vitamin-c.webp", "f-vitamin-c.webp"],
+  ["fusion-f-vitamin-c.webp", "f-vitamin-c.webp"],
+  ["f-melirutin.webp", "f-melirutin.webp"],
+  ["fusion-f-melirutin.webp", "f-melirutin.webp"],
+  ["f-eye-contour.webp", "f-eye-contour.webp"],
+  ["fusion-f-eye-contour.webp", "f-eye-contour.webp"],
+  ["f-hair.webp", "f-hair.webp"],
+  ["fusion-f-hair.webp", "f-hair.webp"],
+  ["fusion-hair-men.webp", "fusion-hair-men.webp"],
+  ["fusion-f-hair-men.webp", "fusion-hair-men.webp"],
 ]);
 
 function withoutQuery(src: string): string {
@@ -40,8 +48,9 @@ function filenameFromSrc(src: string): string {
 
 function resolveMasterSpecCutout(src: string): string | null {
   const filename = filenameFromSrc(src);
-  return MASTER_SPEC_CUTOUT_FILENAMES.has(filename)
-    ? `${CUTOUT_ROOT}sourced/${filename}`
+  const cutoutFilename = MASTER_SPEC_CUTOUT_ALIASES.get(filename);
+  return cutoutFilename
+    ? `${CUTOUT_ROOT}sourced/${cutoutFilename}`
     : null;
 }
 
