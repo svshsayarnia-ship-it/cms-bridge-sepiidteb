@@ -27,6 +27,7 @@ export type NormalizedProductImage = {
   file: File;
   removedBackground: boolean;
   removalRatio: number;
+  validatedCutout: boolean;
 };
 
 function safeStem(filename: string): string {
@@ -113,10 +114,6 @@ function isExistingProductCutout(image: RawImage, bounds: Bounds): boolean {
   const visibleBoundsRatio =
     (bounds.width * bounds.height) / Math.max(1, width * height);
 
-  // A real cutout leaves meaningful transparent canvas around the product.
-  // A framed/editorial photo can have rounded transparent corners or an outer
-  // alpha gutter while the actual photograph still occupies almost the whole
-  // canvas. Those framed images must continue through background removal.
   return (
     alphaRatio >= CUTOUT_ALPHA_RATIO &&
     visibleBoundsRatio <= CUTOUT_MAX_VISIBLE_BOUNDS_RATIO
@@ -210,9 +207,6 @@ function removeConnectedBackground(image: RawImage): number {
   let read = 0;
   let write = 0;
 
-  // Transparent gutters around an editorial frame are already background. Mark
-  // them, but seed the flood from the first visible pixels immediately inside
-  // that gutter so the baked studio/photo background can also be removed.
   for (let pixel = 0; pixel < pixels; pixel += 1) {
     if (pixelAlpha(image, pixel) < MIN_VISIBLE_ALPHA) {
       visited[pixel] = 1;
@@ -234,11 +228,6 @@ function removeConnectedBackground(image: RawImage): number {
     if (pixelAlpha(image, next) < MIN_VISIBLE_ALPHA) return true;
     const edgeDistance = nearestBackgroundDistance(image, next, palette);
     const localDistance = colorDistance(data, from, next, channels);
-
-    // Two complementary paths: normal studio gradients can drift moderately
-    // from the sampled edge as long as neighbouring pixels remain continuous;
-    // highly textured backdrops must stay very close locally to prevent the
-    // product package from being swallowed by the flood.
     return (
       (edgeDistance <= 64 && localDistance <= 30) ||
       (edgeDistance <= 108 && localDistance <= 12)
@@ -284,7 +273,6 @@ function removeConnectedBackground(image: RawImage): number {
     if (background[pixel]) data[pixel * channels + 3] = 0;
   }
 
-  // Feather the first foreground pixel around the removed connected region.
   for (let pixel = 0; pixel < pixels; pixel += 1) {
     if (!background[pixel]) continue;
     const x = pixel % width;
@@ -332,6 +320,7 @@ export async function normalizeCmsProductImage(
   const initialBounds = visibleBounds(image);
   const alreadyCutout = isExistingProductCutout(image, initialBounds);
   const removalRatio = alreadyCutout ? 0 : removeConnectedBackground(image);
+  const validatedCutout = alreadyCutout || removalRatio > 0.02;
   const bounds = visibleBounds(image);
   const padding = Math.max(
     18,
@@ -373,5 +362,6 @@ export async function normalizeCmsProductImage(
     file,
     removedBackground: removalRatio > 0.02,
     removalRatio: Math.round(removalRatio * 1000) / 1000,
+    validatedCutout,
   };
 }
