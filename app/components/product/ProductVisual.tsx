@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- remote/SVG fallback stays centralized here */
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 
 import { getProductVisualCategoryConfig } from "../../config/productVisualConfig";
 import {
@@ -100,11 +100,8 @@ export function ProductVisual({
       product.image?.trim() ||
       FALLBACK_PRODUCT_IMAGE,
   );
-  const [src, setSrc] = useState(requestedSrc);
-
-  useEffect(() => {
-    setSrc(requestedSrc);
-  }, [requestedSrc]);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const src = failedSrc === requestedSrc ? FALLBACK_PRODUCT_IMAGE : requestedSrc;
 
   const categoryConfig = getProductVisualCategoryConfig(product.category);
   const profile =
@@ -144,6 +141,9 @@ export function ProductVisual({
     : product.imageAlt?.trim() || `تصویر ${product.nameFa}`;
   const imageClassName = "product-visual__image";
   const imageSizes = sizes ?? getVariantSizes(variant);
+  const handleImageError = () => {
+    if (src !== FALLBACK_PRODUCT_IMAGE) setFailedSrc(requestedSrc);
+  };
 
   const image = canUseNextImage(src) ? (
     <Image
@@ -151,9 +151,7 @@ export function ProductVisual({
       className={imageClassName}
       draggable={draggable}
       fill
-      onError={() => {
-        if (src !== FALLBACK_PRODUCT_IMAGE) setSrc(FALLBACK_PRODUCT_IMAGE);
-      }}
+      onError={handleImageError}
       priority={priority}
       sizes={imageSizes}
       src={src}
@@ -166,9 +164,7 @@ export function ProductVisual({
       draggable={draggable}
       fetchPriority={priority ? "high" : "auto"}
       loading={priority ? "eager" : "lazy"}
-      onError={() => {
-        if (src !== FALLBACK_PRODUCT_IMAGE) setSrc(FALLBACK_PRODUCT_IMAGE);
-      }}
+      onError={handleImageError}
       src={src}
     />
   );
@@ -184,9 +180,7 @@ export function ProductVisual({
       style={visualStyle}
     >
       <span className="product-visual__background" aria-hidden="true" />
-      <span className="product-visual__stage">
-        {image}
-      </span>
+      <span className="product-visual__stage">{image}</span>
     </span>
   );
 }
