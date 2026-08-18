@@ -25,7 +25,6 @@ const products = [
   ["mesolike-eye-top", "تصویر ادیتوریال مزولایک آی تاپ"],
   ["mesolike-hair-men", "تصویر ادیتوریال مزولایک هیر من"],
   ["mesolike-hair", "تصویر ادیتوریال مزولایک ضدریزش مو"],
-  ["hyalase-1500", "تصویر ادیتوریال هیالاز انگلیسی ۱۵۰۰ واحد روی استیج آبی یخی"],
 ];
 
 fs.mkdirSync(outputDir, { recursive: true });
