@@ -196,8 +196,55 @@ function publicFallbackForProduct(
   const exact = fallbackBySlug.get(product.slug);
   if (exact) return exact;
 
-  const canonicalSlug = product.slug.replace(/-\d+$/, "");
-  return fallbackBySlug.get(canonicalSlug);
+  // WooCommerce appends -2, -3, ... when a historical slug is still occupied.
+  // Resolve only a plausible duplicate suffix and only when that canonical
+  // catalog slug actually exists. Do not strip arbitrary model numbers such as
+  // neuronox-100 or dyston-500.
+  const duplicateMatch = product.slug.match(/^(.*)-(\d+)$/u);
+  if (!duplicateMatch) return undefined;
+
+  const suffix = Number(duplicateMatch[2]);
+  if (!Number.isInteger(suffix) || suffix < 2 || suffix > 20) {
+    return undefined;
+  }
+
+  return fallbackBySlug.get(duplicateMatch[1]);
+}
+
+function preferSnapshot(
+  current: StorefrontProduct | undefined,
+  candidate: StorefrontProduct,
+): StorefrontProduct {
+  if (!current) return candidate;
+
+  const currentModified = Date.parse(current.dateModifiedGmt || "");
+  const candidateModified = Date.parse(candidate.dateModifiedGmt || "");
+
+  if (
+    Number.isFinite(candidateModified) &&
+    (!Number.isFinite(currentModified) || candidateModified > currentModified)
+  ) {
+    return candidate;
+  }
+
+  if (
+    Number.isFinite(currentModified) &&
+    Number.isFinite(candidateModified) &&
+    candidateModified < currentModified
+  ) {
+    return current;
+  }
+
+  // If legacy snapshots lack reliable modification timestamps, prefer the one
+  // carrying a real CMS/Woo image over a static fallback. This prevents an old
+  // slug alias with no media from replacing the current CMS photograph.
+  const currentHasCmsImage = current.imageKind === "official";
+  const candidateHasCmsImage = candidate.imageKind === "official";
+  if (candidateHasCmsImage !== currentHasCmsImage) {
+    return candidateHasCmsImage ? candidate : current;
+  }
+
+  return candidate;
 }
 
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
@@ -224,9 +271,14 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
     .filter((product) => !Object.hasOwn(currentInventoryLegacyAliases, product.slug))
     .filter((product) => isApprovedInventorySlug(product.slug));
 
-  const snapshotProducts = Array.from(
-    new Map(mappedSnapshots.map((product) => [product.slug, product])).values(),
-  );
+  const snapshotBySlug = new Map<string, StorefrontProduct>();
+  for (const product of mappedSnapshots) {
+    snapshotBySlug.set(
+      product.slug,
+      preferSnapshot(snapshotBySlug.get(product.slug), product),
+    );
+  }
+  const snapshotProducts = Array.from(snapshotBySlug.values());
   const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
   const fallbackProducts = approvedCatalogProducts
     .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
