@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
 
 const steps = [
   { label: "انتخاب دسته", hint: "از گروه محصول شروع کنید.", href: "/shop", action: "دیدن دسته‌ها" },
@@ -16,16 +13,14 @@ const steps = [
 ];
 
 export function CustomerJourney() {
-  const [expanded, setExpanded] = useState<number | null>(null);
-
   return (
     <nav className="sb-page-journey" aria-label="مسیر مشتری در سپید بیوتی">
       <div className="sb-page-journey__rail">
         <span className="sb-page-journey__label">مسیر شما در سپید</span>
         <ol>
           {steps.map((step, index) => (
-            <li className={expanded === index ? "sb-page-journey__item--expanded" : ""} key={step.label}>
-              <Link href={step.href} onClick={(event) => { if (event.detail === 0) setExpanded(index); }}>
+            <li key={step.label}>
+              <Link href={step.href}>
                 <span className="sb-page-journey__bubble">۰{index + 1}</span>
                 <span>{step.label}</span>
               </Link>
