@@ -1,5 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
-
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -11,10 +9,10 @@ import {
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
+import { ProductVisual } from "../../components/product/ProductVisual";
 import { ShopCatalog } from "../../components/ShopCatalog";
 import { guides } from "../../content-architecture";
 import { getEditorialCategoryCopy } from "../../lib/editorial-category-copy";
-import { getProductCutoutSrc } from "../../lib/product-image";
 import { toPublicProduct } from "../../lib/public-product";
 import { buildSeoMetadata } from "../../lib/seo";
 import { siteOrigin } from "../../lib/site-url";
@@ -317,17 +315,12 @@ export default async function CategoryPage({
                 aria-label={`مشاهده ${featuredEntry.product.nameFa} با قیمت ${formatPrice(featuredEntry.price)}`}
               >
                 <span className="sb-category-commerce-hero__product-image">
-                  <img
-                    src={getProductCutoutSrc(featuredEntry.product.image)}
-                    alt={
-                      featuredEntry.product.imageAlt ||
-                      `تصویر ${featuredEntry.product.nameFa}`
-                    }
-                    width="520"
-                    height="520"
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
+                  <ProductVisual
+                    product={featuredEntry.product}
+                    variant="hero"
+                    priority
+                    showBackground={false}
+                    sizes="(max-width: 820px) 44vw, 260px"
                   />
                 </span>
 

@@ -24,6 +24,18 @@ const STATUS_LABELS: Record<CmsProduct["status"], string> = {
   private: "خصوصی",
 };
 
+const VISUAL_PROFILE_LABELS: Record<CmsProduct["visualProfile"], string> = {
+  default: "خودکار بر اساس دسته",
+  tall: "بلند",
+  wide: "پهن",
+  square: "مربع",
+  vial: "ویال",
+  bottle: "بطری",
+  syringe: "سرنگ",
+  box: "جعبه",
+  kit: "کیت / مجموعه",
+};
+
 const CMS_IMAGE_UPLOAD_LIMIT_BYTES = 4 * 1024 * 1024;
 
 function plainText(html: string) {
@@ -43,15 +55,17 @@ function blankProduct(): CmsProduct {
     description: "",
     shortDescription: "",
     seoTitle: "",
-metaDescription: "",
-focusKeyword: "",
-
-sourceName: "",
-sourceUrl: "",
-
-reviewerName: "",
-reviewerRole: "",
-reviewedAt: "",
+    metaDescription: "",
+    focusKeyword: "",
+    sourceName: "",
+    sourceUrl: "",
+    reviewerName: "",
+    reviewerRole: "",
+    reviewedAt: "",
+    visualProfile: "default",
+    visualScale: null,
+    visualOffsetX: 0,
+    visualOffsetY: 0,
     price: "",
     regularPrice: "",
     salePrice: "",
@@ -85,15 +99,17 @@ function productInput(product: CmsProduct): CmsProductInput {
     description: product.description,
     shortDescription: product.shortDescription,
     seoTitle: product.seoTitle,
-metaDescription: product.metaDescription,
-focusKeyword: product.focusKeyword,
-
-sourceName: product.sourceName,
-sourceUrl: product.sourceUrl,
-
-reviewerName: product.reviewerName,
-reviewerRole: product.reviewerRole,
-reviewedAt: product.reviewedAt,
+    metaDescription: product.metaDescription,
+    focusKeyword: product.focusKeyword,
+    sourceName: product.sourceName,
+    sourceUrl: product.sourceUrl,
+    reviewerName: product.reviewerName,
+    reviewerRole: product.reviewerRole,
+    reviewedAt: product.reviewedAt,
+    visualProfile: product.visualProfile,
+    visualScale: product.visualScale,
+    visualOffsetX: product.visualOffsetX,
+    visualOffsetY: product.visualOffsetY,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
     manageStock: product.manageStock,
@@ -153,32 +169,22 @@ export function CmsDashboard({ userName }: { userName: string }) {
 
     async function initialize() {
       try {
-       const connectionData = await api<CmsConnectionStatus>(
-  "/api/cms/health",
-);
+        const connectionData = await api<CmsConnectionStatus>("/api/cms/health");
+        if (cancelled) return;
+        setConnection(connectionData);
 
-if (cancelled) return;
+        const categoryData = await api<{ categories: CmsCategory[] }>("/api/cms/categories");
+        if (cancelled) return;
+        setCategories(categoryData.categories);
 
-setConnection(connectionData);
-
-const categoryData = await api<{
-  categories: CmsCategory[];
-}>("/api/cms/categories");
-
-if (cancelled) return;
-
-setCategories(categoryData.categories);
-
-const productData = await api<CmsProductsResponse>(
-  "/api/cms/products?page=1&perPage=30&search=&status=all",
-);
-
-if (cancelled) return;
-
-setProducts(productData.products);
-setPage(productData.page);
-setTotal(productData.total);
-setTotalPages(Math.max(1, productData.totalPages));
+        const productData = await api<CmsProductsResponse>(
+          "/api/cms/products?page=1&perPage=30&search=&status=all",
+        );
+        if (cancelled) return;
+        setProducts(productData.products);
+        setPage(productData.page);
+        setTotal(productData.total);
+        setTotalPages(Math.max(1, productData.totalPages));
       } catch (initialError) {
         if (!cancelled) {
           setError(
@@ -212,156 +218,68 @@ setTotalPages(Math.max(1, productData.totalPages));
     [selected],
   );
 
- const premiumReadiness = useMemo(() => {
-  if (!selected) {
-    return [];
-  }
+  const premiumReadiness = useMemo(() => {
+    if (!selected) return [];
 
-  const shortDescriptionLength =
-    plainText(
-      selected.shortDescription,
-    ).length;
+    const shortDescriptionLength = plainText(selected.shortDescription).length;
+    const descriptionLength = plainText(selected.description).length;
+    const seoTitleLength = selected.seoTitle.trim().length;
+    const metaDescriptionLength = selected.metaDescription.trim().length;
+    const hasValidSourceUrl =
+      !selected.sourceUrl.trim() || /^https?:\/\/[^\s]+$/i.test(selected.sourceUrl.trim());
+    const hasValidReviewDate =
+      !selected.reviewedAt.trim() || !Number.isNaN(new Date(selected.reviewedAt).getTime());
 
-  const descriptionLength =
-    plainText(
-      selected.description,
-    ).length;
+    return [
+      { label: "نام محصول کامل است", ready: selected.name.trim().length >= 3 },
+      { label: "نامک محصول مشخص است", ready: selected.slug.trim().length >= 3 },
+      {
+        label: "توضیح کوتاه حداقل ۳۵ نویسه دارد",
+        ready: shortDescriptionLength >= 35,
+      },
+      {
+        label: "توضیحات کامل حداقل ۱۲۰ نویسه دارد",
+        ready: descriptionLength >= 120,
+      },
+      {
+        label: "حداقل یک دسته‌بندی انتخاب شده",
+        ready: selected.categories.length > 0,
+      },
+      { label: "تصویر اصلی محصول اضافه شده", ready: selected.images.length > 0 },
+      {
+        label: "متن جایگزین تصویر اصلی ثبت شده",
+        ready: Boolean(selected.images[0]?.alt.trim()),
+      },
+      {
+        label: "عنوان سئو بین ۳۰ تا ۶۵ نویسه است",
+        ready: seoTitleLength >= 30 && seoTitleLength <= 65,
+      },
+      {
+        label: "توضیح متا بین ۹۰ تا ۱۶۰ نویسه است",
+        ready: metaDescriptionLength >= 90 && metaDescriptionLength <= 160,
+      },
+      { label: "کلمه کلیدی اصلی مشخص است", ready: selected.focusKeyword.trim().length >= 2 },
+      { label: "نام منبع علمی یا رسمی ثبت شده", ready: selected.sourceName.trim().length >= 3 },
+      {
+        label: "آدرس منبع معتبر است",
+        ready: Boolean(selected.sourceUrl.trim()) && hasValidSourceUrl,
+      },
+      { label: "نام بازبین محتوا ثبت شده", ready: selected.reviewerName.trim().length >= 3 },
+      {
+        label: "سمت یا تخصص بازبین ثبت شده",
+        ready: selected.reviewerRole.trim().length >= 3,
+      },
+      {
+        label: "تاریخ بازبینی معتبر است",
+        ready: Boolean(selected.reviewedAt.trim()) && hasValidReviewDate,
+      },
+      { label: "وضعیت موجودی مشخص است", ready: Boolean(selected.stockStatus) },
+    ];
+  }, [selected]);
 
-  const seoTitleLength =
-    selected.seoTitle.trim().length;
+  const failedReadinessItems = premiumReadiness.filter((item) => !item.ready);
+  const isPublishReady = failedReadinessItems.length === 0;
 
-  const metaDescriptionLength =
-    selected.metaDescription.trim().length;
-
-  const hasValidSourceUrl =
-    !selected.sourceUrl.trim() ||
-    /^https?:\/\/[^\s]+$/i.test(
-      selected.sourceUrl.trim(),
-    );
-
-  const hasValidReviewDate =
-    !selected.reviewedAt.trim() ||
-    !Number.isNaN(
-      new Date(
-        selected.reviewedAt,
-      ).getTime(),
-    );
-
-  return [
-    {
-      label: "نام محصول کامل است",
-      ready:
-        selected.name.trim().length >= 3,
-    },
-    {
-      label: "نامک محصول مشخص است",
-      ready:
-        selected.slug.trim().length >= 3,
-    },
-    {
-      label:
-        "توضیح کوتاه حداقل ۳۵ نویسه دارد",
-      ready:
-        shortDescriptionLength >= 35,
-    },
-    {
-      label:
-        "توضیحات کامل حداقل ۱۲۰ نویسه دارد",
-      ready:
-        descriptionLength >= 120,
-    },
-    {
-      label:
-        "حداقل یک دسته‌بندی انتخاب شده",
-      ready:
-        selected.categories.length > 0,
-    },
-    {
-      label:
-        "تصویر اصلی محصول اضافه شده",
-      ready:
-        selected.images.length > 0,
-    },
-    {
-      label:
-        "متن جایگزین تصویر اصلی ثبت شده",
-      ready: Boolean(
-        selected.images[0]?.alt.trim(),
-      ),
-    },
-    {
-      label:
-        "عنوان سئو بین ۳۰ تا ۶۵ نویسه است",
-      ready:
-        seoTitleLength >= 30 &&
-        seoTitleLength <= 65,
-    },
-    {
-      label:
-        "توضیح متا بین ۹۰ تا ۱۶۰ نویسه است",
-      ready:
-        metaDescriptionLength >= 90 &&
-        metaDescriptionLength <= 160,
-    },
-    {
-      label:
-        "کلمه کلیدی اصلی مشخص است",
-      ready:
-        selected.focusKeyword.trim()
-          .length >= 2,
-    },
-    {
-      label:
-        "نام منبع علمی یا رسمی ثبت شده",
-      ready:
-        selected.sourceName.trim()
-          .length >= 3,
-    },
-    {
-      label:
-        "آدرس منبع معتبر است",
-      ready:
-        Boolean(
-          selected.sourceUrl.trim(),
-        ) && hasValidSourceUrl,
-    },
-    {
-      label:
-        "نام بازبین محتوا ثبت شده",
-      ready:
-        selected.reviewerName.trim()
-          .length >= 3,
-    },
-    {
-      label:
-        "سمت یا تخصص بازبین ثبت شده",
-      ready:
-        selected.reviewerRole.trim()
-          .length >= 3,
-    },
-    {
-      label:
-        "تاریخ بازبینی معتبر است",
-      ready:
-        Boolean(
-          selected.reviewedAt.trim(),
-        ) && hasValidReviewDate,
-    },
-    {
-      label:
-        "وضعیت موجودی مشخص است",
-      ready:
-        Boolean(selected.stockStatus),
-    },
-  ];
-}, [selected]);
-const failedReadinessItems =
-  premiumReadiness.filter(
-    (item) => !item.ready,
-  );
-
-const isPublishReady =
-  failedReadinessItems.length === 0;
   function edit(patch: Partial<CmsProduct>) {
     setSelected((current) => (current ? { ...current, ...patch } : current));
     setDirty(true);
@@ -385,45 +303,33 @@ const isPublishReady =
   }
 
   async function submit(event: FormEvent) {
-   event.preventDefault();
+    event.preventDefault();
+    if (!selected || saving) return;
 
-if (!selected || saving) {
-  return;
-}
+    const persistedProduct =
+      selected.id > 0 ? products.find((product) => product.id === selected.id) ?? null : null;
+    const isPublishingForFirstTime =
+      selected.status === "publish" &&
+      (selected.id === 0 || persistedProduct?.status !== "publish");
 
-const persistedProduct =
-  selected.id > 0
-    ? products.find((product) => product.id === selected.id) ?? null
-    : null;
-const isPublishingForFirstTime =
-  selected.status === "publish" &&
-  (selected.id === 0 || persistedProduct?.status !== "publish");
+    if (isPublishingForFirstTime && !isPublishReady) {
+      const missingItems = failedReadinessItems
+        .slice(0, 4)
+        .map((item) => item.label)
+        .join("، ");
 
-if (
-  isPublishingForFirstTime &&
-  !isPublishReady
-) {
-  const missingItems =
-    failedReadinessItems
-      .slice(0, 4)
-      .map((item) => item.label)
-      .join("، ");
+      setNotice("");
+      setError(
+        `انتشار انجام نشد. ابتدا موارد ناقص را تکمیل کن: ${missingItems}${
+          failedReadinessItems.length > 4
+            ? ` و ${failedReadinessItems.length - 4} مورد دیگر`
+            : ""
+        }. برای ذخیره موقت، وضعیت محصول را روی «پیش‌نویس» قرار بده.`,
+      );
+      return;
+    }
 
-  setNotice("");
-  setError(
-    `انتشار انجام نشد. ابتدا موارد ناقص را تکمیل کن: ${missingItems}${
-      failedReadinessItems.length > 4
-        ? ` و ${
-            failedReadinessItems.length - 4
-          } مورد دیگر`
-        : ""
-    }. برای ذخیره موقت، وضعیت محصول را روی «پیش‌نویس» قرار بده.`,
-  );
-
-  return;
-}
-
-setSaving(true);
+    setSaving(true);
     setError("");
     setNotice("");
 
@@ -488,162 +394,107 @@ setSaving(true);
     });
   }
 
-async function uploadFiles(files: FileList | null) {
-  if (!selected || !files?.length || uploading || saving) return;
+  async function uploadFiles(files: FileList | null) {
+    if (!selected || !files?.length || uploading || saving) return;
 
-  const selectedFiles = Array.from(files);
+    const selectedFiles = Array.from(files);
+    const oversized = selectedFiles.find((file) => file.size > CMS_IMAGE_UPLOAD_LIMIT_BYTES);
 
-  const oversized = selectedFiles.find(
-    (file) => file.size > CMS_IMAGE_UPLOAD_LIMIT_BYTES,
-  );
+    if (oversized) {
+      setNotice("");
+      setError(
+        "حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.",
+      );
+      return;
+    }
 
-  if (oversized) {
+    setUploading(true);
+    setSaving(true);
+    setError("");
     setNotice("");
-    setError(
-      "حجم هر تصویر برای آپلود از CMS باید کمتر از ۴ مگابایت باشد. تصویر را فشرده کن و دوباره آپلود کن.",
-    );
-    return;
-  }
 
-  setUploading(true);
-  setSaving(true);
-  setError("");
-  setNotice("");
+    try {
+      let currentProduct = selected;
 
-  try {
-    let currentProduct = selected;
+      if (currentProduct.id === 0) {
+        if (!currentProduct.name.trim()) {
+          throw new Error("قبل از آپلود تصویر، نام محصول را وارد کن.");
+        }
 
-    /*
-     * اگر محصول جدید است، ابتدا آن را به‌صورت پیش‌نویس
-     * در WooCommerce ایجاد می‌کنیم تا شناسه محصول داشته باشد.
-     */
-    if (currentProduct.id === 0) {
-      if (!currentProduct.name.trim()) {
-        throw new Error(
-          "قبل از آپلود تصویر، نام محصول را وارد کن.",
-        );
-      }
-
-      const created = await api<{ product: CmsProduct }>(
-        "/api/cms/products",
-        {
+        const created = await api<{ product: CmsProduct }>("/api/cms/products", {
           method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
+          headers: { "content-type": "application/json" },
           body: JSON.stringify(
             productInput({
               ...currentProduct,
               status: "draft",
             }),
           ),
-        },
-      );
+        });
 
-      currentProduct = created.product;
-
-      setProducts((products) => [
-        created.product,
-        ...products.filter(
-          (product) => product.id !== created.product.id,
-        ),
-      ]);
-
-      setTotal((value) => value + 1);
-    }
-
-    /*
-     * تصاویر مستقیماً داخل Media Library وردپرس آپلود می‌شوند.
-     */
-    const uploadedImages: CmsImage[] = [];
-
-    for (const file of selectedFiles) {
-      const form = new FormData();
-
-      form.set("file", file);
-      form.set("alt", currentProduct.name);
-
-      const uploaded = await api<{ image: CmsImage }>(
-        "/api/cms/media",
-        {
-          method: "POST",
-          body: form,
-        },
-      );
-
-      uploadedImages.push(uploaded.image);
-    }
-
-    /*
-     * عکس‌ها به محصول WooCommerce متصل می‌شوند.
-     * اولین عکس آرایه، تصویر اصلی محصول خواهد بود.
-     */
-    const productWithImages: CmsProduct = {
-      ...currentProduct,
-     images: [
-  ...uploadedImages,
-  ...currentProduct.images,
-],
-    };
-
-    /*
-     * ذخیره مستقیم تصاویر روی محصول WooCommerce
-     */
-    const saved = await api<{ product: CmsProduct }>(
-      `/api/cms/products/${currentProduct.id}`,
-      {
-        method: "PUT",
-        headers: {
-          "content-type": "application/json",
-        },
-       body: JSON.stringify({
-  ...productInput(productWithImages),
-  expectedModifiedGmt: undefined,
-}),
-      },
-    );
-
-    /*
-     * اطلاعات نهایی از پاسخ WooCommerce در CMS نمایش داده می‌شود.
-     */
-    setSelected(saved.product);
-
-    setProducts((products) => {
-      const exists = products.some(
-        (product) => product.id === saved.product.id,
-      );
-
-      if (!exists) {
-        return [saved.product, ...products];
+        currentProduct = created.product;
+        setProducts((products) => [
+          created.product,
+          ...products.filter((product) => product.id !== created.product.id),
+        ]);
+        setTotal((value) => value + 1);
       }
 
-      return products.map((product) =>
-        product.id === saved.product.id
-          ? saved.product
-          : product,
+      const uploadedImages: CmsImage[] = [];
+      for (const file of selectedFiles) {
+        const form = new FormData();
+        form.set("file", file);
+        form.set("alt", currentProduct.name);
+
+        const uploaded = await api<{ image: CmsImage }>("/api/cms/media", {
+          method: "POST",
+          body: form,
+        });
+        uploadedImages.push(uploaded.image);
+      }
+
+      const productWithImages: CmsProduct = {
+        ...currentProduct,
+        images: [...uploadedImages, ...currentProduct.images],
+      };
+
+      const saved = await api<{ product: CmsProduct }>(
+        `/api/cms/products/${currentProduct.id}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ...productInput(productWithImages),
+            expectedModifiedGmt: undefined,
+          }),
+        },
       );
-    });
 
-    setDirty(false);
-
-    setNotice(
-      uploadedImages.length === 1
-        ? "تصویر مستقیماً روی محصول ووکامرس ذخیره شد."
-        : `${uploadedImages.length} تصویر مستقیماً روی محصول ووکامرس ذخیره شدند.`,
-    );
-  } catch (uploadError) {
-    setError(
-      uploadError instanceof Error
-        ? uploadError.message
-        : "آپلود و اتصال تصویر به محصول ناموفق بود.",
-    );
-  } finally {
-    setUploading(false);
-    setSaving(false);
+      setSelected(saved.product);
+      setProducts((products) => {
+        const exists = products.some((product) => product.id === saved.product.id);
+        if (!exists) return [saved.product, ...products];
+        return products.map((product) =>
+          product.id === saved.product.id ? saved.product : product,
+        );
+      });
+      setDirty(false);
+      setNotice(
+        uploadedImages.length === 1
+          ? "تصویر مستقیماً روی محصول ووکامرس ذخیره شد."
+          : `${uploadedImages.length} تصویر مستقیماً روی محصول ووکامرس ذخیره شدند.`,
+      );
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "آپلود و اتصال تصویر به محصول ناموفق بود.",
+      );
+    } finally {
+      setUploading(false);
+      setSaving(false);
+    }
   }
-}
-
-
 
   function addImageUrl() {
     if (!selected || !imageUrl.trim()) return;
@@ -694,9 +545,7 @@ async function uploadFiles(files: FileList | null) {
           </span>
           <small>{userName}</small>
           <form action="/api/cms/logout" method="post">
-            <button type="submit" className="spb-button is-ghost">
-              خروج
-            </button>
+            <button type="submit" className="spb-button is-ghost">خروج</button>
           </form>
         </div>
       </header>
@@ -717,7 +566,6 @@ async function uploadFiles(files: FileList | null) {
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
 
       <PricingManager />
-
       <SiteContentManager />
 
       {categories.length > 0 && (
@@ -725,11 +573,7 @@ async function uploadFiles(files: FileList | null) {
           categories={categories}
           onCategoryUpdated={(category) => {
             setCategories((current) =>
-              current.map((item) =>
-                item.id === category.id
-                  ? category
-                  : item,
-              ),
+              current.map((item) => (item.id === category.id ? category : item)),
             );
           }}
         />
@@ -932,98 +776,72 @@ async function uploadFiles(files: FileList | null) {
               </div>
 
               <div className="spb-cms-section">
-               
-  <h3>سئو و اعتبار محتوا</h3>
+                <h3>سئو و اعتبار محتوا</h3>
+                <div className="spb-form-grid">
+                  <label className="is-wide">
+                    <span>عنوان سئو</span>
+                    <input
+                      value={selected.seoTitle}
+                      onChange={(event) => edit({ seoTitle: event.target.value })}
+                      placeholder="مثلاً خرید نورامیس دیپ لیدوکائین"
+                    />
+                  </label>
+                  <label className="is-wide">
+                    <span>توضیحات متا</span>
+                    <textarea
+                      value={selected.metaDescription}
+                      onChange={(event) => edit({ metaDescription: event.target.value })}
+                      placeholder="خلاصه اختصاصی صفحه برای نتایج گوگل"
+                    />
+                  </label>
+                  <label>
+                    <span>کلمه کلیدی اصلی</span>
+                    <input
+                      value={selected.focusKeyword}
+                      onChange={(event) => edit({ focusKeyword: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    <span>نام منبع</span>
+                    <input
+                      value={selected.sourceName}
+                      onChange={(event) => edit({ sourceName: event.target.value })}
+                    />
+                  </label>
+                  <label className="is-wide">
+                    <span>لینک منبع</span>
+                    <input
+                      dir="ltr"
+                      value={selected.sourceUrl}
+                      onChange={(event) => edit({ sourceUrl: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    <span>نام بازبین</span>
+                    <input
+                      value={selected.reviewerName}
+                      onChange={(event) => edit({ reviewerName: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    <span>سمت یا تخصص بازبین</span>
+                    <input
+                      value={selected.reviewerRole}
+                      onChange={(event) => edit({ reviewerRole: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    <span>تاریخ بررسی</span>
+                    <input
+                      type="date"
+                      value={selected.reviewedAt}
+                      onChange={(event) => edit({ reviewedAt: event.target.value })}
+                    />
+                  </label>
+                </div>
+              </div>
 
-  <div className="spb-form-grid">
-    <label className="is-wide">
-      <span>عنوان سئو</span>
-      <input
-        value={selected.seoTitle}
-        onChange={(event) =>
-          edit({ seoTitle: event.target.value })
-        }
-        placeholder="مثلاً خرید نورامیس دیپ لیدوکائین"
-      />
-    </label>
-
-    <label className="is-wide">
-      <span>توضیحات متا</span>
-      <textarea
-        value={selected.metaDescription}
-        onChange={(event) =>
-          edit({ metaDescription: event.target.value })
-        }
-        placeholder="خلاصه اختصاصی صفحه برای نتایج گوگل"
-      />
-    </label>
-
-    <label>
-      <span>کلمه کلیدی اصلی</span>
-      <input
-        value={selected.focusKeyword}
-        onChange={(event) =>
-          edit({ focusKeyword: event.target.value })
-        }
-      />
-    </label>
-
-    <label>
-      <span>نام منبع</span>
-      <input
-        value={selected.sourceName}
-        onChange={(event) =>
-          edit({ sourceName: event.target.value })
-        }
-      />
-    </label>
-
-    <label className="is-wide">
-      <span>لینک منبع</span>
-      <input
-        dir="ltr"
-        value={selected.sourceUrl}
-        onChange={(event) =>
-          edit({ sourceUrl: event.target.value })
-        }
-      />
-    </label>
-
-    <label>
-      <span>نام بازبین</span>
-      <input
-        value={selected.reviewerName}
-        onChange={(event) =>
-          edit({ reviewerName: event.target.value })
-        }
-      />
-    </label>
-
-    <label>
-      <span>سمت یا تخصص بازبین</span>
-      <input
-        value={selected.reviewerRole}
-        onChange={(event) =>
-          edit({ reviewerRole: event.target.value })
-        }
-      />
-    </label>
-
-    <label>
-  <span>تاریخ بررسی</span>
-  <input
-    type="date"
-    value={selected.reviewedAt}
-    onChange={(event) =>
-      edit({
-        reviewedAt: event.target.value,
-      })
-    }
-  />
-</label>
-  </div>
-</div>
-                <div className="spb-cms-section">
+              <div className="spb-cms-section">
                 <h3>قیمت و موجودی</h3>
                 <div className="spb-form-grid">
                   <label>
@@ -1100,8 +918,87 @@ async function uploadFiles(files: FileList | null) {
               <div className="spb-cms-section">
                 <div className="spb-section-head">
                   <div>
+                    <h3>نمایش تصویر محصول</h3>
+                    <p>
+                      حالت پیش‌فرض از تنظیم دسته استفاده می‌کند. Scale و Offset فقط برای استثناهای واقعی هستند.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="spb-button"
+                    onClick={() =>
+                      edit({
+                        visualProfile: "default",
+                        visualScale: null,
+                        visualOffsetX: 0,
+                        visualOffsetY: 0,
+                      })
+                    }
+                  >
+                    بازنشانی نمایش
+                  </button>
+                </div>
+                <div className="spb-form-grid">
+                  <label>
+                    <span>پروفایل بصری</span>
+                    <select
+                      value={selected.visualProfile}
+                      onChange={(event) =>
+                        edit({ visualProfile: event.target.value as CmsProduct["visualProfile"] })
+                      }
+                    >
+                      {Object.entries(VISUAL_PROFILE_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Scale اختیاری</span>
+                    <input
+                      type="number"
+                      dir="ltr"
+                      min="0.68"
+                      max="1.06"
+                      step="0.01"
+                      value={selected.visualScale ?? ""}
+                      placeholder="خودکار"
+                      onChange={(event) =>
+                        edit({ visualScale: event.target.value === "" ? null : Number(event.target.value) })
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>Offset افقی (%)</span>
+                    <input
+                      type="number"
+                      dir="ltr"
+                      min="-5"
+                      max="5"
+                      step="0.5"
+                      value={selected.visualOffsetX}
+                      onChange={(event) => edit({ visualOffsetX: Number(event.target.value) })}
+                    />
+                  </label>
+                  <label>
+                    <span>Offset عمودی (%)</span>
+                    <input
+                      type="number"
+                      dir="ltr"
+                      min="-5"
+                      max="5"
+                      step="0.5"
+                      value={selected.visualOffsetY}
+                      onChange={(event) => edit({ visualOffsetY: Number(event.target.value) })}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="spb-cms-section">
+                <div className="spb-section-head">
+                  <div>
                     <h3>تصاویر</h3>
-                    <p>تصویر اول، تصویر اصلی محصول است.</p>
+                    <p>تصویر اول، تصویر اصلی و Master محصول است.</p>
                   </div>
                   <label className={`spb-button is-primary${!connection?.mediaUploadReady ? " is-disabled" : ""}`}>
                     {uploading ? "در حال آپلود..." : "آپلود عکس"}
@@ -1135,7 +1032,7 @@ async function uploadFiles(files: FileList | null) {
                         {/* eslint-disable-next-line @next/next/no-img-element -- remote WooCommerce media. */}
                         <img src={image.src} alt={image.alt || selected.name} />
                         <figcaption>
-                          <span>{index === 0 ? "تصویر اصلی" : `تصویر ${index + 1}`}</span>
+                          <span>{index === 0 ? "تصویر اصلی / Master" : `تصویر ${index + 1}`}</span>
                           <div>
                             {index > 0 && (
                               <button type="button" onClick={() => makePrimary(index)}>اصلی</button>

@@ -53,6 +53,10 @@ export type StorefrontProduct = Product & {
   reviewerName: string;
   reviewerRole: string;
   reviewedAt: string;
+  visualProfile: CmsProduct["visualProfile"];
+  visualScale: number | null;
+  visualOffsetX: number;
+  visualOffsetY: number;
   dateModifiedGmt: string;
   live: boolean;
 };
@@ -156,6 +160,10 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     reviewerName: product.reviewerName,
     reviewerRole: product.reviewerRole,
     reviewedAt: product.reviewedAt || fallback?.reviewedAt || "",
+    visualProfile: product.visualProfile,
+    visualScale: product.visualScale,
+    visualOffsetX: product.visualOffsetX,
+    visualOffsetY: product.visualOffsetY,
     variants: fallback?.variants,
     dateModifiedGmt: product.dateModifiedGmt,
     live: true,
@@ -184,6 +192,10 @@ function mapFallbackProduct(product: Product): StorefrontProduct {
     reviewerName: "",
     reviewerRole: "",
     reviewedAt: product.reviewedAt ?? "",
+    visualProfile: "default",
+    visualScale: null,
+    visualOffsetX: 0,
+    visualOffsetY: 0,
     dateModifiedGmt: "",
     live: false,
   };

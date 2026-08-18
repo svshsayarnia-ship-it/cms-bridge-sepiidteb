@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image, { type ImageLoaderProps } from "next/image";
 import {
   useCallback,
   useEffect,
@@ -10,8 +9,8 @@ import {
   useState,
 } from "react";
 
-import { getProductCutoutSrc } from "../lib/product-image";
 import { ArrowIcon, ChevronIcon } from "./Icons";
+import { ProductVisual } from "./product/ProductVisual";
 
 export type FeaturedCarouselProduct = {
   slug: string;
@@ -44,10 +43,6 @@ const priceFormatter = new Intl.NumberFormat("fa-IR");
 const numberFormatter = new Intl.NumberFormat("fa-IR", {
   minimumIntegerDigits: 2,
 });
-
-function storefrontImageLoader({ src }: ImageLoaderProps) {
-  return src;
-}
 
 function formatPrice(value: string) {
   const numeric = Number(value);
@@ -384,16 +379,11 @@ export function FeaturedProductCarousel({
                 }
               }}
             >
-              <Image
-                alt={product.imageAlt || `تصویر ${product.nameFa}`}
-                draggable={false}
-                height="1254"
-                loader={storefrontImageLoader}
-                loading={currentIndex === 0 ? "eager" : "lazy"}
+              <ProductVisual
+                product={product}
+                variant="carousel"
+                priority={currentIndex === 0}
                 sizes="(max-width: 820px) 92vw, 52vw"
-                src={getProductCutoutSrc(product.image)}
-                unoptimized
-                width="1254"
               />
 
               <span className="sb-featured-carousel__offer">
@@ -449,16 +439,13 @@ export function FeaturedProductCarousel({
               role="tab"
               type="button"
             >
-              <Image
-                alt=""
-                aria-hidden="true"
-                height="88"
-                loader={storefrontImageLoader}
-                loading="lazy"
+              <ProductVisual
+                className="sb-featured-carousel__rail-visual"
+                product={item}
+                variant="thumbnail"
+                decorative
+                showBackground={false}
                 sizes="58px"
-                src={getProductCutoutSrc(item.image)}
-                unoptimized
-                width="88"
               />
               <span>
                 <small>{item.brand || item.categoryTitle}</small>

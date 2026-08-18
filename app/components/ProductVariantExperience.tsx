@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- local editorial product imagery */
 import Link from "next/link";
 import { useState } from "react";
+import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
-import { getProductCutoutSrc } from "../lib/product-image";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
+import { ProductVisual } from "./product/ProductVisual";
 
 type Pricing = {
   label: string;
@@ -46,6 +46,10 @@ export type ProductExperienceProduct = Pick<
   | "summary"
   | "specs"
 > & {
+  visualProfile?: ProductVisualProfile;
+  visualScale?: number | null;
+  visualOffsetX?: number;
+  visualOffsetY?: number;
   variants?: ProductExperienceVariant[];
 };
 
@@ -198,9 +202,8 @@ export function ProductVariantExperience({
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
-  const displayImage = getProductCutoutSrc(
-    selectedVariant?.image ?? liveImage?.src ?? catalogImage?.src ?? product.image,
-  );
+  const displayImage =
+    selectedVariant?.image ?? liveImage?.src ?? catalogImage?.src ?? product.image;
   const displayImageAlt = selectedVariant?.imageAlt ?? liveImage?.alt ?? catalogImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
   const isEditorialFamilyImage =
     (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
@@ -232,13 +235,20 @@ export function ProductVariantExperience({
         <div className="sb-shell sb-product-detail__grid">
           <div className="sb-product-gallery">
             <div className="sb-product-gallery__main">
-              <img
+              <ProductVisual
                 key={displayImage}
-                src={displayImage}
-                alt={displayImageAlt}
-                width="1254"
-                height="1254"
-                fetchPriority="high"
+                product={{
+                  nameFa: displayName,
+                  category: product.category,
+                  masterImage: displayImage,
+                  imageAlt: displayImageAlt,
+                  visualProfile: product.visualProfile,
+                  visualScale: product.visualScale,
+                  visualOffsetX: product.visualOffsetX,
+                  visualOffsetY: product.visualOffsetY,
+                }}
+                variant="detail"
+                priority
               />
               {isEditorialFamilyImage && (
                 <span className="sb-product-gallery__identity" aria-hidden="true">

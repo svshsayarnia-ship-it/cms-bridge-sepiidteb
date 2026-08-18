@@ -1,3 +1,4 @@
+import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { CmsPricingState } from "./pricing-types";
 
 export type CmsCategory = {
@@ -42,15 +43,22 @@ export type CmsProduct = {
   description: string;
   shortDescription: string;
   seoTitle: string;
-metaDescription: string;
-focusKeyword: string;
+  metaDescription: string;
+  focusKeyword: string;
 
-sourceName: string;
-sourceUrl: string;
+  sourceName: string;
+  sourceUrl: string;
 
-reviewerName: string;
-reviewerRole: string;
-reviewedAt: string;
+  reviewerName: string;
+  reviewerRole: string;
+  reviewedAt: string;
+
+  /** ProductVisual metadata stored in WooCommerce product meta. */
+  visualProfile: ProductVisualProfile;
+  visualScale: number | null;
+  visualOffsetX: number;
+  visualOffsetY: number;
+
   price: string;
   regularPrice: string;
   salePrice: string;
@@ -75,10 +83,18 @@ export type CmsProductInput = Omit<
   | "categories"
   | "brands"
   | "pricing"
+  | "visualProfile"
+  | "visualScale"
+  | "visualOffsetX"
+  | "visualOffsetY"
 > & {
   id?: number;
   categoryIds: number[];
   expectedModifiedGmt?: string;
+  visualProfile?: ProductVisualProfile;
+  visualScale?: number | null;
+  visualOffsetX?: number;
+  visualOffsetY?: number;
 };
 
 export type CmsProductsResponse = {
