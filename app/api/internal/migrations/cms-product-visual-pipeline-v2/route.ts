@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { CmsProduct, CmsProductInput } from "@/app/lib/cms-types";
+import type { CmsImage, CmsProduct, CmsProductInput } from "@/app/lib/cms-types";
 import { normalizeCmsProductImage } from "@/app/lib/product-image-normalizer";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
@@ -34,10 +34,10 @@ function isAuthorized(request: Request) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-function withImage(
+function withImages(
   product: CmsProduct,
   categoryId: number,
-  image: CmsProduct["images"][number],
+  images: CmsImage[],
 ): CmsProductInput {
   return {
     name: product.name,
@@ -62,7 +62,7 @@ function withImage(
     stockQuantity: product.stockQuantity,
     stockStatus: product.stockStatus,
     categoryIds: [categoryId],
-    images: [image],
+    images,
     expectedModifiedGmt: product.dateModifiedGmt || undefined,
   };
 }
@@ -91,7 +91,23 @@ export async function GET(request: Request) {
     if (!category) throw new Error("Hyaluronidase category not found");
 
     const sourceImage = product.images.find((image) => Boolean(image.src));
-    if (!sourceImage) throw new Error("Liporase source image not found");
+    if (!sourceImage) {
+      const updated = await updateProduct(
+        product.id,
+        withImages(product, category.id, []),
+      );
+      await rememberStorefrontProduct(updated, { requirePersistence: true });
+      return Response.json({
+        ok: true,
+        fallbackUsed: true,
+        product: {
+          id: updated.id,
+          slug: updated.slug,
+          category: updated.categories[0] ?? null,
+          image: null,
+        },
+      });
+    }
 
     const response = await fetch(sourceImage.src, {
       cache: "no-store",
@@ -109,18 +125,31 @@ export async function GET(request: Request) {
     const normalized = await normalizeCmsProductImage(
       new File([bytes], filename, { type: contentType }),
     );
-    const uploaded = await uploadMedia(
-      normalized.file,
-      sourceImage.alt || product.name,
-      crypto.randomUUID(),
-    );
 
+    let images: CmsImage[] = [];
+    let fallbackUsed = !normalized.validatedCutout;
+
+    if (normalized.validatedCutout) {
+      const uploaded = await uploadMedia(
+        normalized.file,
+        sourceImage.alt || product.name,
+        crypto.randomUUID(),
+      );
+      images = [
+        {
+          ...uploaded,
+          alt: sourceImage.alt || uploaded.alt || product.name,
+        },
+      ];
+      fallbackUsed = false;
+    }
+
+    // If the current photo cannot be confidently isolated, deliberately clear
+    // Woo media. The storefront then falls back to its approved static cutout
+    // while the category stage remains the sole owner of visual identity.
     const updated = await updateProduct(
       product.id,
-      withImage(product, category.id, {
-        ...uploaded,
-        alt: sourceImage.alt || uploaded.alt || product.name,
-      }),
+      withImages(product, category.id, images),
     );
     await rememberStorefrontProduct(updated, { requirePersistence: true });
 
@@ -131,6 +160,7 @@ export async function GET(request: Request) {
 
     return Response.json({
       ok: true,
+      fallbackUsed,
       product: {
         id: updated.id,
         slug: updated.slug,
@@ -138,6 +168,7 @@ export async function GET(request: Request) {
         image: updated.images[0]?.src ?? null,
       },
       normalization: {
+        validatedCutout: normalized.validatedCutout,
         removedBackground: normalized.removedBackground,
         removalRatio: normalized.removalRatio,
       },
