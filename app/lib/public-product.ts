@@ -1,3 +1,4 @@
+import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
 import { getCompactBrandLabel } from "./public-copy";
@@ -21,6 +22,10 @@ export type PublicProduct = Pick<
 > & {
   /** Canonical product asset when the product passed through the public mapper. */
   masterImage?: string;
+  visualProfile?: ProductVisualProfile;
+  visualScale?: number | null;
+  visualOffsetX?: number;
+  visualOffsetY?: number;
   price?: string;
   regularPrice?: string;
   salePrice?: string;
@@ -51,6 +56,10 @@ export function toPublicProduct(
     | "shortBenefit"
     | "priceToman"
   > & {
+    visualProfile?: ProductVisualProfile;
+    visualScale?: number | null;
+    visualOffsetX?: number;
+    visualOffsetY?: number;
     price?: string;
     regularPrice?: string;
     salePrice?: string;
@@ -72,6 +81,10 @@ export function toPublicProduct(
     volume: product.volume,
     shortBenefit: product.shortBenefit,
     priceToman: product.priceToman,
+    visualProfile: product.visualProfile,
+    visualScale: product.visualScale,
+    visualOffsetX: product.visualOffsetX,
+    visualOffsetY: product.visualOffsetY,
     price: product.price,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
