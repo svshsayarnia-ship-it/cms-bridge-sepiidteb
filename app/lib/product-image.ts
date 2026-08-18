@@ -7,8 +7,9 @@ const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-
 
 // Fusion Meso cartons are predominantly white. Background-removal models can
 // mistake the carton face for the backdrop, leaving a faded or incomplete box.
-// Keep the reviewed source photograph for these exact catalog assets and let
-// the storefront presentation layer visually remove only the flat white field.
+// Keep the reviewed source photograph for these exact catalog assets. The
+// presentation layer applies the white-carton treatment by matching the clean
+// asset path, so the URL itself stays valid for Next/Image and browser caches.
 const WHITE_CARTON_SOURCE_ASSETS = new Set([
   "/images/products/sourced/f-mesomatrix.webp",
   "/images/products/sourced/fusion-f-radiance.webp",
@@ -20,8 +21,6 @@ const WHITE_CARTON_SOURCE_ASSETS = new Set([
   "/images/products/sourced/f-hair.webp",
   "/images/products/sourced/fusion-hair-men.webp",
 ]);
-
-const WHITE_CARTON_MARKER = "preserve-white-carton=1";
 
 function withoutQuery(src: string): string {
   return src.split("?", 1)[0];
@@ -44,17 +43,13 @@ function resolveWhiteCartonSource(src: string): string | null {
   return null;
 }
 
-function preserveWhiteCartonSource(src: string): string {
-  return `${src}?${WHITE_CARTON_MARKER}`;
-}
-
 /** Resolve an approved local product photograph to its normalized alpha cutout. */
 export function getProductCutoutSrc(src?: string | null): string {
   if (!src) return "";
 
   const whiteCartonSource = resolveWhiteCartonSource(src);
   if (whiteCartonSource) {
-    return preserveWhiteCartonSource(whiteCartonSource);
+    return whiteCartonSource;
   }
 
   if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
