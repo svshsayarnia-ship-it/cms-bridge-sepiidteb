@@ -1,0 +1,5 @@
+/* WooCommerce media is CMS-owned. Raw image URLs are intentionally hidden so
+   editors can only create attachments through the CMS upload pipeline. */
+.spb-image-url {
+  display: none !important;
+}
