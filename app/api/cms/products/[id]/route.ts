@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
+import type { CmsImage, CmsProduct, CmsProductInput } from "@/app/lib/cms-types";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { parseProductInput } from "@/app/lib/cms-input";
 import {
@@ -31,6 +32,12 @@ function comparableHtml(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function sameNumberSet(first: number[], second: number[]) {
+  if (first.length !== second.length) return false;
+  const values = new Set(first);
+  return second.every((value) => values.has(value));
+}
+
 function assertProductPersisted(
   product: Awaited<ReturnType<typeof getProduct>>,
   input: ReturnType<typeof parseProductInput>,
@@ -49,6 +56,21 @@ function assertProductPersisted(
     ["لینک منبع", product.sourceUrl === input.sourceUrl],
     ["قیمت عادی", product.regularPrice === input.regularPrice.trim()],
     ["قیمت فروش", product.salePrice === input.salePrice.trim()],
+    [
+      "دسته‌بندی",
+      sameNumberSet(
+        product.categories.map((category) => category.id),
+        input.categoryIds,
+      ),
+    ],
+    [
+      "تصاویر",
+      input.images.every((image) =>
+        product.images.some((savedImage) =>
+          image.id > 0 ? savedImage.id === image.id : savedImage.src === image.src,
+        ),
+      ),
+    ],
   ];
 
   const mismatchedFields = checks
@@ -62,6 +84,38 @@ function assertProductPersisted(
       "product_persistence_mismatch",
     );
   }
+}
+
+function currentProductWithImages(
+  product: CmsProduct,
+  images: CmsImage[],
+): CmsProductInput {
+  return {
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku,
+    status: product.status,
+    catalogVisibility: product.catalogVisibility,
+    featured: product.featured,
+    description: product.description,
+    shortDescription: product.shortDescription,
+    seoTitle: product.seoTitle,
+    metaDescription: product.metaDescription,
+    focusKeyword: product.focusKeyword,
+    sourceName: product.sourceName,
+    sourceUrl: product.sourceUrl,
+    reviewerName: product.reviewerName,
+    reviewerRole: product.reviewerRole,
+    reviewedAt: product.reviewedAt,
+    regularPrice: product.regularPrice || product.price,
+    salePrice: product.salePrice,
+    manageStock: product.manageStock,
+    stockQuantity: product.stockQuantity,
+    stockStatus: product.stockStatus,
+    categoryIds: product.categories.map((category) => category.id),
+    images,
+    expectedModifiedGmt: product.dateModifiedGmt || undefined,
+  };
 }
 
 function invalidatePricePages(slug: string) {
@@ -90,17 +144,26 @@ export async function PUT(request: Request, context: Context) {
 
   try {
     const id = await productId(context);
-    const input = parseProductInput(
-      await request.json(),
-    );
+    const rawInput = (await request.json()) as Record<string, unknown>;
+    const parsedInput = parseProductInput(rawInput);
 
-    const updatedProduct = await updateProduct(
-      id,
-      input,
-    );
+    // The CMS media workflow intentionally omits expectedModifiedGmt. Treat
+    // that request as an image-only write: read the current WooCommerce record
+    // and rebuild every non-image field from the source of truth before saving.
+    // This prevents a stale editor tab from reverting category, price, copy or
+    // SEO merely because an operator changed the product photograph.
+    const isImageOnlyWrite =
+      Array.isArray(rawInput.images) &&
+      !Object.prototype.hasOwnProperty.call(rawInput, "expectedModifiedGmt");
 
-    // Read the product back from WooCommerce so success means every editor
-    // field, not only price, was persisted by the source of truth.
+    const input = isImageOnlyWrite
+      ? currentProductWithImages(await getProduct(id), parsedInput.images)
+      : parsedInput;
+
+    const updatedProduct = await updateProduct(id, input);
+
+    // Read the product back from WooCommerce so success means every persisted
+    // field was confirmed by the source of truth.
     const product = await getProduct(id);
     assertProductPersisted(product, input);
 
@@ -108,7 +171,10 @@ export async function PUT(request: Request, context: Context) {
 
     invalidatePricePages(product.slug || updatedProduct.slug);
 
-    return Response.json({ product });
+    return Response.json({
+      product,
+      writeScope: isImageOnlyWrite ? "images" : "product",
+    });
   } catch (error) {
     return errorResponse(error);
   }
