@@ -71,8 +71,17 @@ export async function POST(request: Request) {
       outputBytes: normalized.file.size,
       removedBackground: normalized.removedBackground,
       removalRatio: normalized.removalRatio,
+      validatedCutout: normalized.validatedCutout,
       elapsedMs: Math.round(performance.now() - startedAt),
     });
+
+    if (!normalized.validatedCutout) {
+      throw new WooCommerceError(
+        "این تصویر هنوز بک‌گراند یا صحنه‌ی پیچیده دارد و برای قرارگیری روی هویت بصری دسته مناسب نیست. یک عکس واضح از خود محصول با پس‌زمینه ساده یا فایل PNG/WebP شفاف انتخاب کن؛ CMS اجازه نمی‌دهد بک‌گراند عکس، طراحی دسته را خراب کند.",
+        422,
+        "product_image_background_not_isolated",
+      );
+    }
 
     const image = await uploadMedia(
       normalized.file,
@@ -86,6 +95,7 @@ export async function POST(request: Request) {
           transparentCutout: true,
           removedBackground: normalized.removedBackground,
           removalRatio: normalized.removalRatio,
+          validatedCutout: normalized.validatedCutout,
         },
       },
       { status: 201 },
