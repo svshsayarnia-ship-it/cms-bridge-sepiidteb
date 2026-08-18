@@ -4,6 +4,17 @@ import { WooCommerceError } from "./woocommerce";
 const STATUSES = ["draft", "pending", "private", "publish"] as const;
 const VISIBILITIES = ["visible", "catalog", "search", "hidden"] as const;
 const STOCK_STATUSES = ["instock", "outofstock", "onbackorder"] as const;
+const VISUAL_PROFILES = [
+  "tall",
+  "wide",
+  "square",
+  "vial",
+  "bottle",
+  "syringe",
+  "box",
+  "kit",
+  "default",
+] as const;
 const ALLOWED_RICH_TEXT_TAGS = new Set([
   "p",
   "br",
@@ -133,6 +144,22 @@ function oneOf<T extends readonly string[]>(
     : fallback;
 }
 
+function boundedNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+}
+
+function nullableScale(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(1.06, Math.max(0.68, parsed)) : null;
+}
+
 function images(value: unknown): CmsImage[] {
   if (!Array.isArray(value)) return [];
 
@@ -210,6 +237,12 @@ export function parseProductInput(value: unknown): CmsProductInput {
     reviewerName: text(input.reviewerName).trim(),
     reviewerRole: text(input.reviewerRole).trim(),
     reviewedAt: text(input.reviewedAt).trim(),
+
+    visualProfile: oneOf(input.visualProfile, VISUAL_PROFILES, "default"),
+    visualScale: nullableScale(input.visualScale),
+    visualOffsetX: boundedNumber(input.visualOffsetX, 0, -5, 5),
+    visualOffsetY: boundedNumber(input.visualOffsetY, 0, -5, 5),
+
     regularPrice: text(input.regularPrice),
     salePrice: text(input.salePrice),
     manageStock: input.manageStock === true,
