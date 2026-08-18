@@ -12,14 +12,14 @@
   aspect-ratio: 1 / 1;
   overflow: hidden;
   isolation: isolate;
-  background: inherit;
+  background: transparent;
 }
 
 .product-visual__background {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: inherit;
+  background: transparent;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -98,9 +98,9 @@
   transform: scale(1.015);
 }
 
-/* Legacy selectors may still exist during migration. ProductVisual owns image
-   geometry and prevents old per-surface/per-product rules from changing crop,
-   position, blend mode or padding. */
+/* Existing category backgrounds intentionally remain on the surrounding
+   approved UI wrappers during this refactor. ProductVisual owns only product
+   asset geometry, so no category colour, artwork or gradient is duplicated. */
 :where(
     .sb-product-card__visual,
     .sb-product-gallery__main,
