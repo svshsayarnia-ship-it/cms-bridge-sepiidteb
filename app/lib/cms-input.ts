@@ -135,6 +135,7 @@ function oneOf<T extends readonly string[]>(
 
 function images(value: unknown): CmsImage[] {
   if (!Array.isArray(value)) return [];
+
   return value
     .map((item) => {
       if (!item || typeof item !== "object") return null;
@@ -142,8 +143,21 @@ function images(value: unknown): CmsImage[] {
       const src = text(image.src).trim();
       const id = Number(image.id ?? 0);
       if (!src && id <= 0) return null;
+
+      // Product media must first pass through /api/cms/media. That endpoint
+      // normalizes the image and creates the single WordPress attachment that
+      // WooCommerce is allowed to reference. Never let a raw external URL make
+      // WooCommerce sideload a second, unmanaged copy behind the CMS.
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new WooCommerceError(
+          "تصویر محصول باید از بخش آپلود CMS اضافه شود؛ آدرس مستقیم تصویر به WooCommerce ارسال نمی‌شود.",
+          400,
+          "cms_managed_media_required",
+        );
+      }
+
       return {
-        id: Number.isSafeInteger(id) && id > 0 ? id : 0,
+        id,
         src,
         name: text(image.name),
         alt: text(image.alt),
@@ -181,21 +195,21 @@ export function parseProductInput(value: unknown): CmsProductInput {
     catalogVisibility: oneOf(input.catalogVisibility, VISIBILITIES, "visible"),
     featured: input.featured === true,
     description: normalizeRichText(
-  input.description,
-),
-shortDescription: normalizeRichText(
-  input.shortDescription,
-),
+      input.description,
+    ),
+    shortDescription: normalizeRichText(
+      input.shortDescription,
+    ),
     seoTitle: text(input.seoTitle).trim(),
-metaDescription: text(input.metaDescription).trim(),
-focusKeyword: text(input.focusKeyword).trim(),
+    metaDescription: text(input.metaDescription).trim(),
+    focusKeyword: text(input.focusKeyword).trim(),
 
-sourceName: text(input.sourceName).trim(),
-sourceUrl: text(input.sourceUrl).trim(),
+    sourceName: text(input.sourceName).trim(),
+    sourceUrl: text(input.sourceUrl).trim(),
 
-reviewerName: text(input.reviewerName).trim(),
-reviewerRole: text(input.reviewerRole).trim(),
-reviewedAt: text(input.reviewedAt).trim(),
+    reviewerName: text(input.reviewerName).trim(),
+    reviewerRole: text(input.reviewerRole).trim(),
+    reviewedAt: text(input.reviewedAt).trim(),
     regularPrice: text(input.regularPrice),
     salePrice: text(input.salePrice),
     manageStock: input.manageStock === true,

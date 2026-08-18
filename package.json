@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/apply-approved-product-images.mjs",
+    "prebuild": "node scripts/apply-approved-product-images.mjs && node scripts/audit-storefront-image-references.mjs",
     "build": "next build",
     "start": "next start",
     "test": "npm run build",
@@ -15,6 +15,7 @@
     "audit:seo": "node scripts/seo-audit.mjs",
     "audit:content": "node scripts/content-quality-audit.mjs",
     "audit:product-images": "python3 scripts/audit-product-cutouts.py",
+    "audit:storefront-images": "node scripts/audit-storefront-image-references.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh"
   },
   "dependencies": {

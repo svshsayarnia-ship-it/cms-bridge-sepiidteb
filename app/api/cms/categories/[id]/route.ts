@@ -5,6 +5,7 @@ import type {
   CmsCategoryInput,
   CmsImage,
 } from "@/app/lib/cms-types";
+import { cleanupDetachedCmsMedia } from "@/app/lib/managed-media";
 import {
   STOREFRONT_CATALOG_TAG,
 } from "@/app/lib/storefront-catalog";
@@ -13,6 +14,7 @@ import {
 } from "@/app/lib/storefront-categories";
 import {
   errorResponse,
+  listCategories,
   updateCategory,
   WooCommerceError,
 } from "@/app/lib/woocommerce";
@@ -79,13 +81,13 @@ function parseImage(
 
   if (
     !Number.isSafeInteger(id) ||
-    id < 0 ||
-    (id === 0 && !src)
+    id <= 0 ||
+    !src
   ) {
     throw new WooCommerceError(
-      "تصویر دسته‌بندی معتبر نیست.",
+      "تصویر دسته‌بندی باید از بخش آپلود CMS اضافه شود؛ آدرس مستقیم تصویر به WooCommerce ارسال نمی‌شود.",
       400,
-      "invalid_category_image",
+      "cms_managed_media_required",
     );
   }
 
@@ -141,13 +143,47 @@ export async function PUT(
 
   try {
     const id = await categoryId(context);
+    const input = parseCategoryInput(
+      await request.json(),
+    );
+    const currentCategory = (
+      await listCategories({
+        requestTimeoutMs: 20_000,
+        requestMaxAttempts: 1,
+      })
+    ).find((category) => category.id === id);
+
+    if (!currentCategory) {
+      throw new WooCommerceError(
+        "دسته‌بندی در WooCommerce پیدا نشد.",
+        404,
+        "category_not_found",
+      );
+    }
+
+    const oldImageId = currentCategory.image?.id ?? 0;
+    const requestedImageId = input.image?.id ?? 0;
 
     const category = await updateCategory(
       id,
-      parseCategoryInput(
-        await request.json(),
-      ),
+      input,
     );
+
+    // The category image selected in CMS is the complete authoritative state.
+    // Once WooCommerce confirms the new image (or null), remove the detached
+    // attachment unless the bridge reports that it is shared elsewhere.
+    if (
+      oldImageId > 0 &&
+      oldImageId !== requestedImageId
+    ) {
+      await cleanupDetachedCmsMedia(
+        [oldImageId],
+        {
+          ownerType: "category",
+          ownerId: id,
+        },
+      );
+    }
 
     revalidateTag(
       STOREFRONT_CATALOG_TAG,
