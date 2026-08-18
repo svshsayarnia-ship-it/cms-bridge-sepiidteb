@@ -11,17 +11,6 @@ const DRIVE_PRODUCT_ROOT = "/images/drive/product-";
 const TOP_AGE_PRO_SOURCE = "/images/products/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
-const WHITE_CARTON_SOURCE_ASSETS = new Set([
-  "/images/products/sourced/f-mesomatrix.webp",
-  "/images/products/sourced/fusion-f-radiance.webp",
-  "/images/products/sourced/fusion-lift-face.webp",
-  "/images/products/sourced/fusion-melaclear.webp",
-  "/images/products/sourced/f-vitamin-c.webp",
-  "/images/products/sourced/f-melirutin.webp",
-  "/images/products/sourced/f-eye-contour.webp",
-  "/images/products/sourced/f-hair.webp",
-  "/images/products/sourced/fusion-hair-men.webp",
-]);
 
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -40,12 +29,14 @@ function publicFileExists(urlPath) {
 function resolvedProductImage(urlPath) {
   const clean = urlPath.split("?", 1)[0];
 
-  if (WHITE_CARTON_SOURCE_ASSETS.has(clean)) return clean;
   if (clean === TOP_AGE_PRO_SOURCE || clean === TOP_AGE_PRO_CUTOUT) {
     return TOP_AGE_PRO_CLEAN_CUTOUT;
   }
   if (clean.startsWith(CUTOUT_ROOT)) return clean;
 
+  // Master Spec Rule_02: every local product source photograph must have a
+  // normalized foreground cutout. No category- or brand-specific exception is
+  // allowed to keep a baked background in the storefront rendering path.
   if (
     clean.startsWith(PRODUCT_ROOT) &&
     !clean.startsWith(`${PRODUCT_ROOT}editorial/`)
