@@ -4,7 +4,8 @@ import sharp from "sharp";
 
 const MAX_EDGE = 1800;
 const MIN_VISIBLE_ALPHA = 24;
-const EXISTING_ALPHA_RATIO = 0.004;
+const EXISTING_ALPHA_RATIO = 0.12;
+const EXISTING_BORDER_ALPHA_RATIO = 0.65;
 const MAX_BACKGROUND_REMOVAL_RATIO = 0.94;
 const SQUARE_PADDING_RATIO = 0.075;
 
@@ -28,7 +29,6 @@ function safeStem(filename: string): string {
     .replace(/[^a-z0-9\u0600-\u06ff]+/giu, "-")
     .replace(/^-+|-+$/gu, "")
     .slice(0, 72);
-
   return stem || `product-${Date.now()}`;
 }
 
@@ -63,10 +63,8 @@ function borderPalette(image: RawImage): Array<readonly [number, number, number]
   const { data, width, height, channels } = image;
   const palette: Array<readonly [number, number, number]> = [];
   const samples = 18;
-
   const pushPixel = (x: number, y: number) => {
-    const pixel = y * width + x;
-    const offset = pixel * channels;
+    const offset = (y * width + x) * channels;
     palette.push([data[offset], data[offset + 1], data[offset + 2]]);
   };
 
@@ -78,7 +76,6 @@ function borderPalette(image: RawImage): Array<readonly [number, number, number]
     pushPixel(0, y);
     pushPixel(width - 1, y);
   }
-
   return palette;
 }
 
@@ -101,10 +98,37 @@ function hasMeaningfulTransparency(image: RawImage): boolean {
   const { data, width, height, channels } = image;
   const pixels = width * height;
   let transparent = 0;
+  let transparentBorder = 0;
+  let borderPixels = 0;
+
   for (let pixel = 0; pixel < pixels; pixel += 1) {
     if (data[pixel * channels + 3] < 245) transparent += 1;
   }
-  return transparent / pixels >= EXISTING_ALPHA_RATIO;
+
+  const countBorder = (pixel: number) => {
+    borderPixels += 1;
+    if (data[pixel * channels + 3] < 245) transparentBorder += 1;
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    countBorder(x);
+    countBorder((height - 1) * width + x);
+  }
+  for (let y = 1; y < height - 1; y += 1) {
+    countBorder(y * width);
+    countBorder(y * width + width - 1);
+  }
+
+  const canvasRatio = transparent / pixels;
+  const borderRatio = borderPixels > 0 ? transparentBorder / borderPixels : 0;
+
+  // Rounded corners, shadows or a thin transparent frame are not a product
+  // cutout. A source is trusted as already-cut-out only when transparency is
+  // substantial across the canvas or dominates the outer edge.
+  return (
+    canvasRatio >= EXISTING_ALPHA_RATIO ||
+    borderRatio >= EXISTING_BORDER_ALPHA_RATIO
+  );
 }
 
 function removeConnectedBackground(image: RawImage): number {
@@ -136,10 +160,6 @@ function removeConnectedBackground(image: RawImage): number {
   const canJoinBackground = (from: number, next: number) => {
     const edgeDistance = nearestBorderColorDistance(image, next, palette);
     const localDistance = colorDistance(data, from, next, channels);
-
-    // The background must remain connected to the image edge. Requiring local
-    // continuity prevents a pale carton or vial label from being removed just
-    // because it is numerically close to a cream/white studio backdrop.
     return (
       (edgeDistance <= 52 && localDistance <= 24) ||
       (edgeDistance <= 92 && localDistance <= 10)
@@ -171,10 +191,6 @@ function removeConnectedBackground(image: RawImage): number {
   }
 
   const ratio = write / pixels;
-
-  // If the flood fill consumes virtually the whole image, keep the original
-  // instead of risking a damaged product. This is a guard for unusual artwork
-  // where the product itself touches every edge or closely matches the studio.
   if (ratio >= MAX_BACKGROUND_REMOVAL_RATIO) {
     original.copy(data);
     return 0;
@@ -184,8 +200,6 @@ function removeConnectedBackground(image: RawImage): number {
     data[queue[index] * channels + 3] = 0;
   }
 
-  // Add a one-pixel soft transition at the product boundary. It avoids the
-  // hard halo that JPEG/WebP studio backgrounds can leave after segmentation.
   for (let index = 0; index < write; index += 1) {
     const pixel = queue[index];
     const x = pixel % width;
@@ -202,7 +216,6 @@ function removeConnectedBackground(image: RawImage): number {
       data[alphaOffset] = Math.min(data[alphaOffset], 210);
     }
   }
-
   return ratio;
 }
 
@@ -227,13 +240,7 @@ function visibleBounds(image: RawImage) {
   if (right < left || bottom < top) {
     return { left: 0, top: 0, width, height };
   }
-
-  return {
-    left,
-    top,
-    width: right - left + 1,
-    height: bottom - top + 1,
-  };
+  return { left, top, width: right - left + 1, height: bottom - top + 1 };
 }
 
 export async function normalizeCmsProductImage(
@@ -273,11 +280,7 @@ export async function normalizeCmsProductImage(
   );
 
   const crop = sharp(image.data, {
-    raw: {
-      width: image.width,
-      height: image.height,
-      channels: 4,
-    },
+    raw: { width: image.width, height: image.height, channels: 4 },
   }).extract(bounds);
 
   const horizontal = Math.max(0, side - bounds.width);
