@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- local compressed assets */
+/* eslint-disable @next/next/no-img-element -- local non-product compressed assets */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,6 @@ import {
   type Category,
 } from "../data";
 import type { PublicProduct } from "../lib/public-product";
-import { getProductCutoutSrc } from "../lib/product-image";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -19,6 +18,7 @@ import {
   MenuIcon,
   SearchIcon,
 } from "./Icons";
+import { ProductVisual } from "./product/ProductVisual";
 
 const navItems = [
   { href: "/shop", label: "فروشگاه" },
@@ -451,12 +451,12 @@ export function SiteHeader({
               {searchResults.length ? (
                 searchResults.map((product) => (
                   <Link href={productHref(product)} key={product.slug}>
-                    <div
+                    <ProductVisual
                       className="sb-search-results__image"
-                      style={{
-                        backgroundImage: `url(${getProductCutoutSrc(product.image)})`,
-                        backgroundPosition: `${product.position} center`,
-                      }}
+                      product={product}
+                      variant="search"
+                      showBackground={false}
+                      sizes="72px"
                     />
                     <div>
                       <span>{product.categoryTitle}</span>
