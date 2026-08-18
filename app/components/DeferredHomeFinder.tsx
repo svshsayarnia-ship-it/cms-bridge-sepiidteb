@@ -15,8 +15,8 @@ export function DeferredHomeFinder({ products }: { products: PublicProduct[] }) 
 
     let cancelled = false;
     const loadFinder = async () => {
-      const module = await import("./HomeFinder");
-      if (!cancelled) setFinder(() => module.HomeFinder);
+      const homeFinderModule = await import("./HomeFinder");
+      if (!cancelled) setFinder(() => homeFinderModule.HomeFinder);
     };
 
     if (!("IntersectionObserver" in window)) {
