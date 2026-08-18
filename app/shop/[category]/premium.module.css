@@ -394,3 +394,53 @@
     font-size: 0.7rem;
   }
 }
+
+/* Restore the original category-specific hero identity without touching the
+   newer commerce layout, CTA, product cards, or category-card artwork. */
+:global(.sb-category-page[data-category="fillers"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-fillers.webp") !important;
+}
+
+:global(.sb-category-page[data-category="skin-boosters"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-skinbooster.webp") !important;
+}
+
+:global(.sb-category-page[data-category="botulinum-toxins"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-botox.webp") !important;
+}
+
+:global(.sb-category-page[data-category="rejuvenation-cocktails"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/product-fusion.webp") !important;
+}
+
+:global(.sb-category-page[data-category="brightening-cocktails"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-skin.webp") !important;
+}
+
+:global(.sb-category-page[data-category="eye-cocktails"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-mesotherapy.webp") !important;
+}
+
+:global(.sb-category-page[data-category="hair-cocktails"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/product-hair-care-v2.webp") !important;
+}
+
+:global(.sb-category-page[data-category="hyaluronidase-products"] .sb-category-commerce-hero__visual) {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(31, 27, 25, 0.2)),
+    url("/images/drive/category-supplies.webp") !important;
+}
