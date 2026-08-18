@@ -89,6 +89,17 @@ type WooRequestResult<T> = {
 const DEFAULT_WOO_TIMEOUT_MS = 20_000;
 const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
 const PRODUCT_BATCH_TIMEOUT_MS = 90_000;
+const VISUAL_PROFILES = new Set<CmsProduct["visualProfile"]>([
+  "tall",
+  "wide",
+  "square",
+  "vial",
+  "bottle",
+  "syringe",
+  "box",
+  "kit",
+  "default",
+]);
 
 export class WooCommerceError extends Error {
   constructor(
@@ -399,6 +410,24 @@ function getProductMeta(
     ? meta.value
     : "";
 }
+
+function getProductMetaNumber(
+  product: WooProduct,
+  key: string,
+): number | null {
+  const raw = getProductMeta(product, key);
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getProductVisualProfile(product: WooProduct): CmsProduct["visualProfile"] {
+  const raw = getProductMeta(product, "sepiid_visual_profile");
+  return VISUAL_PROFILES.has(raw as CmsProduct["visualProfile"])
+    ? (raw as CmsProduct["visualProfile"])
+    : "default";
+}
+
 function mapProduct(product: WooProduct): CmsProduct {
   return {
     id: product.id,
@@ -411,40 +440,18 @@ function mapProduct(product: WooProduct): CmsProduct {
     featured: product.featured,
     description: product.description,
     shortDescription: product.short_description,
-    seoTitle: getProductMeta(
-  product,
-  "sepiid_seo_title",
-),
-metaDescription: getProductMeta(
-  product,
-  "sepiid_meta_description",
-),
-focusKeyword: getProductMeta(
-  product,
-  "sepiid_focus_keyword",
-),
-
-sourceName: getProductMeta(
-  product,
-  "sepiid_source_name",
-),
-sourceUrl: getProductMeta(
-  product,
-  "sepiid_source_url",
-),
-
-reviewerName: getProductMeta(
-  product,
-  "sepiid_reviewer_name",
-),
-reviewerRole: getProductMeta(
-  product,
-  "sepiid_reviewer_role",
-),
-reviewedAt: getProductMeta(
-  product,
-  "sepiid_reviewed_at",
-),
+    seoTitle: getProductMeta(product, "sepiid_seo_title"),
+    metaDescription: getProductMeta(product, "sepiid_meta_description"),
+    focusKeyword: getProductMeta(product, "sepiid_focus_keyword"),
+    sourceName: getProductMeta(product, "sepiid_source_name"),
+    sourceUrl: getProductMeta(product, "sepiid_source_url"),
+    reviewerName: getProductMeta(product, "sepiid_reviewer_name"),
+    reviewerRole: getProductMeta(product, "sepiid_reviewer_role"),
+    reviewedAt: getProductMeta(product, "sepiid_reviewed_at"),
+    visualProfile: getProductVisualProfile(product),
+    visualScale: getProductMetaNumber(product, "sepiid_visual_scale"),
+    visualOffsetX: getProductMetaNumber(product, "sepiid_visual_offset_x") ?? 0,
+    visualOffsetY: getProductMetaNumber(product, "sepiid_visual_offset_y") ?? 0,
     price: product.price,
     regularPrice: product.regular_price,
     salePrice: product.sale_price,
@@ -502,6 +509,10 @@ function mapStoreProduct(product: WooStoreProduct): CmsProduct {
     reviewerName: "",
     reviewerRole: "",
     reviewedAt: "",
+    visualProfile: "default",
+    visualScale: null,
+    visualOffsetX: 0,
+    visualOffsetY: 0,
     price: currentPrice,
     regularPrice,
     salePrice,
@@ -542,39 +553,22 @@ function productPayload(input: CmsProductInput) {
       image.id > 0 ? { id: image.id } : { src: image.src, alt: image.alt },
     ),
     meta_data: [
-  {
-    key: "sepiid_seo_title",
-    value: input.seoTitle,
-  },
-  {
-    key: "sepiid_meta_description",
-    value: input.metaDescription,
-  },
-  {
-    key: "sepiid_focus_keyword",
-    value: input.focusKeyword,
-  },
-  {
-    key: "sepiid_source_name",
-    value: input.sourceName,
-  },
-  {
-    key: "sepiid_source_url",
-    value: input.sourceUrl,
-  },
-  {
-    key: "sepiid_reviewer_name",
-    value: input.reviewerName,
-  },
-  {
-    key: "sepiid_reviewer_role",
-    value: input.reviewerRole,
-  },
-  {
-    key: "sepiid_reviewed_at",
-    value: input.reviewedAt,
-  },
-],
+      { key: "sepiid_seo_title", value: input.seoTitle },
+      { key: "sepiid_meta_description", value: input.metaDescription },
+      { key: "sepiid_focus_keyword", value: input.focusKeyword },
+      { key: "sepiid_source_name", value: input.sourceName },
+      { key: "sepiid_source_url", value: input.sourceUrl },
+      { key: "sepiid_reviewer_name", value: input.reviewerName },
+      { key: "sepiid_reviewer_role", value: input.reviewerRole },
+      { key: "sepiid_reviewed_at", value: input.reviewedAt },
+      { key: "sepiid_visual_profile", value: input.visualProfile },
+      {
+        key: "sepiid_visual_scale",
+        value: input.visualScale === null ? "" : String(input.visualScale),
+      },
+      { key: "sepiid_visual_offset_x", value: String(input.visualOffsetX) },
+      { key: "sepiid_visual_offset_y", value: String(input.visualOffsetY) },
+    ],
   };
 }
 
