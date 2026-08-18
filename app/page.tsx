@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
-import { HomeFinder } from "./components/HomeFinder";
+import { DeferredHomeFinder } from "./components/DeferredHomeFinder";
 import { CustomerJourney } from "./components/CustomerJourney";
 import {
   ArrowIcon,
@@ -214,7 +214,7 @@ export default async function Home() {
         />
       </Reveal>
 
-      <HomeFinder products={products.map(toPublicProduct)} />
+      <DeferredHomeFinder products={products.map(toPublicProduct)} />
 
       <Reveal>
         <section className="sb-section sb-professional-home">
