@@ -72,12 +72,22 @@ for (const relativePath of deprecatedProductCss) {
   }
 }
 
+const productImageResolver = await read("app/lib/product-image.ts");
+if (
+  productImageResolver.includes("WHITE_CARTON_SOURCE_ASSETS") ||
+  productImageResolver.includes("resolveWhiteCartonSource")
+) {
+  failures.push(
+    "app/lib/product-image.ts: product-specific source-image bypass is present",
+  );
+}
+
 const visualComponent = await read("app/components/product/ProductVisual.tsx");
+const css = await read("app/product-visual.css");
 for (const requiredToken of [
   "object-fit: contain",
   "object-position: center bottom",
 ]) {
-  const css = await read("app/product-visual.css");
   if (!css.includes(requiredToken)) {
     failures.push(`app/product-visual.css: missing ${requiredToken}`);
   }
