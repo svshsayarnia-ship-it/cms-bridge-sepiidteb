@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -12,6 +14,7 @@ import { JsonLd } from "../../components/JsonLd";
 import { ShopCatalog } from "../../components/ShopCatalog";
 import { guides } from "../../content-architecture";
 import { getEditorialCategoryCopy } from "../../lib/editorial-category-copy";
+import { getProductCutoutSrc } from "../../lib/product-image";
 import { toPublicProduct } from "../../lib/public-product";
 import { buildSeoMetadata } from "../../lib/seo";
 import { siteOrigin } from "../../lib/site-url";
@@ -24,6 +27,7 @@ import styles from "./premium.module.css";
 
 export const revalidate = 300;
 
+const priceFormatter = new Intl.NumberFormat("fa-IR");
 const BOTULINUM_CATEGORY_SLUG = "botulinum-toxins";
 const botulinumGuide = guides.find(
   (guide) => guide.slug === "botulinum-toxin",
@@ -51,6 +55,42 @@ const botulinumComparisonChecks = [
       "شرایط حمل و نگهداری باید با اطلاعات همان محصول هماهنگ باشد؛ یک پاسخ کلی برای همه برندها کافی نیست.",
   },
 ] as const;
+
+type PriceSource = {
+  salePrice?: string | number;
+  regularPrice?: string | number;
+  price?: string | number;
+  priceToman?: string | number;
+};
+
+function numericPrice(value?: string | number): number | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const normalized =
+    typeof value === "string"
+      ? value.replace(/[\s,٬]/gu, "")
+      : value;
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) && parsed > 0
+    ? Math.round(parsed)
+    : null;
+}
+
+function visiblePrice(product: PriceSource): number | null {
+  return (
+    numericPrice(product.salePrice) ??
+    numericPrice(product.regularPrice) ??
+    numericPrice(product.price) ??
+    numericPrice(product.priceToman)
+  );
+}
+
+function formatPrice(value: number): string {
+  return `${priceFormatter.format(value)} تومان`;
+}
 
 export function generateStaticParams() {
   return catalogCategories.map(
@@ -157,6 +197,23 @@ export default async function CategoryPage({
     (product) =>
       product.category === category.slug,
   );
+  const pricedItems = items
+    .map((product) => ({
+      product,
+      price: visiblePrice(product),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        product: (typeof items)[number];
+        price: number;
+      } => entry.price !== null,
+    );
+  const featuredEntry = pricedItems[0] ?? null;
+  const startingPrice = pricedItems.length
+    ? Math.min(...pricedItems.map((entry) => entry.price))
+    : null;
 
   const group = getGroupForCategory(
     category.slug,
@@ -194,34 +251,114 @@ export default async function CategoryPage({
         />
       </div>
 
-      <section className="sb-category-hero">
-        <div className="sb-shell sb-category-hero__grid">
-          <div>
+      <section className="sb-category-hero sb-category-commerce-hero">
+        <div className="sb-shell sb-category-commerce-hero__grid">
+          <div className="sb-category-commerce-hero__copy">
             <span className="sb-eyebrow">
               {category.en}
             </span>
 
-            <h1>{category.title}</h1>
+            <h1>خرید و قیمت {category.title}</h1>
 
-            <p>{category.description}</p>
+            <p>{editorial.intro}</p>
 
-            <div className="sb-category-hero__notice">
-              <span>راهنمای تصمیم</span>
-              <p>{category.guide}</p>
+            <div
+              className="sb-category-commerce-hero__signals"
+              aria-label="اطلاعات خرید این دسته"
+            >
+              <span>
+                <small>محصولات قابل مقایسه</small>
+                <strong>{priceFormatter.format(items.length)} محصول</strong>
+              </span>
+
+              {startingPrice ? (
+                <span>
+                  <small>قیمت از</small>
+                  <strong>{formatPrice(startingPrice)}</strong>
+                </span>
+              ) : null}
+
+              <Link href="#category-products">
+                دیدن محصولات و قیمت‌ها
+                <ArrowIcon />
+              </Link>
             </div>
+
+            {isBotulinumCategory ? (
+              <div
+                className={styles.heroAssurance}
+                aria-label="معیارهای اصلی مقایسه فرآورده‌های بوتولینوم"
+              >
+                <span>نام دقیق فرآورده</span>
+                <span>تعداد واحد</span>
+                <span>بسته‌بندی و بچ</span>
+                <span>حمل و نگهداری</span>
+              </div>
+            ) : null}
           </div>
 
           <div
-            className="sb-category-hero__image"
+            className="sb-category-commerce-hero__visual"
             style={{
-              backgroundImage: `url(${category.image})`,
+              backgroundImage: `linear-gradient(180deg, rgba(255,255,255,.06), rgba(31,27,25,.2)), url(${category.image})`,
               backgroundPosition: `${category.position} center`,
             }}
-            role="img"
-            aria-label={`تصویر نمایشی ${category.title}`}
+            role="group"
+            aria-label={`هویت بصری و محصول قیمت‌دار ${category.title}`}
           >
-            <span>SEPIID EDITORIAL / {category.en}</span>
-            <strong>{category.title}</strong>
+            <span className="sb-category-commerce-hero__editorial-label">
+              SEPIID EDITORIAL / {category.en}
+            </span>
+
+            {featuredEntry ? (
+              <Link
+                href={productHref(featuredEntry.product)}
+                className="sb-category-commerce-hero__featured"
+                aria-label={`مشاهده ${featuredEntry.product.nameFa} با قیمت ${formatPrice(featuredEntry.price)}`}
+              >
+                <span className="sb-category-commerce-hero__product-image">
+                  <img
+                    src={getProductCutoutSrc(featuredEntry.product.image)}
+                    alt={
+                      featuredEntry.product.imageAlt ||
+                      `تصویر ${featuredEntry.product.nameFa}`
+                    }
+                    width="520"
+                    height="520"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                  />
+                </span>
+
+                <span className="sb-category-commerce-hero__product-copy">
+                  <small>یک گزینه برای شروع مقایسه</small>
+                  <strong>{featuredEntry.product.nameFa}</strong>
+                  {featuredEntry.product.volume ? (
+                    <span>{featuredEntry.product.volume}</span>
+                  ) : null}
+                  <b>{formatPrice(featuredEntry.price)}</b>
+                  <em>
+                    جزئیات این محصول
+                    <ArrowIcon />
+                  </em>
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="#category-products"
+                className="sb-category-commerce-hero__featured sb-category-commerce-hero__featured--fallback"
+              >
+                <span className="sb-category-commerce-hero__product-copy">
+                  <small>محصولات این دسته</small>
+                  <strong>{category.title}</strong>
+                  <em>
+                    دیدن محصولات و قیمت‌ها
+                    <ArrowIcon />
+                  </em>
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </section>

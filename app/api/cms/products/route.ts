@@ -1,6 +1,5 @@
 import { revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
-import { syncApprovedInventoryToWoo } from "@/app/lib/inventory-woo-sync";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import { parseProductInput } from "@/app/lib/cms-input";
 import {
@@ -21,31 +20,8 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const requestedPage = Number(url.searchParams.get("page") ?? 1);
-
-    // The CMS list is the natural reconciliation point: whenever an editor
-    // opens or searches products, approved static inventory is checked against
-    // WooCommerce first. Missing canonical products are created once; existing
-    // WooCommerce records are intentionally left untouched so CMS edits remain
-    // authoritative after initial creation.
-    if (requestedPage === 1) {
-      try {
-        await syncApprovedInventoryToWoo();
-      } catch (syncError) {
-        // A temporary sync problem must never make the product manager unusable.
-        // No success TTL is recorded on failure, so the next page-1 request
-        // automatically retries reconciliation.
-        console.error("[inventory-woo-sync] automatic sync failed", {
-          error:
-            syncError instanceof Error
-              ? syncError.message
-              : String(syncError),
-        });
-      }
-    }
-
     const result = await listProducts({
-      page: requestedPage,
+      page: Number(url.searchParams.get("page") ?? 1),
       perPage: Number(url.searchParams.get("perPage") ?? 30),
       search: url.searchParams.get("search") ?? "",
       status: url.searchParams.get("status") ?? "all",
