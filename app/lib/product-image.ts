@@ -5,86 +5,91 @@ const TOP_AGE_PRO_SOURCE = "/images/products/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
 
-// Fusion Meso cartons are predominantly white. Background-removal models can
-// mistake the carton face for the backdrop, leaving a faded or incomplete box.
-// Keep the reviewed source photograph for these exact catalog assets. The
-// presentation layer applies the white-carton treatment by matching the clean
-// asset path, so the URL itself stays valid for Next/Image and browser caches.
-const WHITE_CARTON_SOURCE_ASSETS = new Set([
-  "/images/products/sourced/f-mesomatrix.webp",
-  "/images/products/sourced/fusion-f-radiance.webp",
-  "/images/products/sourced/fusion-lift-face.webp",
-  "/images/products/sourced/fusion-melaclear.webp",
-  "/images/products/sourced/f-vitamin-c.webp",
-  "/images/products/sourced/f-melirutin.webp",
-  "/images/products/sourced/f-eye-contour.webp",
-  "/images/products/sourced/f-hair.webp",
-  "/images/products/sourced/fusion-hair-men.webp",
+// Master Spec Rule_02: Fusion foreground assets must always resolve to the
+// normalized transparent cutout. This also covers WooCommerce-hosted copies of
+// the same filename so a stale Featured Image cannot reintroduce a baked-in
+// background on cards or PDPs while the CMS media library is being cleaned up.
+const MASTER_SPEC_CUTOUT_FILENAMES = new Set([
+  "f-mesomatrix.webp",
+  "fusion-f-radiance.webp",
+  "fusion-lift-face.webp",
+  "fusion-melaclear.webp",
+  "f-vitamin-c.webp",
+  "f-melirutin.webp",
+  "f-eye-contour.webp",
+  "f-hair.webp",
+  "fusion-hair-men.webp",
 ]);
 
 function withoutQuery(src: string): string {
   return src.split("?", 1)[0];
 }
 
-function resolveWhiteCartonSource(src: string): string | null {
+function filenameFromSrc(src: string): string {
   const cleanSrc = withoutQuery(src);
 
-  if (WHITE_CARTON_SOURCE_ASSETS.has(cleanSrc)) {
-    return cleanSrc;
+  try {
+    const pathname = cleanSrc.startsWith("http://") || cleanSrc.startsWith("https://")
+      ? new URL(cleanSrc).pathname
+      : cleanSrc;
+    return decodeURIComponent(pathname.split("/").pop() ?? "");
+  } catch {
+    return cleanSrc.split("/").pop() ?? "";
   }
+}
 
-  if (cleanSrc.startsWith(CUTOUT_ROOT)) {
-    const sourceCandidate = `${PRODUCT_ROOT}${cleanSrc.slice(CUTOUT_ROOT.length)}`;
-    if (WHITE_CARTON_SOURCE_ASSETS.has(sourceCandidate)) {
-      return sourceCandidate;
-    }
-  }
-
-  return null;
+function resolveMasterSpecCutout(src: string): string | null {
+  const filename = filenameFromSrc(src);
+  return MASTER_SPEC_CUTOUT_FILENAMES.has(filename)
+    ? `${CUTOUT_ROOT}sourced/${filename}`
+    : null;
 }
 
 /** Resolve an approved local product photograph to its normalized alpha cutout. */
 export function getProductCutoutSrc(src?: string | null): string {
   if (!src) return "";
 
-  const whiteCartonSource = resolveWhiteCartonSource(src);
-  if (whiteCartonSource) {
-    return whiteCartonSource;
+  const cleanSrc = withoutQuery(src);
+  const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
+  if (masterSpecCutout) {
+    return masterSpecCutout;
   }
 
-  if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
+  if (cleanSrc === TOP_AGE_PRO_SOURCE || cleanSrc === TOP_AGE_PRO_CUTOUT) {
     return TOP_AGE_PRO_CLEAN_CUTOUT;
   }
 
-  if (src.startsWith(CUTOUT_ROOT)) return src;
+  if (cleanSrc.startsWith(CUTOUT_ROOT)) return cleanSrc;
 
   if (
-    src.startsWith(PRODUCT_ROOT) &&
-    !src.startsWith(`${PRODUCT_ROOT}editorial/`)
+    cleanSrc.startsWith(PRODUCT_ROOT) &&
+    !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)
   ) {
-    const relative = src
+    const relative = cleanSrc
       .slice(PRODUCT_ROOT.length)
       .replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
     return `${CUTOUT_ROOT}${relative}`;
   }
 
-  if (src.startsWith(DRIVE_PRODUCT_ROOT)) {
-    const filename = src
+  if (cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)) {
+    const filename = cleanSrc
       .split("/")
       .pop()
       ?.replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-    return filename ? `${CUTOUT_ROOT}drive/${filename}` : src;
+    return filename ? `${CUTOUT_ROOT}drive/${filename}` : cleanSrc;
   }
 
-  return src;
+  return cleanSrc;
 }
 
 export function hasLocalProductCutout(src?: string | null): boolean {
   if (!src) return false;
+  const cleanSrc = withoutQuery(src);
   return (
-    src.startsWith(CUTOUT_ROOT) ||
-    (src.startsWith(PRODUCT_ROOT) &&
-      !src.startsWith(`${PRODUCT_ROOT}editorial/`)) ||
-    src.startsWith(DRIVE_PRODUCT_ROOT)
+    Boolean(resolveMasterSpecCutout(cleanSrc)) ||
+    cleanSrc.startsWith(CUTOUT_ROOT) ||
+    (cleanSrc.startsWith(PRODUCT_ROOT) &&
+      !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)) ||
+    cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)
   );
 }
