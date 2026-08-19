@@ -28,6 +28,30 @@ const deprecatedProductCss = [
   "app/hyaluronidase-product-images.css",
 ];
 
+const requiredMasterSpecCutouts = [
+  "public/images/products/cutouts/sourced/f-mesomatrix.webp",
+  "public/images/products/cutouts/sourced/fusion-lift-face.webp",
+  "public/images/products/cutouts/sourced/fusion-f-radiance.webp",
+  "public/images/products/cutouts/sourced/fusion-melaclear.webp",
+  "public/images/products/cutouts/sourced/f-vitamin-c.webp",
+  "public/images/products/cutouts/sourced/f-melirutin.webp",
+  "public/images/products/cutouts/sourced/f-eye-contour.webp",
+  "public/images/products/cutouts/sourced/f-hair.webp",
+  "public/images/products/cutouts/sourced/fusion-hair-men.webp",
+];
+
+const requiredMasterSpecAliases = [
+  "fusion-f-mesomatrix.webp",
+  "fusion-f-lift-face.webp",
+  "fusion-f-radiance.webp",
+  "fusion-f-melaclear.webp",
+  "fusion-f-vitamin-c.webp",
+  "fusion-f-melirutin.webp",
+  "fusion-f-eye-contour.webp",
+  "fusion-f-hair.webp",
+  "fusion-f-hair-men.webp",
+];
+
 const failures = [];
 
 async function read(relativePath) {
@@ -126,6 +150,29 @@ if (
   failures.push(
     "app/lib/product-image.ts: product-specific source-image bypass is present",
   );
+}
+
+if (
+  !productImageResolver.includes("MASTER_SPEC_CUTOUT_ALIASES") ||
+  !productImageResolver.includes("resolveMasterSpecCutout")
+) {
+  failures.push(
+    "app/lib/product-image.ts: approved master cutout resolver is missing",
+  );
+}
+
+for (const alias of requiredMasterSpecAliases) {
+  if (!productImageResolver.includes(`\"${alias}\"`)) {
+    failures.push(`app/lib/product-image.ts: missing approved cutout alias ${alias}`);
+  }
+}
+
+for (const relativePath of requiredMasterSpecCutouts) {
+  try {
+    await access(path.join(root, relativePath));
+  } catch {
+    failures.push(`${relativePath}: approved master cutout is missing`);
+  }
 }
 
 const visualComponent = await read("app/components/product/ProductVisual.tsx");
