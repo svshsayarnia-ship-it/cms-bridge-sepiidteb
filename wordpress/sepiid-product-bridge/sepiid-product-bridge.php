@@ -3,7 +3,7 @@
  * Plugin Name:       Sepiid Product Bridge
  * Plugin URI:        https://sepiidbeauty.ir/
  * Description:       اتصال امن Sepiid CMS و حساب مشتریان به محصولات، دسته‌بندی‌ها، رسانه‌ها و WooCommerce.
- * Version:           1.8.2
+ * Version:           1.8.3
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Author:            Sepiid Beauty
@@ -23,7 +23,7 @@ namespace Sepiid\ProductBridge;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.8.2';
+const VERSION = '1.8.3';
 const FILE    = __FILE__;
 const PATH    = __DIR__;
 
@@ -56,6 +56,7 @@ function boot() {
 	require_once PATH . '/includes/class-customer-auth-controller.php';
 	require_once PATH . '/includes/class-customer-password-policy.php';
 	require_once PATH . '/includes/class-customer-otp-controller.php';
+	require_once PATH . '/includes/class-kavenegar-direct-otp-provider.php';
 	require_once PATH . '/includes/class-customer-identity-controller.php';
 	require_once PATH . '/includes/class-admin.php';
 
@@ -75,6 +76,9 @@ function boot() {
 
 	$customer_password_policy = new Customer_Password_Policy();
 	$customer_password_policy->hooks();
+
+	$kavenegar_direct_otp_provider = new Kavenegar_Direct_Otp_Provider();
+	$kavenegar_direct_otp_provider->hooks();
 
 	$customer_otp_controller = new Customer_Otp_Controller();
 	$customer_otp_controller->hooks();
