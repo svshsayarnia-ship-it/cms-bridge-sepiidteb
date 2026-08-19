@@ -11,15 +11,23 @@ type HeaderProduct = Pick<
   | "nameFa"
   | "nameEn"
   | "brand"
+  | "category"
   | "categoryTitle"
   | "image"
+  | "masterImage"
+  | "imageAlt"
   | "position"
+  | "visualProfile"
+  | "visualScale"
+  | "visualOffsetX"
+  | "visualOffsetY"
 >;
 
 /**
  * Keep the client boundary lean. SiteHeader search and navigation only read
- * the fields projected below; serializing the complete product catalog into
- * every page's React payload wastes bytes and parsing work on mobile.
+ * the identifying fields plus the complete ProductVisual contract projected
+ * below. Keeping category/profile/scale/offset metadata prevents search results
+ * from silently falling back to a different image geometry than cards/PDPs.
  */
 export function SiteHeaderServer({
   categories,
@@ -40,23 +48,37 @@ export function SiteHeaderServer({
       nameFa,
       nameEn,
       brand,
+      category,
       categoryTitle,
       image,
+      masterImage,
+      imageAlt,
       position,
+      visualProfile,
+      visualScale,
+      visualOffsetX,
+      visualOffsetY,
     }) => ({
       slug,
       nameFa,
       nameEn,
       brand,
+      category,
       categoryTitle,
       image,
+      masterImage,
+      imageAlt,
       position,
+      visualProfile,
+      visualScale,
+      visualOffsetX,
+      visualOffsetY,
     }),
   );
 
   // SiteHeader intentionally consumes only the projected fields above. The
-  // casts preserve its existing public prop types while avoiding a risky
-  // client-component refactor during this technical SEO/performance fix.
+  // casts preserve its existing public prop types while keeping the client
+  // payload compact and the product visual contract intact.
   return (
     <SiteHeader
       categories={headerCategories as Category[]}
