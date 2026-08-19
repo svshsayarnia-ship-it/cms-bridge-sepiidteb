@@ -72,6 +72,11 @@ const requiredDistinctFillerAssets = [
   "/images/products/neuramis-volume-1ml.webp",
   "/images/products/neuramis-deep-10-pack.webp",
   "/images/products/neuramis-lido-10-pack.webp",
+  "/images/products/audrey-m.webp",
+  "/images/products/audrey-h.webp",
+  "/images/products/inovosense-smile.webp",
+  "/images/products/inovosense-style.webp",
+  "/images/products/inovosense-shape.webp",
 ];
 
 for (const asset of requiredDistinctFillerAssets) {
@@ -94,6 +99,7 @@ for (const asset of requiredJaluproAssets) {
 
 for (const relativePath of [
   "public/images/products/alcarisa-28.webp",
+  "public/images/products/cutouts/alcarisa-28.webp",
   "public/images/products/neuramis-lido-1ml.webp",
   "public/images/products/alcarisa-16.webp",
   "public/images/products/alcarisa-20.webp",
@@ -105,6 +111,11 @@ for (const relativePath of [
   "public/images/products/neuramis-volume-1ml.webp",
   "public/images/products/neuramis-deep-10-pack.webp",
   "public/images/products/neuramis-lido-10-pack.webp",
+  "public/images/products/audrey-m.webp",
+  "public/images/products/audrey-h.webp",
+  "public/images/products/inovosense-smile.webp",
+  "public/images/products/inovosense-style.webp",
+  "public/images/products/inovosense-shape.webp",
   "public/images/products/jalupro-classic.webp",
   "public/images/products/jalupro-hmw.webp",
   "public/images/products/jalupro-super-hydro.webp",
