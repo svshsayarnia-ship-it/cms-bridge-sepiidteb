@@ -206,16 +206,31 @@ export function ProductVariantExperience({
     !hasVariants && liveShortDescription ? liveShortDescription : displaySummary,
     getSupplierTerms(product.brand),
   );
-  const editorialDescription = toPublicCopy(liveDescription);
+  const editorialDescription = hasVariants ? "" : toPublicCopy(liveDescription);
+  const variantEditorialDescription = hasVariants
+    ? conciseProductCopy(displaySummary, getSupplierTerms(product.brand))
+    : "";
   const selectedSpecLabels = new Set(
     selectedVariant?.specs.map(([label]) => label) ?? [],
   );
+  const hasModelListSpec = product.specs.some(([label]) => label === "مدل‌های موجود");
+  const currentVariantList = product.variants
+    ?.map((variant) => variant.label.replace(/^مدل\s+/u, "").trim())
+    .filter(Boolean)
+    .join("، ");
+  const currentProductSpecs =
+    hasVariants && hasModelListSpec && currentVariantList
+      ? [
+          ["مدل‌های موجود", currentVariantList] as [string, string],
+          ...product.specs.filter(([label]) => label !== "مدل‌های موجود"),
+        ]
+      : product.specs;
   const displaySpecs = selectedVariant
     ? [
-        ...product.specs.filter(([label]) => !selectedSpecLabels.has(label)),
+        ...currentProductSpecs.filter(([label]) => !selectedSpecLabels.has(label)),
         ...selectedVariant.specs,
       ]
-    : product.specs;
+    : currentProductSpecs;
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
@@ -381,13 +396,19 @@ export function ProductVariantExperience({
         </div>
       </section>
 
-      {editorialDescription && (
+      {(variantEditorialDescription || editorialDescription) && (
         <section className="sb-section sb-product-description" id="description">
           <div className="sb-shell sb-product-description__grid">
             <div className="sb-product-description__heading">
               <h2>درباره {displayName}</h2>
             </div>
-            <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: editorialDescription }} />
+            {hasVariants ? (
+              <article className="sb-product-description__content sb-product-rich-text">
+                <p>{variantEditorialDescription}</p>
+              </article>
+            ) : (
+              <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: editorialDescription }} />
+            )}
           </div>
         </section>
       )}
