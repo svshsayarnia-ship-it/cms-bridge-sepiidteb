@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { whatsappHref } from "../data";
+import {
+  hasPersianKeyboardInput,
+  passwordPolicyState,
+  toAsciiDigits,
+} from "../lib/account-input";
 import type { CustomerUser } from "../lib/customer-auth";
 
 type AccountMode = "login" | "register" | "profile" | "forgot";
@@ -70,6 +75,10 @@ export function CustomerAccount({
   const [registerChallenge, setRegisterChallenge] = useState("");
   const [registerCode, setRegisterCode] = useState("");
   const [phoneProof, setPhoneProof] = useState("");
+
+  const passwordPolicy = passwordPolicyState(password);
+  const passwordHasPersianInput = hasPersianKeyboardInput(password);
+  const emailHasPersianInput = hasPersianKeyboardInput(profile.email);
 
   useEffect(() => {
     if (initialUser) return;
@@ -204,6 +213,18 @@ export function CustomerAccount({
     event.preventDefault();
     if (!phoneProof) {
       setMessage("قبل از ساخت حساب، شماره موبایل را با کد پیامکی تأیید کن.");
+      return;
+    }
+    if (emailHasPersianInput) {
+      setMessage("به نظر می‌رسد کیبورد روی فارسی است. ایمیل را با کیبورد English وارد کن.");
+      return;
+    }
+    if (passwordHasPersianInput) {
+      setMessage("به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.");
+      return;
+    }
+    if (!passwordPolicy.valid) {
+      setMessage("رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.");
       return;
     }
 
@@ -364,7 +385,7 @@ export function CustomerAccount({
                         autoComplete="one-time-code"
                         maxLength={6}
                         value={loginCode}
-                        onChange={(event) => setLoginCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        onChange={(event) => setLoginCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
                         placeholder="------"
                         required
                       />
@@ -420,10 +441,20 @@ export function CustomerAccount({
                   <label>
                     <span>ایمیل</span>
                     <input dir="ltr" type="email" inputMode="email" autoComplete="email" value={profile.email} onChange={(event) => update("email", event.target.value)} required />
+                    {emailHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ ایمیل را با کیبورد English وارد کن.</small>}
                   </label>
                   <label>
                     <span>رمز حساب</span>
-                    <input dir="ltr" type="password" minLength={10} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+                    <input
+                      dir="ltr"
+                      type="password"
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                    />
+                    {passwordHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
                   </label>
                   <label>
                     <span>کلینیک یا مرکز</span>
@@ -460,7 +491,7 @@ export function CustomerAccount({
                         autoComplete="one-time-code"
                         maxLength={6}
                         value={registerCode}
-                        onChange={(event) => setRegisterCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        onChange={(event) => setRegisterCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
                         required
                       />
                     </label>
@@ -476,8 +507,19 @@ export function CustomerAccount({
                 )}
 
                 {phoneProof && <p className="sb-account-message" role="status">شماره موبایل تأیید شده است.</p>}
-                <p className="sb-account-note">رمز حساب حداقل ۱۰ کاراکتر باشد. ورود روزمره سایت با OTP پیامکی انجام می‌شود.</p>
-                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || !phoneProof}>
+                <p className="sb-account-note">
+                  رمز حداقل ۱۰ کاراکتر باشد، حتماً یک حرف انگلیسی و یک عدد انگلیسی داشته باشد و از حداقل سه گروهِ حروف کوچک، حروف بزرگ، عدد یا نشانه تشکیل شود.
+                </p>
+                {password && !passwordHasPersianInput && (
+                  <p className="sb-account-note" aria-live="polite">
+                    {passwordPolicy.valid ? "✓ شرایط رمز عبور کامل است." : "شرایط رمز عبور هنوز کامل نشده است."}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="sb-btn sb-btn--dark"
+                  disabled={pending || !phoneProof || !passwordPolicy.valid || passwordHasPersianInput || emailHasPersianInput}
+                >
                   {pending ? "در حال ساخت حساب..." : "ساخت حساب"}
                 </button>
                 <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>بازیابی رمز حساب</button>
@@ -489,7 +531,7 @@ export function CustomerAccount({
                 <div>
                   <span className="sb-eyebrow">PROFILE</span>
                   <h2>مشخصات حساب</h2>
-                  <p>شماره موبایل هر حساب یکتا است و نمی‌تواند روی حساب دیگری استفاده شود.</p>
+                  <p>شماره موبایل هویت ورود حساب است و تغییر آن نیاز به تأیید پیامکی دوباره دارد.</p>
                 </div>
                 <div className="sb-account-form__grid">
                   <label>
@@ -498,7 +540,7 @@ export function CustomerAccount({
                   </label>
                   <label>
                     <span>شماره موبایل</span>
-                    <input dir="ltr" inputMode="tel" autoComplete="tel" value={profile.phone} onChange={(event) => update("phone", event.target.value)} required />
+                    <input dir="ltr" inputMode="tel" autoComplete="tel" value={profile.phone} readOnly aria-readonly="true" />
                   </label>
                   <label>
                     <span>ایمیل</span>
