@@ -6,6 +6,7 @@ import { whatsappHref } from "../data";
 import type { CustomerUser } from "../lib/customer-auth";
 
 type AccountMode = "login" | "register" | "profile" | "forgot";
+type OtpPurpose = "login" | "register";
 
 type CustomerProfile = {
   email: string;
@@ -14,6 +15,18 @@ type CustomerProfile = {
   clinicName: string;
   city: string;
   accountType: string;
+};
+
+type OtpRequestResult = {
+  challenge?: string;
+  expiresIn?: number;
+  message?: string;
+};
+
+type OtpVerifyResult = {
+  user?: CustomerUser;
+  phoneProof?: string;
+  expiresIn?: number;
 };
 
 const emptyProfile: CustomerProfile = {
@@ -52,6 +65,11 @@ export function CustomerAccount({
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [loginChallenge, setLoginChallenge] = useState("");
+  const [loginCode, setLoginCode] = useState("");
+  const [registerChallenge, setRegisterChallenge] = useState("");
+  const [registerCode, setRegisterCode] = useState("");
+  const [phoneProof, setPhoneProof] = useState("");
 
   useEffect(() => {
     if (initialUser) return;
@@ -93,24 +111,64 @@ export function CustomerAccount({
 
   function update(field: keyof CustomerProfile, value: string) {
     setProfile((current) => ({ ...current, [field]: value }));
+    if (field === "phone") {
+      setRegisterChallenge("");
+      setRegisterCode("");
+      setPhoneProof("");
+    }
     setMessage("");
   }
 
-  async function submitLogin(event: FormEvent) {
+  function updateLoginPhone(value: string) {
+    setIdentifier(value);
+    setLoginChallenge("");
+    setLoginCode("");
+    setMessage("");
+  }
+
+  async function requestOtp(purpose: OtpPurpose) {
+    const phone = purpose === "login" ? identifier : profile.phone;
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<OtpRequestResult>("otp-request", {
+        phone,
+        purpose,
+      });
+      if (!result.challenge) throw new Error("درخواست کد کامل نشد. دوباره تلاش کن.");
+      if (purpose === "login") {
+        setLoginChallenge(result.challenge);
+        setLoginCode("");
+      } else {
+        setRegisterChallenge(result.challenge);
+        setRegisterCode("");
+        setPhoneProof("");
+      }
+      setMessage(result.message || "کد یک‌بارمصرف پیامک شد.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function verifyLoginOtp(event: FormEvent) {
     event.preventDefault();
     setPending(true);
     setMessage("");
-
     try {
-      const result = await accountRequest<{ user: CustomerUser }>("login", {
-        identifier,
-        password,
+      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
+        challenge: loginChallenge,
+        code: loginCode,
+        purpose: "login",
       });
+      if (!result.user) throw new Error("ورود تکمیل نشد. دوباره کد بگیر.");
       setUser(result.user);
       setProfile(profileFromUser(result.user));
-      setPassword("");
+      setLoginCode("");
+      setLoginChallenge("");
       setMode("profile");
-      setMessage("ورود با موفقیت انجام شد.");
+      setMessage("ورود با کد پیامکی با موفقیت انجام شد.");
 
       const returnTo = safeReturnTo(new URLSearchParams(window.location.search).get("return_to"));
       if (returnTo !== "/account/profile") window.location.assign(returnTo);
@@ -121,11 +179,36 @@ export function CustomerAccount({
     }
   }
 
-  async function submitRegister(event: FormEvent) {
-    event.preventDefault();
+  async function verifyRegisterOtp() {
     setPending(true);
     setMessage("");
+    try {
+      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
+        challenge: registerChallenge,
+        code: registerCode,
+        purpose: "register",
+      });
+      if (!result.phoneProof) throw new Error("تأیید شماره تکمیل نشد. دوباره کد بگیر.");
+      setPhoneProof(result.phoneProof);
+      setRegisterCode("");
+      setMessage("شماره موبایل تأیید شد. حالا می‌توانی عضویت را کامل کنی.");
+    } catch (error) {
+      setPhoneProof("");
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
 
+  async function submitRegister(event: FormEvent) {
+    event.preventDefault();
+    if (!phoneProof) {
+      setMessage("قبل از ساخت حساب، شماره موبایل را با کد پیامکی تأیید کن.");
+      return;
+    }
+
+    setPending(true);
+    setMessage("");
     try {
       const result = await accountRequest<{ user: CustomerUser }>("register", {
         email: profile.email,
@@ -135,12 +218,15 @@ export function CustomerAccount({
         city: profile.city,
         clinicName: profile.clinicName,
         accountType: profile.accountType,
+        phoneProof,
       });
       setUser(result.user);
       setProfile(profileFromUser(result.user));
       setPassword("");
+      setPhoneProof("");
+      setRegisterChallenge("");
       setMode("profile");
-      setMessage("حساب امن شما ساخته شد و وارد حساب شدید.");
+      setMessage("حساب ساخته شد و شماره موبایل به‌صورت یکتا به همین حساب متصل شد.");
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -152,15 +238,18 @@ export function CustomerAccount({
     event.preventDefault();
     setPending(true);
     setMessage("");
-
     try {
-      const result = await accountRequest<{ user: CustomerUser }>("profile", {
-        fullName: profile.fullName,
-        phone: profile.phone,
-        city: profile.city,
-        clinicName: profile.clinicName,
-        accountType: profile.accountType,
-      }, "PATCH");
+      const result = await accountRequest<{ user: CustomerUser }>(
+        "profile",
+        {
+          fullName: profile.fullName,
+          phone: profile.phone,
+          city: profile.city,
+          clinicName: profile.clinicName,
+          accountType: profile.accountType,
+        },
+        "PATCH",
+      );
       setUser(result.user);
       setProfile(profileFromUser(result.user));
       setMessage("تغییرات حساب ذخیره شد.");
@@ -175,11 +264,8 @@ export function CustomerAccount({
     event.preventDefault();
     setPending(true);
     setMessage("");
-
     try {
-      const result = await accountRequest<{ message?: string }>("password-request", {
-        identifier,
-      });
+      const result = await accountRequest<{ message?: string }>("password-request", { identifier });
       setMessage(result.message || "اگر حسابی با این مشخصات وجود داشته باشد، لینک بازیابی ارسال می‌شود.");
     } catch (error) {
       setMessage(errorMessage(error));
@@ -197,8 +283,11 @@ export function CustomerAccount({
       setProfile(emptyProfile);
       setIdentifier("");
       setPassword("");
+      setLoginChallenge("");
+      setRegisterChallenge("");
+      setPhoneProof("");
       setMode("login");
-      setMessage("از حساب کاربری خارج شدید.");
+      setMessage("از حساب کاربری خارج شدی.");
     } catch (error) {
       setMessage(errorMessage(error));
     } finally {
@@ -214,13 +303,13 @@ export function CustomerAccount({
             <span className="sb-eyebrow">SECURE CUSTOMER ACCOUNT</span>
             <h1>حساب کاربری سپید بیوتی</h1>
             <p>
-              ورود امن برای نگهداری مشخصات خرید و اتصال یکپارچه به حساب مشتری در
-              WooCommerce؛ نشست ورود فقط در کوکی امن مرورگر نگهداری می‌شود.
+              ورود با کد یک‌بارمصرف پیامکی انجام می‌شود و هر شماره موبایل فقط می‌تواند
+              به یک حساب مشتری متصل باشد.
             </p>
           </div>
           <div className="sb-account-status">
-            <strong>{user ? user.fullName || user.email : "وارد حساب نشده‌اید"}</strong>
-            <span>{user ? user.phone || user.email : "ورود با موبایل یا ایمیل"}</span>
+            <strong>{user ? user.fullName || user.email : "وارد حساب نشده‌ای"}</strong>
+            <span>{user ? user.phone || user.email : "ورود امن با SMS"}</span>
           </div>
         </div>
       </section>
@@ -234,11 +323,7 @@ export function CustomerAccount({
             <button type="button" className={mode === "register" ? "is-active" : ""} onClick={() => setMode("register")}>
               ثبت‌نام
             </button>
-            <button
-              type="button"
-              className={mode === "profile" ? "is-active" : ""}
-              onClick={() => setMode(user ? "profile" : "login")}
-            >
+            <button type="button" className={mode === "profile" ? "is-active" : ""} onClick={() => setMode(user ? "profile" : "login")}>
               مشخصات کاربر
             </button>
           </aside>
@@ -247,41 +332,51 @@ export function CustomerAccount({
             {message && <p className="sb-account-message" role="status">{message}</p>}
 
             {mode === "login" && (
-              <form className="sb-account-form" onSubmit={submitLogin}>
+              <form className="sb-account-form" onSubmit={verifyLoginOtp}>
                 <div>
-                  <span className="sb-eyebrow">LOGIN</span>
-                  <h2>ورود امن</h2>
-                  <p>شماره موبایل یا ایمیل حساب و رمز عبور را وارد کنید.</p>
+                  <span className="sb-eyebrow">SMS LOGIN</span>
+                  <h2>ورود با کد پیامکی</h2>
+                  <p>شماره موبایل حساب را وارد کن؛ ورود فقط با رمز یک‌بارمصرف انجام می‌شود.</p>
                 </div>
                 <label>
-                  <span>موبایل یا ایمیل</span>
+                  <span>شماره موبایل</span>
                   <input
                     dir="ltr"
-                    autoComplete="username"
-                    inputMode="email"
+                    autoComplete="tel"
+                    inputMode="tel"
                     value={identifier}
-                    onChange={(event) => setIdentifier(event.target.value)}
-                    placeholder="09xxxxxxxxx یا email@example.com"
+                    onChange={(event) => updateLoginPhone(event.target.value)}
+                    placeholder="09xxxxxxxxx"
                     required
                   />
                 </label>
-                <label>
-                  <span>رمز عبور</span>
-                  <input
-                    dir="ltr"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                  />
-                </label>
-                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
-                  {pending ? "در حال بررسی..." : "ورود"}
-                </button>
-                <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>
-                  رمز عبور را فراموش کرده‌ام
-                </button>
+                {!loginChallenge ? (
+                  <button type="button" className="sb-btn sb-btn--dark" disabled={pending} onClick={() => void requestOtp("login")}>
+                    {pending ? "در حال ارسال..." : "دریافت رمز پیامکی"}
+                  </button>
+                ) : (
+                  <>
+                    <label>
+                      <span>رمز یک‌بارمصرف ۶ رقمی</span>
+                      <input
+                        dir="ltr"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={loginCode}
+                        onChange={(event) => setLoginCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="------"
+                        required
+                      />
+                    </label>
+                    <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || loginCode.length !== 6}>
+                      {pending ? "در حال تأیید..." : "تأیید کد و ورود"}
+                    </button>
+                    <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("login")}>
+                      ارسال دوباره کد
+                    </button>
+                  </>
+                )}
                 <button type="button" className="sb-account-inline" onClick={() => setMode("register")}>
                   هنوز حساب ندارم
                 </button>
@@ -292,34 +387,26 @@ export function CustomerAccount({
               <form className="sb-account-form" onSubmit={submitForgot}>
                 <div>
                   <span className="sb-eyebrow">RECOVERY</span>
-                  <h2>بازیابی رمز عبور</h2>
-                  <p>موبایل یا ایمیل حساب را وارد کنید. پاسخ، وجود یا عدم وجود حساب را افشا نمی‌کند.</p>
+                  <h2>بازیابی رمز حساب</h2>
+                  <p>برای مدیریت رمز WooCommerce، موبایل یا ایمیل حساب را وارد کن.</p>
                 </div>
                 <label>
                   <span>موبایل یا ایمیل</span>
-                  <input
-                    dir="ltr"
-                    autoComplete="username"
-                    value={identifier}
-                    onChange={(event) => setIdentifier(event.target.value)}
-                    required
-                  />
+                  <input dir="ltr" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />
                 </label>
                 <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
                   {pending ? "در حال ارسال..." : "ارسال لینک بازیابی"}
                 </button>
-                <button type="button" className="sb-account-inline" onClick={() => setMode("login")}>
-                  بازگشت به ورود
-                </button>
+                <button type="button" className="sb-account-inline" onClick={() => setMode("login")}>بازگشت به ورود پیامکی</button>
               </form>
             )}
 
             {mode === "register" && (
               <form className="sb-account-form" onSubmit={submitRegister}>
                 <div>
-                  <span className="sb-eyebrow">REGISTER</span>
-                  <h2>ساخت حساب</h2>
-                  <p>حساب شما مستقیماً به هویت مشتری در WooCommerce متصل می‌شود.</p>
+                  <span className="sb-eyebrow">VERIFIED REGISTER</span>
+                  <h2>ساخت حساب با شماره یکتا</h2>
+                  <p>هر شماره فقط یک عضویت دارد و قبل از ساخت حساب باید همان شماره با SMS تأیید شود.</p>
                 </div>
                 <div className="sb-account-form__grid">
                   <label>
@@ -335,7 +422,7 @@ export function CustomerAccount({
                     <input dir="ltr" type="email" inputMode="email" autoComplete="email" value={profile.email} onChange={(event) => update("email", event.target.value)} required />
                   </label>
                   <label>
-                    <span>رمز عبور</span>
+                    <span>رمز حساب</span>
                     <input dir="ltr" type="password" minLength={10} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
                   </label>
                   <label>
@@ -356,10 +443,44 @@ export function CustomerAccount({
                     </select>
                   </label>
                 </div>
-                <p className="sb-account-note">رمز باید حداقل ۱۰ کاراکتر و ترکیبی از حداقل سه گروهِ حروف کوچک، حروف بزرگ، عدد یا نشانه باشد.</p>
-                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
-                  {pending ? "در حال ساخت حساب..." : "ساخت حساب امن"}
+
+                {!phoneProof && !registerChallenge && (
+                  <button type="button" className="sb-btn sb-btn--ghost" disabled={pending} onClick={() => void requestOtp("register")}>
+                    {pending ? "در حال ارسال..." : "ارسال کد تأیید موبایل"}
+                  </button>
+                )}
+
+                {!phoneProof && registerChallenge && (
+                  <div className="sb-account-form__grid">
+                    <label>
+                      <span>کد تأیید ۶ رقمی</span>
+                      <input
+                        dir="ltr"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={registerCode}
+                        onChange={(event) => setRegisterCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        required
+                      />
+                    </label>
+                    <div className="sb-account-actions">
+                      <button type="button" className="sb-btn sb-btn--ghost" disabled={pending || registerCode.length !== 6} onClick={() => void verifyRegisterOtp()}>
+                        {pending ? "در حال تأیید..." : "تأیید شماره موبایل"}
+                      </button>
+                      <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("register")}>
+                        ارسال دوباره کد
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {phoneProof && <p className="sb-account-message" role="status">شماره موبایل تأیید شده است.</p>}
+                <p className="sb-account-note">رمز حساب حداقل ۱۰ کاراکتر باشد. ورود روزمره سایت با OTP پیامکی انجام می‌شود.</p>
+                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || !phoneProof}>
+                  {pending ? "در حال ساخت حساب..." : "ساخت حساب"}
                 </button>
+                <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>بازیابی رمز حساب</button>
               </form>
             )}
 
@@ -368,7 +489,7 @@ export function CustomerAccount({
                 <div>
                   <span className="sb-eyebrow">PROFILE</span>
                   <h2>مشخصات حساب</h2>
-                  <p>ایمیل هویت اصلی حساب است؛ سایر اطلاعات را می‌توانید اینجا ویرایش کنید.</p>
+                  <p>شماره موبایل هر حساب یکتا است و نمی‌تواند روی حساب دیگری استفاده شود.</p>
                 </div>
                 <div className="sb-account-form__grid">
                   <label>
@@ -402,27 +523,23 @@ export function CustomerAccount({
                   </label>
                 </div>
                 <div className="sb-account-actions">
-                  <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
-                    {pending ? "در حال ذخیره..." : "ذخیره تغییرات"}
-                  </button>
+                  <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>{pending ? "در حال ذخیره..." : "ذخیره تغییرات"}</button>
                   <a className="sb-btn sb-btn--ghost" href={supportLink}>ارتباط با پشتیبانی</a>
-                  <button type="button" className="sb-account-inline" onClick={logout} disabled={pending}>
-                    خروج از حساب
-                  </button>
+                  <button type="button" className="sb-account-inline" onClick={logout} disabled={pending}>خروج از حساب</button>
                 </div>
               </form>
             )}
 
             {mode === "profile" && !user && (
               <div className="sb-account-profile">
-                <h2>برای دیدن حساب وارد شوید</h2>
-                <p>این بخش فقط بعد از احراز هویت در دسترس است.</p>
-                <button type="button" className="sb-btn sb-btn--dark" onClick={() => setMode("login")}>ورود به حساب</button>
+                <h2>برای دیدن حساب وارد شو</h2>
+                <p>این بخش فقط بعد از تأیید کد پیامکی در دسترس است.</p>
+                <button type="button" className="sb-btn sb-btn--dark" onClick={() => setMode("login")}>ورود با SMS</button>
               </div>
             )}
 
             <p className="sb-account-note">
-              اطلاعات ورود در مرورگر به‌صورت پروفایل محلی ذخیره نمی‌شود. برای مسائل حساب می‌توانید از <Link href="/contact">پشتیبانی سپید بیوتی</Link> کمک بگیرید.
+              رمز یک‌بارمصرف زمان‌دار است و تعداد درخواست و تلاش برای کد محدود می‌شود. برای مسائل حساب از <Link href="/contact">پشتیبانی سپید بیوتی</Link> کمک بگیر.
             </p>
           </div>
         </div>
