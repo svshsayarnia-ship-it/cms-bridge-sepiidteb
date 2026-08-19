@@ -5,6 +5,7 @@ import "./ui-audit.css";
 import "./category-hovers.css";
 import "./category-commerce-hero.css";
 import "./product-visual.css";
+import "./account-responsive.css";
 import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";

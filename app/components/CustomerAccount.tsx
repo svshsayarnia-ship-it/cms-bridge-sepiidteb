@@ -3,54 +3,107 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { whatsappHref } from "../data";
+import {
+  hasPersianKeyboardInput,
+  passwordPolicyState,
+  toAsciiDigits,
+} from "../lib/account-input";
+import type { CustomerUser } from "../lib/customer-auth";
 
-type AccountMode = "login" | "register" | "profile";
+type AccountMode = "login" | "register" | "profile" | "forgot";
+type OtpPurpose = "login" | "register";
 
 type CustomerProfile = {
+  email: string;
   fullName: string;
   phone: string;
   clinicName: string;
   city: string;
-  role: string;
+  accountType: string;
 };
 
-const STORAGE_KEY = "sepiid_customer_profile_v1";
+type OtpRequestResult = {
+  challenge?: string;
+  expiresIn?: number;
+  message?: string;
+};
+
+type OtpVerifyResult = {
+  user?: CustomerUser;
+  phoneProof?: string;
+  expiresIn?: number;
+};
 
 const emptyProfile: CustomerProfile = {
+  email: "",
   fullName: "",
   phone: "",
   clinicName: "",
   city: "",
-  role: "clinic",
+  accountType: "customer",
 };
 
-function normalizePhone(value: string) {
-  return value.replace(/[^\d+]/g, "");
+function profileFromUser(user: CustomerUser): CustomerProfile {
+  return {
+    email: user.email,
+    fullName: user.fullName,
+    phone: user.phone,
+    clinicName: user.clinicName,
+    city: user.city,
+    accountType: user.accountType || "customer",
+  };
 }
 
-export function CustomerAccount({ initialMode = "login" }: { initialMode?: AccountMode }) {
-  const [mode, setMode] = useState<AccountMode>(initialMode);
-  const [profile, setProfile] = useState<CustomerProfile>(emptyProfile);
-  const [savedProfile, setSavedProfile] = useState<CustomerProfile | null>(null);
+export function CustomerAccount({
+  initialMode = "login",
+  initialUser = null,
+}: {
+  initialMode?: AccountMode;
+  initialUser?: CustomerUser | null;
+}) {
+  const [mode, setMode] = useState<AccountMode>(initialUser ? "profile" : initialMode);
+  const [user, setUser] = useState<CustomerUser | null>(initialUser);
+  const [profile, setProfile] = useState<CustomerProfile>(
+    initialUser ? profileFromUser(initialUser) : emptyProfile,
+  );
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
+  const [loginChallenge, setLoginChallenge] = useState("");
+  const [loginCode, setLoginCode] = useState("");
+  const [registerChallenge, setRegisterChallenge] = useState("");
+  const [registerCode, setRegisterCode] = useState("");
+  const [phoneProof, setPhoneProof] = useState("");
+
+  const passwordPolicy = passwordPolicyState(password);
+  const passwordHasPersianInput = hasPersianKeyboardInput(password);
+  const emailHasPersianInput = hasPersianKeyboardInput(profile.email);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+    if (initialUser) return;
 
-      try {
-        const saved = JSON.parse(raw) as CustomerProfile;
-        setSavedProfile(saved);
-        setProfile(saved);
-        if (initialMode === "profile") setMode("profile");
-      } catch {
-        window.localStorage.removeItem(STORAGE_KEY);
-      }
-    }, 0);
+    const controller = new AbortController();
+    void fetch("/api/account/auth/session", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { user?: CustomerUser };
+      })
+      .then((result) => {
+        if (!result?.user) return;
+        setUser(result.user);
+        setProfile(profileFromUser(result.user));
+        if (initialMode !== "register") setMode("profile");
+      })
+      .catch(() => undefined);
 
-    return () => window.clearTimeout(timer);
-  }, [initialMode]);
+    return () => controller.abort();
+  }, [initialMode, initialUser]);
 
   const supportLink = useMemo(() => {
     const text = [
@@ -67,43 +120,200 @@ export function CustomerAccount({ initialMode = "login" }: { initialMode?: Accou
 
   function update(field: keyof CustomerProfile, value: string) {
     setProfile((current) => ({ ...current, [field]: value }));
+    if (field === "phone") {
+      setRegisterChallenge("");
+      setRegisterCode("");
+      setPhoneProof("");
+    }
     setMessage("");
   }
 
-  function submitRegister(event: FormEvent) {
-    event.preventDefault();
-    if (!profile.fullName.trim() || normalizePhone(profile.phone).length < 10) {
-      setMessage("نام و شماره موبایل معتبر را وارد کن.");
-      return;
-    }
-
-    const nextProfile = { ...profile, phone: normalizePhone(profile.phone) };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProfile));
-    setSavedProfile(nextProfile);
-    setProfile(nextProfile);
-    setMode("profile");
-    setMessage("مشخصات اولیه روی همین دستگاه ذخیره شد.");
+  function updateLoginPhone(value: string) {
+    setIdentifier(value);
+    setLoginChallenge("");
+    setLoginCode("");
+    setMessage("");
   }
 
-  function submitLogin(event: FormEvent) {
+  async function requestOtp(purpose: OtpPurpose) {
+    const phone = purpose === "login" ? identifier : profile.phone;
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<OtpRequestResult>("otp-request", {
+        phone,
+        purpose,
+      });
+      if (!result.challenge) throw new Error("درخواست کد کامل نشد. دوباره تلاش کن.");
+      if (purpose === "login") {
+        setLoginChallenge(result.challenge);
+        setLoginCode("");
+      } else {
+        setRegisterChallenge(result.challenge);
+        setRegisterCode("");
+        setPhoneProof("");
+      }
+      setMessage(result.message || "کد یک‌بارمصرف پیامک شد.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function verifyLoginOtp(event: FormEvent) {
     event.preventDefault();
-    const phone = normalizePhone(profile.phone);
-    if (savedProfile && normalizePhone(savedProfile.phone) === phone) {
-      setProfile(savedProfile);
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
+        challenge: loginChallenge,
+        code: loginCode,
+        purpose: "login",
+      });
+      if (!result.user) throw new Error("ورود تکمیل نشد. دوباره کد بگیر.");
+      setUser(result.user);
+      setProfile(profileFromUser(result.user));
+      setLoginCode("");
+      setLoginChallenge("");
       setMode("profile");
-      setMessage("وارد پنل کاربری شدی.");
+      setMessage("ورود با کد پیامکی با موفقیت انجام شد.");
+
+      const returnTo = safeReturnTo(new URLSearchParams(window.location.search).get("return_to"));
+      if (returnTo !== "/account/profile") window.location.assign(returnTo);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function verifyRegisterOtp() {
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
+        challenge: registerChallenge,
+        code: registerCode,
+        purpose: "register",
+      });
+      if (!result.phoneProof) throw new Error("تأیید شماره تکمیل نشد. دوباره کد بگیر.");
+      setPhoneProof(result.phoneProof);
+      setRegisterCode("");
+      setMessage("شماره موبایل تأیید شد. حالا می‌توانی عضویت را کامل کنی.");
+    } catch (error) {
+      setPhoneProof("");
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function submitRegister(event: FormEvent) {
+    event.preventDefault();
+    if (!phoneProof) {
+      setMessage("قبل از ساخت حساب، شماره موبایل را با کد پیامکی تأیید کن.");
+      return;
+    }
+    if (emailHasPersianInput) {
+      setMessage("به نظر می‌رسد کیبورد روی فارسی است. ایمیل را با کیبورد English وارد کن.");
+      return;
+    }
+    if (passwordHasPersianInput) {
+      setMessage("به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.");
+      return;
+    }
+    if (!passwordPolicy.valid) {
+      setMessage("رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.");
       return;
     }
 
-    setMessage("برای این شماره پروفایلی روی این دستگاه پیدا نشد. ابتدا عضویت را ثبت کن.");
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<{ user: CustomerUser }>("register", {
+        email: profile.email,
+        phone: profile.phone,
+        fullName: profile.fullName,
+        password,
+        city: profile.city,
+        clinicName: profile.clinicName,
+        accountType: profile.accountType,
+        phoneProof,
+      });
+      setUser(result.user);
+      setProfile(profileFromUser(result.user));
+      setPassword("");
+      setPhoneProof("");
+      setRegisterChallenge("");
+      setMode("profile");
+      setMessage("حساب ساخته شد و شماره موبایل به‌صورت یکتا به همین حساب متصل شد.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
   }
 
-  function clearProfile() {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setSavedProfile(null);
-    setProfile(emptyProfile);
-    setMode("login");
-    setMessage("از حساب کاربری خارج شدی.");
+  async function submitProfile(event: FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<{ user: CustomerUser }>(
+        "profile",
+        {
+          fullName: profile.fullName,
+          phone: profile.phone,
+          city: profile.city,
+          clinicName: profile.clinicName,
+          accountType: profile.accountType,
+        },
+        "PATCH",
+      );
+      setUser(result.user);
+      setProfile(profileFromUser(result.user));
+      setMessage("تغییرات حساب ذخیره شد.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function submitForgot(event: FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<{ message?: string }>("password-request", { identifier });
+      setMessage(result.message || "اگر حسابی با این مشخصات وجود داشته باشد، لینک بازیابی ارسال می‌شود.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function logout() {
+    setPending(true);
+    setMessage("");
+    try {
+      await accountRequest<{ ok: boolean }>("logout", {});
+      setUser(null);
+      setProfile(emptyProfile);
+      setIdentifier("");
+      setPassword("");
+      setLoginChallenge("");
+      setRegisterChallenge("");
+      setPhoneProof("");
+      setMode("login");
+      setMessage("از حساب کاربری خارج شدی.");
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -111,164 +321,296 @@ export function CustomerAccount({ initialMode = "login" }: { initialMode?: Accou
       <section className="sb-account-hero">
         <div className="sb-shell sb-account-hero__grid">
           <div>
-            <span className="sb-eyebrow">CUSTOMER ACCOUNT</span>
-            <h1>ورود و پروفایل مشتریان سپید بیوتی</h1>
+            <span className="sb-eyebrow">SECURE CUSTOMER ACCOUNT</span>
+            <h1>حساب کاربری سپید بیوتی</h1>
             <p>
-              این نسخه، پروفایل اولیه مشتری را برای پیگیری سریع استعلام‌ها آماده
-              می‌کند. سفارش، پرداخت و سوابق خرید رسمی هنوز باید از مسیر پشتیبانی
-              تأیید شود.
+              ورود با کد یک‌بارمصرف پیامکی انجام می‌شود و هر شماره موبایل فقط می‌تواند
+              به یک حساب مشتری متصل باشد.
             </p>
           </div>
           <div className="sb-account-status">
-            <strong>{savedProfile ? savedProfile.fullName : "پروفایل ثبت نشده"}</strong>
-            <span>{savedProfile ? savedProfile.phone : "ثبت سریع با موبایل"}</span>
+            <strong>{user ? user.fullName || user.email : "وارد حساب نشده‌ای"}</strong>
+            <span>{user ? user.phone || user.email : "ورود امن با SMS"}</span>
           </div>
         </div>
       </section>
 
       <section className="sb-section">
         <div className="sb-shell sb-account-layout">
-          <aside className="sb-account-side">
-            <button
-              type="button"
-              className={mode === "login" ? "is-active" : ""}
-              onClick={() => setMode("login")}
-            >
+          <aside className="sb-account-side" aria-label="حساب کاربری">
+            <button type="button" className={mode === "login" ? "is-active" : ""} onClick={() => setMode("login")}>
               ورود
             </button>
-            <button
-              type="button"
-              className={mode === "register" ? "is-active" : ""}
-              onClick={() => setMode("register")}
-            >
+            <button type="button" className={mode === "register" ? "is-active" : ""} onClick={() => setMode("register")}>
               ثبت‌نام
             </button>
-            <button
-              type="button"
-              className={mode === "profile" ? "is-active" : ""}
-              onClick={() => setMode("profile")}
-            >
+            <button type="button" className={mode === "profile" ? "is-active" : ""} onClick={() => setMode(user ? "profile" : "login")}>
               مشخصات کاربر
             </button>
           </aside>
 
-          <div className="sb-account-panel">
-            {message && <p className="sb-account-message">{message}</p>}
+          <div className="sb-account-panel" aria-busy={pending}>
+            {message && <p className="sb-account-message" role="status">{message}</p>}
 
             {mode === "login" && (
-              <form className="sb-account-form" onSubmit={submitLogin}>
+              <form className="sb-account-form" onSubmit={verifyLoginOtp}>
                 <div>
-                  <span className="sb-eyebrow">LOGIN</span>
-                  <h2>ورود با شماره موبایل</h2>
-                  <p>در این نسخه، ورود فقط پروفایل ذخیره‌شده روی همین دستگاه را باز می‌کند.</p>
+                  <span className="sb-eyebrow">SMS LOGIN</span>
+                  <h2>ورود با کد پیامکی</h2>
+                  <p>شماره موبایل حساب را وارد کن؛ ورود فقط با رمز یک‌بارمصرف انجام می‌شود.</p>
                 </div>
                 <label>
                   <span>شماره موبایل</span>
                   <input
                     dir="ltr"
+                    autoComplete="tel"
                     inputMode="tel"
-                    value={profile.phone}
-                    onChange={(event) => update("phone", event.target.value)}
+                    value={identifier}
+                    onChange={(event) => updateLoginPhone(event.target.value)}
                     placeholder="09xxxxxxxxx"
+                    required
                   />
                 </label>
-                <button type="submit" className="sb-btn sb-btn--dark">ورود</button>
+                {!loginChallenge ? (
+                  <button type="button" className="sb-btn sb-btn--dark" disabled={pending} onClick={() => void requestOtp("login")}>
+                    {pending ? "در حال ارسال..." : "دریافت رمز پیامکی"}
+                  </button>
+                ) : (
+                  <>
+                    <label>
+                      <span>رمز یک‌بارمصرف ۶ رقمی</span>
+                      <input
+                        dir="ltr"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={loginCode}
+                        onChange={(event) => setLoginCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
+                        placeholder="------"
+                        required
+                      />
+                    </label>
+                    <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || loginCode.length !== 6}>
+                      {pending ? "در حال تأیید..." : "تأیید کد و ورود"}
+                    </button>
+                    <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("login")}>
+                      ارسال دوباره کد
+                    </button>
+                  </>
+                )}
                 <button type="button" className="sb-account-inline" onClick={() => setMode("register")}>
-                  هنوز ثبت‌نام نکرده‌ام
+                  هنوز حساب ندارم
                 </button>
+              </form>
+            )}
+
+            {mode === "forgot" && (
+              <form className="sb-account-form" onSubmit={submitForgot}>
+                <div>
+                  <span className="sb-eyebrow">RECOVERY</span>
+                  <h2>بازیابی رمز حساب</h2>
+                  <p>برای مدیریت رمز WooCommerce، موبایل یا ایمیل حساب را وارد کن.</p>
+                </div>
+                <label>
+                  <span>موبایل یا ایمیل</span>
+                  <input dir="ltr" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />
+                </label>
+                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
+                  {pending ? "در حال ارسال..." : "ارسال لینک بازیابی"}
+                </button>
+                <button type="button" className="sb-account-inline" onClick={() => setMode("login")}>بازگشت به ورود پیامکی</button>
               </form>
             )}
 
             {mode === "register" && (
               <form className="sb-account-form" onSubmit={submitRegister}>
                 <div>
-                  <span className="sb-eyebrow">REGISTER</span>
-                  <h2>ثبت مشخصات اولیه</h2>
-                  <p>این اطلاعات برای سریع‌تر شدن استعلام و ارتباط با پشتیبانی استفاده می‌شود.</p>
+                  <span className="sb-eyebrow">VERIFIED REGISTER</span>
+                  <h2>ساخت حساب با شماره یکتا</h2>
+                  <p>هر شماره فقط یک عضویت دارد و قبل از ساخت حساب باید همان شماره با SMS تأیید شود.</p>
                 </div>
                 <div className="sb-account-form__grid">
                   <label>
                     <span>نام و نام خانوادگی</span>
-                    <input value={profile.fullName} onChange={(event) => update("fullName", event.target.value)} />
+                    <input autoComplete="name" value={profile.fullName} onChange={(event) => update("fullName", event.target.value)} required />
                   </label>
                   <label>
                     <span>شماره موبایل</span>
+                    <input dir="ltr" inputMode="tel" autoComplete="tel" value={profile.phone} onChange={(event) => update("phone", event.target.value)} placeholder="09xxxxxxxxx" required />
+                  </label>
+                  <label>
+                    <span>ایمیل</span>
+                    <input dir="ltr" type="email" inputMode="email" autoComplete="email" value={profile.email} onChange={(event) => update("email", event.target.value)} required />
+                    {emailHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ ایمیل را با کیبورد English وارد کن.</small>}
+                  </label>
+                  <label>
+                    <span>رمز حساب</span>
                     <input
                       dir="ltr"
-                      inputMode="tel"
-                      value={profile.phone}
-                      onChange={(event) => update("phone", event.target.value)}
+                      type="password"
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
                     />
+                    {passwordHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
                   </label>
                   <label>
                     <span>کلینیک یا مرکز</span>
-                    <input value={profile.clinicName} onChange={(event) => update("clinicName", event.target.value)} />
+                    <input autoComplete="organization" value={profile.clinicName} onChange={(event) => update("clinicName", event.target.value)} />
                   </label>
                   <label>
                     <span>شهر</span>
-                    <input value={profile.city} onChange={(event) => update("city", event.target.value)} />
+                    <input autoComplete="address-level2" value={profile.city} onChange={(event) => update("city", event.target.value)} />
                   </label>
                   <label>
                     <span>نوع کاربر</span>
-                    <select value={profile.role} onChange={(event) => update("role", event.target.value)}>
+                    <select value={profile.accountType} onChange={(event) => update("accountType", event.target.value)}>
+                      <option value="customer">خریدار</option>
                       <option value="clinic">کلینیک / مرکز زیبایی</option>
                       <option value="doctor">پزشک یا فرد واجد صلاحیت</option>
                       <option value="buyer">مسئول خرید</option>
                     </select>
                   </label>
                 </div>
-                <button type="submit" className="sb-btn sb-btn--dark">ثبت مشخصات</button>
+
+                {!phoneProof && !registerChallenge && (
+                  <button type="button" className="sb-btn sb-btn--ghost" disabled={pending} onClick={() => void requestOtp("register")}>
+                    {pending ? "در حال ارسال..." : "ارسال کد تأیید موبایل"}
+                  </button>
+                )}
+
+                {!phoneProof && registerChallenge && (
+                  <div className="sb-account-form__grid">
+                    <label>
+                      <span>کد تأیید ۶ رقمی</span>
+                      <input
+                        dir="ltr"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={registerCode}
+                        onChange={(event) => setRegisterCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
+                        required
+                      />
+                    </label>
+                    <div className="sb-account-actions">
+                      <button type="button" className="sb-btn sb-btn--ghost" disabled={pending || registerCode.length !== 6} onClick={() => void verifyRegisterOtp()}>
+                        {pending ? "در حال تأیید..." : "تأیید شماره موبایل"}
+                      </button>
+                      <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("register")}>
+                        ارسال دوباره کد
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {phoneProof && <p className="sb-account-message" role="status">شماره موبایل تأیید شده است.</p>}
+                <p className="sb-account-note">
+                  رمز حداقل ۱۰ کاراکتر باشد، حتماً یک حرف انگلیسی و یک عدد انگلیسی داشته باشد و از حداقل سه گروهِ حروف کوچک، حروف بزرگ، عدد یا نشانه تشکیل شود.
+                </p>
+                {password && !passwordHasPersianInput && (
+                  <p className="sb-account-note" aria-live="polite">
+                    {passwordPolicy.valid ? "✓ شرایط رمز عبور کامل است." : "شرایط رمز عبور هنوز کامل نشده است."}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="sb-btn sb-btn--dark"
+                  disabled={pending || !phoneProof || !passwordPolicy.valid || passwordHasPersianInput || emailHasPersianInput}
+                >
+                  {pending ? "در حال ساخت حساب..." : "ساخت حساب"}
+                </button>
+                <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>بازیابی رمز حساب</button>
               </form>
             )}
 
-            {mode === "profile" && (
-              <div className="sb-account-profile">
+            {mode === "profile" && user && (
+              <form className="sb-account-form" onSubmit={submitProfile}>
                 <div>
                   <span className="sb-eyebrow">PROFILE</span>
-                  <h2>مشخصات کاربر</h2>
-                  <p>برای ویرایش مشخصات، فرم ثبت‌نام را دوباره ذخیره کن.</p>
+                  <h2>مشخصات حساب</h2>
+                  <p>شماره موبایل هویت ورود حساب است و تغییر آن نیاز به تأیید پیامکی دوباره دارد.</p>
                 </div>
-                <dl>
-                  <div>
-                    <dt>نام</dt>
-                    <dd>{savedProfile?.fullName || "ثبت نشده"}</dd>
-                  </div>
-                  <div>
-                    <dt>موبایل</dt>
-                    <dd dir="ltr">{savedProfile?.phone || "ثبت نشده"}</dd>
-                  </div>
-                  <div>
-                    <dt>کلینیک / مرکز</dt>
-                    <dd>{savedProfile?.clinicName || "ثبت نشده"}</dd>
-                  </div>
-                  <div>
-                    <dt>شهر</dt>
-                    <dd>{savedProfile?.city || "ثبت نشده"}</dd>
-                  </div>
-                </dl>
+                <div className="sb-account-form__grid">
+                  <label>
+                    <span>نام و نام خانوادگی</span>
+                    <input autoComplete="name" value={profile.fullName} onChange={(event) => update("fullName", event.target.value)} required />
+                  </label>
+                  <label>
+                    <span>شماره موبایل</span>
+                    <input dir="ltr" inputMode="tel" autoComplete="tel" value={profile.phone} readOnly aria-readonly="true" />
+                  </label>
+                  <label>
+                    <span>ایمیل</span>
+                    <input dir="ltr" value={profile.email} readOnly aria-readonly="true" />
+                  </label>
+                  <label>
+                    <span>کلینیک یا مرکز</span>
+                    <input autoComplete="organization" value={profile.clinicName} onChange={(event) => update("clinicName", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>شهر</span>
+                    <input autoComplete="address-level2" value={profile.city} onChange={(event) => update("city", event.target.value)} />
+                  </label>
+                  <label>
+                    <span>نوع کاربر</span>
+                    <select value={profile.accountType} onChange={(event) => update("accountType", event.target.value)}>
+                      <option value="customer">خریدار</option>
+                      <option value="clinic">کلینیک / مرکز زیبایی</option>
+                      <option value="doctor">پزشک یا فرد واجد صلاحیت</option>
+                      <option value="buyer">مسئول خرید</option>
+                    </select>
+                  </label>
+                </div>
                 <div className="sb-account-actions">
-                  <a className="sb-btn sb-btn--dark" href={supportLink}>
-                    ارسال مشخصات برای پشتیبانی
-                  </a>
-                  <button type="button" className="sb-btn sb-btn--ghost" onClick={() => setMode("register")}>
-                    ویرایش مشخصات
-                  </button>
-                  {savedProfile && (
-                    <button type="button" className="sb-account-inline" onClick={clearProfile}>
-                      خروج از حساب
-                    </button>
-                  )}
+                  <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>{pending ? "در حال ذخیره..." : "ذخیره تغییرات"}</button>
+                  <a className="sb-btn sb-btn--ghost" href={supportLink}>ارتباط با پشتیبانی</a>
+                  <button type="button" className="sb-account-inline" onClick={logout} disabled={pending}>خروج از حساب</button>
                 </div>
+              </form>
+            )}
+
+            {mode === "profile" && !user && (
+              <div className="sb-account-profile">
+                <h2>برای دیدن حساب وارد شو</h2>
+                <p>این بخش فقط بعد از تأیید کد پیامکی در دسترس است.</p>
+                <button type="button" className="sb-btn sb-btn--dark" onClick={() => setMode("login")}>ورود با SMS</button>
               </div>
             )}
 
             <p className="sb-account-note">
-              برای پنل واقعی شامل رمز عبور، سفارش‌ها، پرداخت و تاریخچه خرید، مرحله بعد باید
-              دیتابیس و احراز هویت امن اضافه شود. <Link href="/contact">تماس با پشتیبانی</Link>
+              رمز یک‌بارمصرف زمان‌دار است و تعداد درخواست و تلاش برای کد محدود می‌شود. برای مسائل حساب از <Link href="/contact">پشتیبانی سپید بیوتی</Link> کمک بگیر.
             </p>
           </div>
         </div>
       </section>
     </main>
   );
+}
+
+async function accountRequest<T>(action: string, body: Record<string, unknown>, method: "POST" | "PATCH" = "POST"): Promise<T> {
+  const response = await fetch(`/api/account/auth/${action}`, {
+    method,
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const result = (await response.json().catch(() => ({}))) as { error?: string } & T;
+  if (!response.ok) throw new Error(result.error || "عملیات حساب کاربری انجام نشد.");
+  return result;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "عملیات حساب کاربری انجام نشد.";
+}
+
+function safeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/api/")) {
+    return "/account/profile";
+  }
+  return value;
 }

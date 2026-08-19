@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Sepiid Product Bridge
  * Plugin URI:        https://sepiidbeauty.ir/
- * Description:       اتصال امن Sepiid CMS به محصولات، دسته‌بندی‌ها و رسانه‌های WooCommerce.
- * Version:           1.7.2
+ * Description:       اتصال امن Sepiid CMS و حساب مشتریان به محصولات، دسته‌بندی‌ها، رسانه‌ها و WooCommerce.
+ * Version:           1.8.2
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Author:            Sepiid Beauty
@@ -23,20 +23,17 @@ namespace Sepiid\ProductBridge;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.7.2';
+const VERSION = '1.8.2';
 const FILE    = __FILE__;
 const PATH    = __DIR__;
 
 /**
  * Declare compatibility only for WooCommerce features this bridge does not alter.
  *
- * The plugin uses public WordPress media APIs and WooCommerce REST authentication.
- * It never reads or writes order storage directly.
- *
  * @return void
  */
 function declare_woocommerce_compatibility() {
-	if ( ! class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+	if ( ! class_exists( '\\Automattic\\WooCommerce\\Utilities\\FeaturesUtil' ) ) {
 		return;
 	}
 
@@ -56,6 +53,10 @@ add_action( 'before_woocommerce_init', __NAMESPACE__ . '\\declare_woocommerce_co
 function boot() {
 	require_once PATH . '/includes/class-rest-controller.php';
 	require_once PATH . '/includes/class-site-presentation-controller.php';
+	require_once PATH . '/includes/class-customer-auth-controller.php';
+	require_once PATH . '/includes/class-customer-password-policy.php';
+	require_once PATH . '/includes/class-customer-otp-controller.php';
+	require_once PATH . '/includes/class-customer-identity-controller.php';
 	require_once PATH . '/includes/class-admin.php';
 
 	if ( ! class_exists( 'WooCommerce' ) ) {
@@ -66,9 +67,20 @@ function boot() {
 	$rest_controller = new Rest_Controller();
 	$rest_controller->hooks();
 
-	$site_presentation_controller =
-		new Site_Presentation_Controller();
+	$site_presentation_controller = new Site_Presentation_Controller();
 	$site_presentation_controller->hooks();
+
+	$customer_auth_controller = new Customer_Auth_Controller();
+	$customer_auth_controller->hooks();
+
+	$customer_password_policy = new Customer_Password_Policy();
+	$customer_password_policy->hooks();
+
+	$customer_otp_controller = new Customer_Otp_Controller();
+	$customer_otp_controller->hooks();
+
+	$customer_identity_controller = new Customer_Identity_Controller();
+	$customer_identity_controller->hooks();
 
 	if ( is_admin() ) {
 		$admin = new Admin();
@@ -76,4 +88,3 @@ function boot() {
 	}
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\boot', 20 );
-
