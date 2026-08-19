@@ -12,6 +12,7 @@ import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { siteOrigin } from "../lib/site-url";
 import { buildSeoMetadata } from "../lib/seo";
 import { toPublicProduct } from "../lib/public-product";
+import styles from "./shop-identity.module.css";
 
 export const revalidate = 300;
 
@@ -48,21 +49,29 @@ export default async function ShopPage() {
         />
       </div>
 
-      <section className="sb-page-hero sb-shop-hero">
-        <div className="sb-shell sb-shop-hero__grid">
-          <div>
-            <span className="sb-eyebrow">
+      <section
+        className={`sb-page-hero sb-shop-hero ${styles.hero}`}
+        aria-labelledby="shop-page-title"
+      >
+        <div className={`sb-shell sb-shop-hero__grid ${styles.grid}`}>
+          <div className={styles.identity}>
+            <span className={`sb-eyebrow ${styles.eyebrow}`}>
               SHOP / SEPIID BEAUTY
             </span>
 
-            <h1>فروشگاه سپید بیوتی</h1>
+            <h1 id="shop-page-title" className={styles.title}>
+              <span>فروشگاه</span>
+              <strong>سپید بیوتی</strong>
+            </h1>
 
-            <p>
+            <span className={styles.rule} aria-hidden="true" />
+
+            <p className={styles.lead}>
               اگر نام محصول را می‌دانید، مستقیم جستجو کنید. اگر هنوز بین چند گزینه مردد هستید، از دسته‌بندی شروع کنید و مدل، حجم، بسته‌بندی و قیمت محصولات مشابه را کنار هم ببینید.
             </p>
           </div>
 
-          <div className="sb-shop-hero__stats">
+          <div className={`sb-shop-hero__stats ${styles.stats}`}>
             <div>
               <strong>{products.length}</strong>
               <span>محصول برای مقایسه</span>
