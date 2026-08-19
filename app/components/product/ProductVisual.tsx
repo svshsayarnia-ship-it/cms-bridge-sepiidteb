@@ -85,6 +85,24 @@ function getVariantSizes(variant: ProductVisualVariant) {
   }
 }
 
+function resolveVisualProfile(
+  requestedProfile: ProductVisualProfile | null | undefined,
+  categoryProfile: ProductVisualProfile,
+): ProductVisualProfile {
+  // CMS uses `default` as an unset value. Treating it as a real override makes
+  // cards ignore their category geometry while PDPs fall back differently.
+  // Only a genuinely shape-specific profile may override the category profile.
+  if (
+    requestedProfile &&
+    requestedProfile !== "default" &&
+    VISUAL_PROFILES[requestedProfile]
+  ) {
+    return requestedProfile;
+  }
+
+  return categoryProfile;
+}
+
 export function ProductVisual({
   product,
   variant = "card",
@@ -104,10 +122,10 @@ export function ProductVisual({
   const src = failedSrc === requestedSrc ? FALLBACK_PRODUCT_IMAGE : requestedSrc;
 
   const categoryConfig = getProductVisualCategoryConfig(product.category);
-  const profile =
-    product.visualProfile && VISUAL_PROFILES[product.visualProfile]
-      ? product.visualProfile
-      : categoryConfig.defaultProfile;
+  const profile = resolveVisualProfile(
+    product.visualProfile,
+    categoryConfig.defaultProfile,
+  );
   const profileConfig = VISUAL_PROFILES[profile] ?? VISUAL_PROFILES.default;
 
   const scale = useMemo(() => {
