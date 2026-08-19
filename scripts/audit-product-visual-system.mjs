@@ -78,6 +78,23 @@ if (/selectedVariant\?\.image\s*\|\|\s*catalogImage\?\.src/gu.test(productExperi
   );
 }
 
+const headerServer = await read("app/components/SiteHeaderServer.tsx");
+for (const requiredField of [
+  '"category"',
+  '"masterImage"',
+  '"imageAlt"',
+  '"visualProfile"',
+  '"visualScale"',
+  '"visualOffsetX"',
+  '"visualOffsetY"',
+]) {
+  if (!headerServer.includes(requiredField)) {
+    failures.push(
+      `SiteHeaderServer.tsx: search projection drops ProductVisual field ${requiredField}`,
+    );
+  }
+}
+
 const layout = await read("app/layout.tsx");
 if (!layout.includes('import "./product-visual.css";')) {
   failures.push("app/layout.tsx: product-visual.css is not loaded");
