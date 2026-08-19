@@ -21,6 +21,27 @@ export function toAsciiDigits(value: string) {
     .replace(/[٠-٩]/g, (digit) => String(arabic.indexOf(digit)));
 }
 
+/**
+ * Keep the public account form deliberately strict: users enter the canonical
+ * Iranian local mobile format only (09xxxxxxxxx). The backend still normalizes
+ * legacy/international formats defensively, but the storefront never lets a
+ * malformed value progress to the SMS step.
+ */
+export function normalizeIranMobileInput(value: string) {
+  return toAsciiDigits(value).replace(/\D/g, "").slice(0, 11);
+}
+
+export function isValidIranMobile(value: string) {
+  return /^09\d{9}$/.test(value);
+}
+
+export function iranMobileValidationMessage(value: string) {
+  if (!value) return "";
+  if (!value.startsWith("09")) return "شماره موبایل باید با 09 شروع شود.";
+  if (value.length !== 11) return "شماره موبایل باید دقیقاً ۱۱ رقم باشد.";
+  return isValidIranMobile(value) ? "" : "شماره موبایل معتبر نیست.";
+}
+
 export function passwordPolicyState(value: string): PasswordPolicyState {
   const hasLowercase = /[a-z]/.test(value);
   const hasUppercase = /[A-Z]/.test(value);
