@@ -46,17 +46,28 @@ jobs:
         run: npm run build
 
       - name: Package WordPress bridge
+        id: package_bridge
+        shell: bash
         run: |
+          set -euo pipefail
+          PLUGIN_VERSION="$(sed -n 's/^ \* Version:[[:space:]]*//p' wordpress/sepiid-product-bridge/sepiid-product-bridge.php | head -n1 | tr -d '\r')"
+          if [ -z "$PLUGIN_VERSION" ]; then
+            echo "Could not determine Sepiid Product Bridge version" >&2
+            exit 1
+          fi
+          ARTIFACT_NAME="sepiid-product-bridge-${PLUGIN_VERSION}"
           rm -rf dist
           mkdir -p dist
           cp -R wordpress/sepiid-product-bridge dist/sepiid-product-bridge
           cd dist
-          zip -qr sepiid-product-bridge-1.8.2.zip sepiid-product-bridge
+          zip -qr "${ARTIFACT_NAME}.zip" sepiid-product-bridge
+          echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+          echo "artifact_path=dist/${ARTIFACT_NAME}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Upload WordPress bridge artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sepiid-product-bridge-1.8.2
-          path: dist/sepiid-product-bridge-1.8.2.zip
+          name: ${{ steps.package_bridge.outputs.artifact_name }}
+          path: ${{ steps.package_bridge.outputs.artifact_path }}
           if-no-files-found: error
           retention-days: 14
