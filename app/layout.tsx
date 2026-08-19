@@ -3,6 +3,7 @@ import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
+import "./category-hover-continuity.css";
 import "./category-commerce-hero.css";
 import "./category-continuity.css";
 import "./product-visual.css";
