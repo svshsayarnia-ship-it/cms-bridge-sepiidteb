@@ -1,0 +1,113 @@
+/* Stage 5 — make catalog state changes legible without remounting product cards. */
+
+.sb-catalog__result-feedback {
+  min-width: 0;
+}
+
+.sb-catalog__result-copy {
+  position: relative;
+  min-width: 0;
+  padding-inline-start: 11px;
+  display: grid;
+  gap: 1px;
+  animation: sb-catalog-result-change 280ms var(--sb-ease) both;
+}
+
+.sb-catalog__result-copy::before {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--category-accent, var(--sb-gold-dark));
+  content: "";
+  transform-origin: center;
+  animation: sb-catalog-result-marker 280ms var(--sb-ease) both;
+}
+
+.sb-catalog__result-copy p {
+  line-height: 1.55;
+}
+
+.sb-catalog__result-copy p strong {
+  display: inline-block;
+  color: var(--category-accent, var(--sb-gold-dark));
+  animation: sb-catalog-result-count 320ms var(--sb-ease) both;
+}
+
+.sb-catalog__result-copy small {
+  max-width: min(52vw, 520px);
+  overflow: hidden;
+  color: var(--sb-muted);
+  font-size: 0.58rem;
+  font-weight: 560;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes sb-catalog-result-change {
+  0% {
+    opacity: 0.48;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sb-catalog-result-marker {
+  0% {
+    opacity: 0.22;
+    transform: scaleY(0.35);
+  }
+  65% {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0.62;
+    transform: scaleY(0.82);
+  }
+}
+
+@keyframes sb-catalog-result-count {
+  0% {
+    opacity: 0.52;
+    transform: translateY(2px) scale(0.96);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 820px) {
+  .sb-catalog__result-copy small {
+    max-width: min(66vw, 430px);
+  }
+}
+
+@media (max-width: 560px) {
+  .sb-catalog__result-copy {
+    padding-inline-start: 9px;
+  }
+
+  .sb-catalog__result-copy small {
+    max-width: 58vw;
+    font-size: 0.53rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-catalog__result-copy,
+  .sb-catalog__result-copy::before,
+  .sb-catalog__result-copy p strong {
+    animation: none;
+  }
+}

@@ -156,6 +156,55 @@ export function ShopCatalog({
     return result;
   }, [brand, category, highVolumeOnly, items, query, sort]);
 
+  const resultContext = useMemo(() => {
+    const parts: string[] = [];
+    const normalizedQuery = query.trim();
+
+    if (normalizedQuery) parts.push(`جستجو «${normalizedQuery}»`);
+
+    if (!initialCategory && category !== "all") {
+      const categoryTitle =
+        categoryOptions.find((item) => item.slug === category)?.title ??
+        items.find((item) => item.category === category)?.categoryTitle;
+      if (categoryTitle) parts.push(categoryTitle);
+    }
+
+    if (brand !== "all") parts.push(`برند ${brand}`);
+    if (highVolumeOnly) parts.push("حجم بیشتر از ۲ میلی‌لیتر");
+
+    if (sort === "name") {
+      parts.push("مرتب‌شده بر اساس نام");
+    } else if (sort === "brand") {
+      parts.push("مرتب‌شده بر اساس برند");
+    }
+
+    if (parts.length) return parts.join(" · ");
+
+    if (initialCategory) {
+      return `همه محصولات ${items[0]?.categoryTitle ?? "این دسته"}`;
+    }
+
+    return "همه محصولات فروشگاه";
+  }, [
+    brand,
+    category,
+    categoryOptions,
+    highVolumeOnly,
+    initialCategory,
+    items,
+    query,
+    sort,
+  ]);
+
+  const resultFeedbackKey = [
+    query.trim(),
+    brand,
+    category,
+    highVolumeOnly ? "high" : "all-volume",
+    sort,
+    filtered.length,
+  ].join("|");
+
   const reset = () => {
     setQuery("");
     setBrand("all");
@@ -307,10 +356,22 @@ export function ShopCatalog({
               <FilterIcon />
               فیلترها
             </button>
-            <p aria-live="polite">
-              <strong>{filtered.length}</strong>
-              محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
-            </p>
+            <div
+              className="sb-catalog__result-feedback"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <div
+                className="sb-catalog__result-copy"
+                key={resultFeedbackKey}
+              >
+                <p>
+                  <strong>{filtered.length}</strong>
+                  محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
+                </p>
+                <small>{resultContext}</small>
+              </div>
+            </div>
           </div>
           <label>
             <span>مرتب‌سازی:</span>
