@@ -90,7 +90,40 @@ export default async function ShopPage() {
         </div>
       </section>
 
+      <nav className={styles.journey} aria-label="مسیر انتخاب در فروشگاه">
+        <div className={`sb-shell ${styles.journeyInner}`}>
+          <Link href="#shop-groups" className={styles.journeyStep}>
+            <span>۰۱</span>
+            <div>
+              <small>شروع از نوع نیاز</small>
+              <strong>انتخاب خانواده</strong>
+            </div>
+          </Link>
+
+          <span className={styles.journeyConnector} aria-hidden="true" />
+
+          <Link href="#shop-categories" className={styles.journeyStep}>
+            <span>۰۲</span>
+            <div>
+              <small>محدود کردن انتخاب‌ها</small>
+              <strong>انتخاب دسته</strong>
+            </div>
+          </Link>
+
+          <span className={styles.journeyConnector} aria-hidden="true" />
+
+          <Link href="#shop-products" className={styles.journeyStep}>
+            <span>۰۳</span>
+            <div>
+              <small>دیدن مدل، حجم و قیمت</small>
+              <strong>مقایسه محصولات</strong>
+            </div>
+          </Link>
+        </div>
+      </nav>
+
       <section
+        id="shop-groups"
         className="sb-shop-groups"
         aria-label="مسیرهای اصلی فروشگاه"
       >
@@ -129,7 +162,7 @@ export default async function ShopPage() {
         </div>
       </section>
 
-      <section className="sb-shop-categories">
+      <section id="shop-categories" className="sb-shop-categories">
         <div className="sb-shell sb-shop-categories__row">
           {categories.map((category) => {
             const count = products.filter(
@@ -158,7 +191,7 @@ export default async function ShopPage() {
         </div>
       </section>
 
-      <section className="sb-section sb-catalog-section">
+      <section id="shop-products" className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
             items={products.map(toPublicProduct)}
