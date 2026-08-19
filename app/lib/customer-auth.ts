@@ -24,6 +24,17 @@ type AuthRequestOptions = {
   userAgent?: string | null;
 };
 
+type CustomerAuthAction =
+  | "register"
+  | "login"
+  | "session"
+  | "logout"
+  | "profile"
+  | "otp/request"
+  | "otp/verify"
+  | "password/request"
+  | "password/reset";
+
 const CUSTOMER_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const REQUEST_TIMEOUT_MS = 12_000;
 const PROD_COOKIE = "__Host-sepiid_customer_session";
@@ -108,7 +119,7 @@ export function clearCustomerSessionCookie(store: Awaited<ReturnType<typeof cook
 }
 
 export async function customerAuthRequest<T>(
-  action: "register" | "login" | "session" | "logout" | "profile" | "password/request" | "password/reset",
+  action: CustomerAuthAction,
   options: AuthRequestOptions = {},
 ): Promise<T> {
   const baseUrl = wordpressBaseUrl();
