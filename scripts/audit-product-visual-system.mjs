@@ -12,6 +12,17 @@ const requiredProductVisualConsumers = [
   "app/shop/[category]/page.tsx",
 ];
 
+const requiredCategoryProfiles = [
+  "fillers",
+  "skin-boosters",
+  "botulinum-toxins",
+  "rejuvenation-cocktails",
+  "brightening-cocktails",
+  "eye-cocktails",
+  "hair-cocktails",
+  "hyaluronidase-products",
+];
+
 const deprecatedProductCss = [
   "app/fusion-product-images.css",
   "app/hyaluronidase-product-images.css",
@@ -49,6 +60,24 @@ if (/<(?:img|Image)\b/gu.test(productExperience)) {
   failures.push("ProductVariantExperience.tsx: raw image element found outside ProductVisual");
 }
 
+if (!productExperience.includes("liveImage?.src || catalogImage?.src || product.image")) {
+  failures.push(
+    "ProductVariantExperience.tsx: PDP canonical image must prefer the same Woo/CMS master used by discovery surfaces",
+  );
+}
+
+if (!productExperience.includes("selectedVariant?.imageVerified === true")) {
+  failures.push(
+    "ProductVariantExperience.tsx: an unverified variant image can replace the canonical product master",
+  );
+}
+
+if (/selectedVariant\?\.image\s*\|\|\s*catalogImage\?\.src/gu.test(productExperience)) {
+  failures.push(
+    "ProductVariantExperience.tsx: variant image bypasses the verified-image gate",
+  );
+}
+
 const layout = await read("app/layout.tsx");
 if (!layout.includes('import "./product-visual.css";')) {
   failures.push("app/layout.tsx: product-visual.css is not loaded");
@@ -83,6 +112,7 @@ if (
 }
 
 const visualComponent = await read("app/components/product/ProductVisual.tsx");
+const visualConfig = await read("app/config/productVisualConfig.ts");
 const css = await read("app/product-visual.css");
 for (const requiredToken of [
   "object-fit: contain",
@@ -95,6 +125,21 @@ for (const requiredToken of [
 
 if (!visualComponent.includes("masterImage") || !visualComponent.includes("visualProfile")) {
   failures.push("ProductVisual.tsx: master image/profile contract is incomplete");
+}
+
+if (!visualComponent.includes('requestedProfile !== "default"')) {
+  failures.push(
+    "ProductVisual.tsx: CMS `default` profile can still override category geometry",
+  );
+}
+
+for (const category of requiredCategoryProfiles) {
+  const key = category === "fillers" ? "fillers:" : `\"${category}\":`;
+  if (!visualConfig.includes(key)) {
+    failures.push(
+      `app/config/productVisualConfig.ts: missing visual profile for ${category}`,
+    );
+  }
 }
 
 if (failures.length) {
