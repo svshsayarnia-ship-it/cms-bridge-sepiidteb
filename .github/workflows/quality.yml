@@ -51,12 +51,12 @@ jobs:
           mkdir -p dist
           cp -R wordpress/sepiid-product-bridge dist/sepiid-product-bridge
           cd dist
-          zip -qr sepiid-product-bridge-1.8.1.zip sepiid-product-bridge
+          zip -qr sepiid-product-bridge-1.8.2.zip sepiid-product-bridge
 
       - name: Upload WordPress bridge artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sepiid-product-bridge-1.8.1
-          path: dist/sepiid-product-bridge-1.8.1.zip
+          name: sepiid-product-bridge-1.8.2
+          path: dist/sepiid-product-bridge-1.8.2.zip
           if-no-files-found: error
           retention-days: 14
