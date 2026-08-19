@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { hasPersianKeyboardInput, passwordPolicyState } from "../lib/account-input";
 
 export function PasswordResetForm({ login, resetKey }: { login: string; resetKey: string }) {
   const [password, setPassword] = useState("");
@@ -10,12 +11,24 @@ export function PasswordResetForm({ login, resetKey }: { login: string; resetKey
   const [success, setSuccess] = useState(false);
   const [pending, setPending] = useState(false);
 
+  const passwordPolicy = passwordPolicyState(password);
+  const passwordHasPersianInput = hasPersianKeyboardInput(password);
+  const confirmationHasPersianInput = hasPersianKeyboardInput(confirmation);
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setMessage("");
 
     if (!login || !resetKey) {
       setMessage("لینک بازیابی کامل نیست. دوباره درخواست بازیابی رمز بدهید.");
+      return;
+    }
+    if (passwordHasPersianInput || confirmationHasPersianInput) {
+      setMessage("به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.");
+      return;
+    }
+    if (!passwordPolicy.valid) {
+      setMessage("رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.");
       return;
     }
     if (password !== confirmation) {
@@ -69,7 +82,7 @@ export function PasswordResetForm({ login, resetKey }: { login: string; resetKey
             {success ? (
               <div className="sb-account-profile">
                 <h2>رمز تغییر کرد</h2>
-                <p>برای امنیت، دوباره با رمز جدید وارد حساب شوید.</p>
+                <p>رمز حساب تغییر کرده است. ورود روزمره سایت همچنان با کد پیامکی انجام می‌شود.</p>
                 <Link className="sb-btn sb-btn--dark" href="/account/login">ورود به حساب</Link>
               </div>
             ) : (
@@ -85,6 +98,7 @@ export function PasswordResetForm({ login, resetKey }: { login: string; resetKey
                     onChange={(event) => setPassword(event.target.value)}
                     required
                   />
+                  {passwordHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
                 </label>
                 <label>
                   <span>تکرار رمز جدید</span>
@@ -97,9 +111,27 @@ export function PasswordResetForm({ login, resetKey }: { login: string; resetKey
                     onChange={(event) => setConfirmation(event.target.value)}
                     required
                   />
+                  {confirmationHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
                 </label>
-                <p className="sb-account-note">حداقل ۱۰ کاراکتر و ترکیبی از حداقل سه گروهِ حروف کوچک، حروف بزرگ، عدد یا نشانه.</p>
-                <button type="submit" className="sb-btn sb-btn--dark" disabled={pending}>
+                <p className="sb-account-note">
+                  حداقل ۱۰ کاراکتر، حتماً یک حرف انگلیسی و یک عدد انگلیسی، و حداقل سه گروه از حروف کوچک، حروف بزرگ، عدد یا نشانه.
+                </p>
+                {password && !passwordHasPersianInput && (
+                  <p className="sb-account-note" aria-live="polite">
+                    {passwordPolicy.valid ? "✓ شرایط رمز عبور کامل است." : "شرایط رمز عبور هنوز کامل نشده است."}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="sb-btn sb-btn--dark"
+                  disabled={
+                    pending ||
+                    !passwordPolicy.valid ||
+                    passwordHasPersianInput ||
+                    confirmationHasPersianInput ||
+                    password !== confirmation
+                  }
+                >
                   {pending ? "در حال تغییر رمز..." : "ذخیره رمز جدید"}
                 </button>
               </form>
