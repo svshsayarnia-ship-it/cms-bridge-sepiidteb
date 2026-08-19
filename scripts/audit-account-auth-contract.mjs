@@ -1,0 +1,64 @@
+import { readFile } from "node:fs/promises";
+
+const checks = [
+  {
+    file: "app/components/SiteHeader.tsx",
+    needles: ['className="sb-header__account"', 'href="/account"', "ورود / عضویت"],
+  },
+  {
+    file: "app/account-responsive.css",
+    needles: [".sb-header__account {", "display: inline-flex !important", "@media (min-width: 1101px)"],
+  },
+  {
+    file: "app/api/account/auth/[action]/route.ts",
+    needles: [
+      '"register"',
+      '"logout"',
+      '"otp-request"',
+      '"otp-verify"',
+      '"password-request"',
+      '"password-reset"',
+      'action !== "session"',
+      'action !== "profile"',
+    ],
+  },
+  {
+    file: "app/components/CustomerAccount.tsx",
+    needles: [
+      'accountRequest<OtpRequestResult>("otp-request"',
+      'accountRequest<OtpVerifyResult>("otp-verify"',
+      'accountRequest<{ user: CustomerUser }>("register"',
+      '"profile"',
+      '"logout"',
+    ],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/includes/class-customer-otp-controller.php",
+    needles: ["/auth/otp/request", "/auth/otp/verify", "sepiid_send_otp_sms"],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",
+    needles: [
+      "SEPIID_SMS_PROVIDER",
+      "SEPIID_RAZBAN_API_TOKEN",
+      "SEPIID_RAZBAN_PATTERN",
+      "SEPIID_RAZBAN_API_URL",
+      "sepiid_razban_otp_transport",
+    ],
+  },
+];
+
+const failures = [];
+for (const check of checks) {
+  const source = await readFile(check.file, "utf8");
+  for (const needle of check.needles) {
+    if (!source.includes(needle)) failures.push(`${check.file}: missing ${needle}`);
+  }
+}
+
+if (failures.length) {
+  console.error("Account/auth contract audit failed:\n" + failures.map((item) => `- ${item}`).join("\n"));
+  process.exit(1);
+}
+
+console.log("Account/auth contract audit passed.");
