@@ -175,10 +175,16 @@ export function ProductVariantExperience({
   initialVariantId,
 }: ProductVariantExperienceProps) {
   const defaultVariantId = product.variants?.[0]?.id ?? "";
+  const hasInitialVariantSelection = Boolean(
+    initialVariantId && product.variants?.some((variant) => variant.id === initialVariantId),
+  );
   const [selectedId, setSelectedId] = useState(
-    product.variants?.some((variant) => variant.id === initialVariantId)
+    hasInitialVariantSelection
       ? initialVariantId ?? defaultVariantId
       : defaultVariantId,
+  );
+  const [hasExplicitVariantSelection, setHasExplicitVariantSelection] = useState(
+    hasInitialVariantSelection,
   );
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
   const hasVariants = Boolean(product.variants?.length);
@@ -202,14 +208,31 @@ export function ProductVariantExperience({
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
-  // Prefer the normalized local catalog cutout on the PDP whenever it exists.
-  // Woo media remains the fallback for CMS-only products with no local master.
-  const displayImage =
-    selectedVariant?.image || catalogImage?.src || liveImage?.src || product.image;
-  const displayImageAlt = selectedVariant?.imageAlt || catalogImage?.alt || liveImage?.alt || product.imageAlt || `تصویر ${displayName}`;
+
+  // The same canonical master used by discovery cards must also be the PDP
+  // default. Woo/CMS stays authoritative; local catalog media is fallback only.
+  // A variant may replace the master only after an explicit selection and only
+  // when that variant has an exact verified image.
+  const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
+  const canonicalImageAlt =
+    liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
+  const canUseSelectedVariantImage = Boolean(
+    hasExplicitVariantSelection &&
+      selectedVariant?.imageVerified === true &&
+      selectedVariant.image?.trim(),
+  );
+  const displayImage = canUseSelectedVariantImage
+    ? selectedVariant?.image || canonicalImage
+    : canonicalImage;
+  const displayImageAlt = canUseSelectedVariantImage
+    ? selectedVariant?.imageAlt || canonicalImageAlt
+    : canonicalImageAlt;
+  const displayImageKind = canUseSelectedVariantImage
+    ? selectedVariant?.imageKind
+    : product.imageKind;
   const isEditorialFamilyImage =
-    (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
-    !liveImage?.src;
+    displayImageKind === "editorial-family" && !liveImage?.src;
+
   const pricing = livePricing ?? (hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
@@ -223,6 +246,7 @@ export function ProductVariantExperience({
 
   function selectVariant(id: string) {
     setSelectedId(id);
+    setHasExplicitVariantSelection(true);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
