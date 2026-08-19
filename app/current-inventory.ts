@@ -32,8 +32,8 @@ const alcarisa28 = {
   label: "مدل ۲۸",
   nameFa: "آلکاریسا ۲۸",
   nameEn: "ALCARISA 28",
-  image: "/images/products/editorial/fillers-family.webp",
-  imageAlt: "نمای ادیتوریال خانواده فیلر برای آلکاریسا ۲۸؛ مدل دقیق روی بسته کنترل می‌شود",
+  image: "/images/products/alcarisa-28.webp",
+  imageAlt: "نمای ادیتوریال اختصاصی بسته آلکاریسا ۲۸",
   imageVerified: false,
   imageKind: "editorial-family" as const,
   imageApproved: true,
@@ -54,9 +54,21 @@ const alcarisaSeed: ProductSeed = {
   variants: [...(alcarisa.variants ?? []), alcarisa28],
 };
 
-// Keep every existing product variant. Inventory filtering may hide whole
-// product families, but it must not collapse a published family to one variant.
-const revofilSeed: ProductSeed = revofil;
+// Keep every published Revofil volume visible. The 10 mL source visual is a
+// family/reference image, so mark it as such instead of dropping the variant or
+// letting the 1 mL pack masquerade as the selected 10 mL option.
+const revofilSeed: ProductSeed = {
+  ...revofil,
+  variants: revofil.variants?.map((variant) =>
+    variant.id === "10ml"
+      ? {
+          ...variant,
+          imageKind: "editorial-family" as const,
+          imageApproved: true,
+        }
+      : variant,
+  ),
+};
 
 const neurafillSeed: ProductSeed = {
   slug: "neurafill-deep-lidocaine",
@@ -107,7 +119,7 @@ const neurafillSeed: ProductSeed = {
       nameFa: "نورافیل والیوم",
       nameEn: "NEURAFILL Volume",
       image: "/images/products/editorial/fillers-family.webp",
-      imageAlt: "نمای ادیتوریال خانواده فیلر برای نورافیل والیوم؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
+      imageAlt: "نمای ادیتوریال هم‌خانواده برای نورافیل والیوم؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
       imageVerified: false,
       imageKind: "editorial-family",
       imageApproved: true,
@@ -126,7 +138,7 @@ const neurafillSeed: ProductSeed = {
       nameFa: "نورافیل لیدو",
       nameEn: "NEURAFILL Lido",
       image: "/images/products/editorial/fillers-family.webp",
-      imageAlt: "نمای ادیتوریال خانواده فیلر برای نورافیل لیدو؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
+      imageAlt: "نمای ادیتوریال هم‌خانواده برای نورافیل لیدو؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
       imageVerified: false,
       imageKind: "editorial-family",
       imageApproved: true,
@@ -147,10 +159,10 @@ const neuramisLidoOneMl = {
   label: "Lido · ۱ سی‌سی",
   nameFa: "نورامیس لیدو ۱ سی‌سی",
   nameEn: "NEURAMIS Lido 1 mL",
-  image: "/images/products/sourced/neuramis-lidocaine.webp",
-  imageAlt: "نمای مرجع نورامیس لیدو یک میلی‌لیتری",
-  imageVerified: false,
-  imageKind: "market-reference" as const,
+  image: "/images/products/neuramis-lido-1ml.webp",
+  imageAlt: "بسته نورامیس لیدو یک میلی‌لیتری",
+  imageVerified: true,
+  imageKind: "official" as const,
   imageApproved: true,
   volume: "۱ سرنگ ۱ میلی‌لیتری",
   summary: "گزینه Lido یک‌سی‌سی مطابق انتخاب‌های فعلی صفحه نورامیس در سپیدطب اضافه شده است.",
@@ -168,7 +180,7 @@ const neuramisVolumeTenMl = {
   nameFa: "نورامیس والیوم بسته ۱۰ عددی",
   nameEn: "NEURAMIS Volume 10 × 1 mL",
   image: "/images/products/editorial/fillers-family.webp",
-  imageAlt: "نمای ادیتوریال خانواده فیلر برای نورامیس والیوم ۱۰ سی‌سی؛ بسته دقیق هنگام استعلام کنترل می‌شود",
+  imageAlt: "نمای ادیتوریال هم‌خانواده برای نورامیس والیوم ۱۰ سی‌سی؛ بسته دقیق هنگام استعلام کنترل می‌شود",
   imageVerified: false,
   imageKind: "editorial-family" as const,
   imageApproved: true,
@@ -206,11 +218,11 @@ const perleuxSeed: ProductSeed = {
       label: "Nova",
       nameFa: "پرلوکس نوا",
       nameEn: "PERLEUX Nova",
-      image: perleux.image ?? "/images/products/editorial/skin-boosters-family.webp",
-      imageAlt: "نمای پرلوکس نوا؛ مدل روی بسته هنگام استعلام کنترل می‌شود",
-      imageVerified: perleux.imageVerified,
-      imageKind: perleux.imageKind,
-      imageApproved: perleux.imageApproved,
+      image: "/images/products/editorial/skin-boosters-family.webp",
+      imageAlt: "نمای ادیتوریال هم‌خانواده برای پرلوکس نوا؛ مدل روی بسته هنگام استعلام کنترل می‌شود",
+      imageVerified: false,
+      imageKind: "editorial-family",
+      imageApproved: true,
       volume: "۲ سی‌سی؛ طبق کاتالوگ سپیدطب",
       summary: "مدل Nova پرلوکس مطابق کاتالوگ فعلی سپیدطب در انتخاب‌گر محصول قرار دارد.",
       features: ["مدل Nova", "۲ سی‌سی", "ثبت‌شده در سپیدطب"],
@@ -225,11 +237,11 @@ const perleuxSeed: ProductSeed = {
       label: "Lip",
       nameFa: "پرلوکس لیپ",
       nameEn: "PERLEUX Lip",
-      image: perleux.image ?? "/images/products/editorial/skin-boosters-family.webp",
-      imageAlt: "نمای پرلوکس لیپ؛ مدل روی بسته هنگام استعلام کنترل می‌شود",
-      imageVerified: perleux.imageVerified,
-      imageKind: perleux.imageKind,
-      imageApproved: perleux.imageApproved,
+      image: "/images/products/editorial/skin-boosters-family.webp",
+      imageAlt: "نمای ادیتوریال هم‌خانواده برای پرلوکس لیپ؛ مدل روی بسته هنگام استعلام کنترل می‌شود",
+      imageVerified: false,
+      imageKind: "editorial-family",
+      imageApproved: true,
       volume: "۲ سی‌سی؛ طبق کاتالوگ سپیدطب",
       summary: "مدل Lip پرلوکس مطابق کاتالوگ فعلی سپیدطب در انتخاب‌گر محصول قرار دارد.",
       features: ["مدل Lip", "۲ سی‌سی", "ثبت‌شده در سپیدطب"],

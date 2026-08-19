@@ -145,6 +145,17 @@ const visibleSpecLabels = new Map<string, string>([
   ["واحد قیمت", "واحد قیمت"],
 ]);
 
+const variantFallbackImages: Record<string, string> = {
+  fillers: "/images/products/editorial/fillers-family.webp",
+  "skin-boosters": "/images/products/editorial/skin-boosters-family.webp",
+  "botulinum-toxins": "/images/products/editorial/botulinum-family.webp",
+  "rejuvenation-cocktails": "/images/products/editorial/rejuvenation-family.webp",
+  "brightening-cocktails": "/images/products/editorial/brightening-family.webp",
+  "eye-cocktails": "/images/products/editorial/eye-family.webp",
+  "hair-cocktails": "/images/products/editorial/hair-family.webp",
+  "hyaluronidase-products": "/images/products/editorial/sepiid-natural-stage.webp",
+};
+
 function getVisibleSpecs(specs: Array<[string, string]>) {
   const seen = new Set<string>();
 
@@ -209,29 +220,45 @@ export function ProductVariantExperience({
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
 
-  // The same canonical master used by discovery cards must also be the PDP
-  // default. Woo/CMS stays authoritative; local catalog media is fallback only.
-  // A variant may replace the master only after an explicit selection and only
-  // when that variant has an exact verified image.
+  // Discovery cards and the initial PDP still use the same canonical master.
+  // Once the visitor explicitly chooses a model, however, sibling imagery must
+  // never masquerade as that model. Exact verified media wins; an approved
+  // editorial/reference variant may be shown as labelled reference media; and
+  // otherwise the category-neutral family visual is used instead of a sibling.
   const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
   const canonicalImageAlt =
     liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
-  const canUseSelectedVariantImage = Boolean(
-    hasExplicitVariantSelection &&
-      selectedVariant?.imageVerified === true &&
-      selectedVariant.image?.trim(),
+  const selectedVariantImage = selectedVariant?.image?.trim() || "";
+  const selectedVariantHasDisplayMedia = Boolean(
+    selectedVariantImage &&
+      (selectedVariant?.imageVerified === true ||
+        selectedVariant?.imageKind === "editorial-family" ||
+        selectedVariant?.imageKind === "market-reference"),
   );
+  const canUseSelectedVariantImage = Boolean(
+    hasExplicitVariantSelection && selectedVariantHasDisplayMedia,
+  );
+  const shouldUseNeutralVariantFallback = Boolean(
+    hasExplicitVariantSelection && selectedVariant && !selectedVariantHasDisplayMedia,
+  );
+  const neutralVariantFallback =
+    variantFallbackImages[product.category] || "/images/products/editorial/sepiid-natural-stage.webp";
   const displayImage = canUseSelectedVariantImage
-    ? selectedVariant?.image || canonicalImage
-    : canonicalImage;
+    ? selectedVariantImage
+    : shouldUseNeutralVariantFallback
+      ? neutralVariantFallback
+      : canonicalImage;
   const displayImageAlt = canUseSelectedVariantImage
-    ? selectedVariant?.imageAlt || canonicalImageAlt
-    : canonicalImageAlt;
+    ? selectedVariant?.imageAlt || `نمای ${displayName}`
+    : shouldUseNeutralVariantFallback
+      ? `نمای هم‌خانواده برای ${displayName}`
+      : canonicalImageAlt;
   const displayImageKind = canUseSelectedVariantImage
     ? selectedVariant?.imageKind
-    : product.imageKind;
-  const isEditorialFamilyImage =
-    displayImageKind === "editorial-family" && !liveImage?.src;
+    : shouldUseNeutralVariantFallback
+      ? "editorial-family"
+      : product.imageKind;
+  const isEditorialFamilyImage = displayImageKind === "editorial-family";
 
   const pricing = livePricing ?? (hasVariants
     ? {
