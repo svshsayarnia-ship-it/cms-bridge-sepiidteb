@@ -10,7 +10,15 @@ import {
 } from "../../../../lib/customer-auth";
 
 type Context = { params: Promise<{ action: string }> };
-type AuthResult = { token?: string; user?: CustomerUser; message?: string; ok?: boolean };
+type AuthResult = {
+  token?: string;
+  user?: CustomerUser;
+  message?: string;
+  ok?: boolean;
+  challenge?: string;
+  expiresIn?: number;
+  phoneProof?: string;
+};
 
 const JSON_HEADERS = {
   "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
@@ -43,7 +51,16 @@ export async function POST(request: NextRequest, context: Context) {
   if (!isTrustedMutation(request)) return jsonError("درخواست نامعتبر است.", 403, "invalid_origin");
 
   const { action } = await context.params;
-  if (!new Set(["login", "register", "logout", "password-request", "password-reset"]).has(action)) {
+  if (
+    !new Set([
+      "register",
+      "logout",
+      "otp-request",
+      "otp-verify",
+      "password-request",
+      "password-reset",
+    ]).has(action)
+  ) {
     return methodNotAllowed();
   }
 
@@ -71,18 +88,47 @@ export async function POST(request: NextRequest, context: Context) {
     const input = await readJsonObject(request);
     if (!input) return jsonError("بدنه درخواست معتبر نیست.", 400, "invalid_json");
 
-    if (action === "login") {
-      const result = await customerAuthRequest<AuthResult>("login", {
+    if (action === "otp-request") {
+      const result = await customerAuthRequest<AuthResult>("otp/request", {
         method: "POST",
         body: {
-          identifier: asString(input.identifier),
-          password: asString(input.password),
+          phone: asString(input.phone),
+          purpose: asString(input.purpose),
         },
         userAgent: request.headers.get("user-agent"),
       });
-      if (!result.token || !result.user) return jsonError("پاسخ ورود کامل نیست.", 502, "invalid_auth_response");
-      setCustomerSessionCookie(store, result.token);
-      return Response.json({ user: result.user }, { headers: JSON_HEADERS });
+      return Response.json(
+        {
+          challenge: result.challenge,
+          expiresIn: result.expiresIn,
+          message: result.message,
+        },
+        { headers: JSON_HEADERS },
+      );
+    }
+
+    if (action === "otp-verify") {
+      const result = await customerAuthRequest<AuthResult>("otp/verify", {
+        method: "POST",
+        body: {
+          challenge: asString(input.challenge),
+          code: asString(input.code),
+          purpose: asString(input.purpose),
+        },
+        userAgent: request.headers.get("user-agent"),
+      });
+
+      if (result.token && result.user) {
+        setCustomerSessionCookie(store, result.token);
+        return Response.json({ user: result.user }, { headers: JSON_HEADERS });
+      }
+      if (result.phoneProof) {
+        return Response.json(
+          { phoneProof: result.phoneProof, expiresIn: result.expiresIn },
+          { headers: JSON_HEADERS },
+        );
+      }
+      return jsonError("پاسخ تأیید کد کامل نیست.", 502, "invalid_otp_response");
     }
 
     if (action === "register") {
@@ -96,6 +142,7 @@ export async function POST(request: NextRequest, context: Context) {
           city: asString(input.city),
           clinicName: asString(input.clinicName),
           accountType: asString(input.accountType),
+          phoneProof: asString(input.phoneProof),
         },
         userAgent: request.headers.get("user-agent"),
       });
