@@ -5,6 +5,9 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { whatsappHref } from "../data";
 import {
   hasPersianKeyboardInput,
+  iranMobileValidationMessage,
+  isValidIranMobile,
+  normalizeIranMobileInput,
   passwordPolicyState,
   toAsciiDigits,
 } from "../lib/account-input";
@@ -68,6 +71,7 @@ export function CustomerAccount({
   );
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [loginChallenge, setLoginChallenge] = useState("");
@@ -78,7 +82,13 @@ export function CustomerAccount({
 
   const passwordPolicy = passwordPolicyState(password);
   const passwordHasPersianInput = hasPersianKeyboardInput(password);
+  const confirmPasswordHasPersianInput = hasPersianKeyboardInput(confirmPassword);
   const emailHasPersianInput = hasPersianKeyboardInput(profile.email);
+  const loginPhoneValid = isValidIranMobile(identifier);
+  const registerPhoneValid = isValidIranMobile(profile.phone);
+  const loginPhoneError = iranMobileValidationMessage(identifier);
+  const registerPhoneError = iranMobileValidationMessage(profile.phone);
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
   useEffect(() => {
     if (initialUser) return;
@@ -119,7 +129,8 @@ export function CustomerAccount({
   }, [profile]);
 
   function update(field: keyof CustomerProfile, value: string) {
-    setProfile((current) => ({ ...current, [field]: value }));
+    const nextValue = field === "phone" ? normalizeIranMobileInput(value) : value;
+    setProfile((current) => ({ ...current, [field]: nextValue }));
     if (field === "phone") {
       setRegisterChallenge("");
       setRegisterCode("");
@@ -129,7 +140,7 @@ export function CustomerAccount({
   }
 
   function updateLoginPhone(value: string) {
-    setIdentifier(value);
+    setIdentifier(normalizeIranMobileInput(value));
     setLoginChallenge("");
     setLoginCode("");
     setMessage("");
@@ -137,6 +148,12 @@ export function CustomerAccount({
 
   async function requestOtp(purpose: OtpPurpose) {
     const phone = purpose === "login" ? identifier : profile.phone;
+    const valid = purpose === "login" ? loginPhoneValid : registerPhoneValid;
+    if (!valid) {
+      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+
     setPending(true);
     setMessage("");
     try {
@@ -163,6 +180,11 @@ export function CustomerAccount({
 
   async function verifyLoginOtp(event: FormEvent) {
     event.preventDefault();
+    if (!loginPhoneValid) {
+      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+
     setPending(true);
     setMessage("");
     try {
@@ -189,6 +211,11 @@ export function CustomerAccount({
   }
 
   async function verifyRegisterOtp() {
+    if (!registerPhoneValid) {
+      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+
     setPending(true);
     setMessage("");
     try {
@@ -211,6 +238,10 @@ export function CustomerAccount({
 
   async function submitRegister(event: FormEvent) {
     event.preventDefault();
+    if (!registerPhoneValid) {
+      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
     if (!phoneProof) {
       setMessage("قبل از ساخت حساب، شماره موبایل را با کد پیامکی تأیید کن.");
       return;
@@ -219,12 +250,16 @@ export function CustomerAccount({
       setMessage("به نظر می‌رسد کیبورد روی فارسی است. ایمیل را با کیبورد English وارد کن.");
       return;
     }
-    if (passwordHasPersianInput) {
+    if (passwordHasPersianInput || confirmPasswordHasPersianInput) {
       setMessage("به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.");
       return;
     }
     if (!passwordPolicy.valid) {
       setMessage("رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.");
+      return;
+    }
+    if (!passwordsMatch) {
+      setMessage("تکرار رمز عبور با رمز انتخاب‌شده یکسان نیست.");
       return;
     }
 
@@ -244,6 +279,7 @@ export function CustomerAccount({
       setUser(result.user);
       setProfile(profileFromUser(result.user));
       setPassword("");
+      setConfirmPassword("");
       setPhoneProof("");
       setRegisterChallenge("");
       setMode("profile");
@@ -304,6 +340,7 @@ export function CustomerAccount({
       setProfile(emptyProfile);
       setIdentifier("");
       setPassword("");
+      setConfirmPassword("");
       setLoginChallenge("");
       setRegisterChallenge("");
       setPhoneProof("");
@@ -363,16 +400,34 @@ export function CustomerAccount({
                   <span>شماره موبایل</span>
                   <input
                     dir="ltr"
+                    type="tel"
                     autoComplete="tel"
-                    inputMode="tel"
+                    inputMode="numeric"
+                    maxLength={11}
+                    minLength={11}
+                    pattern="09[0-9]{9}"
                     value={identifier}
                     onChange={(event) => updateLoginPhone(event.target.value)}
                     placeholder="09xxxxxxxxx"
+                    aria-invalid={identifier.length > 0 && !loginPhoneValid}
+                    aria-describedby="login-phone-help"
                     required
                   />
+                  <small
+                    id="login-phone-help"
+                    className={loginPhoneError ? "sb-account-field-error" : "sb-account-field-help"}
+                    role={loginPhoneError ? "alert" : undefined}
+                  >
+                    {loginPhoneError || "شماره باید ۱۱ رقم و با 09 شروع شود."}
+                  </small>
                 </label>
                 {!loginChallenge ? (
-                  <button type="button" className="sb-btn sb-btn--dark" disabled={pending} onClick={() => void requestOtp("login")}>
+                  <button
+                    type="button"
+                    className="sb-btn sb-btn--dark"
+                    disabled={pending || !loginPhoneValid}
+                    onClick={() => void requestOtp("login")}
+                  >
                     {pending ? "در حال ارسال..." : "دریافت رمز پیامکی"}
                   </button>
                 ) : (
@@ -390,7 +445,7 @@ export function CustomerAccount({
                         required
                       />
                     </label>
-                    <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || loginCode.length !== 6}>
+                    <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || loginCode.length !== 6 || !loginPhoneValid}>
                       {pending ? "در حال تأیید..." : "تأیید کد و ورود"}
                     </button>
                     <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("login")}>
@@ -436,12 +491,33 @@ export function CustomerAccount({
                   </label>
                   <label>
                     <span>شماره موبایل</span>
-                    <input dir="ltr" inputMode="tel" autoComplete="tel" value={profile.phone} onChange={(event) => update("phone", event.target.value)} placeholder="09xxxxxxxxx" required />
+                    <input
+                      dir="ltr"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength={11}
+                      minLength={11}
+                      pattern="09[0-9]{9}"
+                      value={profile.phone}
+                      onChange={(event) => update("phone", event.target.value)}
+                      placeholder="09xxxxxxxxx"
+                      aria-invalid={profile.phone.length > 0 && !registerPhoneValid}
+                      aria-describedby="register-phone-help"
+                      required
+                    />
+                    <small
+                      id="register-phone-help"
+                      className={registerPhoneError ? "sb-account-field-error" : "sb-account-field-help"}
+                      role={registerPhoneError ? "alert" : undefined}
+                    >
+                      {registerPhoneError || "شماره باید ۱۱ رقم و با 09 شروع شود."}
+                    </small>
                   </label>
                   <label>
                     <span>ایمیل</span>
                     <input dir="ltr" type="email" inputMode="email" autoComplete="email" value={profile.email} onChange={(event) => update("email", event.target.value)} required />
-                    {emailHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ ایمیل را با کیبورد English وارد کن.</small>}
+                    {emailHasPersianInput && <small className="sb-account-field-error" role="alert">کیبورد روی فارسی است؛ ایمیل را با کیبورد English وارد کن.</small>}
                   </label>
                   <label>
                     <span>رمز حساب</span>
@@ -451,10 +527,33 @@ export function CustomerAccount({
                       minLength={10}
                       autoComplete="new-password"
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                      onChange={(event) => {
+                        setPassword(event.target.value);
+                        setMessage("");
+                      }}
+                      aria-invalid={password.length > 0 && (!passwordPolicy.valid || passwordHasPersianInput)}
                       required
                     />
-                    {passwordHasPersianInput && <small role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
+                    {passwordHasPersianInput && <small className="sb-account-field-error" role="alert">کیبورد روی فارسی است؛ برای رمز کیبورد را روی English بگذار.</small>}
+                  </label>
+                  <label>
+                    <span>تکرار رمز عبور</span>
+                    <input
+                      dir="ltr"
+                      type="password"
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(event) => {
+                        setConfirmPassword(event.target.value);
+                        setMessage("");
+                      }}
+                      aria-invalid={confirmPassword.length > 0 && (!passwordsMatch || confirmPasswordHasPersianInput)}
+                      required
+                    />
+                    {confirmPassword.length > 0 && !passwordsMatch && (
+                      <small className="sb-account-field-error" role="alert">تکرار رمز عبور با رمز انتخاب‌شده یکسان نیست.</small>
+                    )}
                   </label>
                   <label>
                     <span>کلینیک یا مرکز</span>
@@ -476,7 +575,12 @@ export function CustomerAccount({
                 </div>
 
                 {!phoneProof && !registerChallenge && (
-                  <button type="button" className="sb-btn sb-btn--ghost" disabled={pending} onClick={() => void requestOtp("register")}>
+                  <button
+                    type="button"
+                    className="sb-btn sb-btn--ghost"
+                    disabled={pending || !registerPhoneValid}
+                    onClick={() => void requestOtp("register")}
+                  >
                     {pending ? "در حال ارسال..." : "ارسال کد تأیید موبایل"}
                   </button>
                 )}
@@ -496,10 +600,10 @@ export function CustomerAccount({
                       />
                     </label>
                     <div className="sb-account-actions">
-                      <button type="button" className="sb-btn sb-btn--ghost" disabled={pending || registerCode.length !== 6} onClick={() => void verifyRegisterOtp()}>
+                      <button type="button" className="sb-btn sb-btn--ghost" disabled={pending || registerCode.length !== 6 || !registerPhoneValid} onClick={() => void verifyRegisterOtp()}>
                         {pending ? "در حال تأیید..." : "تأیید شماره موبایل"}
                       </button>
-                      <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("register")}>
+                      <button type="button" className="sb-account-inline" disabled={pending || !registerPhoneValid} onClick={() => void requestOtp("register")}>
                         ارسال دوباره کد
                       </button>
                     </div>
@@ -518,7 +622,16 @@ export function CustomerAccount({
                 <button
                   type="submit"
                   className="sb-btn sb-btn--dark"
-                  disabled={pending || !phoneProof || !passwordPolicy.valid || passwordHasPersianInput || emailHasPersianInput}
+                  disabled={
+                    pending ||
+                    !phoneProof ||
+                    !registerPhoneValid ||
+                    !passwordPolicy.valid ||
+                    !passwordsMatch ||
+                    passwordHasPersianInput ||
+                    confirmPasswordHasPersianInput ||
+                    emailHasPersianInput
+                  }
                 >
                   {pending ? "در حال ساخت حساب..." : "ساخت حساب"}
                 </button>

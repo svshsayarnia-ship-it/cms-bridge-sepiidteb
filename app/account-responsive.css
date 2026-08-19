@@ -3,6 +3,27 @@
    login/registration unreachable from the mobile header. Keep the existing
    visual language, but compact the control for narrow screens. */
 
+.sb-account-form input[aria-invalid="true"] {
+  border-color: var(--sb-danger);
+  box-shadow: 0 0 0 2px rgba(162, 63, 63, 0.09);
+}
+
+.sb-account-field-help,
+.sb-account-field-error {
+  margin: 0;
+  font-size: 0.69rem;
+  font-weight: 620;
+  line-height: 1.7;
+}
+
+.sb-account-field-help {
+  color: var(--sb-muted);
+}
+
+.sb-account-field-error {
+  color: var(--sb-danger);
+}
+
 @media (max-width: 460px) {
   .sb-header__account {
     min-height: 40px;
