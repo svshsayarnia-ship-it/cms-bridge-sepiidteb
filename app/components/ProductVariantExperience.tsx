@@ -285,6 +285,10 @@ export function ProductVariantExperience({
         note: product.priceNote ?? "قیمت امروز",
       });
   const inquiryLink = buildInquiryLink(displayName, displayVolume);
+  const variantFeedbackKey = hasVariants ? selectedId : "single-product";
+  const variantMeta = [selectedVariant?.label, displayVolume, packagingLabel]
+    .filter(Boolean)
+    .join(" · ");
 
   function selectVariant(id: string) {
     setSelectedId(id);
@@ -344,16 +348,24 @@ export function ProductVariantExperience({
                 )
               ) : null}
             </div>
-            <h1>{displayName}</h1>
-            <p className="sb-product-summary__en">{displayNameEn}</p>
+            <div
+              className="sb-product-summary__identity-change"
+              key={`identity-${variantFeedbackKey}`}
+            >
+              <h1>{displayName}</h1>
+              <p className="sb-product-summary__en">{displayNameEn}</p>
+            </div>
 
             {hasVariants && (
               <div className="sb-product-variants">
                 <div className="sb-product-variants__head">
                   <strong>مدل موردنظر</strong>
-                  <span>
-                    {displayVolume}
-                    {packagingLabel ? ` · ${packagingLabel}` : ""}
+                  <span
+                    className="sb-product-variants__selection-meta"
+                    key={`meta-${variantFeedbackKey}`}
+                    aria-live="polite"
+                  >
+                    {variantMeta}
                   </span>
                 </div>
                 <div className="sb-product-variants__options" role="group" aria-label="انتخاب مدل محصول">
@@ -373,13 +385,20 @@ export function ProductVariantExperience({
             )}
 
             {visibleSummary && (
-              <p className="sb-product-summary__lead" aria-live="polite">
+              <p
+                className="sb-product-summary__lead sb-product-summary__state-change"
+                key={`summary-${variantFeedbackKey}`}
+                aria-live="polite"
+              >
                 {visibleSummary}
               </p>
             )}
 
             <div className="sb-product-summary__order">
-              <div>
+              <div
+                className="sb-product-summary__price-change"
+                key={`price-${variantFeedbackKey}`}
+              >
                 <span>قیمت فعلی</span>
                 <strong>{pricing.label}</strong>
                 <small>{toPublicCopy(pricing.note)}</small>

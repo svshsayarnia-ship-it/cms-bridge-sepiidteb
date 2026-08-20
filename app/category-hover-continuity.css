@@ -1,0 +1,68 @@
+/* Stage 4 — preserve category identity while destination details are revealed. */
+
+.sb-category-card:hover .sb-category-visual__image,
+.sb-category-card:focus-visible .sb-category-visual__image,
+.sb-category-card--previewed .sb-category-visual__image {
+  transform: scale(1.04);
+}
+
+.sb-category-card:hover .sb-category-visual__title,
+.sb-category-card:focus-visible .sb-category-visual__title,
+.sb-category-card--previewed .sb-category-visual__title {
+  padding: 9px 13px 10px;
+  background: rgba(255, 252, 246, 0.92);
+  box-shadow: 0 10px 28px rgba(76, 58, 50, 0.13);
+  transform: translateY(-2px) scale(0.94);
+}
+
+.sb-category-card:hover .sb-category-visual__title small,
+.sb-category-card:focus-visible .sb-category-visual__title small,
+.sb-category-card--previewed .sb-category-visual__title small {
+  max-height: 18px;
+  opacity: 0.76;
+  transform: none;
+}
+
+.sb-category-card:hover .sb-category-visual__title strong,
+.sb-category-card:focus-visible .sb-category-visual__title strong,
+.sb-category-card--previewed .sb-category-visual__title strong {
+  font-size: clamp(1.42rem, 1.9vw, 1.82rem);
+  letter-spacing: -0.035em;
+}
+
+.sb-category-card:hover .sb-category-visual__destination,
+.sb-category-card:focus-visible .sb-category-visual__destination,
+.sb-category-card--previewed .sb-category-visual__destination {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@media (max-width: 560px) {
+  .sb-category-card:hover .sb-category-visual__title,
+  .sb-category-card:focus-visible .sb-category-visual__title,
+  .sb-category-card--previewed .sb-category-visual__title {
+    padding: 7px 9px 8px;
+    transform: translateY(-1px) scale(0.94);
+  }
+
+  .sb-category-card:hover .sb-category-visual__title small,
+  .sb-category-card:focus-visible .sb-category-visual__title small,
+  .sb-category-card--previewed .sb-category-visual__title small {
+    max-height: 18px;
+    opacity: 0.72;
+  }
+
+  .sb-category-card:hover .sb-category-visual__title strong,
+  .sb-category-card:focus-visible .sb-category-visual__title strong,
+  .sb-category-card--previewed .sb-category-visual__title strong {
+    font-size: clamp(1.02rem, 5.2vw, 1.28rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-category-card:hover .sb-category-visual__title,
+  .sb-category-card:focus-visible .sb-category-visual__title,
+  .sb-category-card--previewed .sb-category-visual__title {
+    transform: none;
+  }
+}
