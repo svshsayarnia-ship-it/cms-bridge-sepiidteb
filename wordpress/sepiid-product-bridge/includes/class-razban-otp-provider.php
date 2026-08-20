@@ -44,7 +44,7 @@ final class Razban_Otp_Provider {
 			'api_token'   => $this->config_value( 'SEPIID_RAZBAN_API_TOKEN' ),
 			'pattern'     => $this->config_value( 'SEPIID_RAZBAN_PATTERN' ),
 			'from_number' => $this->config_value( 'SEPIID_RAZBAN_FROM_NUMBER' ),
-			'param_key'   => $this->config_value( 'SEPIID_RAZBAN_PARAM_KEY', 'code' ),
+			'param_key'   => $this->config_value( 'SEPIID_RAZBAN_PARAM_KEY', 'Code' ),
 		);
 
 		// Keep an escape hatch for an official Razban plugin or future API changes
