@@ -82,7 +82,9 @@ final class Razban_Otp_Provider {
 			'code'         => $config['pattern'],
 			'recipients'   => array( $recipient ),
 			'params'       => array(
-				$config['param_key'] => (string) $code,
+				// The live Sepiid pattern defines Code as a numeric variable. OTPs are
+				// generated in the 100000..999999 range, so integer casting is safe.
+				$config['param_key'] => (int) $code,
 			),
 		);
 
@@ -105,18 +107,64 @@ final class Razban_Otp_Provider {
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
-		if ( $status < 200 || $status >= 300 ) {
+		$body   = (string) wp_remote_retrieve_body( $response );
+		$parsed = json_decode( $body, true );
+
+		$provider_ok = true;
+		if ( is_array( $parsed ) && isset( $parsed['meta']['status'] ) ) {
+			$provider_ok = true === $parsed['meta']['status'];
+		}
+
+		if ( $status < 200 || $status >= 300 || ! $provider_ok ) {
+			$message      = $this->provider_message( $parsed, $status );
+			$message_code = '';
+			if ( is_array( $parsed ) && ! empty( $parsed['meta']['message_code'] ) ) {
+				$message_code = sanitize_text_field( (string) $parsed['meta']['message_code'] );
+			}
+
 			return new \WP_Error(
 				'sepiid_razban_failed',
-				'رازبان درخواست ارسال کد را نپذیرفت. وضعیت پترن، توکن و خط ارسال را بررسی کن.',
+				$message,
 				array(
-					'status'          => 503,
-					'provider_status' => $status,
+					'status'                => 503,
+					'provider_status'       => $status,
+					'provider_message_code' => $message_code,
 				)
 			);
 		}
 
 		return true;
+	}
+
+	/**
+	 * Return a useful provider error without leaking credentials or request data.
+	 *
+	 * @param mixed $parsed Parsed JSON response.
+	 * @param int   $status HTTP status.
+	 * @return string
+	 */
+	private function provider_message( $parsed, $status ) {
+		if ( 401 === (int) $status ) {
+			return 'توکن API رازبان/IPPanel معتبر نیست یا دسترسی ارسال ندارد. یک Access Key فعال را در wp-config.php قرار بده.';
+		}
+
+		if ( is_array( $parsed ) && ! empty( $parsed['meta']['message'] ) ) {
+			$message = trim( wp_strip_all_tags( (string) $parsed['meta']['message'] ) );
+			if ( '' !== $message ) {
+				if ( function_exists( 'mb_substr' ) ) {
+					$message = mb_substr( $message, 0, 220 );
+				} else {
+					$message = substr( $message, 0, 220 );
+				}
+				return 'رازبان/IPPanel: ' . $message;
+			}
+		}
+
+		if ( 422 === (int) $status ) {
+			return 'رازبان/IPPanel داده‌های پترن را معتبر ندانست. کد پترن، نام/نوع متغیر و خط ارسال را بررسی کن.';
+		}
+
+		return 'رازبان درخواست ارسال کد را نپذیرفت. وضعیت پترن، توکن و خط ارسال را بررسی کن.';
 	}
 
 	/**

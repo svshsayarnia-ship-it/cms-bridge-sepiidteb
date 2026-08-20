@@ -34,7 +34,7 @@ const checks = [
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-customer-otp-controller.php",
-    needles: ["/auth/otp/request", "/auth/otp/verify", "sepiid_send_otp_sms"],
+    needles: ["/auth/otp/request", "/auth/otp/verify", "sepiid_send_otp_sms", "random_int( 100000, 999999 )"],
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",
@@ -48,6 +48,8 @@ const checks = [
       "'Authorization' => $config['api_token']",
       "'recipients'   => array( $recipient )",
       "'params'       => array(",
+      "=> (int) $code",
+      "provider_message",
       "sepiid_razban_otp_transport",
     ],
   },
