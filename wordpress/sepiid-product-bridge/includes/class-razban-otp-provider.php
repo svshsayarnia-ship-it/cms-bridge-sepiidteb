@@ -2,11 +2,9 @@
 /**
  * Razban SMS OTP provider adapter for Sepiid Beauty.
  *
- * Razban's public documentation confirms HTTPS, an account token and an
- * approved pattern for OTP, while the concrete endpoint/payload contract is
- * supplied inside their customer/developer documentation. This adapter keeps
- * that transport configurable so no provider secret or guessed API contract is
- * committed to source control.
+ * Razban's panel exposes the IPPanel Edge pattern API. This provider keeps all
+ * secrets and account-specific identifiers in wp-config.php / environment
+ * variables while committing only the public transport contract.
  *
  * @package SepiidProductBridge
  */
@@ -16,6 +14,8 @@ namespace Sepiid\ProductBridge;
 defined( 'ABSPATH' ) || exit;
 
 final class Razban_Otp_Provider {
+	const DEFAULT_API_URL = 'https://edge.ippanel.com/v1/api/send';
+
 	/** @return void */
 	public function hooks() {
 		// Run before the Kavenegar adapter. A non-null result prevents fall-through.
@@ -40,18 +40,15 @@ final class Razban_Otp_Provider {
 		}
 
 		$config = array(
-			'api_url'       => $this->config_value( 'SEPIID_RAZBAN_API_URL' ),
-			'api_token'     => $this->config_value( 'SEPIID_RAZBAN_API_TOKEN' ),
-			'pattern'       => $this->config_value( 'SEPIID_RAZBAN_PATTERN' ),
-			'auth_header'   => $this->config_value( 'SEPIID_RAZBAN_AUTH_HEADER', 'Authorization' ),
-			'auth_prefix'   => $this->config_value( 'SEPIID_RAZBAN_AUTH_PREFIX', 'Bearer ' ),
-			'phone_field'   => $this->config_value( 'SEPIID_RAZBAN_PHONE_FIELD' ),
-			'code_field'    => $this->config_value( 'SEPIID_RAZBAN_CODE_FIELD' ),
-			'pattern_field' => $this->config_value( 'SEPIID_RAZBAN_PATTERN_FIELD' ),
+			'api_url'     => $this->config_value( 'SEPIID_RAZBAN_API_URL', self::DEFAULT_API_URL ),
+			'api_token'   => $this->config_value( 'SEPIID_RAZBAN_API_TOKEN' ),
+			'pattern'     => $this->config_value( 'SEPIID_RAZBAN_PATTERN' ),
+			'from_number' => $this->config_value( 'SEPIID_RAZBAN_FROM_NUMBER' ),
+			'param_key'   => $this->config_value( 'SEPIID_RAZBAN_PARAM_KEY', 'Code' ),
 		);
 
-		// Allow an official Razban plugin or a future exact transport mapping to
-		// take over without changing the OTP/session architecture.
+		// Keep an escape hatch for an official Razban plugin or future API changes
+		// without touching the OTP/session architecture.
 		$filtered = apply_filters( 'sepiid_razban_otp_transport', null, $phone, $code, $purpose, $config );
 		if ( true === $filtered || is_wp_error( $filtered ) ) {
 			return $filtered;
@@ -60,12 +57,12 @@ final class Razban_Otp_Provider {
 			return $this->error( 'sepiid_razban_failed', 'ارسال کد از سرویس رازبان انجام نشد.' );
 		}
 
-		$required = array( 'api_url', 'api_token', 'pattern', 'phone_field', 'code_field', 'pattern_field' );
+		$required = array( 'api_token', 'pattern', 'from_number', 'param_key' );
 		foreach ( $required as $key ) {
 			if ( empty( $config[ $key ] ) ) {
 				return $this->error(
 					'sepiid_razban_not_configured',
-					'اتصال رازبان هنوز کامل تنظیم نشده است. مشخصات API و پترن را روی وردپرس وارد کن.'
+					'اتصال رازبان هنوز کامل تنظیم نشده است. توکن، کد پترن و خط ارسال را روی وردپرس وارد کن.'
 				);
 			}
 		}
@@ -74,32 +71,31 @@ final class Razban_Otp_Provider {
 			return $this->error( 'sepiid_razban_invalid_endpoint', 'آدرس API رازبان باید HTTPS باشد.' );
 		}
 
-		$payload = array(
-			$config['phone_field']   => $phone,
-			$config['code_field']    => $code,
-			$config['pattern_field'] => $config['pattern'],
-		);
-
-		$extra_payload = $this->config_value( 'SEPIID_RAZBAN_EXTRA_PAYLOAD_JSON' );
-		if ( $extra_payload ) {
-			$decoded = json_decode( $extra_payload, true );
-			if ( is_array( $decoded ) ) {
-				$payload = array_merge( $decoded, $payload );
-			}
+		$recipient = $this->normalize_iran_mobile_e164( $phone );
+		if ( '' === $recipient ) {
+			return $this->error( 'sepiid_razban_invalid_phone', 'شماره موبایل برای ارسال پیامک معتبر نیست.' );
 		}
 
-		$headers = array(
-			'Accept'       => 'application/json',
-			'Content-Type' => 'application/json; charset=utf-8',
+		$payload = array(
+			'sending_type' => 'pattern',
+			'from_number'  => $config['from_number'],
+			'code'         => $config['pattern'],
+			'recipients'   => array( $recipient ),
+			'params'       => array(
+				$config['param_key'] => (string) $code,
+			),
 		);
-		$headers[ $config['auth_header'] ] = $config['auth_prefix'] . $config['api_token'];
 
 		$response = wp_remote_post(
 			$config['api_url'],
 			array(
 				'timeout'     => 8,
 				'redirection' => 0,
-				'headers'     => $headers,
+				'headers'     => array(
+					'Accept'        => 'application/json',
+					'Content-Type'  => 'application/json; charset=utf-8',
+					'Authorization' => $config['api_token'],
+				),
 				'body'        => wp_json_encode( $payload ),
 			)
 		);
@@ -110,10 +106,42 @@ final class Razban_Otp_Provider {
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status < 200 || $status >= 300 ) {
-			return $this->error( 'sepiid_razban_failed', 'رازبان درخواست ارسال کد را نپذیرفت. تنظیمات API یا پترن را بررسی کن.' );
+			return new \WP_Error(
+				'sepiid_razban_failed',
+				'رازبان درخواست ارسال کد را نپذیرفت. وضعیت پترن، توکن و خط ارسال را بررسی کن.',
+				array(
+					'status'          => 503,
+					'provider_status' => $status,
+				)
+			);
 		}
 
 		return true;
+	}
+
+	/**
+	 * Convert an Iranian mobile number to E.164 (+989xxxxxxxxx).
+	 *
+	 * @param string $phone Raw/canonical phone value.
+	 * @return string
+	 */
+	private function normalize_iran_mobile_e164( $phone ) {
+		$digits = preg_replace( '/\D+/', '', (string) $phone );
+		if ( ! is_string( $digits ) ) {
+			return '';
+		}
+
+		if ( 11 === strlen( $digits ) && 0 === strpos( $digits, '09' ) ) {
+			return '+98' . substr( $digits, 1 );
+		}
+		if ( 12 === strlen( $digits ) && 0 === strpos( $digits, '989' ) ) {
+			return '+' . $digits;
+		}
+		if ( 10 === strlen( $digits ) && 0 === strpos( $digits, '9' ) ) {
+			return '+98' . $digits;
+		}
+
+		return '';
 	}
 
 	/** @return string */
