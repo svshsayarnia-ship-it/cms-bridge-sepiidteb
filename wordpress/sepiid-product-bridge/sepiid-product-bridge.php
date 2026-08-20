@@ -3,7 +3,7 @@
  * Plugin Name:       Sepiid Product Bridge
  * Plugin URI:        https://sepiidbeauty.ir/
  * Description:       اتصال امن Sepiid CMS و حساب مشتریان به محصولات، دسته‌بندی‌ها، رسانه‌ها و WooCommerce.
- * Version:           1.8.4
+ * Version:           1.8.5
  * Requires at least: 6.9
  * Requires PHP:      7.4
  * Author:            Sepiid Beauty
@@ -23,7 +23,7 @@ namespace Sepiid\ProductBridge;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '1.8.4';
+const VERSION = '1.8.5';
 const FILE    = __FILE__;
 const PATH    = __DIR__;
 
