@@ -59,8 +59,6 @@ export function RoleAwareProductCardVisual({
       ...product,
       image: cardImage.src,
       imageAlt: cardImage.alt || product.imageAlt,
-      imageVerified: true,
-      imageApproved: true,
       imageKind: "official",
     };
   }, [cardImage, product]);
