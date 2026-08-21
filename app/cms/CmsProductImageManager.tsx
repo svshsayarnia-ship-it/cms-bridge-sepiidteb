@@ -213,7 +213,7 @@ export function CmsProductImageManager({
         roleUploadFileName(file.name, token),
         {
           type: file.type,
-          lastModified: Date.now(),
+          lastModified: file.lastModified,
         },
       );
       const form = new FormData();
