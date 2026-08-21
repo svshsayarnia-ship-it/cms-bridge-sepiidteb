@@ -93,18 +93,22 @@ function humanizeStorefrontProduct(product: StorefrontProduct): StorefrontProduc
   return {
     ...product,
     badge: product.badge ? toPublicCopy(product.badge) : product.badge,
-    imageAlt: toPublicCopy(product.imageAlt),
+    imageAlt: toPublicCopy(product.imageAlt || `تصویر ${product.nameFa}`),
     volume: product.volume ? toPublicCopy(product.volume) : product.volume,
     priceNote: product.priceNote ? toPublicCopy(product.priceNote) : product.priceNote,
     sourceStatus: product.sourceStatus ? toPublicCopy(product.sourceStatus) : product.sourceStatus,
     warning: product.warning ? toPublicCopy(product.warning) : product.warning,
-    summary: toPublicCopy(product.summary),
-    shortBenefit: toPublicCopy(product.shortBenefit),
-    audience: toPublicCopy(product.audience),
-    features: product.features.map((item) => toPublicCopy(item)),
-    specs: product.specs.map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
-    checks: product.checks.map((item) => toPublicCopy(item)),
-    faq: product.faq.map((item) => ({
+    summary: toPublicCopy(
+      product.summary || `مشخصات، مدل و قیمت ${product.nameFa} را ببینید.`,
+    ),
+    shortBenefit: toPublicCopy(
+      product.shortBenefit || product.summary || `مشخصات ${product.nameFa} را ببینید.`,
+    ),
+    audience: toPublicCopy(product.audience || "برای استفاده حرفه‌ای"),
+    features: (product.features ?? []).map((item) => toPublicCopy(item)),
+    specs: (product.specs ?? []).map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
+    checks: (product.checks ?? []).map((item) => toPublicCopy(item)),
+    faq: (product.faq ?? []).map((item) => ({
       question: toPublicCopy(item.question),
       answer: toPublicCopy(item.answer),
     })),
@@ -112,12 +116,14 @@ function humanizeStorefrontProduct(product: StorefrontProduct): StorefrontProduc
       ...variant,
       label: toPublicCopy(variant.label),
       nameFa: toPublicCopy(variant.nameFa),
-      imageAlt: toPublicCopy(variant.imageAlt),
-      volume: toPublicCopy(variant.volume),
-      summary: toPublicCopy(variant.summary),
+      imageAlt: toPublicCopy(variant.imageAlt || `تصویر ${variant.nameFa}`),
+      volume: variant.volume ? toPublicCopy(variant.volume) : variant.volume,
+      summary: toPublicCopy(
+        variant.summary || `مشخصات و قیمت ${variant.nameFa} را ببینید.`,
+      ),
       priceNote: variant.priceNote ? toPublicCopy(variant.priceNote) : variant.priceNote,
-      features: variant.features.map((item) => toPublicCopy(item)),
-      specs: variant.specs.map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
+      features: (variant.features ?? []).map((item) => toPublicCopy(item)),
+      specs: (variant.specs ?? []).map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
     })),
   };
 }
