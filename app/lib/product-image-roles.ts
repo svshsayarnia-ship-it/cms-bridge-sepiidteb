@@ -26,11 +26,11 @@ function asSlugList(slugs: string | string[]): string[] {
 }
 
 export function cardImageRoleToken(slug: string): string {
-  return `${ROLE_PREFIX}-card-${rolePart(slug)}`;
+  return `${ROLE_PREFIX}-card-${rolePart(slug)}-slot`;
 }
 
 export function variantImageRoleToken(slug: string, variantId: string): string {
-  return `${ROLE_PREFIX}-variant-${rolePart(slug)}-${rolePart(variantId)}`;
+  return `${ROLE_PREFIX}-variant-${rolePart(slug)}-${rolePart(variantId)}-slot`;
 }
 
 export function imageHasRoleToken(image: CmsImage, token: string): boolean {
