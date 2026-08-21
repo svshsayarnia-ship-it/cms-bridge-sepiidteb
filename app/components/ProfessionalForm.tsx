@@ -7,10 +7,10 @@ export function ProfessionalForm() {
   const [name, setName] = useState("");
   const [center, setCenter] = useState("");
   const [city, setCity] = useState("");
-  const [need, setNeed] = useState("استعلام چند محصول");
+  const [need, setNeed] = useState("قیمت و موجودی چند محصول");
 
   const href = `https://wa.me/989037251266?text=${encodeURIComponent(
-    `سلام، برای همکاری حرفه‌ای پیام می‌دهم.\nنام: ${name || "—"}\nمرکز: ${
+    `سلام، برای خرید کلینیکی پیام می‌دهم.\nنام: ${name || "—"}\nمرکز: ${
       center || "—"
     }\nشهر: ${city || "—"}\nدرخواست: ${need}`,
   )}`;
@@ -24,9 +24,9 @@ export function ProfessionalForm() {
       }}
     >
       <div className="sb-professional-form__head">
-        <span className="sb-eyebrow">QUICK BRIEF / فرم کوتاه</span>
-        <h2>درخواست خود را در یک پیام کامل بفرستید.</h2>
-        <p>این فرم اطلاعات را ذخیره نمی‌کند؛ متن آماده در واتساپ شما باز می‌شود.</p>
+        <span className="sb-eyebrow">یک پیام کامل بفرستید</span>
+        <h2>چند مورد کوتاه را بنویسید؛ ادامه‌اش در واتساپ است.</h2>
+        <p>چیزی در سایت ذخیره نمی‌شود. فقط یک پیام آماده می‌کنیم تا لازم نباشد اطلاعات را دوباره تایپ کنید.</p>
       </div>
       <div className="sb-professional-form__fields">
         <label>
@@ -42,20 +42,19 @@ export function ProfessionalForm() {
           <input value={city} onChange={(event) => setCity(event.target.value)} required />
         </label>
         <label>
-          <span>نوع درخواست</span>
+          <span>برای چه کاری پیام می‌دهید؟</span>
           <select value={need} onChange={(event) => setNeed(event.target.value)}>
-            <option>استعلام چند محصول</option>
-            <option>برنامه خرید دوره‌ای</option>
+            <option>قیمت و موجودی چند محصول</option>
+            <option>خرید دوره‌ای برای کلینیک</option>
             <option>ملزومات کلینیکی</option>
             <option>پیگیری سفارش</option>
           </select>
         </label>
       </div>
       <button className="sb-btn sb-btn--gold" type="submit">
-        ساخت پیام و ادامه در واتساپ
+        ادامه در واتساپ
         <ArrowIcon />
       </button>
     </form>
   );
 }
-
