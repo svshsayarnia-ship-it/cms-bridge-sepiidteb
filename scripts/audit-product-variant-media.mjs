@@ -49,7 +49,7 @@ if (
 const requiredInventoryMappings = [
   'image: "/images/products/alcarisa-28.webp"',
   'image: "/images/products/neuramis-lido-1ml.webp"',
-  'variant.id === "10ml"',
+  'id: "revofil-10ml"',
   'image: "https://www.drfiller.co/wp-content/uploads/2021/05/Revofil-10cc-s3-1024x819.jpg"',
   'image: "https://neurafill-lido.com/wp-content/uploads/2023/06/Neurafill-004-1024x1024.webp"',
   'image: "/images/products/neuramis-volume-1ml.webp"',
