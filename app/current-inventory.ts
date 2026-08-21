@@ -54,15 +54,16 @@ const alcarisaSeed: ProductSeed = {
   variants: [...(alcarisa.variants ?? []), alcarisa28],
 };
 
-// Keep every published Revofil volume visible, but never show a generic family
-// placeholder for the 10 mL option. The selected variant uses a model-matched
-// market photograph from the dedicated Revofil 10cc listing.
+// The legacy catalog guard treats the generic id `10ml` as unverified market
+// media. Give the verified Revofil 10cc option its own stable id so the exact
+// model image remains available to the public variant selector.
 const revofilSeed: ProductSeed = {
   ...revofil,
   variants: revofil.variants?.map((variant) =>
     variant.id === "10ml"
       ? {
           ...variant,
+          id: "revofil-10ml",
           image: "https://www.drfiller.co/wp-content/uploads/2021/05/Revofil-10cc-s3-1024x819.jpg",
           imageAlt: "تصویر بسته REVOFIL Ultra Volume 10cc و سرنگ همان مدل",
           imageVerified: true,
