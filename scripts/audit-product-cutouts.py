@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Fail when a storefront cutout can crop, float or carry a baked backdrop."""
+"""Fail when a storefront product image is corrupt or a cutout can crop/float."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CUTOUT_ROOT = ROOT / "public/images/products/cutouts"
+PRODUCT_ROOT = ROOT / "public/images/products"
+CUTOUT_ROOT = PRODUCT_ROOT / "cutouts"
 EXPECTED_CANVAS = (1400, 1400)
 EXPECTED_FLOOR_Y = 980
 MAX_WIDTH = 1060
@@ -21,8 +22,38 @@ MIN_TRANSPARENT_FRACTION = 0.55
 MAX_CORNER_ALPHA = 4
 
 
+def validate_webp_payloads(failures: list[str]) -> None:
+    """A .webp filename must contain an actual decodable WebP payload."""
+    for path in sorted(PRODUCT_ROOT.rglob("*.webp")):
+        if path.name.endswith(".tmp.webp"):
+            continue
+        label = path.relative_to(ROOT)
+        try:
+            with Image.open(path) as image:
+                image.verify()
+                if image.format != "WEBP":
+                    failures.append(
+                        f"{label}: extension=.webp but payload={image.format or 'unknown'}",
+                    )
+        except (UnidentifiedImageError, OSError, ValueError) as error:
+            failures.append(f"{label}: invalid WebP payload ({error})")
+
+
+def open_rgba(path: Path, failures: list[str]) -> Image.Image | None:
+    try:
+        with Image.open(path) as image:
+            if image.format != "WEBP":
+                return None
+            return image.convert("RGBA")
+    except (UnidentifiedImageError, OSError, ValueError):
+        # validate_webp_payloads already emits the actionable payload failure.
+        return None
+
+
 def main() -> None:
     failures: list[str] = []
+    validate_webp_payloads(failures)
+
     files = [
         path
         for path in sorted(CUTOUT_ROOT.rglob("*.webp"))
@@ -30,51 +61,54 @@ def main() -> None:
     ]
 
     for path in files:
-        with Image.open(path).convert("RGBA") as image:
-            if image.size != EXPECTED_CANVAS:
-                failures.append(f"{path.relative_to(ROOT)}: canvas={image.size}")
-                continue
+        image = open_rgba(path, failures)
+        if image is None:
+            continue
 
-            raw_alpha = image.getchannel("A")
-            alpha_histogram = raw_alpha.histogram()
-            transparent_fraction = alpha_histogram[0] / (image.width * image.height)
-            if transparent_fraction < MIN_TRANSPARENT_FRACTION:
-                failures.append(
-                    f"{path.relative_to(ROOT)}: transparent canvas="
-                    f"{transparent_fraction:.1%}, possible baked backdrop",
-                )
+        if image.size != EXPECTED_CANVAS:
+            failures.append(f"{path.relative_to(ROOT)}: canvas={image.size}")
+            continue
 
-            corners = (
-                raw_alpha.getpixel((0, 0)),
-                raw_alpha.getpixel((image.width - 1, 0)),
-                raw_alpha.getpixel((0, image.height - 1)),
-                raw_alpha.getpixel((image.width - 1, image.height - 1)),
+        raw_alpha = image.getchannel("A")
+        alpha_histogram = raw_alpha.histogram()
+        transparent_fraction = alpha_histogram[0] / (image.width * image.height)
+        if transparent_fraction < MIN_TRANSPARENT_FRACTION:
+            failures.append(
+                f"{path.relative_to(ROOT)}: transparent canvas="
+                f"{transparent_fraction:.1%}, possible baked backdrop",
             )
-            if max(corners) > MAX_CORNER_ALPHA:
-                failures.append(
-                    f"{path.relative_to(ROOT)}: non-transparent canvas corner {corners}",
-                )
 
-            alpha = raw_alpha.point(lambda value: 255 if value >= 12 else 0)
-            bbox = alpha.getbbox()
-            if not bbox:
-                failures.append(f"{path.relative_to(ROOT)}: empty alpha")
-                continue
+        corners = (
+            raw_alpha.getpixel((0, 0)),
+            raw_alpha.getpixel((image.width - 1, 0)),
+            raw_alpha.getpixel((0, image.height - 1)),
+            raw_alpha.getpixel((image.width - 1, image.height - 1)),
+        )
+        if max(corners) > MAX_CORNER_ALPHA:
+            failures.append(
+                f"{path.relative_to(ROOT)}: non-transparent canvas corner {corners}",
+            )
 
-            left, top, right, bottom = bbox
-            width = right - left
-            height = bottom - top
-            label = path.relative_to(ROOT)
+        alpha = raw_alpha.point(lambda value: 255 if value >= 12 else 0)
+        bbox = alpha.getbbox()
+        if not bbox:
+            failures.append(f"{path.relative_to(ROOT)}: empty alpha")
+            continue
 
-            if abs(bottom - EXPECTED_FLOOR_Y) > TOLERANCE:
-                failures.append(f"{label}: floor={bottom}, expected={EXPECTED_FLOOR_Y}")
-            if width > MAX_WIDTH + TOLERANCE or height > MAX_HEIGHT + TOLERANCE:
-                failures.append(f"{label}: content={width}x{height}")
-            if min(left, top, EXPECTED_CANVAS[0] - right) < 12:
-                failures.append(f"{label}: unsafe canvas margin bbox={bbox}")
-            center_x = (left + right) / 2
-            if abs(center_x - EXPECTED_CANVAS[0] / 2) > MAX_CENTER_OFFSET:
-                failures.append(f"{label}: horizontal center={center_x:.1f}")
+        left, top, right, bottom = bbox
+        width = right - left
+        height = bottom - top
+        label = path.relative_to(ROOT)
+
+        if abs(bottom - EXPECTED_FLOOR_Y) > TOLERANCE:
+            failures.append(f"{label}: floor={bottom}, expected={EXPECTED_FLOOR_Y}")
+        if width > MAX_WIDTH + TOLERANCE or height > MAX_HEIGHT + TOLERANCE:
+            failures.append(f"{label}: content={width}x{height}")
+        if min(left, top, EXPECTED_CANVAS[0] - right) < 12:
+            failures.append(f"{label}: unsafe canvas margin bbox={bbox}")
+        center_x = (left + right) / 2
+        if abs(center_x - EXPECTED_CANVAS[0] / 2) > MAX_CENTER_OFFSET:
+            failures.append(f"{label}: horizontal center={center_x:.1f}")
 
     eptq = [
         CUTOUT_ROOT / "eptq/eptq-s100.webp",
@@ -83,14 +117,16 @@ def main() -> None:
     ]
     eptq_sizes: list[tuple[int, int]] = []
     for path in eptq:
-        with Image.open(path).convert("RGBA") as image:
-            bbox = image.getchannel("A").point(
-                lambda value: 255 if value >= 12 else 0,
-            ).getbbox()
-            if bbox and (bbox[2] - bbox[0]) <= (bbox[3] - bbox[1]):
-                failures.append(f"{path.relative_to(ROOT)}: EPTQ variant is not landscape")
-            if bbox:
-                eptq_sizes.append((bbox[2] - bbox[0], bbox[3] - bbox[1]))
+        image = open_rgba(path, failures)
+        if image is None:
+            continue
+        bbox = image.getchannel("A").point(
+            lambda value: 255 if value >= 12 else 0,
+        ).getbbox()
+        if bbox and (bbox[2] - bbox[0]) <= (bbox[3] - bbox[1]):
+            failures.append(f"{path.relative_to(ROOT)}: EPTQ variant is not landscape")
+        if bbox:
+            eptq_sizes.append((bbox[2] - bbox[0], bbox[3] - bbox[1]))
 
     if len(eptq_sizes) == len(eptq):
         widths = [width for width, _ in eptq_sizes]
@@ -109,14 +145,16 @@ def main() -> None:
         if not path.exists():
             failures.append(f"{path.relative_to(ROOT)}: required storefront cutout is missing")
             continue
-        with Image.open(path).convert("RGBA") as image:
-            bbox = image.getchannel("A").point(
-                lambda value: 255 if value >= 12 else 0,
-            ).getbbox()
-            if bbox:
-                neuramis_ten_pack_sizes.append(
-                    (bbox[2] - bbox[0], bbox[3] - bbox[1]),
-                )
+        image = open_rgba(path, failures)
+        if image is None:
+            continue
+        bbox = image.getchannel("A").point(
+            lambda value: 255 if value >= 12 else 0,
+        ).getbbox()
+        if bbox:
+            neuramis_ten_pack_sizes.append(
+                (bbox[2] - bbox[0], bbox[3] - bbox[1]),
+            )
 
     if len(neuramis_ten_pack_sizes) == 2:
         for dimension, values in (
@@ -130,7 +168,8 @@ def main() -> None:
     if not rabianca.exists():
         failures.append(f"{rabianca.relative_to(ROOT)}: required storefront cutout is missing")
     else:
-        with Image.open(rabianca).convert("RGBA") as image:
+        image = open_rgba(rabianca, failures)
+        if image is not None:
             bbox = image.getchannel("A").point(
                 lambda value: 255 if value >= 12 else 0,
             ).getbbox()

@@ -33,11 +33,22 @@ jobs:
           node-version: "22.13.0"
           cache: npm
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Install product image audit dependency
+        run: python -m pip install --disable-pip-version-check Pillow
+
       - name: Lint WordPress bridge PHP
         run: find wordpress/sepiid-product-bridge -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Audit normalized product cutouts
+        run: npm run audit:product-images
 
       - name: Run ESLint
         run: npm run lint

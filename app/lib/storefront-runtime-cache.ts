@@ -5,6 +5,9 @@ import type { CmsProduct } from "./cms-types";
 
 const CACHE_NAMESPACE = "sepiid-storefront";
 const PRODUCT_TTL_SECONDS = 60 * 60 * 24 * 30;
+const PRODUCT_INDEX_KEY = "products:index";
+const PRODUCT_INDEX_NAME = "cms-product-index";
+const PRODUCT_INDEX_MAX_ATTEMPTS = 3;
 
 function productKey(slug: string) {
   return `product:${slug.trim()}`;
@@ -32,6 +35,90 @@ function isCmsProduct(value: unknown): value is CmsProduct {
   );
 }
 
+function isProductSlugIndex(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((slug) => typeof slug === "string" && Boolean(slug.trim()))
+  );
+}
+
+function normalizeSlugs(slugs: Iterable<string>) {
+  return Array.from(
+    new Set(
+      Array.from(slugs)
+        .map((slug) => slug.trim())
+        .filter(Boolean),
+    ),
+  ).sort();
+}
+
+async function getRuntimeStorefrontProductSlugs(): Promise<string[]> {
+  try {
+    const value = await cache().get(PRODUCT_INDEX_KEY);
+    return isProductSlugIndex(value) ? normalizeSlugs(value) : [];
+  } catch (error) {
+    console.warn("[storefront-runtime-cache] product index read failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
+}
+
+async function ensureRuntimeStorefrontProductSlugs(slugs: string[]) {
+  const requiredSlugs = normalizeSlugs(slugs);
+  if (requiredSlugs.length === 0) return;
+
+  for (let attempt = 1; attempt <= PRODUCT_INDEX_MAX_ATTEMPTS; attempt += 1) {
+    const current = await getRuntimeStorefrontProductSlugs();
+    if (requiredSlugs.every((slug) => current.includes(slug))) return;
+
+    const next = normalizeSlugs([...current, ...requiredSlugs]);
+    const productCache = cache();
+    await productCache.set(PRODUCT_INDEX_KEY, next, {
+      ttl: PRODUCT_TTL_SECONDS,
+      tags: ["storefront-products", "storefront-product-index"],
+      name: PRODUCT_INDEX_NAME,
+    });
+
+    const persisted = await productCache.get(PRODUCT_INDEX_KEY);
+    if (
+      isProductSlugIndex(persisted) &&
+      requiredSlugs.every((slug) => persisted.includes(slug))
+    ) {
+      return;
+    }
+  }
+
+  throw new Error(
+    `فهرست Runtime Cache برای «${requiredSlugs.join("، ")}» تأیید نشد.`,
+  );
+}
+
+async function forgetRuntimeStorefrontProductSlug(slug: string) {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) return;
+
+  for (let attempt = 1; attempt <= PRODUCT_INDEX_MAX_ATTEMPTS; attempt += 1) {
+    const current = await getRuntimeStorefrontProductSlugs();
+    if (!current.includes(cleanSlug)) return;
+
+    const next = current.filter((item) => item !== cleanSlug);
+    const productCache = cache();
+    await productCache.set(PRODUCT_INDEX_KEY, next, {
+      ttl: PRODUCT_TTL_SECONDS,
+      tags: ["storefront-products", "storefront-product-index"],
+      name: PRODUCT_INDEX_NAME,
+    });
+
+    const persisted = await productCache.get(PRODUCT_INDEX_KEY);
+    if (isProductSlugIndex(persisted) && !persisted.includes(cleanSlug)) {
+      return;
+    }
+  }
+
+  throw new Error(`حذف «${cleanSlug}» از فهرست Runtime Cache تأیید نشد.`);
+}
+
 export async function getRuntimeStorefrontProduct(
   slug: string,
 ): Promise<CmsProduct | null> {
@@ -48,6 +135,23 @@ export async function getRuntimeStorefrontProduct(
     });
     return null;
   }
+}
+
+/**
+ * Return every product currently known to the Runtime Cache in this region.
+ * The index stores only slugs so the cache never needs one large catalog value.
+ * This lets discovery surfaces overlay the exact same fresh product records the
+ * PDP reads, while the Next Data Cache remains the cross-request snapshot.
+ */
+export async function getRuntimeStorefrontProducts(): Promise<CmsProduct[]> {
+  const slugs = await getRuntimeStorefrontProductSlugs();
+  if (slugs.length === 0) return [];
+
+  const products = await Promise.all(
+    slugs.map((slug) => getRuntimeStorefrontProduct(slug)),
+  );
+
+  return products.filter((product): product is CmsProduct => Boolean(product));
 }
 
 export async function rememberRuntimeStorefrontProducts(products: CmsProduct[]) {
@@ -78,6 +182,12 @@ export async function rememberRuntimeStorefrontProducts(products: CmsProduct[]) 
       }
     }),
   );
+
+  // Keep a compact slug index so catalog/listing surfaces can read the same
+  // fresh Runtime Cache records as product detail pages without scanning keys.
+  await ensureRuntimeStorefrontProductSlugs(
+    validProducts.map((product) => product.slug),
+  );
 }
 
 export async function forgetRuntimeStorefrontProduct(slug: string) {
@@ -85,4 +195,5 @@ export async function forgetRuntimeStorefrontProduct(slug: string) {
   if (!cleanSlug) return;
 
   await cache().delete(productKey(cleanSlug));
+  await forgetRuntimeStorefrontProductSlug(cleanSlug);
 }

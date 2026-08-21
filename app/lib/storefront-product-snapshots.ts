@@ -4,6 +4,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import type { CmsProduct } from "./cms-types";
 import {
   forgetRuntimeStorefrontProduct,
+  getRuntimeStorefrontProducts,
   rememberRuntimeStorefrontProducts,
 } from "./storefront-runtime-cache";
 
@@ -28,8 +29,51 @@ function snapshotCache() {
   });
 }
 
+function preferNewestProduct(
+  current: CmsProduct | undefined,
+  candidate: CmsProduct,
+): CmsProduct {
+  if (!current) return candidate;
+
+  const currentModified = Date.parse(current.dateModifiedGmt || "");
+  const candidateModified = Date.parse(candidate.dateModifiedGmt || "");
+
+  if (
+    Number.isFinite(candidateModified) &&
+    (!Number.isFinite(currentModified) || candidateModified > currentModified)
+  ) {
+    return candidate;
+  }
+
+  if (
+    Number.isFinite(currentModified) &&
+    Number.isFinite(candidateModified) &&
+    currentModified > candidateModified
+  ) {
+    return current;
+  }
+
+  // Equal or legacy timestamps: prefer the Runtime Cache record because it is
+  // the value most recently confirmed by a CMS write or a live Woo read.
+  return candidate;
+}
+
 export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots> {
-  return snapshotCache()();
+  const [persistedSnapshots, runtimeProducts] = await Promise.all([
+    snapshotCache()(),
+    getRuntimeStorefrontProducts(),
+  ]);
+
+  if (runtimeProducts.length === 0) return persistedSnapshots;
+
+  const merged: ProductSnapshots = { ...persistedSnapshots };
+  for (const product of runtimeProducts) {
+    const slug = product.slug.trim();
+    if (!slug) continue;
+    merged[slug] = preferNewestProduct(merged[slug], product);
+  }
+
+  return merged;
 }
 
 type RememberOptions = {
@@ -72,6 +116,10 @@ export async function rememberStorefrontProducts(
     );
   }
 
+  // This read now overlays Runtime Cache values onto the persisted Next Data
+  // Cache snapshot. A confirmed CMS image therefore reaches cards, category
+  // pages, search and PDP through one product record instead of two diverging
+  // cache paths.
   const current = await getStorefrontProductSnapshots();
   snapshotSeed = { ...current, ...incoming };
 
