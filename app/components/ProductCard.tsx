@@ -8,7 +8,7 @@ import {
   getPublicVolumeLabel,
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
-import { ProductVisual } from "./product/ProductVisual";
+import { RoleAwareProductCardVisual } from "./RoleAwareProductCardVisual";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
@@ -47,20 +47,12 @@ export function ProductCard({
         href={href}
         aria-label={`مشاهده ${product.nameFa}`}
       >
-        <ProductVisual
+        <RoleAwareProductCardVisual
           product={product}
-          variant="card"
+          brand={brand}
           priority={priority}
           sizes={productImageSizes}
         />
-
-        {product.imageKind === "editorial-family" && (
-          <span className="sb-product-card__identity" aria-hidden="true">
-            <small>{brand || "سپید بیوتی"}</small>
-            <strong>{product.nameFa}</strong>
-            {product.nameEn && <em>{product.nameEn}</em>}
-          </span>
-        )}
 
         {product.badge && (
           <span className="sb-product-card__badge">
