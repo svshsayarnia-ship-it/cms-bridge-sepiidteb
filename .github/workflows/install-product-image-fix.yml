@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - ".image-staging/READY"
+  schedule:
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
