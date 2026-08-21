@@ -1,6 +1,6 @@
 import type { CmsProduct } from "@/app/lib/cms-types";
 import { findCardRoleImage, findVariantRoleImage } from "@/app/lib/product-image-roles";
-import { getProductBySlug, WooCommerceError } from "@/app/lib/woocommerce";
+import { getStorefrontProductSnapshots } from "@/app/lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,18 @@ function publicImage(image: { src: string; alt: string } | null) {
     : null;
 }
 
+function resolveSnapshotProduct(
+  snapshots: Record<string, CmsProduct>,
+  slug: string,
+): CmsProduct | null {
+  for (const candidate of slugCandidates(slug)) {
+    const product = snapshots[candidate];
+    if (product) return product;
+  }
+
+  return null;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const slug = (url.searchParams.get("slug") ?? "").trim();
@@ -51,62 +63,44 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    let product: CmsProduct | null = null;
+  const snapshots = await getStorefrontProductSnapshots();
+  const product = resolveSnapshotProduct(snapshots, slug);
 
-    for (const candidate of slugCandidates(slug)) {
-      product = await getProductBySlug(candidate, {
-        requestTimeoutMs: 12_000,
-        requestMaxAttempts: 1,
-      });
-      if (product) break;
-    }
-
-    if (
-      !product ||
-      product.status !== "publish" ||
-      product.catalogVisibility === "hidden"
-    ) {
-      return Response.json(
-        { cardImage: null, variantImages: {} },
-        { headers: { "cache-control": "no-store" } },
-      );
-    }
-
-    const roleSlugs = [product.slug, slug];
-    const cardImage = findCardRoleImage(product.images, roleSlugs);
-    const variantImages = Object.fromEntries(
-      variantIds.flatMap((variantId) => {
-        const image = findVariantRoleImage(
-          product.images,
-          roleSlugs,
-          variantId,
-        );
-        return image?.src
-          ? [[variantId, { src: image.src, alt: image.alt || product.name }]]
-          : [];
-      }),
-    );
-
+  if (
+    !product ||
+    product.status !== "publish" ||
+    product.catalogVisibility === "hidden"
+  ) {
     return Response.json(
-      {
-        cardImage: publicImage(
-          cardImage
-            ? { src: cardImage.src, alt: cardImage.alt || product.name }
-            : null,
-        ),
-        variantImages,
-      },
+      { cardImage: null, variantImages: {} },
       { headers: { "cache-control": "no-store" } },
     );
-  } catch (error) {
-    if (error instanceof WooCommerceError) {
-      return Response.json(
-        { cardImage: null, variantImages: {} },
-        { headers: { "cache-control": "no-store" } },
-      );
-    }
-
-    throw error;
   }
+
+  const roleSlugs = [product.slug, slug];
+  const cardImage = findCardRoleImage(product.images, roleSlugs);
+  const variantImages = Object.fromEntries(
+    variantIds.flatMap((variantId) => {
+      const image = findVariantRoleImage(
+        product.images,
+        roleSlugs,
+        variantId,
+      );
+      return image?.src
+        ? [[variantId, { src: image.src, alt: image.alt || product.name }]]
+        : [];
+    }),
+  );
+
+  return Response.json(
+    {
+      cardImage: publicImage(
+        cardImage
+          ? { src: cardImage.src, alt: cardImage.alt || product.name }
+          : null,
+      ),
+      variantImages,
+    },
+    { headers: { "cache-control": "no-store" } },
+  );
 }
