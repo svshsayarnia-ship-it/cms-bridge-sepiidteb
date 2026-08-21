@@ -54,16 +54,19 @@ const alcarisaSeed: ProductSeed = {
   variants: [...(alcarisa.variants ?? []), alcarisa28],
 };
 
-// Keep every published Revofil volume visible. The 10 mL source visual is a
-// family/reference image, so mark it as such instead of dropping the variant or
-// letting the 1 mL pack masquerade as the selected 10 mL option.
+// Keep every published Revofil volume visible, but never show a generic family
+// placeholder for the 10 mL option. The selected variant uses a model-matched
+// market photograph from the dedicated Revofil 10cc listing.
 const revofilSeed: ProductSeed = {
   ...revofil,
   variants: revofil.variants?.map((variant) =>
     variant.id === "10ml"
       ? {
           ...variant,
-          imageKind: "editorial-family" as const,
+          image: "https://www.drfiller.co/wp-content/uploads/2021/05/Revofil-10cc-s3-1024x819.jpg",
+          imageAlt: "تصویر بسته REVOFIL Ultra Volume 10cc و سرنگ همان مدل",
+          imageVerified: true,
+          imageKind: "market-reference" as const,
           imageApproved: true,
         }
       : variant,
@@ -118,19 +121,19 @@ const neurafillSeed: ProductSeed = {
       label: "Volume",
       nameFa: "نورافیل والیوم",
       nameEn: "NEURAFILL Volume",
-      image: "/images/products/editorial/fillers-family.webp",
-      imageAlt: "نمای ادیتوریال هم‌خانواده برای نورافیل والیوم؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
-      imageVerified: false,
-      imageKind: "editorial-family",
+      image: "https://neurafill-lido.com/wp-content/uploads/2023/06/Neurafill-004-1024x1024.webp",
+      imageAlt: "تصویر رسمی بسته طلایی Neurafill Volume Lidocaine",
+      imageVerified: true,
+      imageKind: "official",
       imageApproved: true,
-      volume: "حجم روی بسته همان موجودی کنترل می‌شود",
-      summary: "مدل Volume خانواده نورافیل در صفحه فعلی سپیدطب قابل انتخاب است؛ تصویر و حجم دقیق همان بسته پیش از سفارش کنترل می‌شود.",
-      features: ["مدل Volume", "ثبت‌شده در سپیدطب", "تطبیق بسته پیش از تحویل"],
-      specs: [["مدل", "NEURAFILL Volume"]],
+      volume: "۱ میلی‌لیتر",
+      summary: "مدل Volume خانواده نورافیل با تصویر اختصاصی همان مدل نمایش داده می‌شود؛ حجم این مدل ۱ میلی‌لیتر است.",
+      features: ["مدل Volume", "۱ میلی‌لیتر", "تصویر اختصاصی همان مدل"],
+      specs: [["مدل", "NEURAFILL Volume"], ["حجم", "۱ میلی‌لیتر"]],
       priceToman: 5_000_000,
       priceNote: "قیمت مرجع سپیدطب؛ قیمت زنده فروشگاه اولویت دارد",
-      sourceName: "SepiidTeb — نورافیل اصلی",
-      sourceUrl: "https://sepiidteb.ir/product/116/",
+      sourceName: "Neurafill — Volume",
+      sourceUrl: "https://neurafill-lido.com/neurafill-volume/",
     },
     {
       id: "lido",
@@ -179,15 +182,15 @@ const neuramisVolumeTenMl = {
   label: "Volume · ۱۰×۱ میل",
   nameFa: "نورامیس والیوم بسته ۱۰ عددی",
   nameEn: "NEURAMIS Volume 10 × 1 mL",
-  image: "/images/products/editorial/fillers-family.webp",
-  imageAlt: "نمای ادیتوریال هم‌خانواده برای نورامیس والیوم ۱۰ سی‌سی؛ بسته دقیق هنگام استعلام کنترل می‌شود",
-  imageVerified: false,
-  imageKind: "editorial-family" as const,
+  image: "/images/products/neuramis-volume-1ml.webp",
+  imageAlt: "تصویر واقعی بسته طلایی NEURAMIS Volume؛ مقدار ۱۰×۱ میلی‌لیتر در مشخصات انتخاب نمایش داده می‌شود",
+  imageVerified: true,
+  imageKind: "official" as const,
   imageApproved: true,
   volume: "۱۰ × ۱ میلی‌لیتر؛ مجموع ۱۰ میلی‌لیتر",
-  summary: "گزینه Volume ده‌سی‌سی مطابق ترکیب مقدار و مدل صفحه فعلی نورامیس در سپیدطب اضافه شده است؛ تعداد و بسته دقیق پیش از تحویل کنترل می‌شود.",
-  features: ["مدل Volume", "مجموع ۱۰ میلی‌لیتر", "ثبت‌شده در سپیدطب"],
-  specs: [["مدل", "NEURAMIS Volume"], ["مقدار کاتالوگ", "۱۰ سی‌سی"]] as Array<[string, string]>,
+  summary: "این انتخاب از تصویر واقعی مدل Volume استفاده می‌کند؛ تعداد ۱۰ سرنگ یک‌میلی‌لیتری در مشخصات همین انتخاب نمایش داده می‌شود و روی بسته جعل نمی‌شود.",
+  features: ["مدل Volume", "۱۰ × ۱ میلی‌لیتر", "تصویر واقعی مدل Volume"],
+  specs: [["مدل", "NEURAMIS Volume"], ["محتویات", "۱۰ × ۱ میلی‌لیتر"], ["حجم کل", "۱۰ میلی‌لیتر"]] as Array<[string, string]>,
   priceToman: 3_895_000,
   priceNote: "قیمت مرجع سپیدطب؛ واحد نهایی قیمت هنگام استعلام تأیید شود",
   sourceName: "SepiidTeb — نورامیس ۱ و ۱۰ سی‌سی",
