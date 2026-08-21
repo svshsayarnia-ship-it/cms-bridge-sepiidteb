@@ -1,0 +1,268 @@
+.spb-role-manager {
+  margin: 24px auto;
+  width: min(1460px, calc(100% - 32px));
+  padding: 24px;
+  border: 1px solid rgba(37, 34, 31, 0.12);
+  border-radius: 24px;
+  background: #fffdfa;
+  box-shadow: 0 18px 55px rgba(37, 34, 31, 0.06);
+  direction: rtl;
+}
+
+.spb-role-manager__head,
+.spb-role-manager__variants-head,
+.spb-role-manager__summary,
+.spb-role-card,
+.spb-role-card__actions,
+.spb-role-manager__picker {
+  display: flex;
+  align-items: center;
+}
+
+.spb-role-manager__head {
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.spb-role-manager__head h2,
+.spb-role-manager__variants-head h3,
+.spb-role-card h3,
+.spb-role-card h4 {
+  margin: 0;
+}
+
+.spb-role-manager__head p,
+.spb-role-manager__variants-head p,
+.spb-role-card p,
+.spb-role-manager__summary p {
+  margin: 5px 0 0;
+  color: #746d65;
+  line-height: 1.8;
+}
+
+.spb-role-manager__eyebrow,
+.spb-role-card small,
+.spb-role-manager__summary small,
+.spb-role-manager__variants-head small {
+  display: block;
+  margin-bottom: 5px;
+  color: #8d8278;
+  font-size: 12px;
+}
+
+.spb-role-manager__head > span {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.spb-role-manager__head > span.is-ready {
+  background: #edf7f0;
+  color: #2e6941;
+}
+
+.spb-role-manager__head > span.is-offline {
+  background: #fff0ec;
+  color: #9b3f32;
+}
+
+.spb-role-manager__alert {
+  margin: 12px 0;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+.spb-role-manager__alert.is-error {
+  background: #fff0ec;
+  color: #8f352a;
+}
+
+.spb-role-manager__alert.is-success {
+  background: #edf7f0;
+  color: #2e6941;
+}
+
+.spb-role-manager__picker {
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f7f3ee;
+}
+
+.spb-role-manager__picker input,
+.spb-role-manager__picker select {
+  min-width: 0;
+  height: 44px;
+  border: 1px solid rgba(37, 34, 31, 0.14);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0 12px;
+  color: #2b2825;
+  font: inherit;
+}
+
+.spb-role-manager__picker input {
+  flex: 0.8 1 280px;
+}
+
+.spb-role-manager__picker select {
+  flex: 1.2 1 420px;
+}
+
+.spb-role-manager__body {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.spb-role-manager__summary {
+  gap: 16px;
+  padding: 14px;
+  border: 1px dashed rgba(37, 34, 31, 0.16);
+  border-radius: 18px;
+}
+
+.spb-role-manager__summary strong {
+  display: block;
+  font-size: 16px;
+}
+
+.spb-role-manager__preview,
+.spb-role-card__visual {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f2ece5, #fbf8f4);
+}
+
+.spb-role-manager__preview {
+  width: 96px;
+  height: 96px;
+}
+
+.spb-role-manager__preview img,
+.spb-role-card__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.spb-role-manager__preview span,
+.spb-role-card__visual span {
+  padding: 10px;
+  color: #8b8178;
+  font-size: 12px;
+  text-align: center;
+}
+
+.spb-role-card {
+  align-items: stretch;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid rgba(37, 34, 31, 0.11);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.spb-role-card.is-card-role {
+  border-color: rgba(98, 70, 45, 0.22);
+  background: linear-gradient(120deg, #fff, #fbf4ec);
+}
+
+.spb-role-card__visual {
+  width: 142px;
+  min-height: 142px;
+}
+
+.spb-role-card__content {
+  min-width: 0;
+  flex: 1;
+  align-self: center;
+}
+
+.spb-role-card__content em {
+  display: block;
+  margin-top: 4px;
+  color: #887c72;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.spb-role-card__actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.spb-role-card__actions input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spb-role-manager__variants {
+  padding-top: 6px;
+}
+
+.spb-role-manager__variants-head {
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 12px;
+}
+
+.spb-role-manager__variants-head p {
+  max-width: 520px;
+  text-align: left;
+}
+
+.spb-role-manager__variant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .spb-role-manager {
+    width: min(100% - 20px, 1460px);
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .spb-role-manager__head,
+  .spb-role-manager__variants-head,
+  .spb-role-manager__picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spb-role-manager__variants-head p {
+    max-width: none;
+    text-align: right;
+  }
+
+  .spb-role-manager__variant-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .spb-role-card,
+  .spb-role-manager__summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spb-role-card__visual,
+  .spb-role-manager__preview {
+    width: 100%;
+    height: 180px;
+  }
+}
