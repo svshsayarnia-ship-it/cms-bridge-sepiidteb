@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
@@ -11,6 +11,16 @@ import { ProductVisual } from "./product/ProductVisual";
 type Pricing = {
   label: string;
   note: string;
+};
+
+type PublicRoleImage = {
+  src: string;
+  alt: string;
+};
+
+type ProductImageRolesResponse = {
+  cardImage: PublicRoleImage | null;
+  variantImages: Record<string, PublicRoleImage>;
 };
 
 type ProductExperienceVariant = Pick<
@@ -197,7 +207,47 @@ export function ProductVariantExperience({
   const [hasExplicitVariantSelection, setHasExplicitVariantSelection] = useState(
     hasInitialVariantSelection,
   );
+  const [cmsVariantImages, setCmsVariantImages] = useState<
+    Record<string, PublicRoleImage>
+  >({});
+  const variantIds = product.variants?.map((variant) => variant.id).join(",") ?? "";
+
+  useEffect(() => {
+    if (!variantIds || typeof window === "undefined") return;
+
+    const pathnameParts = window.location.pathname.split("/").filter(Boolean);
+    const slug = decodeURIComponent(pathnameParts[pathnameParts.length - 1] ?? "");
+    if (!slug) return;
+
+    const controller = new AbortController();
+    const query = new URLSearchParams({
+      slug,
+      variants: variantIds,
+    });
+
+    void fetch(`/api/product-image-roles?${query.toString()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as ProductImageRolesResponse;
+      })
+      .then((data) => {
+        if (data?.variantImages) setCmsVariantImages(data.variantImages);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.warn("[product-variant] role image load failed", error);
+      });
+
+    return () => controller.abort();
+  }, [variantIds]);
+
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
+  const selectedCmsVariantImage = selectedVariant
+    ? cmsVariantImages[selectedVariant.id]
+    : undefined;
   const hasVariants = Boolean(product.variants?.length);
   const displayName = selectedVariant?.nameFa ?? product.nameFa;
   const displayNameEn = selectedVariant?.nameEn ?? product.nameEn;
@@ -237,18 +287,19 @@ export function ProductVariantExperience({
 
   // Discovery cards and the initial PDP still use the same canonical master.
   // Once the visitor explicitly chooses a model, however, sibling imagery must
-  // never masquerade as that model. Exact verified media wins; an approved
-  // editorial/reference variant may be shown as labelled reference media; and
-  // otherwise the category-neutral family visual is used instead of a sibling.
+  // never masquerade as that model. Exact CMS variant media wins; otherwise the
+  // verified catalog variant or a neutral family visual is used.
   const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
   const canonicalImageAlt =
     liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
-  const selectedVariantImage = selectedVariant?.image?.trim() || "";
+  const selectedVariantImage =
+    selectedCmsVariantImage?.src || selectedVariant?.image?.trim() || "";
   const selectedVariantHasDisplayMedia = Boolean(
-    selectedVariantImage &&
-      (selectedVariant?.imageVerified === true ||
-        selectedVariant?.imageKind === "editorial-family" ||
-        selectedVariant?.imageKind === "market-reference"),
+    selectedCmsVariantImage?.src ||
+      (selectedVariantImage &&
+        (selectedVariant?.imageVerified === true ||
+          selectedVariant?.imageKind === "editorial-family" ||
+          selectedVariant?.imageKind === "market-reference")),
   );
   const canUseSelectedVariantImage = Boolean(
     hasExplicitVariantSelection && selectedVariantHasDisplayMedia,
@@ -264,12 +315,14 @@ export function ProductVariantExperience({
       ? neutralVariantFallback
       : canonicalImage;
   const displayImageAlt = canUseSelectedVariantImage
-    ? selectedVariant?.imageAlt || `نمای ${displayName}`
+    ? selectedCmsVariantImage?.alt || selectedVariant?.imageAlt || `نمای ${displayName}`
     : shouldUseNeutralVariantFallback
       ? `نمای هم‌خانواده برای ${displayName}`
       : canonicalImageAlt;
   const displayImageKind = canUseSelectedVariantImage
-    ? selectedVariant?.imageKind
+    ? selectedCmsVariantImage?.src
+      ? "official"
+      : selectedVariant?.imageKind
     : shouldUseNeutralVariantFallback
       ? "editorial-family"
       : product.imageKind;

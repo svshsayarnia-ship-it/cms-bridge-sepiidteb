@@ -1,8 +1,30 @@
 import { redirect } from "next/navigation";
+import { catalogProducts } from "../catalog";
 import { authorizeCmsRequest } from "../lib/cms-auth";
 import { CmsDashboard } from "./CmsDashboard";
+import {
+  CmsProductImageManager,
+  type CmsImageFamilyDefinition,
+} from "./CmsProductImageManager";
 
 export const dynamic = "force-dynamic";
+
+const imageFamilies: CmsImageFamilyDefinition[] = catalogProducts.flatMap((product) =>
+  product.variants?.length
+    ? [
+        {
+          slug: product.slug,
+          nameFa: product.nameFa,
+          variants: product.variants.map((variant) => ({
+            id: variant.id,
+            label: variant.label,
+            nameFa: variant.nameFa,
+            nameEn: variant.nameEn,
+          })),
+        },
+      ]
+    : [],
+);
 
 export default async function CmsPage() {
   const authorization = await authorizeCmsRequest();
@@ -28,5 +50,10 @@ export default async function CmsPage() {
     );
   }
 
-  return <CmsDashboard userName={authorization.user.displayName} />;
+  return (
+    <>
+      <CmsProductImageManager families={imageFamilies} />
+      <CmsDashboard userName={authorization.user.displayName} />
+    </>
+  );
 }

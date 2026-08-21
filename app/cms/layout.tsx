@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./cms.css";
 import "./media-authority.css";
+import "./product-image-manager.css";
 import { CmsRawImagePipeline } from "./CmsRawImagePipeline";
 
 export const metadata: Metadata = {
