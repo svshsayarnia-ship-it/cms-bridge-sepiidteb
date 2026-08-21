@@ -89,6 +89,39 @@ function addSkuToSpecs(specs: Array<[string, string]>, sku: string): Array<[stri
   return [...specs, ["SKU", sku]];
 }
 
+function humanizeStorefrontProduct(product: StorefrontProduct): StorefrontProduct {
+  return {
+    ...product,
+    badge: product.badge ? toPublicCopy(product.badge) : product.badge,
+    imageAlt: toPublicCopy(product.imageAlt),
+    volume: product.volume ? toPublicCopy(product.volume) : product.volume,
+    priceNote: product.priceNote ? toPublicCopy(product.priceNote) : product.priceNote,
+    sourceStatus: product.sourceStatus ? toPublicCopy(product.sourceStatus) : product.sourceStatus,
+    warning: product.warning ? toPublicCopy(product.warning) : product.warning,
+    summary: toPublicCopy(product.summary),
+    shortBenefit: toPublicCopy(product.shortBenefit),
+    audience: toPublicCopy(product.audience),
+    features: product.features.map((item) => toPublicCopy(item)),
+    specs: product.specs.map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
+    checks: product.checks.map((item) => toPublicCopy(item)),
+    faq: product.faq.map((item) => ({
+      question: toPublicCopy(item.question),
+      answer: toPublicCopy(item.answer),
+    })),
+    variants: product.variants?.map((variant) => ({
+      ...variant,
+      label: toPublicCopy(variant.label),
+      nameFa: toPublicCopy(variant.nameFa),
+      imageAlt: toPublicCopy(variant.imageAlt),
+      volume: toPublicCopy(variant.volume),
+      summary: toPublicCopy(variant.summary),
+      priceNote: variant.priceNote ? toPublicCopy(variant.priceNote) : variant.priceNote,
+      features: variant.features.map((item) => toPublicCopy(item)),
+      specs: variant.specs.map(([label, value]) => [toPublicCopy(label), toPublicCopy(value)] as [string, string]),
+    })),
+  };
+}
+
 function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProduct {
   const primaryCategory = product.categories?.[0];
   const sourceCategorySlug = primaryCategory?.slug || fallback?.category || "products";
@@ -105,7 +138,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
       : null;
   const liveImage = product.images?.find((image) => Boolean(image.src)) ?? verifiedFallbackImage;
   const descriptionText = plainText(product.shortDescription || product.description || "");
-  const summary = descriptionText || fallback?.summary || "اطلاعات تکمیلی این محصول هنگام استعلام ارائه می‌شود.";
+  const summary = descriptionText || fallback?.summary || "اگر درباره مدل، حجم یا بسته این محصول سؤال دارید، قبل از سفارش از تیم سپید بپرسید.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);
   const livePrice = Number(product.salePrice || product.regularPrice || product.price);
   const priceToman = Number.isSafeInteger(livePrice) && livePrice > 0
@@ -131,7 +164,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     volume: fallback?.volume,
     priceToman,
     priceNote: fallback?.priceNote,
-    sourceStatus: fallback?.sourceStatus || toPublicCopy(product.sourceName) || "اطلاعات محصول در زمان استعلام بازبینی می‌شود",
+    sourceStatus: fallback?.sourceStatus || toPublicCopy(product.sourceName) || "اطلاعات این محصول قبل از سفارش دوباره بررسی می‌شود",
     warning: fallback?.warning,
     summary,
     shortBenefit: fallback?.shortBenefit || summary,
@@ -298,7 +331,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
   const products = Array.from(
     new Map([...snapshotProducts, ...fallbackProducts].map((product) => [product.slug, product])).values(),
-  );
+  ).map(humanizeStorefrontProduct);
 
   if (snapshotProducts.length > 0) {
     return {
