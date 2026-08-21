@@ -6,18 +6,13 @@ const payloadRoot = path.join(root, "image-payloads", "product-masters");
 const productRoot = path.join(root, "public", "images", "products");
 const cutoutRoot = path.join(productRoot, "cutouts");
 
+// Only Neurafill still needs reconstruction from the staged payload.
+// Alcarisa 28 and Neuramis Volume are kept as repository-native WebP blobs so
+// this step must not overwrite their verified master/cutout files.
 const assets = [
-  {
-    slug: "alcarisa-28",
-    prefix: "alcarisa-28.webp.b64.part",
-  },
   {
     slug: "neurafill-lidocaine",
     prefix: "neurafill-lidocaine.master.webp.b64.part",
-  },
-  {
-    slug: "neuramis-volume-1ml",
-    prefix: "neuramis-volume-1ml.master.webp.b64.part",
   },
 ];
 
@@ -58,5 +53,5 @@ for (const asset of assets) {
 }
 
 console.log(
-  `[product-image-payloads] restored ${assets.length} master/cutout pairs before validation`,
+  `[product-image-payloads] restored ${assets.length} staged master/cutout pair before validation`,
 );
