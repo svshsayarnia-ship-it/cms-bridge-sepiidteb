@@ -96,7 +96,7 @@ export function ProductCard({
       <Link
         className="sb-product-card__visual"
         href={href}
-        aria-label={`مشاهده ${product.nameFa}`}
+        aria-label={`دیدن ${product.nameFa}`}
       >
         <ProductVisual
           product={displayProduct}
@@ -120,7 +120,7 @@ export function ProductCard({
         )}
 
         <span className="sb-product-card__view">
-          مشاهده محصول
+          دیدن محصول
           <ArrowIcon />
         </span>
       </Link>
@@ -150,7 +150,7 @@ export function ProductCard({
             className={`sb-product-card__price${visiblePrice ? "" : " is-pending"}`}
             aria-label={`قیمت ${product.nameFa}`}
           >
-            <span>{salePrice ? "قیمت ویژه" : "قیمت فعلی"}</span>
+            <span>{salePrice ? "قیمت ویژه" : "قیمت"}</span>
             {visiblePrice ? (
               <div>
                 <strong>{formatPrice(visiblePrice)}</strong>
@@ -159,15 +159,15 @@ export function ProductCard({
                   : null}
               </div>
             ) : (
-              <strong>قیمت در صفحه محصول</strong>
+              <strong>قیمت را داخل محصول ببینید</strong>
             )}
           </div>
           <Link
             className="sb-product-card__cta"
             href={href}
-            aria-label={`مشاهده جزئیات ${product.nameFa}`}
+            aria-label={`دیدن جزئیات ${product.nameFa}`}
           >
-            <span>جزئیات محصول</span>
+            <span>بیشتر ببینید</span>
             <ArrowIcon />
           </Link>
         </div>
