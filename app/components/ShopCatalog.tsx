@@ -184,7 +184,7 @@ export function ShopCatalog({
       <div className="sb-catalog__filter-head">
         <div>
           <FilterIcon />
-          <strong>فیلتر محصولات</strong>
+          <strong>محصول‌ها را محدود کنید</strong>
         </div>
         <button type="button" onClick={reset}>
           پاک‌کردن همه
@@ -196,12 +196,12 @@ export function ShopCatalog({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="نام محصول یا برند"
+          placeholder="اسم محصول یا برند"
         />
       </label>
       {!initialCategory && (
         <fieldset className="sb-catalog__fieldset">
-          <legend>دسته تخصصی</legend>
+          <legend>دسته محصول</legend>
           <label>
             <input
               type="radio"
@@ -258,8 +258,7 @@ export function ShopCatalog({
             <small>{fillerCounts.highVolume}</small>
           </label>
           <p>
-            فقط محصولاتی که حجم درج‌شدهٔ هر سرنگ یا ویال آن‌ها بیشتر از ۲
-            میلی‌لیتر است.
+            این گزینه فقط فیلرهایی را نشان می‌دهد که حجم هر سرنگ یا ویالشان بیشتر از ۲ میلی‌لیتر است.
           </p>
         </fieldset>
       )}
@@ -309,13 +308,13 @@ export function ShopCatalog({
             </button>
             <p aria-live="polite">
               <strong>{filtered.length}</strong>
-              محصول {initialCategory ? "در این دسته" : "در فروشگاه"}
+              محصول {initialCategory ? "در این دسته" : "پیدا شد"}
             </p>
           </div>
           <label>
             <span>مرتب‌سازی:</span>
             <select value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="featured">پیشنهاد سپید</option>
+              <option value="featured">پیشنهادهای سپید</option>
               <option value="name">نام محصول</option>
               <option value="brand">نام برند</option>
             </select>
@@ -331,10 +330,10 @@ export function ShopCatalog({
         ) : (
           <div className="sb-catalog__empty">
             <span>۰ نتیجه</span>
-            <h2>ترکیب این فیلترها محصولی ندارد.</h2>
-            <p>فیلترها را پاک کنید یا برای استعلام کالای موردنظر با پشتیبانی تماس بگیرید.</p>
+            <h2>با این انتخاب‌ها محصولی پیدا نشد.</h2>
+            <p>یکی از فیلترها را بردارید. اگر محصول مشخصی مدنظرتان است، می‌توانید اسمش را مستقیم برای تیم سپید بفرستید.</p>
             <button className="sb-btn sb-btn--dark" type="button" onClick={reset}>
-              پاک‌کردن فیلترها
+              از نو جستجو کن
             </button>
           </div>
         )}
@@ -365,7 +364,7 @@ export function ShopCatalog({
             type="button"
             onClick={() => setFiltersOpen(false)}
           >
-            نمایش {filtered.length} محصول
+            دیدن {filtered.length} محصول
           </button>
         </div>
       )}
