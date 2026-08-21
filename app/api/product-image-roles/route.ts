@@ -1,3 +1,4 @@
+import type { CmsProduct } from "@/app/lib/cms-types";
 import { findCardRoleImage, findVariantRoleImage } from "@/app/lib/product-image-roles";
 import { getProductBySlug, WooCommerceError } from "@/app/lib/woocommerce";
 
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    let product = null;
+    let product: CmsProduct | null = null;
 
     for (const candidate of slugCandidates(slug)) {
       product = await getProductBySlug(candidate, {
