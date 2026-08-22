@@ -47,16 +47,28 @@ const neuramisVariantLinks = {
   Lido: "/product/neuramis-deep-lidocaine?variant=lido-10ml",
 } as const;
 
-function prepareNeuramisGuideHtml(value: string) {
-  let html = value
+function isNeuramisGuide(slug: string) {
+  return /(?:نورامیس|neuramis)/i.test(slug);
+}
+
+function normalizeNeuramisModelCopy(value: string) {
+  return value
     .replace(/Neuramis Light/gi, "Neuramis Lido")
     .replace(/نورامیس Light/gi, "نورامیس Lido")
     .replace(/مدل Light/gi, "مدل Lido")
+    .replace(/Light ظریف‌تر، Deep/gi, "Lido لیدوکائین‌دار، Deep");
+}
+
+function absoluteArticleImage(value: string) {
+  return /^https?:\/\//i.test(value) ? value : `${siteOrigin}${value}`;
+}
+
+function prepareNeuramisGuideHtml(value: string) {
+  let html = normalizeNeuramisModelCopy(value)
     .replace(
       /مدل Lido معمولاً در دسته ژل‌های ظریف‌تر قرار می‌گیرد و برای خطوط سطحی‌تر یا نواحی ظریف‌تر مورد\s*توجه قرار می‌گیرد\. انتخاب نهایی باید با تشخیص متخصص انجام شود؛ زیرا ضخامت پوست و محل درمان در\s*نتیجه نهایی نقش تعیین‌کننده دارند\./gi,
       "نام Lido به وجود لیدوکائین در این مدل اشاره دارد. مدل موجود سپید بیوتی به‌صورت بسته ۱۰ عددی از سرنگ‌های یک‌میلی‌لیتری ارائه می‌شود؛ مشخصات روی جعبه و انتخاب نهایی باید پیش از خرید با نیاز حرفه‌ای و نظر متخصص تطبیق داده شود.",
     )
-    .replace(/Light ظریف‌تر، Deep/gi, "Lido حاوی لیدوکائین، Deep")
     .replace(/بافت ظریف‌تر/gi, "حاوی لیدوکائین")
     .replace(/رسیدگی به خطوط ظریف‌تر، با تشخیص متخصص/gi, "بررسی مدل لیدوکائین‌دار در بسته ۱۰ × ۱ میلی‌لیتری")
     .replace(
@@ -162,10 +174,13 @@ export async function generateMetadata({
     article.slug === "verify-dermal-filler-authenticity"
       ? "/images/magazine-authenticity-v2.webp"
       : article.image;
+  const description = article.metaDescription || article.excerpt;
 
   return buildSeoMetadata({
     title: article.seoTitle || article.title,
-    description: article.metaDescription || article.excerpt,
+    description: isNeuramisGuide(article.slug)
+      ? normalizeNeuramisModelCopy(description)
+      : description,
     path: `/magazine/${article.slug}`,
     image,
     imageAlt:
@@ -188,7 +203,7 @@ export default async function ArticlePage({
   if (!article) notFound();
   const renderedHtmlContent = article.contentMode === "html"
     ? prepareArticleHtml(
-        /(?:نورامیس|neuramis)/i.test(article.slug)
+        isNeuramisGuide(article.slug)
           ? prepareNeuramisGuideHtml(article.htmlContent ?? "")
           : article.htmlContent ?? "",
       )
@@ -460,8 +475,10 @@ export default async function ArticlePage({
           "@context": "https://schema.org",
           "@type": "Article",
           headline: article.title,
-          description: article.excerpt,
-          image: `${siteOrigin}${image}`,
+          description: isNeuramisGuide(article.slug)
+            ? normalizeNeuramisModelCopy(article.excerpt)
+            : article.excerpt,
+          image: absoluteArticleImage(image),
           inLanguage: "fa-IR",
           author: {
             "@type": "Organization",
@@ -488,10 +505,14 @@ export default async function ArticlePage({
             "@type": "FAQPage",
             mainEntity: article.faq.map((item) => ({
               "@type": "Question",
-              name: item.question,
+              name: isNeuramisGuide(article.slug)
+                ? normalizeNeuramisModelCopy(item.question)
+                : item.question,
               acceptedAnswer: {
                 "@type": "Answer",
-                text: item.answer,
+                text: isNeuramisGuide(article.slug)
+                  ? normalizeNeuramisModelCopy(item.answer)
+                  : item.answer,
               },
             })),
           }}
