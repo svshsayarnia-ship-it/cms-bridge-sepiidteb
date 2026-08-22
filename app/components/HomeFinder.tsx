@@ -17,17 +17,17 @@ type Question = {
 
 const questions: Question[] = [
   {
-    title: "برای چه نوع خریدی دنبال محصول هستید؟",
-    description: "تا مسیر مناسب‌تری برای دیدن کالاها و استعلام به شما نشان بدهیم.",
+    title: "برای چه نوع خریدی اینجا هستید؟",
+    description: "فقط برای اینکه پیشنهاد بعدی به چیزی که می‌خواهید نزدیک‌تر باشد.",
     answers: [
-      { label: "کلینیک یا مطب", value: "professional" },
-      { label: "مرکز یا سالن زیبایی", value: "pro" },
-      { label: "فقط می‌خواهم محصولات را ببینم", value: "browse" },
+      { label: "برای کلینیک یا مطب", value: "professional" },
+      { label: "برای یک مرکز زیبایی حرفه‌ای", value: "pro" },
+      { label: "فعلاً فقط محصولات را می‌بینم", value: "browse" },
     ],
   },
   {
     title: "دنبال کدام گروه محصول هستید؟",
-    description: "دسته‌ای را انتخاب کنید که به خرید شما نزدیک‌تر است.",
+    description: "نزدیک‌ترین گزینه را انتخاب کنید؛ بعداً هم می‌توانید دسته را عوض کنید.",
     answers: [
       { label: "فیلر و ژل", value: "fillers" },
       { label: "مزوژل و اسکین‌بوستر", value: "skin-boosters" },
@@ -37,27 +37,27 @@ const questions: Question[] = [
     ],
   },
   {
-    title: "الان بیشتر به چه کمکی نیاز دارید؟",
-    description: "در پایان، شما را مستقیم به همان مسیر می‌بریم.",
+    title: "الان بیشتر چه چیزی لازم دارید؟",
+    description: "محصول‌ها را ببینید، مدل‌ها را مقایسه کنید یا مستقیم قیمت و موجودی را بپرسید.",
     answers: [
       { label: "دیدن محصولات این دسته", value: "shop" },
       { label: "مقایسه برند و مدل", value: "compare" },
-      { label: "قیمت و موجودی روز", value: "inquiry" },
+      { label: "قیمت و موجودی امروز", value: "inquiry" },
     ],
   },
   {
-    title: "نام برند یا مدل موردنظرتان را بنویسید.",
-    description: "مثلاً نورامیس، جالپرو یا رِووفیل. ما آن را در دستهٔ درست جست‌وجو می‌کنیم.",
+    title: "اگر اسم برند یا مدل را می‌دانید، بنویسید.",
+    description: "مثلاً نورامیس، جالپرو یا رووفیل. اگر نمی‌دانید هم مشکلی نیست.",
     answers: [],
     type: "product-name",
   },
   {
-    title: "دوست دارید از کدام مسیر ادامه دهید؟",
-    description: "می‌توانید محصولات را ببینید یا مستقیم دربارهٔ موجودی پیام بدهید.",
+    title: "از اینجا چطور ادامه بدهیم؟",
+    description: "می‌توانید محصولات را ببینید یا مستقیم درباره موجودی پیام بدهید.",
     answers: [
-      { label: "نمایش محصولات", value: "shop" },
-      { label: "استعلام در واتساپ", value: "support" },
-      { label: "مسیر خرید کلینیکی", value: "clinic" },
+      { label: "محصولات را نشان بده", value: "shop" },
+      { label: "در واتساپ می‌پرسم", value: "support" },
+      { label: "برای سفارش کلینیکی", value: "clinic" },
     ],
   },
 ];
@@ -108,41 +108,41 @@ export function HomeFinder({
 
     if (finalChoice === "clinic" && role !== "browse") {
       return {
-        eyebrow: "مسیر پیشنهادی برای شما",
-        title: "فرم سفارش کلینیکی آماده است.",
-        text: "فهرست اقلام و زمان تحویل مدنظرتان را بفرستید تا هماهنگ کنیم.",
+        eyebrow: "پیشنهاد ما",
+        title: "فهرست خریدتان را یک‌جا بفرستید.",
+        text: "اسم محصول‌ها، تعداد و زمان تقریبی تحویل را بفرستید تا موجودی و قیمت هر قلم را با شما هماهنگ کنیم.",
         href: "/professional",
-        action: "ورود به مسیر کلینیک",
+        action: "سفارش کلینیکی",
       };
     }
 
     if (finalChoice === "support" || answers[2] === "inquiry") {
       const item = productName ? ` و مدل «${productName}»` : "";
       return {
-        eyebrow: "مسیر پیشنهادی برای شما",
-        title: "موجودی و قیمت روز را از ما بپرسید.",
-        text: `برای ${categoryTitle}${item} موجودی، قیمت و جزئیات بسته را بررسی می‌کنیم.`,
+        eyebrow: "پیشنهاد ما",
+        title: "قیمت و موجودی امروز را مستقیم بپرسید.",
+        text: `برای ${categoryTitle}${item} قیمت، موجودی و جزئیات بسته را با شما چک می‌کنیم.`,
         href: whatsappHref(`سلام، برای ${categoryTitle}${item} موجودی و قیمت روز می‌خواهم.`),
-        action: "شروع گفت‌وگو",
+        action: "پیام به سپید",
       };
     }
 
     if (productName) {
       return {
-        eyebrow: "مسیر پیشنهادی برای شما",
-        title: `برای «${productName}» از جست‌وجوی فروشگاه شروع کنید.`,
-        text: "اگر مدل دقیق در فهرست نبود، از همان صفحه موجودی آن را استعلام کنید.",
+        eyebrow: "پیشنهاد ما",
+        title: `اول «${productName}» را در فروشگاه پیدا کنیم.`,
+        text: "اگر مدل دقیق را پیدا نکردید، از همان‌جا برای موجودی و قیمت پیام بدهید.",
         href: "/shop",
         action: "جست‌وجو در فروشگاه",
       };
     }
 
     return {
-      eyebrow: "مسیر پیشنهادی برای شما",
-      title: `${categoryTitle} آمادهٔ مشاهده است.`,
-      text: "محصولات، برندها و مشخصات هر مورد را در یک صفحه ببینید.",
+      eyebrow: "پیشنهاد ما",
+      title: `محصولات ${categoryTitle} را ببینید.`,
+      text: "مدل‌ها، برندها، حجم و قیمت را کنار هم می‌بینید و راحت‌تر مقایسه می‌کنید.",
       href: `/shop/${category}`,
-      action: "مشاهده محصولات مرتبط",
+      action: "دیدن محصولات",
     };
   }, [answers, category, finalChoice, productName, role]);
 
@@ -178,14 +178,14 @@ export function HomeFinder({
     <section className="sb-finder" aria-labelledby="finder-title">
       <div className="sb-shell sb-finder__grid">
         <div className="sb-finder__intro">
-          <span className="sb-eyebrow sb-eyebrow--gold">SEPIID GUIDE / ۵ QUESTION</span>
-          <h2 id="finder-title">در پنج سؤال، مسیر خریدتان را پیدا کنید.</h2>
-          <p>چند پاسخ کوتاه بدهید تا سریع‌تر به دسته یا محصول موردنظرتان برسید.</p>
+          <span className="sb-eyebrow sb-eyebrow--gold">اگر بین گزینه‌ها مردد هستید</span>
+          <h2 id="finder-title">با چند سؤال کوتاه، سریع‌تر به محصول برسید.</h2>
+          <p>جواب‌ها فقط کمک می‌کنند دسته یا صفحه مناسب‌تر را پیدا کنید؛ چیزی ذخیره نمی‌شود.</p>
           <ol className="sb-finder__steps" aria-label="مراحل راهنمای انتخاب">
             {questions.map((item, index) => (
               <li className={index === step ? "sb-finder__step--active" : index < step ? "sb-finder__step--done" : ""} key={item.title}>
                 <span>{index < step ? <CheckIcon /> : `۰${index + 1}`}</span>
-                <b>{index === step ? item.title : `پرسش ${index + 1}`}</b>
+                <b>{index === step ? item.title : `سؤال ${index + 1}`}</b>
               </li>
             ))}
           </ol>
@@ -196,7 +196,7 @@ export function HomeFinder({
             <div className="sb-finder__question" key={question.title}>
               <VialMark className="sb-vial-mark--guide" />
               <span className="sb-finder__index">۰{step + 1}</span>
-              <span className="sb-eyebrow">پرسش {step + 1} از ۵</span>
+              <span className="sb-eyebrow">سؤال {step + 1} از ۵</span>
               <h3>{question.title}</h3>
               <p>{question.description}</p>
               {question.type === "product-name" ? (
@@ -213,14 +213,14 @@ export function HomeFinder({
                     type="text"
                   />
                   <button type="button" onClick={showNamedProducts}>
-                    نمایش محصولات موردنظر <ArrowIcon />
+                    پیدا کردن محصول <ArrowIcon />
                   </button>
                   <button
                     className="sb-finder__skip-name"
                     type="button"
                     onClick={continueWithProductName}
                   >
-                    نام محصول را نمی‌دانم
+                    اسم محصول را نمی‌دانم
                   </button>
                 </div>
               ) : (
@@ -232,7 +232,7 @@ export function HomeFinder({
                   ))}
                 </div>
               )}
-              {step > 0 && <button className="sb-finder__back" type="button" onClick={() => setStep((current) => current - 1)}>بازگشت به پرسش قبل</button>}
+              {step > 0 && <button className="sb-finder__back" type="button" onClick={() => setStep((current) => current - 1)}>سؤال قبل</button>}
             </div>
           ) : (
             <div className="sb-finder__question sb-finder__question--result">
@@ -240,10 +240,10 @@ export function HomeFinder({
               <span className="sb-eyebrow">{recommendation.eyebrow}</span>
               <h3>{recommendation.title}</h3>
               <p>{recommendation.text}</p>
-              <div className="sb-finder__chips"><span>دسته: {categoryLabels[category]}</span><span>پاسخ‌های شما ثبت نمی‌شود.</span></div>
+              <div className="sb-finder__chips"><span>دسته: {categoryLabels[category]}</span><span>پاسخ‌ها ذخیره نمی‌شوند.</span></div>
               <div className="sb-finder__actions">
                 <Link className="sb-btn sb-btn--gold" href={recommendation.href}>{recommendation.action}<ArrowIcon /></Link>
-                <button type="button" onClick={restart}>شروع دوباره</button>
+                <button type="button" onClick={restart}>از اول</button>
               </div>
             </div>
           )}

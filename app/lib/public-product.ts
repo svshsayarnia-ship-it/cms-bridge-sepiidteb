@@ -1,7 +1,11 @@
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
-import { getCompactBrandLabel } from "./public-copy";
+import {
+  getCompactBrandLabel,
+  getPublicVolumeLabel,
+  toPublicCopy,
+} from "./public-copy";
 
 export type PublicProduct = Pick<
   Product,
@@ -71,15 +75,17 @@ export function toPublicProduct(
     nameEn: product.nameEn,
     brand: getCompactBrandLabel(product.brand),
     category: product.category,
-    categoryTitle: product.categoryTitle,
-    badge: product.badge,
+    categoryTitle: toPublicCopy(product.categoryTitle),
+    badge: product.badge ? toPublicCopy(product.badge) : product.badge,
     image: product.image,
     masterImage: product.image,
-    imageAlt: product.imageAlt,
+    imageAlt: toPublicCopy(product.imageAlt || `تصویر ${product.nameFa}`),
     imageKind: product.imageKind,
     position: product.position,
-    volume: product.volume,
-    shortBenefit: product.shortBenefit,
+    volume: product.volume ? getPublicVolumeLabel(product.volume) : product.volume,
+    shortBenefit: toPublicCopy(
+      product.shortBenefit || `مشخصات، مدل و قیمت ${product.nameFa} را ببینید.`,
+    ),
     priceToman: product.priceToman,
     visualProfile: product.visualProfile,
     visualScale: product.visualScale,

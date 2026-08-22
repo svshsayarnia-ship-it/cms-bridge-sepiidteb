@@ -270,26 +270,25 @@ export function FeaturedProductCarousel({
       <div className="sb-shell">
         <div className="sb-featured-carousel__head">
           <div>
-            <span className="sb-eyebrow">FEATURED / SHOP</span>
+            <span className="sb-eyebrow">چند انتخاب از فروشگاه</span>
             <h2 id="featured-products-title">
-              انتخاب‌های ویژه،
-              <em>در مرکز توجه.</em>
+              شاید محصول بعدی‌تان
+              <em>اینجا باشد.</em>
             </h2>
           </div>
           <div className="sb-featured-carousel__intro">
             <p>
-              هر محصول با اطلاعات کوتاه و مسیر مستقیم بررسی و خرید نمایش داده می‌شود؛
-              تخفیف نیز فقط براساس قیمت ثبت‌شدهٔ فروشگاه نشان داده می‌شود.
+              چند محصول را هر بار اینجا می‌آوریم تا بدون گشتن بین همه دسته‌ها، مدل، قیمت و جزئیاتشان را سریع ببینید.
             </p>
             <Link className="sb-text-link" href="/shop">
-              مشاهده همه محصولات
+              دیدن همه محصولات
               <ArrowIcon />
             </Link>
             <div
               className="sb-featured-carousel__rotation"
-              aria-label={`زمان باقی‌مانده تا انتخاب محصولات تازه: ${formatCountdown(rotationRemainingMs)}`}
+              aria-label={`زمان باقی‌مانده تا تغییر محصولات پیشنهادی: ${formatCountdown(rotationRemainingMs)}`}
             >
-              <span>ترکیب تازه محصولات تا</span>
+              <span>پیشنهادهای بعدی تا</span>
               <time>{formatCountdown(rotationRemainingMs)}</time>
             </div>
           </div>
@@ -315,7 +314,7 @@ export function FeaturedProductCarousel({
             <div className="sb-featured-carousel__copy">
               <div className="sb-featured-carousel__kicker">
                 <span>{numberFormatter.format(currentIndex + 1)}</span>
-                <b>{product.categoryTitle || "محصول منتخب"}</b>
+                <b>{product.categoryTitle || "انتخاب سپید"}</b>
               </div>
 
               <p className="sb-featured-carousel__brand">
@@ -325,7 +324,7 @@ export function FeaturedProductCarousel({
               {product.nameEn && <small>{product.nameEn}</small>}
 
               <p className="sb-featured-carousel__benefit">
-                {product.shortBenefit || "مشاهده مشخصات و جزئیات محصول"}
+                {product.shortBenefit || "مشخصات و جزئیات این محصول را ببینید"}
               </p>
 
               {volume && (
@@ -338,17 +337,17 @@ export function FeaturedProductCarousel({
                 <div className="sb-featured-carousel__price">
                   <span>
                     {isOutOfStock
-                      ? "وضعیت محصول"
+                      ? "وضعیت"
                       : salePrice
                         ? "قیمت ویژه"
                         : isInStock
-                          ? "قیمت فروشگاه"
-                          : "قیمت ثبت‌شده"}
+                          ? "قیمت"
+                          : "آخرین قیمت"}
                   </span>
                   <strong>
                     {isOutOfStock
                       ? "ناموجود"
-                      : livePrice || "استعلام قیمت روز"}
+                      : livePrice || "قیمت امروز را بپرسید"}
                   </strong>
                   {!isOutOfStock && salePrice && regularPrice && (
                     <del>{regularPrice}</del>
@@ -358,10 +357,10 @@ export function FeaturedProductCarousel({
                 <Link className="sb-featured-carousel__cta" href={href}>
                   <span>
                     {isOutOfStock
-                      ? "مشاهده محصول"
+                      ? "دیدن محصول"
                       : isInStock
-                        ? "مشاهده و خرید"
-                        : "مشاهده و استعلام"}
+                        ? "دیدن محصول"
+                        : "جزئیات و قیمت"}
                   </span>
                   <ArrowIcon />
                 </Link>
@@ -371,7 +370,7 @@ export function FeaturedProductCarousel({
             <Link
               className="sb-featured-carousel__visual"
               href={href}
-              aria-label={`مشاهده ${product.nameFa}`}
+              aria-label={`دیدن ${product.nameFa}`}
               onClick={(event) => {
                 if (dragged.current) {
                   event.preventDefault();
@@ -390,12 +389,12 @@ export function FeaturedProductCarousel({
                 {discountPercent > 0 ? (
                   <>
                     <b>{priceFormatter.format(discountPercent)}٪</b>
-                    <small>تخفیف ویژه</small>
+                    <small>تخفیف</small>
                   </>
                 ) : (
                   <>
                     <b>{product.badge || "منتخب"}</b>
-                    <small>پیشنهاد سپید</small>
+                    <small>از فروشگاه سپید</small>
                   </>
                 )}
               </span>
@@ -428,7 +427,7 @@ export function FeaturedProductCarousel({
           </div>
         </div>
 
-        <div className="sb-featured-carousel__rail" role="tablist" aria-label="محصولات منتخب">
+        <div className="sb-featured-carousel__rail" role="tablist" aria-label="محصولات پیشنهادی">
           {products.map((item, index) => (
             <button
               aria-label={`نمایش ${item.nameFa}`}

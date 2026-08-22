@@ -33,24 +33,24 @@ const botulinumGuide = guides.find(
 
 const botulinumComparisonChecks = [
   {
-    title: "نام دقیق فرآورده",
+    title: "اسم دقیق محصول",
     body:
-      "نام برند، مدل و نسخه درج‌شده روی بسته را کامل بخوانید؛ عنوان عمومی «بوتاکس» برای مقایسه دو کالا کافی نیست.",
+      "روی جعبه نام برند و مدل را کامل بخوانید؛ فقط دیدن کلمه «بوتاکس» برای مقایسه دو محصول کافی نیست.",
   },
   {
     title: "تعداد واحد",
     body:
-      "عدد واحد را فقط در چارچوب همان فرآورده بررسی کنید و واحد دو برند را بدون مرجع رسمی معادل هم نگیرید.",
+      "عدد واحد را برای همان محصول بخوانید. عدد دو برند مختلف را بدون منبع رسمی معادل هم در نظر نگیرید.",
   },
   {
-    title: "بسته‌بندی و بچ",
+    title: "جعبه، ویال و بچ",
     body:
-      "سلامت پلمب، خوانایی تاریخ و شماره بچ و هماهنگی اطلاعات جعبه و ویال را پیش از نهایی‌کردن سفارش بررسی کنید.",
+      "پلمب، تاریخ، شماره بچ و هماهنگی اطلاعات جعبه و ویال را قبل از سفارش بررسی کنید.",
   },
   {
-    title: "حمل و نگهداری",
+    title: "نگهداری و حمل",
     body:
-      "شرایط حمل و نگهداری باید با اطلاعات همان محصول هماهنگ باشد؛ یک پاسخ کلی برای همه برندها کافی نیست.",
+      "شرایط نگهداری هر برند را جدا ببینید؛ برای این محصولات یک پاسخ یکسان وجود ندارد.",
   },
 ] as const;
 
@@ -265,13 +265,13 @@ export default async function CategoryPage({
               aria-label="اطلاعات خرید این دسته"
             >
               <span>
-                <small>محصولات قابل مقایسه</small>
+                <small>تعداد محصولات</small>
                 <strong>{priceFormatter.format(items.length)} محصول</strong>
               </span>
 
               {startingPrice ? (
                 <span>
-                  <small>قیمت از</small>
+                  <small>شروع قیمت</small>
                   <strong>{formatPrice(startingPrice)}</strong>
                 </span>
               ) : null}
@@ -287,10 +287,10 @@ export default async function CategoryPage({
                 className={styles.heroAssurance}
                 aria-label="معیارهای اصلی مقایسه فرآورده‌های بوتولینوم"
               >
-                <span>نام دقیق فرآورده</span>
+                <span>نام دقیق محصول</span>
                 <span>تعداد واحد</span>
-                <span>بسته‌بندی و بچ</span>
-                <span>حمل و نگهداری</span>
+                <span>جعبه و بچ</span>
+                <span>نگهداری و حمل</span>
               </div>
             ) : null}
           </div>
@@ -302,7 +302,7 @@ export default async function CategoryPage({
               backgroundPosition: `${category.position} center`,
             }}
             role="group"
-            aria-label={`هویت بصری و محصول قیمت‌دار ${category.title}`}
+            aria-label={`تصویر و محصول منتخب ${category.title}`}
           >
             <span className="sb-category-commerce-hero__editorial-label">
               SEPIID EDITORIAL / {category.en}
@@ -325,14 +325,14 @@ export default async function CategoryPage({
                 </span>
 
                 <span className="sb-category-commerce-hero__product-copy">
-                  <small>یک گزینه برای شروع مقایسه</small>
+                  <small>برای شروع، این مدل را ببینید</small>
                   <strong>{featuredEntry.product.nameFa}</strong>
                   {featuredEntry.product.volume ? (
                     <span>{featuredEntry.product.volume}</span>
                   ) : null}
                   <b>{formatPrice(featuredEntry.price)}</b>
                   <em>
-                    جزئیات این محصول
+                    دیدن محصول
                     <ArrowIcon />
                   </em>
                 </span>
@@ -358,7 +358,7 @@ export default async function CategoryPage({
 
       <div className="sb-subcategory-nav">
         <div className="sb-shell">
-          <span>دسته‌های مرتبط:</span>
+          <span>دسته‌های نزدیک:</span>
 
           {categories
             .filter(
@@ -403,13 +403,12 @@ export default async function CategoryPage({
             <div className={styles.comparePanel}>
               <div className={styles.compareHead}>
                 <div className={styles.compareHeadCopy}>
-                  <p className={styles.kicker}>SEPIID BUYING CHECK</p>
+                  <p className={styles.kicker}>چهار نکته قبل از خرید</p>
                   <h2 id="botulinum-comparison-title">
-                    بوتاکس را با چهار معیار واقعی مقایسه کنید
+                    برای مقایسه بوتاکس، فقط قیمت را نبینید
                   </h2>
                   <p>
-                    قیمت زمانی قابل‌مقایسه است که دقیقاً بدانید کدام فرآورده،
-                    با چه تعداد واحد و چه بسته‌بندی‌ای روبه‌روی شماست.
+                    وقتی قیمت دو محصول را کنار هم می‌گذارید، اول مطمئن شوید مدل، تعداد واحد و نوع بسته واقعاً قابل‌مقایسه هستند.
                   </p>
                 </div>
 
@@ -435,14 +434,12 @@ export default async function CategoryPage({
               </div>
 
               <div className={styles.professionalNote}>
-                <span>برای مصرف حرفه‌ای</span>
+                <span>اگر برای کلینیک می‌خرید</span>
                 <p>
-                  این صفحه برای مقایسه تجاری محصول است؛ انتخاب، آماده‌سازی و
-                  مصرف هر فرآورده باید بر اساس اطلاعات همان محصول و توسط فرد
-                  واجد صلاحیت انجام شود.
+                  اینجا برای شناخت و مقایسه محصول است. انتخاب، آماده‌سازی و استفاده از هر فرآورده باید بر اساس اطلاعات همان محصول و توسط فرد واجد صلاحیت انجام شود.
                 </p>
                 <Link href="/professional">
-                  خرید و همکاری حرفه‌ای
+                  سفارش کلینیکی
                   <ArrowIcon />
                 </Link>
               </div>
@@ -455,7 +452,7 @@ export default async function CategoryPage({
         <div className="sb-shell sb-category-seo__grid">
           <div>
             <span className="sb-eyebrow">
-              SEPIID GUIDE
+              راهنمای کوتاه این دسته
             </span>
 
             <h2>{editorial.guideTitle}</h2>
@@ -488,16 +485,15 @@ export default async function CategoryPage({
         >
           <div className={`sb-shell ${styles.faqGrid}`}>
             <div className={styles.faqHead}>
-              <p className={styles.kicker}>PURCHASE FAQ</p>
+              <p className={styles.kicker}>سؤال‌های قبل از سفارش</p>
               <h2 id="botulinum-faq-title">
-                سؤال‌های مهم قبل از سفارش بوتاکس
+                چند سؤال مهم درباره خرید بوتاکس
               </h2>
               <p>
-                پاسخ‌های کوتاه برای استعلام دقیق‌تر؛ بدون تبدیل صفحه خرید به
-                توصیه پزشکی یا دستور مصرف.
+                جواب‌های کوتاه برای چیزهایی که معمولاً قبل از سفارش باید روشن باشند.
               </p>
               <span className={styles.reviewedAt}>
-                بازبینی محتوا: {botulinumGuide.reviewedAt}
+                آخرین بازبینی: {botulinumGuide.reviewedAt}
               </span>
             </div>
 

@@ -79,15 +79,15 @@ const priceFormatter = new Intl.NumberFormat("fa-IR");
 function formatStaticPrice(value?: number) {
   return value && value > 0
     ? `${priceFormatter.format(value)} تومان`
-    : "بررسی قیمت امروز";
+    : "قیمت را بپرسید";
 }
 
 function buildInquiryLink(name: string, volume?: string) {
-  const message = `سلام، موجودی و قیمت «${name}»${volume ? ` با بسته ${volume}` : ""} را می‌خواهم.`;
+  const message = `سلام، برای «${name}»${volume ? ` با بسته ${volume}` : ""} موجودی و قیمت امروز رو می‌خواستم.`;
   return `https://wa.me/989037251266?text=${encodeURIComponent(message)}`;
 }
 
-const internalProductTerms = /تطبیق|تأیید|تایید|فهرست|گزارش|مرجع|بچ‌کد|پلمب/u;
+const internalProductTerms = /تطبیق|تأیید|تایید|فهرست|گزارش|مرجع|بچ‌کد|پلمب|نمایه|مسیر استعلام|داده‌های بازار|این صفحه برای/u;
 
 function conciseProductCopy(value: string, supplierTerms: string[]) {
   const plain = toPublicCopy(
@@ -381,7 +381,7 @@ export function ProductVariantExperience({
             </div>
             {isEditorialFamilyImage && (
               <p className="sb-product-gallery__image-note">
-                نمای ادیتوریال خانواده محصول است؛ مدل دقیق روی بسته پیش از سفارش مشخص می‌شود.
+                این تصویر نمای خانواده محصول است. قبل از سفارش، مدل دقیق روی بسته را با ما چک کنید.
               </p>
             )}
           </div>
@@ -403,7 +403,7 @@ export function ProductVariantExperience({
             {hasVariants && (
               <div className="sb-product-variants">
                 <div className="sb-product-variants__head">
-                  <strong>مدل موردنظر</strong>
+                  <strong>مدل را انتخاب کنید</strong>
                   <span>
                     {displayVolume}
                     {packagingLabel ? ` · ${packagingLabel}` : ""}
@@ -433,17 +433,17 @@ export function ProductVariantExperience({
 
             <div className="sb-product-summary__order">
               <div>
-                <span>قیمت فعلی</span>
+                <span>قیمت</span>
                 <strong>{pricing.label}</strong>
                 <small>{toPublicCopy(pricing.note)}</small>
               </div>
               <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
-                بررسی موجودی امروز
+                موجودی و قیمت امروز
                 <ArrowIcon />
               </Link>
             </div>
             <p className="sb-product-summary__notice">
-              محصول حرفه‌ای
+              ویژه استفاده حرفه‌ای
             </p>
           </div>
         </div>
@@ -453,7 +453,7 @@ export function ProductVariantExperience({
         <section className="sb-section sb-product-description" id="description">
           <div className="sb-shell sb-product-description__grid">
             <div className="sb-product-description__heading">
-              <h2>درباره {displayName}</h2>
+              <h2>بیشتر درباره {displayName}</h2>
             </div>
             {hasVariants ? (
               <article className="sb-product-description__content sb-product-rich-text">
@@ -470,7 +470,7 @@ export function ProductVariantExperience({
         <section className="sb-section sb-product-info-section" id="specs">
           <div className="sb-shell sb-product-info-section__grid">
             <div>
-              <h2>بسته و مشخصات</h2>
+              <h2>مشخصات و بسته‌بندی</h2>
             </div>
             <dl className="sb-spec-table">
               {visibleSpecs.map(([label, value]) => (
@@ -483,7 +483,7 @@ export function ProductVariantExperience({
 
       <div className="sb-product-mobile-cta">
         <div><span>{displayName}</span><strong>{pricing.label}</strong></div>
-        <Link href={inquiryLink}>بررسی موجودی</Link>
+        <Link href={inquiryLink}>موجودی و قیمت</Link>
       </div>
     </>
   );

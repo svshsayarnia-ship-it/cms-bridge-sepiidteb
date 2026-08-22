@@ -49,7 +49,7 @@ function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: stri
       <span>
         <strong>Sepiid Beauty</strong>
         {tagline && <small>{tagline}</small>}
-        <small>سپید بیوتی · انتخاب حرفه‌ای</small>
+        <small>سپید بیوتی · انتخاب دقیق‌تر</small>
       </span>
     </Link>
   );
@@ -218,7 +218,7 @@ export function SiteHeader({
         <div className="sb-shell sb-trustbar__inner">
           <p>
             <i />
-            بررسی بسته‌بندی، بچ‌کد و شرایط تحویل پیش از ارسال
+            قبل از ارسال، بسته‌بندی، بچ‌کد و شرایط تحویل را با شما چک می‌کنیم
           </p>
           <div>
             <span>ارسال هماهنگ‌شده به سراسر ایران</span>
@@ -237,7 +237,7 @@ export function SiteHeader({
             aria-label="باز کردن جستجوی محصولات"
           >
             <SearchIcon />
-            <span>جستجو میان محصولات و برندها</span>
+            <span>اسم محصول یا برند را جستجو کنید</span>
             <kbd>/</kbd>
           </button>
 
@@ -274,21 +274,21 @@ export function SiteHeader({
           <div className="sb-header__mobile-search sb-shell">
             <button type="button" onClick={openSearch}>
               <SearchIcon />
-              جستجو میان محصولات
+              جستجو در محصولات
             </button>
           </div>
         )}
-{mobileOpen && (
-  <button
-    className="sb-mobile-menu-backdrop"
-    type="button"
-    aria-label="بستن منوی موبایل"
-    onClick={() => {
-      setMobileOpen(false);
-      setCategoriesOpen(false);
-    }}
-  />
-)}
+        {mobileOpen && (
+          <button
+            className="sb-mobile-menu-backdrop"
+            type="button"
+            aria-label="بستن منوی موبایل"
+            onClick={() => {
+              setMobileOpen(false);
+              setCategoriesOpen(false);
+            }}
+          />
+        )}
         <div
           ref={mobilePanel}
           id="mobile-navigation"
@@ -323,13 +323,12 @@ export function SiteHeader({
                 <div className="sb-mega-menu__grid">
                   <div className="sb-mega-menu__intro">
                     <span>SHOP / CATEGORIES</span>
-                    <h2>از نیاز شروع کنید، نه از نام محصول.</h2>
+                    <h2>اسم محصول را نمی‌دانید؟ از دسته شروع کنید.</h2>
                     <p>
-                      مسیرهای دسته‌بندی برای شناخت بهتر ساخته شده‌اند؛ انتخاب پزشکی
-                      همچنان به ارزیابی فرد واجد صلاحیت نیاز دارد.
+                      نزدیک‌ترین گروه را انتخاب کنید و بعد مدل، حجم، بسته و قیمت محصولات را کنار هم ببینید. برای محصولات تزریقی، انتخاب نهایی باید توسط فرد واجد صلاحیت انجام شود.
                     </p>
                     <Link href="/shop">
-                      مشاهده همه محصولات
+                      دیدن همه محصولات
                       <ArrowIcon />
                     </Link>
                   </div>
@@ -366,7 +365,7 @@ export function SiteHeader({
                       width="1254"
                       height="1254"
                     />
-                    <figcaption>انتخاب دقیق‌تر برای خرید حرفه‌ای</figcaption>
+                    <figcaption>محصول را دقیق‌تر پیدا کنید</figcaption>
                   </figure>
                 </div>
               </div>
@@ -411,7 +410,7 @@ export function SiteHeader({
             <div className="sb-search-modal__top">
               <div>
                 <span>SEARCH / جستجو</span>
-                <h2 id="search-title">محصول یا برند موردنظر را پیدا کنید.</h2>
+                <h2 id="search-title">چه محصولی دنبالش هستید؟</h2>
               </div>
               <button
                 className="sb-icon-btn"
@@ -442,9 +441,9 @@ export function SiteHeader({
 
             <div className="sb-search-modal__meta">
               <span aria-live="polite">
-                {query ? `${searchResults.length} نتیجه` : "پیشنهادهای محبوب"}
+                {query ? `${searchResults.length} نتیجه` : "چند پیشنهاد برای شروع"}
               </span>
-              <small>جستجو در نام فارسی، انگلیسی، برند و دسته</small>
+              <small>نام فارسی، انگلیسی، برند یا دسته را بنویسید</small>
             </div>
 
             <div className="sb-search-results">
@@ -468,10 +467,10 @@ export function SiteHeader({
                 ))
               ) : (
                 <div className="sb-search-results__empty">
-                  <strong>نتیجه‌ای پیدا نشد.</strong>
-                  <p>نام برند یا دسته را امتحان کنید، یا از پشتیبانی استعلام بگیرید.</p>
-                  <Link href={whatsappHref(`سلام، محصول «${query}» را استعلام می‌کنم.`)}>
-                    استعلام از پشتیبانی
+                  <strong>چیزی با این اسم پیدا نکردیم.</strong>
+                  <p>نام برند یا دسته را امتحان کنید. اگر محصول مشخصی مدنظرتان است، اسمش را برای تیم سپید بفرستید.</p>
+                  <Link href={whatsappHref(`سلام، دنبال محصول «${query}» هستم. موجودی و قیمتش رو می‌خواستم.`)}>
+                    پرسیدن از سپید
                   </Link>
                 </div>
               )}

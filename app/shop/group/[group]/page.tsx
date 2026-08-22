@@ -15,12 +15,31 @@ import {
   productHref,
 } from "../../../catalog";
 
+import { getEditorialCategoryCopy } from "../../../lib/editorial-category-copy";
 import { getStorefrontCategories } from "../../../lib/storefront-categories";
 import { siteOrigin } from "../../../lib/site-url";
 import { getStorefrontCatalog } from "../../../lib/storefront-catalog";
 import { buildSeoMetadata } from "../../../lib/seo";
 
 export const revalidate = 300;
+
+const groupCopy: Record<string, { intro: string; title: string; note: string }> = {
+  injectables: {
+    intro: "فیلر، مزوژل، اسکین‌بوستر و فرآورده‌های بوتولینوم را جدا از هم ببینید و از همان گروهی وارد شوید که واقعاً دنبالش هستید.",
+    title: "کدام گروه به چیزی که می‌خواهید نزدیک‌تر است؟",
+    note: "هر دسته محصولات و قیمت‌های خودش را دارد. اگر بین دو گروه مردد هستید، اول تفاوتشان را ببینید و بعد سراغ مدل‌ها بروید.",
+  },
+  "mesotherapy-cocktails": {
+    intro: "کوکتل‌های مزوتراپی را بر اساس کاربرد رایج بازار جدا کرده‌ایم تا پیدا کردن محصول ساده‌تر باشد؛ نه برای اینکه از اسم دسته نتیجه درمانی بگیریم.",
+    title: "دنبال محصول برای کدام گروه هستید؟",
+    note: "از دسته‌ای وارد شوید که به نیاز شما نزدیک‌تر است؛ داخل هر دسته می‌توانید مدل، حجم، بسته و قیمت را کنار هم مقایسه کنید.",
+  },
+  "professional-support": {
+    intro: "محصولات پشتیبان حرفه‌ای را جدا از محصولات زیبایی آورده‌ایم تا قدرت، واحد و نوع بسته هر مورد واضح‌تر دیده شود.",
+    title: "محصول موردنظر را از اینجا پیدا کنید",
+    note: "در این گروه، عدد قدرت و نوع بسته مهم است. قبل از سفارش، مشخصات همان مدل را دقیق ببینید.",
+  },
+};
 
 export function generateStaticParams() {
   return catalogGroups.map((group) => ({
@@ -40,9 +59,11 @@ export async function generateMetadata({
     return {};
   }
 
+  const copy = groupCopy[group.slug];
+
   return buildSeoMetadata({
     title: `${group.title}؛ دسته‌ها و محصولات`,
-    description: group.description,
+    description: copy?.intro || group.description,
     path: `/shop/group/${group.slug}`,
     imageAlt: group.title,
   });
@@ -80,6 +101,11 @@ export default async function ProductGroupPage({
         product.category,
       ),
   );
+  const copy = groupCopy[group.slug] ?? {
+    intro: group.description,
+    title: "دسته موردنظر را انتخاب کنید",
+    note: "هر دسته محصولات و توضیحات خودش را دارد؛ از نزدیک‌ترین گزینه به چیزی که می‌خواهید شروع کنید.",
+  };
 
   return (
     <main id="main-content">
@@ -105,15 +131,15 @@ export default async function ProductGroupPage({
 
           <h1>{group.title}</h1>
 
-          <p>{group.description}</p>
+          <p>{copy.intro}</p>
 
           <div className="sb-group-hero__stats">
             <span>
-              {childCategories.length} مسیر تخصصی
+              {childCategories.length} دسته
             </span>
 
             <span>
-              {groupProducts.length} صفحه محصول مستقل
+              {groupProducts.length} محصول
             </span>
           </div>
         </div>
@@ -124,19 +150,15 @@ export default async function ProductGroupPage({
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">
-                CATEGORY / PATHS
+                CATEGORY / COLLECTIONS
               </span>
 
               <h2>
-                مسیر دقیق‌تر را انتخاب کنید.
+                {copy.title}
               </h2>
             </div>
 
-            <p>
-              هر مسیر، فیلترها و توضیحات مخصوص
-              خود را دارد؛ عنوان دسته جایگزین
-              انتخاب حرفه‌ای نیست.
-            </p>
+            <p>{copy.note}</p>
           </div>
 
           <div className="sb-group-category-grid">
@@ -148,6 +170,11 @@ export default async function ProductGroupPage({
                       product.category ===
                       category.slug,
                   ).length;
+                const editorial = getEditorialCategoryCopy(
+                  category.slug,
+                  category.description,
+                  category.guide,
+                );
 
                 return (
                   <Link
@@ -171,11 +198,11 @@ export default async function ProductGroupPage({
                       </h2>
 
                       <p>
-                        {category.description}
+                        {editorial.intro}
                       </p>
 
                       <strong>
-                        ورود به دسته
+                        دیدن محصولات
                         <ArrowIcon />
                       </strong>
                     </div>
@@ -192,11 +219,11 @@ export default async function ProductGroupPage({
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">
-                PRODUCT / INDEX
+                PRODUCT / PICKS
               </span>
 
               <h2>
-                نمونه‌هایی از این گروه
+                چند محصول از این گروه
               </h2>
             </div>
 
@@ -204,7 +231,7 @@ export default async function ProductGroupPage({
               className="sb-text-link"
               href="/shop"
             >
-              مشاهده کاتالوگ کامل
+              دیدن همه محصولات
               <ArrowIcon />
             </Link>
           </div>
@@ -225,13 +252,11 @@ export default async function ProductGroupPage({
               <span>۰ محصول</span>
 
               <h2>
-                هنوز محصول منتشرشده‌ای در این گروه
-                وجود ندارد.
+                فعلاً محصولی در این گروه منتشر نشده است.
               </h2>
 
               <p>
-                محصولات پس از انتشار در این بخش
-                نمایش داده می‌شوند.
+                هر محصولی که اضافه شود، همین‌جا نمایش داده می‌شود.
               </p>
             </div>
           )}
@@ -243,7 +268,7 @@ export default async function ProductGroupPage({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: group.title,
-          description: group.description,
+          description: copy.intro,
 
           mainEntity: {
             "@type": "ItemList",
