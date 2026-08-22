@@ -1443,6 +1443,9 @@ body:has(.spb-cms-login) {
 .spb-content-mode button { border:0; border-radius:999px; padding:9px 15px; background:transparent; cursor:pointer; }
 .spb-content-mode button.is-active { color:#fff; background:#18352b; }
 .spb-html-entry { display:grid; gap:12px; }
+.spb-article-status { display:grid; gap:6px; margin-bottom:14px; padding:12px; border:1px solid #d8e2de; border-radius:12px; background:#f4faf7; }
+.spb-article-status span { color:#244438; font-size:12px; font-weight:800; }
+.spb-article-status select { min-height:42px; }
 .spb-html-entry__head { display:flex; justify-content:space-between; align-items:center; gap:16px; }
 .spb-html-entry__head small { margin:4px 0 0; }
 .spb-html-code { width:100%; min-height:520px; padding:18px; border:1px solid #cfc7bb; border-radius:12px; background:#17211d; color:#e9f3ed; font:14px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; text-align:left; tab-size:2; resize:vertical; }
