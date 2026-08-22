@@ -1,5 +1,10 @@
 /* eslint-disable @next/next/no-img-element -- local editorial assets are compressed */
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: { absolute: "۱۱۶۲۶۴۰۰" },
+};
 import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
 import { DeferredHomeFinder } from "./components/DeferredHomeFinder";
