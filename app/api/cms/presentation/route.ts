@@ -6,6 +6,42 @@ import { errorResponse, getSitePresentation, updateSitePresentation } from "@/ap
 
 export const dynamic = "force-dynamic";
 
+function plainText(value: string) {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function htmlSection(html: string, pattern: RegExp) {
+  const match = html.match(new RegExp(`<h2[^>]*>${pattern.source}<\\/h2>([\\s\\S]*?)(?=<h2\\b|$)`, "i"));
+  return match?.[1] ?? "";
+}
+
+function extractHtmlArticleData(html: string) {
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "";
+  const firstParagraph = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? "";
+  const faqBlock = htmlSection(html, "[^<]*(?:سوالات|سؤال‌های|سوال‌های|پرسش‌های|faq)[^<]*");
+  const sourceBlock = htmlSection(html, "[^<]*(?:منابع|references|sources)[^<]*");
+  const faq = [...faqBlock.matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>\s*<p[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((match) => ({ question: plainText(match[1]), answer: plainText(match[2]) }))
+    .filter((item) => item.question && item.answer);
+  const sources = [...sourceBlock.matchAll(/<a[^>]+href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => ({ href: match[1].trim(), label: plainText(match[2]) }))
+    .filter((item) => (item.href.startsWith("/") || item.href.startsWith("https://")) && item.label);
+  return { title: plainText(h1), excerpt: plainText(firstParagraph), faq, sources };
+}
+
+function automaticSlug(value: string) {
+  return value
+    .toLocaleLowerCase("fa-IR")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+}
+
 export async function GET(request: Request) {
   const denied = await cmsApiGuard(request);
   if (denied) return denied;
@@ -22,10 +58,17 @@ export async function PUT(request: Request) {
   if (denied) return denied;
   try {
     const presentation = await request.json() as SitePresentation;
-    presentation.articles = presentation.articles.map((article) => ({
+    const preparedArticles = presentation.articles.map((article) => {
+      const extracted = article.contentMode === "html"
+        ? extractHtmlArticleData(article.htmlContent ?? "")
+        : { title: "", excerpt: "", faq: [], sources: [] };
+      return {
       ...article,
-      sources: (article.sources ?? []).filter((source) => source.label.trim() && source.href.trim()),
-      faq: (article.faq ?? []).filter((item) => item.question.trim() && item.answer.trim()),
+      title: article.title.trim() || extracted.title,
+      excerpt: article.excerpt.trim() || extracted.excerpt.slice(0, 220),
+      lead: article.lead.trim() || extracted.excerpt,
+      sources: (article.sources?.length ? article.sources : extracted.sources).filter((source) => source.label.trim() && source.href.trim()),
+      faq: (article.faq?.length ? article.faq : extracted.faq).filter((item) => item.question.trim() && item.answer.trim()),
       relatedProducts: (article.relatedProducts ?? []).filter(Boolean),
       relatedArticles: (article.relatedArticles ?? []).filter(Boolean),
       brandSlugs: (article.brandSlugs ?? []).filter(Boolean),
@@ -41,7 +84,17 @@ export async function PUT(request: Request) {
         links: (section.links ?? []).filter((link) => link.label.trim() && link.href.trim()),
         subsections: (section.subsections ?? []).filter((item) => item.heading.trim()),
       })),
-    }));
+    };
+    });
+    const usedSlugs = new Set<string>();
+    presentation.articles = preparedArticles.map((article) => {
+      const baseSlug = article.slug.trim() || automaticSlug(article.title) || "article";
+      let slug = baseSlug;
+      let suffix = 2;
+      while (usedSlugs.has(slug)) slug = `${baseSlug}-${suffix++}`;
+      usedSlugs.add(slug);
+      return { ...article, slug };
+    });
     const published = presentation.articles.filter((article) => article.status !== "draft");
     const invalid = published.find((article) => !article.title?.trim() || !article.slug?.trim() || !article.excerpt?.trim());
     if (invalid) {

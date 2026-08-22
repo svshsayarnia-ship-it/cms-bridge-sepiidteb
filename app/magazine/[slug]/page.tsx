@@ -231,7 +231,7 @@ export default async function ArticlePage({
             </section>
           ))}
 
-          {article.faq?.length ? (
+          {article.contentMode !== "html" && article.faq?.length ? (
             <section className="sb-article-faq" id="faq">
               <span className="sb-eyebrow">FAQ / پرسش‌های پرتکرار</span>
               <h2>سؤال‌هایی که معمولاً پیش از تصمیم مطرح می‌شوند</h2>
@@ -239,7 +239,7 @@ export default async function ArticlePage({
             </section>
           ) : null}
 
-          <section className="sb-article-sources" id="sources">
+          {article.contentMode !== "html" ? <section className="sb-article-sources" id="sources">
             <span className="sb-eyebrow">SOURCES / منابع</span>
             <h2>منابع مستقیم و قابل بررسی</h2>
             <p>
@@ -256,7 +256,7 @@ export default async function ArticlePage({
                 </li>
               ))}
             </ol>
-          </section>
+          </section> : null}
 
           {article.cta?.label && article.cta.href ? (
             <div className="sb-article-parent-guide">
