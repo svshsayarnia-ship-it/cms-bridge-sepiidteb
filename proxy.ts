@@ -15,6 +15,12 @@ type WooProductProbe = {
   images?: Array<{ src?: string }>;
 };
 
+type SitePresentationProbe = {
+  presentation?: {
+    articles?: Array<{ slug?: string; status?: string }>;
+  } | null;
+};
+
 type StaticRouteRule = {
   pattern: RegExp;
   allowedSlugs: Set<string>;
@@ -308,6 +314,71 @@ async function probeWooProduct(
   }
 }
 
+async function probePublishedArticle(
+  slug: string,
+): Promise<boolean | null> {
+  const storeUrl = (process.env.WORDPRESS_URL ?? "")
+    .trim()
+    .replace(/\/$/, "");
+  const consumerKey = (
+    process.env.WOOCOMMERCE_CONSUMER_KEY ?? ""
+  ).trim();
+  const consumerSecret = (
+    process.env.WOOCOMMERCE_CONSUMER_SECRET ?? ""
+  ).trim();
+
+  if (!storeUrl || !consumerKey || !consumerSecret) {
+    return null;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(`${storeUrl}/wp-json/wc/v3/sepiid-site-presentation`);
+  } catch {
+    return null;
+  }
+
+  const headers = new Headers({
+    accept: "application/json",
+    "cache-control": "no-cache, no-store, max-age=0",
+  });
+  if ((process.env.WOOCOMMERCE_AUTH_MODE ?? "basic") === "query") {
+    url.searchParams.set("consumer_key", consumerKey);
+    url.searchParams.set("consumer_secret", consumerSecret);
+  } else {
+    headers.set(
+      "authorization",
+      `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`,
+    );
+  }
+  url.searchParams.set("_sepiid_cache_bust", String(Date.now()));
+
+  try {
+    const response = await fetch(url, {
+      headers,
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      return null;
+    }
+    if (!response.ok) {
+      return response.status >= 500 ? null : false;
+    }
+
+    const payload = (await response.json()) as SitePresentationProbe;
+    const remoteArticles = payload.presentation?.articles;
+    if (!Array.isArray(remoteArticles)) return null;
+
+    return remoteArticles.some(
+      (article) => article.slug === slug && article.status !== "draft",
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return;
@@ -315,10 +386,14 @@ export async function proxy(request: NextRequest) {
 
   const articleSlug = articleSlugFromPath(request.nextUrl.pathname);
   if (articleSlug) {
-    if (!publicArticleSlugs.has(articleSlug)) {
-      return missingArticleResponse(request);
-    }
-    return;
+    if (publicArticleSlugs.has(articleSlug)) return;
+
+    const remoteStatus = await probePublishedArticle(articleSlug);
+    // On a temporary WordPress/auth failure, let App Router make the final
+    // decision instead of turning a valid CMS article into a hard 404.
+    if (remoteStatus !== false) return;
+
+    return missingArticleResponse(request);
   }
 
   const staticRoute = staticRouteFromPath(request.nextUrl.pathname);
