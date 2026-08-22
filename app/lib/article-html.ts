@@ -1,7 +1,7 @@
 const ALLOWED_TAGS = new Set([
   "p", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "ul", "ol", "li",
   "blockquote", "a", "table", "thead", "tbody", "tr", "th", "td", "br", "hr",
-  "figure", "figcaption", "span", "img",
+  "article", "section", "header", "footer", "nav", "figure", "figcaption", "span", "img",
 ]);
 
 const VOID_TAGS = new Set(["br", "hr", "img"]);
