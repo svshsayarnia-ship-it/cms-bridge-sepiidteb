@@ -1555,6 +1555,31 @@ body:has(.spb-cms-login) {
 .spb-html-code { width:100%; min-height:520px; padding:18px; border:1px solid #cfc7bb; border-radius:12px; background:#17211d; color:#e9f3ed; font:14px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; text-align:left; tab-size:2; resize:vertical; }
 .spb-html-tags { display:flex; flex-wrap:wrap; gap:8px; color:#655f57; }
 .spb-html-tags code { direction:ltr; }
+.spb-editor-mode-switch { display:flex; flex-wrap:wrap; gap:8px; }
+.spb-editor-mode-switch button, .spb-tiptap-editor__toolbar button { padding:8px 11px; border:1px solid #d6cec1; border-radius:9px; color:#3d473f; background:#fff; font:inherit; font-size:13px; cursor:pointer; }
+.spb-editor-mode-switch button.is-active, .spb-tiptap-editor__toolbar button.is-active { border-color:#244438; color:#fff; background:#244438; }
+.spb-editor-mode-switch button:disabled { opacity:.5; cursor:not-allowed; }
+.spb-tiptap-editor { overflow:hidden; border:1px solid #cfc7bb; border-radius:12px; background:#fff; }
+.spb-tiptap-editor__toolbar { display:flex; flex-wrap:wrap; gap:7px; padding:10px; border-bottom:1px solid #ded8cc; background:#f7f4ee; }
+.spb-tiptap-editor__toolbar button:hover:not(:disabled) { border-color:#698275; }
+.spb-tiptap-editor__toolbar .spb-tiptap-editor__source { margin-inline-start:auto; color:#244438; background:#edf5f0; }
+.spb-tiptap-surface { min-height:420px; padding:22px; color:#2c302d; line-height:2; outline:none; }
+.spb-tiptap-surface > :first-child { margin-top:0; }
+.spb-tiptap-surface h2 { margin:1.7em 0 .55em; color:#244438; font-size:1.45rem; }
+.spb-tiptap-surface h3 { margin:1.45em 0 .45em; color:#365447; font-size:1.2rem; }
+.spb-tiptap-surface h4 { margin:1.25em 0 .35em; font-size:1.05rem; }
+.spb-tiptap-surface p, .spb-tiptap-surface ul, .spb-tiptap-surface ol { margin:0 0 1em; }
+.spb-tiptap-surface ul, .spb-tiptap-surface ol { padding-inline-start:1.6em; }
+.spb-tiptap-surface blockquote { margin:1.1em 0; padding:10px 16px; border-inline-start:4px solid #6b927d; color:#4d5d52; background:#f4f8f5; }
+.spb-tiptap-surface a { color:#1c6553; text-decoration:underline; }
+.spb-tiptap-surface table { width:100%; margin:1.2em 0; border-collapse:collapse; table-layout:fixed; }
+.spb-tiptap-surface th, .spb-tiptap-surface td { min-width:80px; padding:9px; border:1px solid #cfc7bb; text-align:right; vertical-align:top; }
+.spb-tiptap-surface th { color:#244438; background:#edf5f0; }
+.spb-tiptap-surface .selectedCell:after { position:absolute; inset:0; z-index:2; pointer-events:none; content:""; background:#cce5d5; opacity:.35; }
+.spb-tiptap-surface img { display:block; max-width:100%; height:auto; margin:1.2em 0; border-radius:10px; }
+.spb-tiptap-editor__hint, .spb-visual-editor-warning { margin:0; padding:11px 14px; border-top:1px solid #ded8cc; color:#655f57; font-size:13px; line-height:1.8; background:#faf8f4; }
+.spb-visual-editor-warning { border:1px solid #e7c980; border-radius:10px; color:#73560f; background:#fff9e9; }
+.spb-tiptap-loading { padding:24px; border:1px dashed #cfc7bb; border-radius:12px; color:#655f57; }
 .spb-repeat-list { display:grid; gap:14px; margin-bottom:12px; }
 .spb-repeat-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:16px; border:1px solid #e7e0d6; border-radius:14px; background:#fbfaf7; }
 .spb-repeat-card > .is-wide, .spb-repeat-card__head, .spb-subsection-list { grid-column:1/-1; }
@@ -1584,7 +1609,7 @@ body:has(.spb-cms-login) {
 .spb-article-image-uploader__result > div { display:flex; flex-wrap:wrap; gap:8px; }
 .spb-article-image-uploader__status { grid-column:1 / -1; margin:0; font-size:.88rem; color:var(--spb-muted, #6d665e); }
 @media (max-width: 720px) { .spb-article-image-uploader { grid-template-columns:1fr; align-items:stretch; } .spb-article-image-uploader__result { align-items:flex-start; flex-direction:column; } }
-@media (max-width: 720px) { .spb-content-mode, .spb-html-entry__head { align-items:stretch; flex-direction:column; width:100%; } .spb-html-code { min-height:420px; font-size:12px; } }
+@media (max-width: 720px) { .spb-content-mode, .spb-html-entry__head { align-items:stretch; flex-direction:column; width:100%; } .spb-html-code { min-height:420px; font-size:12px; } .spb-tiptap-surface { min-height:360px; padding:16px; } .spb-tiptap-editor__toolbar .spb-tiptap-editor__source { margin-inline-start:0; } }
 
 /* CMS responsive safety: uploaded images and long API values must stay inside
    their cards, while form fields remain usable on iOS-sized viewports. */
