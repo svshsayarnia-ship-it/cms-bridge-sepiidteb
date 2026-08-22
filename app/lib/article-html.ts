@@ -73,8 +73,44 @@ export function sanitizeArticleHtml(input: string) {
   });
 }
 
+/**
+ * The page title is the only H1. Give every editorial heading a stable anchor
+ * while persisting the article so the rendered table of contents is useful,
+ * copyable, and does not depend on a client-side script.
+ */
+export function normalizeArticleHtml(input: string) {
+  const sanitized = sanitizeArticleHtml(input);
+  const usedIds = new Set<string>();
+  let sectionNumber = 0;
+
+  return sanitized.replace(/<h([23])\b([^>]*)>/gi, (full, level: string, attributes: string) => {
+    const existingId = readAttribute(attributes, "id");
+    let id = existingId || `section-${++sectionNumber}`;
+    let suffix = 2;
+    while (usedIds.has(id)) id = `${existingId || `section-${sectionNumber}`}-${suffix++}`;
+    usedIds.add(id);
+    return `<h${level} id="${escapeAttribute(id)}">`;
+  });
+}
+
+export type ArticleHeading = {
+  id: string;
+  level: 2 | 3;
+  text: string;
+};
+
+export function getArticleHeadings(html: string): ArticleHeading[] {
+  return [...html.matchAll(/<h([23])\b([^>]*)>([\s\S]*?)<\/h\1>/gi)]
+    .map((match) => ({
+      id: readAttribute(match[2], "id"),
+      level: Number(match[1]) as 2 | 3,
+      text: match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+    }))
+    .filter((heading) => heading.id && heading.text);
+}
+
 export function encodeArticleHtml(html: string) {
-  const encoded = Buffer.from(sanitizeArticleHtml(html), "utf8").toString("base64");
+  const encoded = Buffer.from(normalizeArticleHtml(html), "utf8").toString("base64");
   return encoded.match(/.{1,8000}/g) ?? [];
 }
 

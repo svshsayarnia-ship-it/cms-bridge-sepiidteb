@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import type { Article } from "../data";
 import type { CmsImage } from "../lib/cms-types";
+import { analyzeArticleSeo } from "../lib/article-seo";
 import { ArticleImageUploader } from "./ArticleImageUploader";
 
 type Props = { articles: Article[]; selectedIndex: number; onSelect(index: number): void; onChange(articles: Article[]): void };
@@ -52,6 +53,15 @@ const htmlTemplate = `<h1>عنوان اصلی مقاله</h1>
 export function MagazineManager({ articles, selectedIndex, onSelect, onChange }: Props) {
   const article = articles[selectedIndex];
   const htmlEditorRef = useRef<HTMLTextAreaElement>(null);
+  const seoChecks = article ? analyzeArticleSeo({
+    title: article.seoTitle || article.title,
+    metaDescription: article.metaDescription,
+    excerpt: article.excerpt,
+    html: editableHtml(article),
+    image: article.image,
+    imageAlt: article.imageAlt,
+  }) : [];
+  const passedSeoChecks = seoChecks.filter((check) => check.state === "pass").length;
   function update(patch: Partial<Article>) {
     if (!article) return;
     const next = [...articles];
@@ -106,6 +116,19 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
           onInsertIntoArticle={insertImage}
         />
       </div>
+
+      <section className="spb-article-seo-health" aria-live="polite">
+        <div className="spb-article-seo-health__head">
+          <div><strong>کنترل کیفیت سئو و انتشار</strong><small>راهنمایی است، نه مانع انتشار. نتیجه را بر اساس موضوع و نیت جست‌وجو قضاوت کن.</small></div>
+          <b>{passedSeoChecks} از {seoChecks.length} مورد آماده</b>
+        </div>
+        <ul>
+          {seoChecks.map((check) => <li className={`is-${check.state}`} key={check.id}>
+            <span aria-hidden="true">{check.state === "pass" ? "✓" : "!"}</span>
+            <div><strong>{check.label}</strong><p>{check.detail}</p></div>
+          </li>)}
+        </ul>
+      </section>
     </fieldset>
 
     <details className="spb-editor-box spb-magazine-advanced"><summary>تنظیمات پیشرفتهٔ انتشار و سئو (اختیاری)</summary><div className="spb-form-grid">

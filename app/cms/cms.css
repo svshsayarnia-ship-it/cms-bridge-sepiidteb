@@ -181,6 +181,110 @@ body:has(.spb-cms-login) {
   color: #175c43;
 }
 
+.spb-article-seo-health {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #dce5e2;
+  border-radius: 10px;
+  background: #fbfdfc;
+}
+
+.spb-article-seo-health__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7ecea;
+}
+
+.spb-article-seo-health__head strong,
+.spb-article-seo-health__head small {
+  display: block;
+}
+
+.spb-article-seo-health__head small {
+  margin-top: 4px;
+  color: #64736e;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.spb-article-seo-health__head b {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #175c43;
+  background: #e9f5ee;
+  font-size: 12px;
+}
+
+.spb-article-seo-health ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spb-article-seo-health li {
+  display: flex;
+  gap: 8px;
+  padding: 9px;
+  border-radius: 7px;
+  background: #f5f8f7;
+}
+
+.spb-article-seo-health li > span {
+  flex: 0 0 auto;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.spb-article-seo-health li.is-pass > span {
+  color: #17613f;
+  background: #dff3e7;
+}
+
+.spb-article-seo-health li.is-warning > span {
+  color: #855d08;
+  background: #fff0c8;
+}
+
+.spb-article-seo-health li strong,
+.spb-article-seo-health li p {
+  display: block;
+  margin: 0;
+}
+
+.spb-article-seo-health li strong {
+  font-size: 12px;
+}
+
+.spb-article-seo-health li p {
+  margin-top: 3px;
+  color: #5f6d68;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+@media (max-width: 720px) {
+  .spb-article-seo-health__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .spb-article-seo-health ul {
+    grid-template-columns: 1fr;
+  }
+}
+
 .spb-cms-layout {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
