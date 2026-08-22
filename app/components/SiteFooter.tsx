@@ -14,6 +14,6 @@ export function SiteFooter({ presentation }: { presentation: SitePresentation["f
       <div className="sb-footer__column"><strong>راهنمای سپید</strong><Link href="/guides">راهنمای انتخاب</Link><Link href="/magazine">مجله و مقالات</Link><Link href="/faq">پرسش‌های متداول</Link><Link href="/about">درباره سپید بیوتی</Link><Link href="/professional">خرید حرفه‌ای کلینیک</Link></div>
       <div className="sb-footer__contact"><span>مشاوره و استعلام</span><Link href={`tel:${presentation.phone}`}>{presentation.phone}</Link><p>{presentation.hours}</p><Link href="/contact">همه راه‌های ارتباط<ArrowIcon /></Link></div>
     </div>
-    <div className="sb-footer__bottom"><span>© 2026 Sepiid Beauty</span><p>{presentation.legalNotice}</p><div><Link href="/policies/privacy">حریم خصوصی</Link><Link href="/policies/terms">شرایط استفاده</Link><Link href="/policies/shipping">ارسال</Link><Link href="/policies/returns">مغایرت و بازگشت</Link></div></div>
+    <div className="sb-footer__bottom"><span>© 2026 Sepiid Beauty</span><p>{presentation.legalNotice}<br /><span className="sb-footer__credit">طراحی و اجرا توسط سیاوش سیارنیا</span></p><div><Link href="/policies/privacy">حریم خصوصی</Link><Link href="/policies/terms">شرایط استفاده</Link><Link href="/policies/shipping">ارسال</Link><Link href="/policies/returns">مغایرت و بازگشت</Link></div></div>
   </div></footer>;
 }
