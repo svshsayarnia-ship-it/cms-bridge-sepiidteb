@@ -81,6 +81,49 @@ function getPublicSummary(value: string) {
     ) ?? "").trim();
 }
 
+const genericCmsProductCopy =
+  /(?:در گروه .* قرار می‌گیرد|برای مقایسه فنی، بررسی بسته‌بندی|به فروشگاه همگام‌سازی شده|اطلاعات بسته و موجودی قبل از سفارش کنترل می‌شود)/u;
+
+function hasUsableCmsEditorialCopy(cmsProduct: CmsProduct | null) {
+  const copy = plainText(
+    cmsProduct?.shortDescription || cmsProduct?.description || "",
+  );
+
+  return copy.length >= 120 && !genericCmsProductCopy.test(copy);
+}
+
+function getPreferredProductSummary(
+  cmsProduct: CmsProduct,
+  fallback?: Product,
+) {
+  const cmsSummary = getPublicSummary(
+    cmsProduct.shortDescription || cmsProduct.description || "",
+  );
+  const fallbackSummary = getPublicSummary(fallback?.summary || "");
+
+  if (!fallbackSummary || hasUsableCmsEditorialCopy(cmsProduct)) {
+    return cmsSummary || fallbackSummary;
+  }
+
+  return fallbackSummary;
+}
+
+function getPreferredProductMetaDescription(
+  cmsProduct: CmsProduct | null,
+  fallback?: Product,
+) {
+  const cmsDescription = plainText(cmsProduct?.metaDescription || "");
+
+  if (
+    cmsDescription.length >= 90 &&
+    !genericCmsProductCopy.test(cmsDescription)
+  ) {
+    return cmsDescription;
+  }
+
+  return getPublicSummary(fallback?.summary || "") || cmsDescription;
+}
+
 function storefrontSlugCandidates(slug: string) {
   const cleanSlug = slug.trim();
   if (!cleanSlug) return [];
@@ -262,13 +305,7 @@ function buildCmsOnlyProduct(
   const category = cmsProduct.categories?.[0];
   const image = getLiveProductImage(cmsProduct, fallback);
 
-  const summary =
-    getPublicSummary(
-      cmsProduct.shortDescription ||
-        cmsProduct.description ||
-        "",
-    ) ||
-    getPublicSummary(fallback?.summary || "");
+  const summary = getPreferredProductSummary(cmsProduct, fallback);
 
   return {
     slug: cmsProduct.slug,
@@ -345,15 +382,13 @@ function buildCmsOnlyProduct(
 }
 
 const blockedFaqTerms = /اصالت|تطبیق|سازنده|منبع|تأیید|تایید|رسمی|پلمب|بچ|تاریخ|مجوز|قطعی|بررسی/u;
-const usefulFaqTerms = /چند|حجم|میل|مدل|قیمت|جعبه|بسته|سرنگ|ویال|محتویات/u;
+const usefulFaqTerms = /چند|حجم|میل|سی‌سی|مدل|قیمت|جعبه|بسته|سرنگ|ویال|محتویات|واحد|کدام|تفاوت|چطور|کاربرد/u;
 
 function getCustomerFaqs(product: Product) {
   return product.faq
     .filter(
-      ({ question, answer }) =>
-        usefulFaqTerms.test(question) &&
-        !blockedFaqTerms.test(question) &&
-        !blockedFaqTerms.test(answer),
+      ({ question }) =>
+        usefulFaqTerms.test(question) && !blockedFaqTerms.test(question),
     )
     .map(({ question, answer }) => ({
       question,
@@ -585,12 +620,7 @@ export async function generateMetadata({
   const curatedSummary = fillerCopyOverrides[product.slug]?.summary;
   const description =
     curatedSummary ||
-    plainText(liveProduct?.metaDescription || "") ||
-    getPublicSummary(
-      liveProduct?.shortDescription ||
-        liveProduct?.description ||
-        "",
-    ) ||
+    getPreferredProductMetaDescription(liveProduct, staticProduct ?? undefined) ||
     getPublicSummary(product.summary) ||
     `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
@@ -638,6 +668,9 @@ export default async function ProductPage({
   const liveProduct = isUsableLiveProduct(cmsProduct, staticProduct)
     ? cmsProduct
     : null;
+  const useCatalogEditorialCopy = Boolean(
+    liveProduct && staticProduct && !hasUsableCmsEditorialCopy(liveProduct),
+  );
 
   const product =
     liveProduct
@@ -763,8 +796,12 @@ export default async function ProductPage({
         liveImage={liveImage}
         catalogImage={catalogImage}
         livePricing={livePricing}
-        liveShortDescription={liveProduct?.shortDescription || ""}
-        liveDescription={liveProduct?.description || ""}
+        liveShortDescription={
+          useCatalogEditorialCopy ? "" : liveProduct?.shortDescription || ""
+        }
+        liveDescription={
+          useCatalogEditorialCopy ? "" : liveProduct?.description || ""
+        }
         brandHref={brandHref}
         initialVariantId={initialVariantId}
       />
