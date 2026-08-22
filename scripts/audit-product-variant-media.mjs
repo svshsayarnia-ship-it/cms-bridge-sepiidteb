@@ -49,8 +49,10 @@ if (
 const requiredInventoryMappings = [
   'image: "/images/products/alcarisa-28.webp"',
   'image: "/images/products/neuramis-lido-1ml.webp"',
-  'variant.id === "10ml"',
-  'imageKind: "editorial-family" as const',
+  'id: "revofil-10ml"',
+  'image: "https://www.drfiller.co/wp-content/uploads/2021/05/Revofil-10cc-s3-1024x819.jpg"',
+  'image: "https://neurafill-lido.com/wp-content/uploads/2023/06/Neurafill-004-1024x1024.webp"',
+  'image: "/images/products/neuramis-volume-1ml.webp"',
   'nameFa: "پرلوکس نوا"',
   'nameFa: "پرلوکس لیپ"',
 ];
@@ -59,6 +61,12 @@ for (const token of requiredInventoryMappings) {
   if (!currentInventory.includes(token)) {
     failures.push(`current-inventory.ts: missing corrected mapping ${token}`);
   }
+}
+
+if (currentInventory.includes('/images/products/editorial/fillers-family.webp')) {
+  failures.push(
+    "current-inventory.ts: generic fillers-family placeholder returned to a current filler variant",
+  );
 }
 
 const requiredDistinctFillerAssets = [
