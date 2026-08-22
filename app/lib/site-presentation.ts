@@ -193,28 +193,31 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
   };
 }
 
-async function loadSitePresentation() {
-  try {
-    return normalizeSitePresentation(
-      await getRemotePresentation({
-        requestTimeoutMs: 2_500,
-        requestMaxAttempts: 1,
-      }),
-    );
-  } catch {
-    return DEFAULT_SITE_PRESENTATION;
-  }
+async function loadRemoteSitePresentation() {
+  return normalizeSitePresentation(
+    await getRemotePresentation({
+      requestTimeoutMs: 12_000,
+      requestMaxAttempts: 2,
+    }),
+  );
 }
 
 const getCachedSitePresentation = unstable_cache(
-  loadSitePresentation,
-  ["site-presentation-v3-editorial"],
+  loadRemoteSitePresentation,
+  ["site-presentation-v4-remote-only"],
   { revalidate: 300, tags: ["site-presentation"] },
 );
 
-export const getSitePresentation = cache(
-  getCachedSitePresentation,
-);
+export const getSitePresentation = cache(async () => {
+  try {
+    return await getCachedSitePresentation();
+  } catch (error) {
+    console.error("[site-presentation] Remote presentation unavailable", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return DEFAULT_SITE_PRESENTATION;
+  }
+});
 
 export function applyArticlePresentation<T extends { slug: string }>(items: T[], presentation: SitePresentation) {
   const overrides = new Map(presentation.articles.map((item) => [item.slug, item]));
