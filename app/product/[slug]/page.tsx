@@ -582,14 +582,16 @@ export async function generateMetadata({
       variantId,
     );
 
+  const curatedSummary = fillerCopyOverrides[product.slug]?.summary;
   const description =
+    curatedSummary ||
     plainText(liveProduct?.metaDescription || "") ||
     getPublicSummary(
       liveProduct?.shortDescription ||
         liveProduct?.description ||
         "",
     ) ||
-    getPublicSummary(fillerCopyOverrides[product.slug]?.summary ?? product.summary) ||
+    getPublicSummary(product.summary) ||
     `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
   const image =
