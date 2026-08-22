@@ -3,6 +3,7 @@ import {
   currentInventoryLegacyAliases,
   currentInventorySeeds,
 } from "./current-inventory";
+import { fillerCopyOverrides } from "./lib/filler-copy";
 import type { ProductSeed } from "./product-seed";
 
 export type CatalogGroup = {
@@ -1002,6 +1003,8 @@ const officialImageOverrides: Record<
 
 function makeProduct(seed: ProductSeed): Product {
   const category = catalogCategories.find((item) => item.slug === seed.category)!;
+  const copyOverride =
+    seed.category === "fillers" ? fillerCopyOverrides[seed.slug] : undefined;
   const imageOverride = officialImageOverrides[seed.slug];
   const resolvedImage =
     imageOverride?.image ||
@@ -1021,24 +1024,29 @@ function makeProduct(seed: ProductSeed): Product {
     imageOverride?.imageVerified ??
     seed.imageVerified ??
     false;
-  const variants = seed.variants?.map((variant) => {
-    if (
-      variant.imageKind === "editorial-family" &&
-      variant.imageApproved === true
-    ) {
-      return variant;
-    }
+  const variants = seed.variants
+    ?.map((variant) => {
+      if (
+        variant.imageKind === "editorial-family" &&
+        variant.imageApproved === true
+      ) {
+        return variant;
+      }
 
-    return ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
-      ? {
-          ...variant,
-          imageAlt: `نمای مرجع بسته ${variant.nameFa}؛ حجم و جزئیات بسته هنگام استعلام تطبیق می‌شود`,
-          imageVerified: false,
-          imageKind: "market-reference" as const,
-          imageApproved: true,
-        }
-      : variant;
-  });
+      return ["10ml", "deep-10ml", "lido-10ml"].includes(variant.id)
+        ? {
+            ...variant,
+            imageAlt: `نمای مرجع بسته ${variant.nameFa}؛ حجم و جزئیات بسته هنگام استعلام تطبیق می‌شود`,
+            imageVerified: false,
+            imageKind: "market-reference" as const,
+            imageApproved: true,
+          }
+        : variant;
+    })
+    .map((variant) => {
+      const copy = copyOverride?.variants?.[variant.id];
+      return copy ? { ...variant, ...copy } : variant;
+    });
   const sourceStatus = seed.sourceStatus ?? (seed.warning
     ? "نیازمند تطبیق پیش از انتشار قطعی"
     : "اطلاعات اولیه بازار؛ در انتظار تطبیق رسمی");
@@ -1088,23 +1096,24 @@ function makeProduct(seed: ProductSeed): Product {
     sourceStatus,
     warning: seed.warning,
     summary:
+      copyOverride?.summary ??
       seed.summary ??
       `${seed.nameFa} در گروه ${category.title} قرار می‌گیرد. این صفحه برای مقایسه فنی، بررسی بسته‌بندی و استعلام اطلاعات همان بچ آماده شده است.`,
     shortBenefit: shortBenefits[seed.category],
     audience: seed.audience ?? "پزشکان، کلینیک‌ها و مسئولان خرید حرفه‌ای",
-    features: seed.features ?? [
+    features: copyOverride?.features ?? seed.features ?? [
       "تطبیق نام کامل مدل با بسته موجود پیش از سفارش",
       "درخواست تصویر بچ‌کد، تاریخ و پلمب قابل مشاهده",
       "تفکیک اطلاعات بازار از مشخصات تأییدشده سازنده",
     ],
-    specs,
+    specs: copyOverride?.specs ?? specs,
     checks: seed.checks ?? [
       "نام محصول، مدل و مشخصات روی جعبه با سفارش تطبیق داده شود.",
       "بچ‌کد، تاریخ، پلمب و سلامت بسته‌بندی پیش از تحویل بررسی شود.",
       seed.warning ??
         "ترکیبات، مجوز و شرایط نگهداری از روی بسته و بروشور رسمی همان محصول تأیید شود.",
     ],
-    faq: seed.faq ?? [
+    faq: copyOverride?.faq ?? seed.faq ?? [
       {
         question: `اطلاعات ${seed.nameFa} در این صفحه قطعی است؟`,
         answer:
