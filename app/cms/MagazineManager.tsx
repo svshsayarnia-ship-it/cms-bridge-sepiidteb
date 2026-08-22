@@ -1,6 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import type { Article } from "../data";
+import type { CmsImage } from "../lib/cms-types";
+import { ArticleImageUploader } from "./ArticleImageUploader";
 
 type Props = { articles: Article[]; selectedIndex: number; onSelect(index: number): void; onChange(articles: Article[]): void };
 
@@ -48,6 +51,7 @@ const htmlTemplate = `<h1>عنوان اصلی مقاله</h1>
 
 export function MagazineManager({ articles, selectedIndex, onSelect, onChange }: Props) {
   const article = articles[selectedIndex];
+  const htmlEditorRef = useRef<HTMLTextAreaElement>(null);
   function update(patch: Partial<Article>) {
     if (!article) return;
     const next = [...articles];
@@ -59,6 +63,24 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
     if (!article || !window.confirm(`مقاله «${article.title || "بدون عنوان"}» حذف شود؟`)) return;
     onChange(articles.filter((_, index) => index !== selectedIndex));
     onSelect(Math.max(0, selectedIndex - 1));
+  }
+  function useAsFeatured(image: CmsImage, alt: string) {
+    update({ image: image.src, imageAlt: alt });
+  }
+  function insertImage(image: CmsImage, alt: string) {
+    if (!article) return;
+    const editor = htmlEditorRef.current;
+    const html = editableHtml(article);
+    const start = editor?.selectionStart ?? html.length;
+    const end = editor?.selectionEnd ?? start;
+    const figure = `\n<figure>\n  <img src="${escapeHtml(image.src)}" alt="${escapeHtml(alt)}" loading="lazy" />\n  <figcaption>${escapeHtml(alt)}</figcaption>\n</figure>\n`;
+    update({ htmlContent: `${html.slice(0, start)}${figure}${html.slice(end)}` });
+    requestAnimationFrame(() => {
+      if (!editor) return;
+      const nextPosition = start + figure.length;
+      editor.focus();
+      editor.setSelectionRange(nextPosition, nextPosition);
+    });
   }
   if (!article) return <div className="spb-empty-state">هنوز مقاله‌ای وجود ندارد. «مقاله جدید» را بزن.</div>;
 
@@ -74,8 +96,14 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
       <label className="is-wide"><span>عنوان اصلی مقاله</span><input value={article.title} onChange={(event) => update({ title: event.target.value })} placeholder="مثال: فیلر نورامیس چیست و چه کاربردی دارد؟" /><small>این عنوان، H1 نهایی صفحه است.</small></label>
       <div className="spb-html-entry">
         <div className="spb-html-entry__head"><div><strong>کد کامل HTML مقاله</strong><small>کل مقاله را یک‌جا Paste کن: مقدمه، H2، H3، جدول، لینک داخلی، FAQ و منابع. اگر H1 هم در کد باشد، برای جلوگیری از H1 تکراری فقط عنوان بالا در صفحه نمایش داده می‌شود.</small></div><button type="button" className="spb-button" onClick={() => update({ htmlContent: htmlTemplate })}>درج قالب نمونه</button></div>
-        <textarea className="spb-html-code" dir="ltr" rows={32} spellCheck={false} value={editableHtml(article)} onChange={(event) => update({ htmlContent: event.target.value })} placeholder={htmlTemplate} />
+        <textarea ref={htmlEditorRef} className="spb-html-code" dir="ltr" rows={32} spellCheck={false} value={editableHtml(article)} onChange={(event) => update({ htmlContent: event.target.value })} placeholder={htmlTemplate} />
         <div className="spb-html-tags"><strong>تگ‌های مجاز:</strong><code>h1, h2, h3, h4, p, strong, em, a, ul, ol, li, blockquote, table, figure, img</code></div>
+        <ArticleImageUploader
+          key={article.slug || `article-${selectedIndex}`}
+          defaultAlt={article.imageAlt || article.title}
+          onUseAsFeatured={useAsFeatured}
+          onInsertIntoArticle={insertImage}
+        />
       </div>
     </fieldset>
 
