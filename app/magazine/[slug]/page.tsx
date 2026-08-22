@@ -143,6 +143,8 @@ export default async function ArticlePage({
   const renderedHtmlContent = article.contentMode === "html"
     ? prepareArticleHtml(article.htmlContent ?? "")
     : "";
+  const hasEmbeddedSources = hasHtmlAnchor(renderedHtmlContent, "sources");
+  const hasSourceSection = hasEmbeddedSources || article.sources.length > 0;
 
   const image =
     article.slug === "verify-dermal-filler-authenticity"
@@ -215,7 +217,7 @@ export default async function ArticlePage({
               ? hasHtmlAnchor(renderedHtmlContent, "faq") && <a href="#faq">پرسش‌های پرتکرار</a>
               : article.faq?.length ? <a href="#faq">پرسش‌های پرتکرار</a> : null}
             {article.contentMode === "html"
-              ? hasHtmlAnchor(renderedHtmlContent, "sources") && <a href="#sources">منابع</a>
+              ? hasSourceSection && <a href="#sources">منابع</a>
               : <a href="#sources">منابع</a>}
           </nav>
           <p>
@@ -323,7 +325,7 @@ export default async function ArticlePage({
             </section>
           ) : null}
 
-          {article.contentMode !== "html" ? <section className="sb-article-sources" id="sources">
+          {(article.contentMode !== "html" || (!hasEmbeddedSources && article.sources.length > 0)) ? <section className="sb-article-sources" id="sources">
             <span className="sb-eyebrow">SOURCES / منابع</span>
             <h2>منابع مستقیم و قابل بررسی</h2>
             <p>
