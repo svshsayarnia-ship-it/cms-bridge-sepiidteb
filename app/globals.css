@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 51442)
-Total output lines: 9780
+Warning: truncated output (original token count: 51461)
+Total output lines: 9781
 
 @import "tailwindcss";
 
@@ -4054,6 +4054,7 @@ contain: paint;
   scroll-margin-top: 150px;
 }
 
+/* CMS tables keep stable column geometry and scroll as one aligned unit. */
 .sb-article-table--html {
   scrollbar-width: thin;
   scrollbar-color: var(--sb-gold) transparent;
@@ -5135,14 +5136,7 @@ contain: paint;
   .sb-group-category-grid > a:hover {
     border-color: rgba(176, 138, 71, 0.5);
     box-shadow: var(--sb-shadow-md);
-    transform: translateY(-2px);
-  }
-}
-
-/* Tablet */
-@media (max-width: 1100px) {
-  .sb-shell {
-    width: mi…1442 tokens truncated…s: 1fr;
+    transform: translateY(-2px);…1461 tokens truncated…s: 1fr;
     justify-items: start;
   }
 
