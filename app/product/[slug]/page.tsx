@@ -34,6 +34,7 @@ import {
 import {
   getCompactBrandLabel,
   getEnglishBrandLabel,
+  toNaturalPersianCopy,
   toPublicCopy,
 } from "../../lib/public-copy";
 import {
@@ -73,7 +74,7 @@ const internalCmsCopyTerms =
   /سازنده|تولید(?:شده)? توسط|کشور|شرکت|اصالت|تاریخ انقضا|بچ|پلمب|منبع|بررسی|پزشک|تزریق|کلینیک|پروتکل|درمان|Medytox|Caregen|Dongkook|BioPlus|Masoondarou|Professional Derma|Wockhardt|Daehan|Spad Pharmed/iu;
 
 function getPublicSummary(value: string) {
-  return (plainText(value)
+  return (toNaturalPersianCopy(plainText(value))
     .split(/(?<=[.!؟؛])\s+/u)
     .find((sentence) =>
       sentence.length > 20 && !internalCmsCopyTerms.test(sentence),
@@ -155,6 +156,13 @@ const getLiveProduct = cache(async (
 
   try {
     const product = await getCmsProductBySlug(slug, {
+      // The authenticated WooCommerce endpoint contains the custom SEO and
+      // E-E-A-T fields that the public Store API does not expose. A saved CMS
+      // snapshot is still preferred, so this slower fallback is only used
+      // before the first confirmed CMS write or after a cache loss. The source
+      // has occasionally taken longer than the normal CMS read limit, so a
+      // cold product page is allowed one bounded recovery read and then seeds
+      // the runtime cache for every following request.
       requestTimeoutMs: 35_000,
       requestMaxAttempts: 1,
     });
@@ -404,7 +412,6 @@ function getPublicSpecs(specs: Product["specs"]) {
 
 function getProductExperience(
   product: Product,
-  cmsProduct: CmsProduct | null,
 ): ProductExperienceProduct {
   return {
     nameFa: product.nameFa,
@@ -420,10 +427,6 @@ function getProductExperience(
     priceNote: product.priceNote,
     summary: getPublicSummary(product.summary),
     specs: getPublicSpecs(product.specs),
-    visualProfile: cmsProduct?.visualProfile,
-    visualScale: cmsProduct?.visualScale,
-    visualOffsetX: cmsProduct?.visualOffsetX,
-    visualOffsetY: cmsProduct?.visualOffsetY,
     variants: product.variants
       ?.filter(
         (variant) =>
@@ -433,19 +436,19 @@ function getProductExperience(
           isPublicImageSrc(variant.image),
       )
       .map((variant) => ({
-        id: variant.id,
-        label: variant.label,
-        nameFa: variant.nameFa,
-        nameEn: variant.nameEn,
-        image: variant.image,
-        imageAlt: variant.imageAlt,
-        imageVerified: variant.imageVerified,
-        imageKind: variant.imageKind,
-        volume: variant.volume,
-        summary: getPublicSummary(variant.summary),
-        specs: getPublicSpecs(variant.specs),
-        priceToman: variant.priceToman,
-        priceNote: variant.priceNote,
+      id: variant.id,
+      label: variant.label,
+      nameFa: variant.nameFa,
+      nameEn: variant.nameEn,
+      image: variant.image,
+      imageAlt: variant.imageAlt,
+      imageVerified: variant.imageVerified,
+      imageKind: variant.imageKind,
+      volume: variant.volume,
+      summary: getPublicSummary(variant.summary),
+      specs: getPublicSpecs(variant.specs),
+      priceToman: variant.priceToman,
+      priceNote: variant.priceNote,
       })),
   };
 }
@@ -558,13 +561,13 @@ export async function generateMetadata({
     ? cmsProduct
     : null;
 
-  const product =
-    liveProduct
-      ? buildCmsOnlyProduct(
-          liveProduct,
-          staticProduct ?? undefined,
-        )
-      : staticProduct;
+ const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
   if (!product) {
     return {};
@@ -616,53 +619,53 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ variant?: string | string[] }>;
 }) {
-  const { slug } = await params;
-  const variantParam = await searchParams;
-  const initialVariantId = Array.isArray(variantParam.variant)
-    ? variantParam.variant[0]
-    : variantParam.variant;
+ const { slug } = await params;
+ const variantParam = await searchParams;
+ const initialVariantId = Array.isArray(variantParam.variant)
+   ? variantParam.variant[0]
+   : variantParam.variant;
 
-  const staticProduct = getProduct(slug);
-  const cmsProduct = await getLiveProduct(slug);
+const staticProduct = getProduct(slug);
+const cmsProduct = await getLiveProduct(slug);
 
-  if (
-    !isPublicCmsProduct(cmsProduct) &&
-    !isPublicStaticProduct(staticProduct)
-  ) {
-    notFound();
-  }
+if (
+  !isPublicCmsProduct(cmsProduct) &&
+  !isPublicStaticProduct(staticProduct)
+) {
+  notFound();
+}
 
-  const liveProduct = isUsableLiveProduct(cmsProduct, staticProduct)
-    ? cmsProduct
-    : null;
+const liveProduct = isUsableLiveProduct(cmsProduct, staticProduct)
+  ? cmsProduct
+  : null;
 
-  const product =
-    liveProduct
-      ? buildCmsOnlyProduct(
-          liveProduct,
-          staticProduct ?? undefined,
-        )
-      : staticProduct;
+const product =
+  liveProduct
+    ? buildCmsOnlyProduct(
+        liveProduct,
+        staticProduct ?? undefined,
+      )
+    : staticProduct;
 
-  if (!product) {
-    notFound();
-  }
+if (!product) {
+  notFound();
+}
 
-  // Related cards are editorial discovery content. Keeping them local prevents a
-  // second WooCommerce request from holding the entire product page open while
-  // the primary product price is already available from its live snapshot.
-  const storefrontProducts = products;
+// Related cards are editorial discovery content. Keeping them local prevents a
+// second WooCommerce request from holding the entire product page open while
+// the primary product price is already available from its live snapshot.
+const storefrontProducts = products;
 
   const related = storefrontProducts
-    .filter(
-      (item) =>
-        item.category === product.category &&
-        item.slug !== product.slug,
+  .filter(
+    (item) =>
+      item.category === product.category &&
+      item.slug !== product.slug,
     )
     .slice(0, 3);
   const group = getGroupForCategory(product.category);
   const customerFaqs = getCustomerFaqs(product);
-  const productExperience = getProductExperience(product, liveProduct);
+  const productExperience = getProductExperience(product);
   const compactBrand = getCompactBrandLabel(product.brand);
   const brandPage = getBrandPageForLabel(compactBrand);
   const brandProductCount = brandPage
@@ -680,66 +683,66 @@ export default async function ProductPage({
       ? `/brands/${brandPage.slug}`
       : undefined;
 
-  const livePricing = getLiveProductPricing(liveProduct);
-  const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
-  const catalogImage = staticProduct && hasLocalProductCutout(staticProduct.image)
-    ? {
-        src: getProductCutoutSrc(staticProduct.image),
-        alt: staticProduct.imageAlt || `تصویر ${staticProduct.nameFa}`,
-      }
-    : null;
+const livePricing = getLiveProductPricing(liveProduct);
+const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
+const catalogImage = staticProduct && hasLocalProductCutout(staticProduct.image)
+  ? {
+      src: getProductCutoutSrc(staticProduct.image),
+      alt: staticProduct.imageAlt || `تصویر ${staticProduct.nameFa}`,
+    }
+  : null;
 
-  const schemaDescription =
-    getPublicSummary(product.summary) || product.nameFa;
-  const schemaPrice = getSchemaPrice(
-    liveProduct,
-    product.priceToman,
-  );
+const schemaDescription =
+  getPublicSummary(product.summary) || product.nameFa;
+const schemaPrice = getSchemaPrice(
+  liveProduct,
+  product.priceToman,
+);
 
-  const schemaAvailability =
-    getSchemaAvailability(liveProduct);
-  const image = liveImage?.src || product.image;
-  const variants = productExperience.variants ?? [];
-  const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
-  const absoluteImage = (value: string) =>
-    value.startsWith("http") ? value : `${siteOrigin}${value}`;
-  const variantSchemas = variants
-    .filter((variant) => variant.priceToman > 0)
-    .map((variant) => {
-      const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
-      const variantPrice =
-        variant.priceToman > 0
-          ? String(Math.round(variant.priceToman * 10))
-          : null;
+const schemaAvailability =
+  getSchemaAvailability(liveProduct);
+const image = liveImage?.src || product.image;
+const variants = productExperience.variants ?? [];
+const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
+const absoluteImage = (value: string) =>
+  value.startsWith("http") ? value : `${siteOrigin}${value}`;
+const variantSchemas = variants
+  .filter((variant) => variant.priceToman > 0)
+  .map((variant) => {
+  const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
+  const variantPrice =
+    variant.priceToman > 0
+      ? String(Math.round(variant.priceToman * 10))
+      : null;
 
-      return {
-        "@type": "Product",
-        "@id": `${variantUrl}#product`,
-        name: variant.nameFa,
-        alternateName: variant.nameEn,
-        url: variantUrl,
-        sku: `${product.slug}-${variant.id}`,
-        image: absoluteImage(variant.image),
-        description: variant.summary || variant.nameFa,
-        isVariantOf: { "@id": productGroupId },
-        ...(variantPrice
-          ? {
-              offers: {
-                "@type": "Offer",
-                url: variantUrl,
-                price: variantPrice,
-                priceCurrency: "IRR",
-                availability: schemaAvailability,
-                itemCondition: "https://schema.org/NewCondition",
-                ...merchantReturnPolicyReference,
-              },
-            }
-          : {}),
-      };
-    });
-  const hasProductOffer = Boolean(
-    schemaPrice || variantSchemas.length > 0,
-  );
+  return {
+    "@type": "Product",
+    "@id": `${variantUrl}#product`,
+    name: variant.nameFa,
+    alternateName: variant.nameEn,
+    url: variantUrl,
+    sku: `${product.slug}-${variant.id}`,
+    image: absoluteImage(variant.image),
+    description: variant.summary || variant.nameFa,
+    isVariantOf: { "@id": productGroupId },
+    ...(variantPrice
+      ? {
+          offers: {
+            "@type": "Offer",
+            url: variantUrl,
+            price: variantPrice,
+            priceCurrency: "IRR",
+            availability: schemaAvailability,
+            itemCondition: "https://schema.org/NewCondition",
+            ...merchantReturnPolicyReference,
+          },
+        }
+      : {}),
+  };
+  });
+const hasProductOffer = Boolean(
+  schemaPrice || variantSchemas.length > 0,
+);
   return (
     <main id="main-content">
       <div className="sb-shell">

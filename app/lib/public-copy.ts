@@ -13,22 +13,12 @@ export function getEnglishBrandLabel(value: string): string {
     .join(" / ");
 }
 
-function canonicalCompactBrandLabel(value: string): string {
-  if (/^fusion(?:\s+meso)?$/iu.test(value)) {
-    return "Fusion";
-  }
-
-  return value;
-}
-
 export function getCompactBrandLabel(
   value: string,
 ): string {
-  const label = getEnglishBrandLabel(value)
+  return getEnglishBrandLabel(value)
     .split("/")[0]
     .trim();
-
-  return canonicalCompactBrandLabel(label);
 }
 
 export function toPublicCopy(value: string): string {
@@ -38,33 +28,51 @@ export function toPublicCopy(value: string): string {
     .replace(/\bWooCommerce\b/giu, "سامانه فروش")
     .replace(/\bCMS\b/giu, "سامانه فروش")
     .replace(/ووکامرس/gu, "سامانه فروش")
-    .replace(/قیمت ثبت[‌ ]شده در سایت/gu, "قیمت فعلی این مدل")
-    .replace(/قیمت فهرست(?: موجودی)?/gu, "قیمت فعلی")
-    .replace(/طبق فهرست موجودی/gu, "در این صفحه")
-    .replace(/در فهرست موجودی/gu, "در سپید بیوتی")
-    .replace(/فهرست موجودی/gu, "محصولات سپید بیوتی")
-    .replace(/محصول منتشر[‌ ]شده/gu, "محصول")
-    .replace(/مسیر استعلام/gu, "مسیر خرید")
-    .replace(/استعلام همان روز/gu, "بررسی قیمت امروز")
-    .replace(/موجودی همان بچ استعلام شود/gu, "موجودی همان مدل پیش از سفارش بررسی شود")
-    .replace(/هنگام استعلام/gu, "پیش از سفارش")
-    .replace(/در مرحله استعلام/gu, "پیش از نهایی‌کردن سفارش")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
 
-export function getPublicVolumeLabel(value?: string): string {
-  if (!value) return "";
-
-  const cleanValue = value
-    .replace(
-      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
-      "",
-    )
-    .replace(/^(?:نسخه‌های|چند نسخه)\s+متفاوت\s+در\s+بازار$/u, "")
+/**
+ * Storefront copy should sound like a person explaining a product, not like a
+ * catalogue export. These edits are intentionally small and conservative so
+ * product facts, names and units remain unchanged.
+ */
+export function toNaturalPersianCopy(value: string): string {
+  return toPublicCopy(value)
+    .replace(/می‌باشد/gu, "است")
+    .replace(/می‌گردد/gu, "می‌شود")
+    .replace(/می‌نماید/gu, "می‌کند")
+    .replace(/به منظور/gu, "برای")
+    .replace(/در راستای/gu, "برای")
+    .replace(/قابل مشاهده/gu, "قابل دیدن")
+    .replace(/قابل ارائه/gu, "که می‌توان ارائه کرد")
+    .replace(/مورد بررسی قرار می‌گیرد/gu, "بررسی می‌شود")
+    .replace(/می‌بایست/gu, "باید")
+    .replace(/دارا می‌باشد/gu, "دارد")
+    .replace(/محصولات حرفه‌ای زیبایی/gu, "محصولات زیبایی")
+    .replace(/اطلاعات تکمیلی/gu, "توضیحات بیشتر")
+    .replace(/فرآیند/gu, "روند")
+    .replace(/فرایند/gu, "روند")
+    .replace(/\s{2,}/g, " ")
     .trim();
+}
 
-  return cleanValue ? toPublicCopy(cleanValue) : "";
+export function toReaderFriendlyCopy(value: string): string {
+  return toNaturalPersianCopy(value)
+    .replace(/فرآورده‌های بوتولینوم/gu, "محصولات بوتاکس")
+    .replace(/فرآورده‌های/gu, "محصولات")
+    .replace(/فرآورده/gu, "محصول")
+    .replace(/پروتکل/gu, "روش کار")
+    .replace(/موارد منع مصرف/gu, "شرایطی که نباید استفاده شود")
+    .replace(/واجد صلاحیت/gu, "دارای صلاحیت")
+    .replace(/زنجیره تأمین/gu, "مسیر خرید")
+    .replace(/دستورالعمل/gu, "راهنمای")
+    .replace(/ناحیه/gu, "محل")
+    .replace(/برچسب/gu, "نوشته روی بسته")
+    .replace(/ترکیبات درج‌شده/gu, "ترکیبات نوشته‌شده روی بسته")
+    .replace(/به‌کارگیری/gu, "استفاده")
+    .replace(/به‌کار بردن/gu, "استفاده کردن")
+    .trim();
 }
 
 export function getPublicSourceUrl(value: string): string {

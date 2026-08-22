@@ -19,6 +19,7 @@ import type {
   Product,
 } from "../data";
 import { siteOrigin } from "../lib/site-url";
+import { toReaderFriendlyCopy } from "../lib/public-copy";
 
 type ContentLandingPageProps = {
   page: GuidePage | ConcernPage;
@@ -97,22 +98,22 @@ export function ContentLandingPage({
           <span className="sb-eyebrow">
             {page.eyebrow}
           </span>
-          <h1>{page.title}</h1>
-          <p>{page.intro}</p>
+          <h1>{toReaderFriendlyCopy(page.title)}</h1>
+          <p>{toReaderFriendlyCopy(page.intro)}</p>
           <small>
-            بازبینی محتوایی: {page.reviewedAt}
+            آخرین بازبینی: {page.reviewedAt}
           </small>
         </div>
       </header>
 
       <section className="sb-content-landing__quick">
         <div className="sb-shell">
-          <h2>خلاصه کاربردی</h2>
+          <h2>خلاصه‌ای که به کارتان می‌آید</h2>
           <ol>
             {page.quickChecks.map((item, index) => (
               <li key={item}>
                 <span>۰{index + 1}</span>
-                <p>{item}</p>
+                <p>{toReaderFriendlyCopy(item)}</p>
               </li>
             ))}
           </ol>
@@ -127,14 +128,14 @@ export function ContentLandingPage({
               key={section.title}
             >
               <span>۰{index + 1}</span>
-              <h2>{section.title}</h2>
+              <h2>{toReaderFriendlyCopy(section.title)}</h2>
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph}>{toReaderFriendlyCopy(paragraph)}</p>
               ))}
               {section.bullets?.length ? (
                 <ul>
                   {section.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
+                    <li key={bullet}>{toReaderFriendlyCopy(bullet)}</li>
                   ))}
                 </ul>
               ) : null}
@@ -143,13 +144,13 @@ export function ContentLandingPage({
         </article>
 
         <aside className="sb-content-landing__aside">
-          <strong>مسیرهای مرتبط</strong>
+          <strong>اگر خواستید بیشتر بخوانید</strong>
           {relatedCategories.map((category) => (
             <Link
               href={`/shop/${category.slug}`}
               key={category.slug}
             >
-              {category.title}
+              {toReaderFriendlyCopy(category.title)}
               <ArrowIcon />
             </Link>
           ))}
@@ -158,7 +159,7 @@ export function ContentLandingPage({
               href={`/${kind === "guide" ? "concerns" : "guides"}/${related.slug}`}
               key={related.slug}
             >
-              {related.title}
+              {toReaderFriendlyCopy(related.title)}
               <ArrowIcon />
             </Link>
           ))}
@@ -168,17 +169,20 @@ export function ContentLandingPage({
       <section className="sb-section sb-content-landing__faq">
         <div className="sb-shell sb-faq-section__grid">
           <div>
-            <span className="sb-eyebrow">پرسش‌های رایج</span>
-            <h2>پاسخ کوتاه و روشن</h2>
+            <span className="sb-eyebrow">سؤال‌های رایج</span>
+            <h2>جواب‌های کوتاه</h2>
           </div>
-          <FaqList items={page.faq} />
+          <FaqList items={page.faq.map((item) => ({
+            question: toReaderFriendlyCopy(item.question),
+            answer: toReaderFriendlyCopy(item.answer),
+          }))} />
         </div>
       </section>
 
       {isGuide(page) && page.sources.length > 0 ? (
         <section className="sb-content-landing__sources">
           <div className="sb-shell">
-            <h2>منابع اصلی</h2>
+            <h2>منابعی که به آن‌ها تکیه کرده‌ایم</h2>
             <ul>
               {page.sources.map((source) => (
                 <li key={source.href}>
@@ -202,7 +206,7 @@ export function ContentLandingPage({
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <h2>محصولات مرتبط برای بررسی مشخصات</h2>
+                <h2>محصولات مرتبط برای دیدن مشخصات</h2>
               </div>
               <Link className="sb-text-link" href="/shop">
                 همه محصولات
@@ -226,7 +230,7 @@ export function ContentLandingPage({
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <h2>مطالعه تکمیلی</h2>
+                <h2>اگر خواستید بیشتر بدانید</h2>
               </div>
               <Link className="sb-text-link" href="/magazine">
                 همه مقاله‌ها

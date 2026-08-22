@@ -1,7 +1,6 @@
-import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
-import { getCompactBrandLabel } from "./public-copy";
+import { getCompactBrandLabel, toNaturalPersianCopy } from "./public-copy";
 
 export type PublicProduct = Pick<
   Product,
@@ -20,12 +19,6 @@ export type PublicProduct = Pick<
   | "shortBenefit"
   | "priceToman"
 > & {
-  /** Canonical product asset when the product passed through the public mapper. */
-  masterImage?: string;
-  visualProfile?: ProductVisualProfile;
-  visualScale?: number | null;
-  visualOffsetX?: number;
-  visualOffsetY?: number;
   price?: string;
   regularPrice?: string;
   salePrice?: string;
@@ -56,10 +49,6 @@ export function toPublicProduct(
     | "shortBenefit"
     | "priceToman"
   > & {
-    visualProfile?: ProductVisualProfile;
-    visualScale?: number | null;
-    visualOffsetX?: number;
-    visualOffsetY?: number;
     price?: string;
     regularPrice?: string;
     salePrice?: string;
@@ -74,17 +63,14 @@ export function toPublicProduct(
     categoryTitle: product.categoryTitle,
     badge: product.badge,
     image: product.image,
-    masterImage: product.image,
     imageAlt: product.imageAlt,
     imageKind: product.imageKind,
     position: product.position,
     volume: product.volume,
-    shortBenefit: product.shortBenefit,
+    shortBenefit: product.shortBenefit
+      ? toNaturalPersianCopy(product.shortBenefit)
+      : product.shortBenefit,
     priceToman: product.priceToman,
-    visualProfile: product.visualProfile,
-    visualScale: product.visualScale,
-    visualOffsetX: product.visualOffsetX,
-    visualOffsetY: product.visualOffsetY,
     price: product.price,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,

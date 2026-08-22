@@ -6,11 +6,12 @@ import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { articles } from "../data";
 import { applyArticlePresentation, getSitePresentation } from "../lib/site-presentation";
 import { buildSeoMetadata } from "../lib/seo";
+import { toReaderFriendlyCopy } from "../lib/public-copy";
 
 export const metadata = buildSeoMetadata({
-  title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
+  title: "مجله سپید؛ راهنمای ساده محصولات زیبایی",
   description:
-    "مقالات منبع‌دار و به‌روز درباره فیلرهای پرجست‌وجو، بوتولینوم، مزوژل، ریزش مو، اصالت محصولات و مدیریت خرید کلینیک.",
+    "نوشته‌های ساده درباره فیلر، بوتاکس، مزوژل، بسته‌بندی، خرید و سؤال‌هایی که بهتر است قبل از سفارش بپرسید.",
   path: "/magazine",
   image: "/images/magazine-authenticity-v2.webp",
   imageAlt: "مجله سپید بیوتی",
@@ -31,12 +32,12 @@ export default async function MagazinePage() {
       <section className="sb-magazine-hero">
         <div className="sb-shell sb-magazine-hero__head">
           <div>
-            <span className="sb-eyebrow">SEPIID JOURNAL / 2026</span>
-            <h1>مجله راهنمای محصولات زیبایی و خرید آگاهانه</h1>
+            <span className="sb-eyebrow">مجله سپید</span>
+            <h1>قبل از خرید، چند نکته ساده بخوانید.</h1>
           </div>
           <p>
-            تحریریه سپید بیوتی، محتوای آموزشی را با تاریخ بازبینی، محدودیت روشن و
-            لینک مستقیم به منابع رسمی یا پژوهشی منتشر می‌کند.
+            اینجا درباره نام مدل‌ها، حجم بسته، راه بررسی و سؤال‌های مهم خرید می‌نویسیم.
+            متن‌ها آموزشی‌اند و جای معاینه یا نظر پزشک را نمی‌گیرند.
           </p>
         </div>
 
@@ -52,8 +53,8 @@ export default async function MagazinePage() {
           </Link>
           <div className="sb-magazine-featured__content">
             <span>{featured.category}</span>
-            <h2>{featured.title}</h2>
-            <p>{featured.excerpt}</p>
+            <h2>{toReaderFriendlyCopy(featured.title)}</h2>
+            <p>{toReaderFriendlyCopy(featured.excerpt)}</p>
             <div className="sb-magazine-featured__meta">
               <span>{featured.date}</span>
               <span>
@@ -62,7 +63,7 @@ export default async function MagazinePage() {
               </span>
             </div>
             <Link className="sb-btn sb-btn--dark" href={`/magazine/${featured.slug}`}>
-              مطالعه مقاله شاخص
+              خواندن مقاله
               <ArrowIcon />
             </Link>
           </div>
@@ -71,7 +72,7 @@ export default async function MagazinePage() {
 
       <section className="sb-topic-strip">
         <div className="sb-shell">
-          <span>موضوع‌ها:</span>
+          <span>از این موضوع‌ها شروع کنید:</span>
           {["راهنمای انتخاب", "مو و پوست سر", "ایمنی و اصالت", "مراقبت آگاهانه"].map(
             (topic) => (
               <a href="#articles" key={topic}>
@@ -86,10 +87,10 @@ export default async function MagazinePage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">LATEST / ARTICLES</span>
-              <h2>تازه‌ترین راهنماها</h2>
+              <span className="sb-eyebrow">نوشته‌های سپید</span>
+              <h2>تازه‌ترین مقاله‌ها</h2>
             </div>
-            <p>{editableArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
+            <p>{editableArticles.length} مقاله درباره انتخاب، بسته و خرید</p>
           </div>
           <div className="sb-article-grid">
             {editableArticles.map((article) => (
@@ -102,29 +103,29 @@ export default async function MagazinePage() {
       <section className="sb-editorial-policy">
         <div className="sb-shell sb-editorial-policy__grid">
           <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">EDITORIAL STANDARD</span>
-            <h2>استاندارد تحریریه سپید</h2>
+            <span className="sb-eyebrow sb-eyebrow--gold">روش نوشتن ما</span>
+            <h2>واضح می‌نویسیم و اغراق نمی‌کنیم</h2>
           </div>
           <ol>
             <li>
               <span>۰۱</span>
               <div>
-                <strong>منبع مستقیم</strong>
-                <p>اولویت با نهادهای رسمی و پژوهش‌های منتشرشده است.</p>
+                <strong>منبع را نشان می‌دهیم</strong>
+                <p>هرجا لازم باشد، لینک منبع رسمی یا پژوهشی را می‌گذاریم.</p>
               </div>
             </li>
             <li>
               <span>۰۲</span>
               <div>
-                <strong>ادعای محتاطانه</strong>
-                <p>نتیجه قطعی، بی‌خطر یا مناسب برای همه نمی‌نویسیم.</p>
+                <strong>قول عجیب نمی‌دهیم</strong>
+                <p>نتیجه قطعی یا مناسب‌بودن برای همه را وعده نمی‌دهیم.</p>
               </div>
             </li>
             <li>
               <span>۰۳</span>
               <div>
-                <strong>بازبینی و اصلاح</strong>
-                <p>تاریخ بازبینی و لینک منابع روی هر مقاله دیده می‌شود.</p>
+                <strong>متن را به‌روز می‌کنیم</strong>
+                <p>تاریخ آخرین بازبینی هر مقاله را روشن می‌نویسیم.</p>
               </div>
             </li>
           </ol>

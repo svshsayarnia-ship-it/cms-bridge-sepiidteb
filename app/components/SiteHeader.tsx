@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- local non-product compressed assets */
+/* eslint-disable @next/next/no-img-element -- local compressed assets */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,6 +10,7 @@ import {
   type Category,
 } from "../data";
 import type { PublicProduct } from "../lib/public-product";
+import { getProductCutoutSrc } from "../lib/product-image";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -18,7 +19,6 @@ import {
   MenuIcon,
   SearchIcon,
 } from "./Icons";
-import { ProductVisual } from "./product/ProductVisual";
 
 const navItems = [
   { href: "/shop", label: "فروشگاه" },
@@ -49,7 +49,7 @@ function BrandMark({ light = false, tagline }: { light?: boolean; tagline?: stri
       <span>
         <strong>Sepiid Beauty</strong>
         {tagline && <small>{tagline}</small>}
-        <small>سپید بیوتی · انتخاب حرفه‌ای</small>
+        <small>سپید بیوتی · اطلاعات روشن برای خرید بهتر</small>
       </span>
     </Link>
   );
@@ -451,12 +451,12 @@ export function SiteHeader({
               {searchResults.length ? (
                 searchResults.map((product) => (
                   <Link href={productHref(product)} key={product.slug}>
-                    <ProductVisual
+                    <div
                       className="sb-search-results__image"
-                      product={product}
-                      variant="search"
-                      showBackground={false}
-                      sizes="72px"
+                      style={{
+                        backgroundImage: `url(${getProductCutoutSrc(product.image)})`,
+                        backgroundPosition: `${product.position} center`,
+                      }}
                     />
                     <div>
                       <span>{product.categoryTitle}</span>

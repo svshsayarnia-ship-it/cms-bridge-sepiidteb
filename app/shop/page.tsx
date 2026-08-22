@@ -15,22 +15,13 @@ import { toPublicProduct } from "../lib/public-product";
 
 export const revalidate = 300;
 
-const groupDescriptions: Record<string, string> = {
-  injectables:
-    "فیلر، مزوژل، اسکین‌بوستر و فرآورده‌های بوتولینوم؛ برای مقایسه مدل، حجم، بسته‌بندی و قیمت.",
-  "mesotherapy-cocktails":
-    "کوکتل‌های تخصصی پوست، دور چشم و مو؛ دسته‌بندی‌شده برای اینکه سریع‌تر به محصول موردنظر برسید.",
-  "professional-support":
-    "محصولات پشتیبان حرفه‌ای با تمرکز بر نام دقیق، قدرت درج‌شده و نوع بسته.",
-};
-
 export const metadata = buildSeoMetadata({
-  title: "فروشگاه سپید بیوتی | قیمت و مقایسه محصولات زیبایی",
+  title: "محصولات زیبایی و کلینیکی",
   description:
-    "فیلر، مزوژل، اسکین‌بوستر، بوتولینوم و کوکتل‌های تخصصی را با مدل، حجم، بسته‌بندی و قیمت مقایسه کنید.",
+    "فیلر، بوتاکس، مزوژل و محصولات حرفه‌ای زیبایی را با نام، حجم، قیمت و راه خرید روشن ببینید.",
   path: "/shop",
   image: "/images/drive/category-fillers.webp",
-  imageAlt: "فروشگاه محصولات تخصصی زیبایی سپید بیوتی",
+  imageAlt: "فروشگاه محصولات تخصصی زیبایی",
 });
 
 export default async function ShopPage() {
@@ -52,29 +43,32 @@ export default async function ShopPage() {
         <div className="sb-shell sb-shop-hero__grid">
           <div>
             <span className="sb-eyebrow">
-              SHOP / SEPIID BEAUTY
+              همه محصولات
             </span>
 
-            <h1>فروشگاه سپید بیوتی</h1>
+            <h1>
+              محصولتان را پیدا کنید
+            </h1>
 
             <p>
-              اگر نام محصول را می‌دانید، مستقیم جستجو کنید. اگر هنوز بین چند گزینه مردد هستید، از دسته‌بندی شروع کنید و مدل، حجم، بسته‌بندی و قیمت محصولات مشابه را کنار هم ببینید.
+              از دسته یا نام برند شروع کنید. در صفحه هر محصول، نام مدل،
+              تصویر، حجم بسته و راه پرسیدن قیمت را یک‌جا می‌بینید.
             </p>
           </div>
 
           <div className="sb-shop-hero__stats">
             <div>
               <strong>{products.length}</strong>
-              <span>محصول برای مقایسه</span>
+              <span>محصول برای دیدن</span>
             </div>
 
             <div>
               <strong>{categories.length}</strong>
-              <span>دسته تخصصی</span>
+              <span>گروه محصول</span>
             </div>
 
             <Link href="/guides">
-              هنوز مطمئن نیستید؟
+              اگر مردد هستید
               <ArrowIcon />
             </Link>
           </div>
@@ -83,7 +77,7 @@ export default async function ShopPage() {
 
       <section
         className="sb-shop-groups"
-        aria-label="مسیرهای اصلی فروشگاه"
+        aria-label="مسیرهای اصلی کاتالوگ"
       >
         <div className="sb-shell">
           {catalogGroups.map(
@@ -103,10 +97,12 @@ export default async function ShopPage() {
                   <span>۰{index + 1}</span>
 
                   <div>
-                    <strong>{group.title}</strong>
+                    <strong>
+                      {group.title}
+                    </strong>
 
                     <small>
-                      {groupDescriptions[group.slug] ?? group.description}
+                      {group.description}
                     </small>
                   </div>
 
@@ -125,7 +121,8 @@ export default async function ShopPage() {
           {categories.map((category) => {
             const count = products.filter(
               (product) =>
-                product.category === category.slug,
+                product.category ===
+                category.slug,
             ).length;
 
             return (
@@ -142,7 +139,9 @@ export default async function ShopPage() {
 
                 <span>{category.title}</span>
 
-                <small>{count} محصول</small>
+                <small>
+                  {count} محصول
+                </small>
               </Link>
             );
           })}
@@ -150,31 +149,35 @@ export default async function ShopPage() {
       </section>
 
       <section className="sb-section sb-catalog-section">
-        <div className="sb-shell">
-          <ShopCatalog
-            items={products.map(toPublicProduct)}
-            categoryOptions={categories}
-          />
-        </div>
-      </section>
+  <div className="sb-shell">
+    <ShopCatalog
+      items={products.map(toPublicProduct)}
+      categoryOptions={categories}
+    />
+  </div>
+</section>
 
       <section className="sb-category-seo">
         <div className="sb-shell sb-category-seo__grid">
           <div>
             <span className="sb-eyebrow">
-              HOW TO CHOOSE / راهنمای سریع
+          چطور از فروشگاه استفاده کنیم؟
             </span>
 
-            <h2>از نام محصول عبور کنید؛ جزئیات مدل را ببینید.</h2>
+            <h2>
+              از نام کامل مدل شروع کنید.
+            </h2>
           </div>
 
           <div>
             <p>
-              دو محصول با نام یا برند مشابه ممکن است حجم، تعداد سرنگ یا ویال و قیمت متفاوتی داشته باشند. صفحه هر محصول را باز کنید و همان مدلی را ببینید که قصد خریدش را دارید.
+              عنوان دسته فقط شروع کار است. نام مدل، حجم و تعداد داخل بسته را
+              با هم بخوانید تا دو محصول متفاوت را اشتباهی مقایسه نکنید.
             </p>
 
             <p>
-              سپید بیوتی قیمت، مدل و شکل بسته را تا جای ممکن کنار هم نشان می‌دهد تا قبل از تماس یا سفارش، تصویر روشن‌تری از انتخابتان داشته باشید.
+              اگر قیمت یا موجودی زود تغییر کند، قیمت روز و وضعیت همان مدل را
+              از ما بپرسید. عدد حدسی به درد خرید نمی‌خورد.
             </p>
           </div>
         </div>
@@ -192,7 +195,9 @@ export default async function ShopPage() {
               (product, index) => ({
                 "@type": "ListItem",
                 position: index + 1,
-                url: `${siteOrigin}${productHref(product)}`,
+                url: `${siteOrigin}${productHref(
+                  product,
+                )}`,
                 name: product.nameFa,
               }),
             ),

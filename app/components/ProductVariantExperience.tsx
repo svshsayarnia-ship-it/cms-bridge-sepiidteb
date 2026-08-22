@@ -1,26 +1,16 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- local editorial product imagery */
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { ProductVisualProfile } from "../config/visualProfiles";
+import { useState } from "react";
 import type { Product, ProductVariant } from "../data";
-import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
+import { getProductCutoutSrc } from "../lib/product-image";
+import { getPublicPackagingLabel } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
-import { ProductVisual } from "./product/ProductVisual";
 
 type Pricing = {
   label: string;
   note: string;
-};
-
-type PublicRoleImage = {
-  src: string;
-  alt: string;
-};
-
-type ProductImageRolesResponse = {
-  cardImage: PublicRoleImage | null;
-  variantImages: Record<string, PublicRoleImage>;
 };
 
 type ProductExperienceVariant = Pick<
@@ -56,10 +46,6 @@ export type ProductExperienceProduct = Pick<
   | "summary"
   | "specs"
 > & {
-  visualProfile?: ProductVisualProfile;
-  visualScale?: number | null;
-  visualOffsetX?: number;
-  visualOffsetY?: number;
   variants?: ProductExperienceVariant[];
 };
 
@@ -79,7 +65,7 @@ const priceFormatter = new Intl.NumberFormat("fa-IR");
 function formatStaticPrice(value?: number) {
   return value && value > 0
     ? `${priceFormatter.format(value)} تومان`
-    : "بررسی قیمت امروز";
+    : "قیمت روز را بپرسید";
 }
 
 function buildInquiryLink(name: string, volume?: string) {
@@ -87,38 +73,28 @@ function buildInquiryLink(name: string, volume?: string) {
   return `https://wa.me/989037251266?text=${encodeURIComponent(message)}`;
 }
 
-const internalProductTerms = /تطبیق|تأیید|تایید|فهرست|گزارش|مرجع|بچ‌کد|پلمب/u;
+const internalProductTerms = /سازنده|تولیدکننده|کشور|تطبیق|تأیید|تایید|بررسی|فهرست|گزارش|مرجع|بچ‌کد|پلمب/u;
 
 function conciseProductCopy(value: string, supplierTerms: string[]) {
-  const plain = toPublicCopy(
-    value
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim(),
-  );
+  const plain = value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!plain) return "";
 
-  const sentences = plain
-    .split(/(?<=[.!؟])\s+/u)
-    .map((sentence) => sentence.trim())
-    .filter(Boolean);
+  const firstSentence = plain.split(/(?<=[.!؟])\s+/u)[0] ?? plain;
 
-  const editorialSentences = sentences.filter(
-    (sentence) =>
-      !internalProductTerms.test(sentence) &&
-      !supplierTerms.some(
-        (term) => term && sentence.toLowerCase().includes(term.toLowerCase()),
-      ),
-  );
+  if (
+    internalProductTerms.test(firstSentence) ||
+    supplierTerms.some((term) => term && firstSentence.toLowerCase().includes(term.toLowerCase()))
+  ) {
+    return "";
+  }
 
-  const selected = (editorialSentences.length ? editorialSentences : sentences)
-    .slice(0, 2)
-    .join(" ");
-
-  return selected.length > 260
-    ? `${selected.slice(0, 257).trimEnd()}…`
-    : selected;
+  return firstSentence.length > 180
+    ? `${firstSentence.slice(0, 177).trimEnd()}…`
+    : firstSentence;
 }
 
 function getSupplierTerms(brand: string) {
@@ -155,24 +131,13 @@ const visibleSpecLabels = new Map<string, string>([
   ["واحد قیمت", "واحد قیمت"],
 ]);
 
-const variantFallbackImages: Record<string, string> = {
-  fillers: "/images/products/editorial/fillers-family.webp",
-  "skin-boosters": "/images/products/editorial/skin-boosters-family.webp",
-  "botulinum-toxins": "/images/products/editorial/botulinum-family.webp",
-  "rejuvenation-cocktails": "/images/products/editorial/rejuvenation-family.webp",
-  "brightening-cocktails": "/images/products/editorial/brightening-family.webp",
-  "eye-cocktails": "/images/products/editorial/eye-family.webp",
-  "hair-cocktails": "/images/products/editorial/hair-family.webp",
-  "hyaluronidase-products": "/images/products/editorial/sepiid-natural-stage.webp",
-};
-
 function getVisibleSpecs(specs: Array<[string, string]>) {
   const seen = new Set<string>();
 
   return specs.flatMap(([label, value]) => {
     const displayLabel = visibleSpecLabels.get(label);
 
-    const cleanValue = toPublicCopy(value)
+    const cleanValue = value
       .replace(/(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست\s+موجودی).*$/u, "")
       .trim();
 
@@ -196,58 +161,12 @@ export function ProductVariantExperience({
   initialVariantId,
 }: ProductVariantExperienceProps) {
   const defaultVariantId = product.variants?.[0]?.id ?? "";
-  const hasInitialVariantSelection = Boolean(
-    initialVariantId && product.variants?.some((variant) => variant.id === initialVariantId),
-  );
   const [selectedId, setSelectedId] = useState(
-    hasInitialVariantSelection
+    product.variants?.some((variant) => variant.id === initialVariantId)
       ? initialVariantId ?? defaultVariantId
       : defaultVariantId,
   );
-  const [hasExplicitVariantSelection, setHasExplicitVariantSelection] = useState(
-    hasInitialVariantSelection,
-  );
-  const [cmsVariantImages, setCmsVariantImages] = useState<
-    Record<string, PublicRoleImage>
-  >({});
-  const variantIds = product.variants?.map((variant) => variant.id).join(",") ?? "";
-
-  useEffect(() => {
-    if (!variantIds || typeof window === "undefined") return;
-
-    const pathnameParts = window.location.pathname.split("/").filter(Boolean);
-    const slug = decodeURIComponent(pathnameParts[pathnameParts.length - 1] ?? "");
-    if (!slug) return;
-
-    const controller = new AbortController();
-    const query = new URLSearchParams({
-      slug,
-      variants: variantIds,
-    });
-
-    void fetch(`/api/product-image-roles?${query.toString()}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as ProductImageRolesResponse;
-      })
-      .then((data) => {
-        if (data?.variantImages) setCmsVariantImages(data.variantImages);
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        console.warn("[product-variant] role image load failed", error);
-      });
-
-    return () => controller.abort();
-  }, [variantIds]);
-
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
-  const selectedCmsVariantImage = selectedVariant
-    ? cmsVariantImages[selectedVariant.id]
-    : undefined;
   const hasVariants = Boolean(product.variants?.length);
   const displayName = selectedVariant?.nameFa ?? product.nameFa;
   const displayNameEn = selectedVariant?.nameEn ?? product.nameEn;
@@ -256,92 +175,38 @@ export function ProductVariantExperience({
     !hasVariants && liveShortDescription ? liveShortDescription : displaySummary,
     getSupplierTerms(product.brand),
   );
-  const editorialDescription = hasVariants ? "" : toPublicCopy(liveDescription);
-  const variantEditorialDescription = hasVariants
-    ? conciseProductCopy(displaySummary, getSupplierTerms(product.brand))
-    : "";
   const selectedSpecLabels = new Set(
     selectedVariant?.specs.map(([label]) => label) ?? [],
   );
-  const hasModelListSpec = product.specs.some(([label]) => label === "مدل‌های موجود");
-  const currentVariantList = product.variants
-    ?.map((variant) => variant.label.replace(/^مدل\s+/u, "").trim())
-    .filter(Boolean)
-    .join("، ");
-  const currentProductSpecs =
-    hasVariants && hasModelListSpec && currentVariantList
-      ? [
-          ["مدل‌های موجود", currentVariantList] as [string, string],
-          ...product.specs.filter(([label]) => label !== "مدل‌های موجود"),
-        ]
-      : product.specs;
   const displaySpecs = selectedVariant
     ? [
-        ...currentProductSpecs.filter(([label]) => !selectedSpecLabels.has(label)),
+        ...product.specs.filter(([label]) => !selectedSpecLabels.has(label)),
         ...selectedVariant.specs,
       ]
-    : currentProductSpecs;
+    : product.specs;
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
-
-  // Discovery cards and the initial PDP still use the same canonical master.
-  // Once the visitor explicitly chooses a model, however, sibling imagery must
-  // never masquerade as that model. Exact CMS variant media wins; otherwise the
-  // verified catalog variant or a neutral family visual is used.
-  const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
-  const canonicalImageAlt =
-    liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
-  const selectedVariantImage =
-    selectedCmsVariantImage?.src || selectedVariant?.image?.trim() || "";
-  const selectedVariantHasDisplayMedia = Boolean(
-    selectedCmsVariantImage?.src ||
-      (selectedVariantImage &&
-        (selectedVariant?.imageVerified === true ||
-          selectedVariant?.imageKind === "editorial-family" ||
-          selectedVariant?.imageKind === "market-reference")),
+  const displayImage = getProductCutoutSrc(
+    selectedVariant?.image ?? catalogImage?.src ?? liveImage?.src ?? product.image,
   );
-  const canUseSelectedVariantImage = Boolean(
-    hasExplicitVariantSelection && selectedVariantHasDisplayMedia,
-  );
-  const shouldUseNeutralVariantFallback = Boolean(
-    hasExplicitVariantSelection && selectedVariant && !selectedVariantHasDisplayMedia,
-  );
-  const neutralVariantFallback =
-    variantFallbackImages[product.category] || "/images/products/editorial/sepiid-natural-stage.webp";
-  const displayImage = canUseSelectedVariantImage
-    ? selectedVariantImage
-    : shouldUseNeutralVariantFallback
-      ? neutralVariantFallback
-      : canonicalImage;
-  const displayImageAlt = canUseSelectedVariantImage
-    ? selectedCmsVariantImage?.alt || selectedVariant?.imageAlt || `نمای ${displayName}`
-    : shouldUseNeutralVariantFallback
-      ? `نمای هم‌خانواده برای ${displayName}`
-      : canonicalImageAlt;
-  const displayImageKind = canUseSelectedVariantImage
-    ? selectedCmsVariantImage?.src
-      ? "official"
-      : selectedVariant?.imageKind
-    : shouldUseNeutralVariantFallback
-      ? "editorial-family"
-      : product.imageKind;
-  const isEditorialFamilyImage = displayImageKind === "editorial-family";
-
+  const displayImageAlt = selectedVariant?.imageAlt ?? catalogImage?.alt ?? liveImage?.alt ?? product.imageAlt ?? `تصویر ${displayName}`;
+  const isEditorialFamilyImage =
+    (selectedVariant?.imageKind ?? product.imageKind) === "editorial-family" &&
+    !liveImage?.src;
   const pricing = livePricing ?? (hasVariants
     ? {
         label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
-        note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت امروز",
+        note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت و موجودی امروز",
       }
     : {
         label: formatStaticPrice(product.priceToman),
-        note: product.priceNote ?? "قیمت امروز",
+        note: product.priceNote ?? "قیمت و موجودی امروز",
       });
   const inquiryLink = buildInquiryLink(displayName, displayVolume);
 
   function selectVariant(id: string) {
     setSelectedId(id);
-    setHasExplicitVariantSelection(true);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -356,20 +221,13 @@ export function ProductVariantExperience({
         <div className="sb-shell sb-product-detail__grid">
           <div className="sb-product-gallery">
             <div className="sb-product-gallery__main">
-              <ProductVisual
+              <img
                 key={displayImage}
-                product={{
-                  nameFa: displayName,
-                  category: product.category,
-                  masterImage: displayImage,
-                  imageAlt: displayImageAlt,
-                  visualProfile: product.visualProfile,
-                  visualScale: product.visualScale,
-                  visualOffsetX: product.visualOffsetX,
-                  visualOffsetY: product.visualOffsetY,
-                }}
-                variant="detail"
-                priority
+                src={displayImage}
+                alt={displayImageAlt}
+                width="1254"
+                height="1254"
+                fetchPriority="high"
               />
               {isEditorialFamilyImage && (
                 <span className="sb-product-gallery__identity" aria-hidden="true">
@@ -381,7 +239,7 @@ export function ProductVariantExperience({
             </div>
             {isEditorialFamilyImage && (
               <p className="sb-product-gallery__image-note">
-                نمای ادیتوریال خانواده محصول است؛ مدل دقیق روی بسته پیش از سفارش مشخص می‌شود.
+                این تصویر برای نشان‌دادن خانواده محصول است؛ عکس و مشخصات بسته موجود را هنگام استعلام می‌فرستیم.
               </p>
             )}
           </div>
@@ -433,35 +291,29 @@ export function ProductVariantExperience({
 
             <div className="sb-product-summary__order">
               <div>
-                <span>قیمت فعلی</span>
+                <span>قیمت</span>
                 <strong>{pricing.label}</strong>
-                <small>{toPublicCopy(pricing.note)}</small>
+                <small>{pricing.note}</small>
               </div>
               <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
-                بررسی موجودی امروز
+                پرسیدن قیمت و موجودی
                 <ArrowIcon />
               </Link>
             </div>
             <p className="sb-product-summary__notice">
-              محصول حرفه‌ای
+              برای استفاده حرفه‌ای؛ انتخاب و مصرف با نظر پزشک
             </p>
           </div>
         </div>
       </section>
 
-      {(variantEditorialDescription || editorialDescription) && (
+      {liveDescription && (
         <section className="sb-section sb-product-description" id="description">
           <div className="sb-shell sb-product-description__grid">
             <div className="sb-product-description__heading">
-              <h2>درباره {displayName}</h2>
+              <h2>درباره این محصول</h2>
             </div>
-            {hasVariants ? (
-              <article className="sb-product-description__content sb-product-rich-text">
-                <p>{variantEditorialDescription}</p>
-              </article>
-            ) : (
-              <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: editorialDescription }} />
-            )}
+            <article className="sb-product-description__content sb-product-rich-text" dangerouslySetInnerHTML={{ __html: liveDescription }} />
           </div>
         </section>
       )}
@@ -470,7 +322,7 @@ export function ProductVariantExperience({
         <section className="sb-section sb-product-info-section" id="specs">
           <div className="sb-shell sb-product-info-section__grid">
             <div>
-              <h2>بسته و مشخصات</h2>
+              <h2>اطلاعات روی بسته</h2>
             </div>
             <dl className="sb-spec-table">
               {visibleSpecs.map(([label, value]) => (
@@ -483,7 +335,7 @@ export function ProductVariantExperience({
 
       <div className="sb-product-mobile-cta">
         <div><span>{displayName}</span><strong>{pricing.label}</strong></div>
-        <Link href={inquiryLink}>بررسی موجودی</Link>
+        <Link href={inquiryLink}>پرسیدن قیمت</Link>
       </div>
     </>
   );

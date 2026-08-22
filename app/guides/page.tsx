@@ -4,16 +4,15 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, CheckIcon } from "../components/Icons";
 import { articles, whatsappHref } from "../data";
 import { concerns, guides } from "../content-architecture";
-import { getEditorialCategoryCopy } from "../lib/editorial-category-copy";
 import { getStorefrontCategories } from "../lib/storefront-categories";
 import { buildSeoMetadata } from "../lib/seo";
 
 export const revalidate = 300;
 
 export const metadata = buildSeoMetadata({
-  title: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
+  title: "راهنمای ساده انتخاب محصولات زیبایی",
   description:
-    "اگر هنوز بین فیلر، مزوژل، اسکین‌بوستر، بوتولینوم یا کوکتل‌های مختلف مردد هستید، از این راهنما برای شناخت دسته و مدل درست شروع کنید.",
+    "کمک می‌کنیم گروه محصول، مدل، حجم بسته و سؤال‌های مهم قبل از خرید را ساده‌تر بشناسید.",
   path: "/guides",
   image: "/images/magazine-authenticity-v2.webp",
   imageAlt: "راهنمای انتخاب محصولات حرفه‌ای زیبایی",
@@ -22,28 +21,29 @@ export const metadata = buildSeoMetadata({
 const steps = [
   {
     index: "۰۱",
-    title: "اول نیاز را مشخص کنید",
-    text: "نام محصول را کنار بگذارید و ببینید دقیقاً دنبال شناخت کدام گروه هستید.",
+    title: "اول ببینید چه می‌خواهید",
+    text: "پوست، مو یا فرم؟ اول خواسته‌تان را روشن کنید، نه اسم یک برند را.",
   },
   {
     index: "۰۲",
-    title: "بعد سراغ مدل بروید",
-    text: "نام کامل، حجم و محتویات همان بسته را کنار گزینه‌های مشابه ببینید.",
+    title: "اسم و بسته را بخوانید",
+    text: "نام مدل، حجم و تعداد داخل همان جعبه را ببینید.",
   },
   {
     index: "۰۳",
-    title: "قیمت را برای همان بسته مقایسه کنید",
-    text: "قیمت یک سرنگ، یک ویال و جعبه کامل را با هم اشتباه نگیرید.",
+    title: "تصمیم پزشکی را به پزشک بسپارید",
+    text: "مناسب‌بودن، ناحیه و روش استفاده را پزشک مشخص می‌کند.",
   },
   {
     index: "۰۴",
-    title: "مرز تصمیم پزشکی را نگه دارید",
-    text: "تناسب محصول، ناحیه و روش استفاده را فرد واجد صلاحیت تعیین می‌کند.",
+    title: "قبل از پرداخت سؤال کنید",
+    text: "قیمت روز، موجودی، سلامت بسته و زمان ارسال را روشن کنید.",
   },
 ];
 
 export default async function GuidesPage() {
-  const categories = await getStorefrontCategories();
+  const categories =
+    await getStorefrontCategories();
 
   return (
     <main id="main-content">
@@ -54,13 +54,14 @@ export default async function GuidesPage() {
       <section className="sb-guides-hero">
         <div className="sb-shell sb-guides-hero__grid">
           <div>
-            <span className="sb-eyebrow">SEPIID DECISION GUIDE</span>
-            <h1>اگر هنوز دقیقاً نمی‌دانید کدام محصول را باید ببینید، از اینجا شروع کنید.</h1>
+            <span className="sb-eyebrow">راهنمای انتخاب سپید</span>
+            <h1>از اسم محصول شروع نکنید؛ از نیازتان شروع کنید.</h1>
             <p>
-              این بخش برای زمانی است که اسم چند محصول را شنیده‌اید اما تفاوت دسته، مدل یا بسته‌ها هنوز روشن نیست. از موضوع یا نیاز شروع کنید و قدم‌به‌قدم به محصولات مرتبط برسید.
+              اگر هنوز نمی‌دانید کدام گروه یا مدل را ببینید، از اینجا شروع کنید.
+              اطلاعات خرید را ساده می‌گوییم و تصمیم پزشکی را به پزشک می‌سپاریم.
             </p>
             <Link className="sb-btn sb-btn--dark" href="/shop">
-              رفتن مستقیم به فروشگاه
+              دیدن محصولات
               <ArrowIcon />
             </Link>
           </div>
@@ -83,9 +84,9 @@ export default async function GuidesPage() {
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">راهنماهای اصلی</span>
-              <h2>موضوعی را انتخاب کنید که می‌خواهید بهتر بشناسید</h2>
+              <h2>موضوعی را انتخاب کنید که می‌خواهید بهتر بفهمید</h2>
             </div>
-            <p>هر راهنما یک سؤال مشخص را جواب می‌دهد و شما را به دسته و محصولات مرتبط می‌رساند.</p>
+            <p>هر راهنما یک موضوع را ساده توضیح می‌دهد و به محصول‌های مرتبط می‌رسد.</p>
           </div>
           <div className="sb-architecture-grid">
             {guides
@@ -96,7 +97,7 @@ export default async function GuidesPage() {
                   <h3>{guide.title}</h3>
                   <p>{guide.description}</p>
                   <strong>
-                    خواندن راهنما
+                    خواندن راهنمای ساده
                     <ArrowIcon />
                   </strong>
                 </Link>
@@ -112,7 +113,7 @@ export default async function GuidesPage() {
               <span className="sb-eyebrow">نیازها و دغدغه‌ها</span>
               <h2>اگر هنوز نام محصول را نمی‌دانید</h2>
             </div>
-            <p>اول مسئله را بشناسید؛ بعد به دسته و محصول برسید.</p>
+            <p>اول خواسته‌تان را روشن کنید؛ بعد سراغ دسته یا مدل بروید.</p>
           </div>
           <div className="sb-architecture-grid sb-architecture-grid--concerns">
             {concerns
@@ -123,7 +124,7 @@ export default async function GuidesPage() {
                   <h3>{concern.title}</h3>
                   <p>{concern.description}</p>
                   <strong>
-                    شروع از این موضوع
+                    دیدن راهنمای مرتبط
                     <ArrowIcon />
                   </strong>
                 </Link>
@@ -136,36 +137,28 @@ export default async function GuidesPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">START / CATEGORY</span>
-              <h2>دسته‌ها را با سؤال درست مقایسه کنید.</h2>
+              <span className="sb-eyebrow">شروع از گروه محصول</span>
+              <h2>اگر نام مدل را نمی‌دانید، از اینجا شروع کنید.</h2>
             </div>
-            <p>در هر گروه، معیار مقایسه کمی متفاوت است.</p>
+            <p>در هر گروه، اطلاعات مهم خودش را پیدا می‌کنید.</p>
           </div>
           <div className="sb-guide-paths__grid">
-            {categories.map((category, index) => {
-              const editorial = getEditorialCategoryCopy(
-                category.slug,
-                category.description,
-                category.guide,
-              );
-
-              return (
-                <article key={category.slug}>
-                  <span>۰{index + 1}</span>
-                  <small>{category.en}</small>
-                  <h3>{category.title}</h3>
-                  <p>{editorial.intro}</p>
-                  <div>
-                    <CheckIcon />
-                    {editorial.guideLead}
-                  </div>
-                  <Link className="sb-text-link" href={`/shop/${category.slug}`}>
-                    دیدن این دسته
-                    <ArrowIcon />
-                  </Link>
-                </article>
-              );
-            })}
+            {categories.map((category, index) => (
+              <article key={category.slug}>
+                <span>۰{index + 1}</span>
+                <small>{category.en}</small>
+                <h3>{category.title}</h3>
+                <p>{category.description}</p>
+                <div>
+                  <CheckIcon />
+                  {category.guide}
+                </div>
+                <Link className="sb-text-link" href={`/shop/${category.slug}`}>
+                  دیدن محصولات این گروه
+                  <ArrowIcon />
+                </Link>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -173,24 +166,24 @@ export default async function GuidesPage() {
       <section className="sb-guide-comparison">
         <div className="sb-shell sb-guide-comparison__grid">
           <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">BOUNDARIES / مرزها</span>
-            <h2>شناخت محصول با انتخاب درمان یکی نیست.</h2>
+            <span className="sb-eyebrow sb-eyebrow--gold">یک نکته مهم</span>
+            <h2>شناخت محصول با انتخاب پزشکی فرق دارد.</h2>
           </div>
           <div className="sb-guide-comparison__cards">
             <article>
-              <strong>سپید بیوتی کمک می‌کند</strong>
+              <strong>سپید بیوتی درباره این‌ها کمک می‌کند</strong>
               <ul>
-                <li>دسته، برند و مدل محصول را بهتر بشناسید</li>
-                <li>حجم، بسته‌بندی و قیمت را مقایسه کنید</li>
-                <li>برای موجودی و سفارش مسیر روشنی داشته باشید</li>
+                <li>گروه و نام دقیق محصول را بشناسید</li>
+                <li>قیمت روز و اطلاعات بسته را بپرسید</li>
+                <li>زمان تحویل و پیگیری را روشن کنید</li>
               </ul>
             </article>
             <article>
-              <strong>فرد واجد صلاحیت باید تصمیم بگیرد</strong>
+              <strong>پزشک باید این‌ها را مشخص کند</strong>
               <ul>
-                <li>آیا محصول برای فرد مناسب است</li>
-                <li>کدام ناحیه و چه روشی مناسب است</li>
-                <li>محدودیت‌ها و عوارض چگونه مدیریت شوند</li>
+                <li>محصول برای فرد مناسب هست یا نه</li>
+                <li>کدام ناحیه و با چه روشی کار شود</li>
+                <li>خطرها و عوارض چطور مدیریت شوند</li>
               </ul>
             </article>
           </div>
@@ -201,8 +194,8 @@ export default async function GuidesPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">READ / NEXT</span>
-              <h2>سه مقاله برای شروع</h2>
+              <span className="sb-eyebrow">برای شروع بخوانید</span>
+              <h2>سه مقاله کوتاه و کاربردی</h2>
             </div>
             <Link className="sb-text-link" href="/magazine">
               همه مقاله‌ها
@@ -220,14 +213,14 @@ export default async function GuidesPage() {
       <section className="sb-guides-cta">
         <div className="sb-shell">
           <div>
-            <span>هنوز بین چند دسته مردد هستید؟</span>
-            <h2>اسم محصول لازم نیست؛ بگویید دنبال شناخت چه گروهی هستید.</h2>
+            <span>هنوز دسته مناسب را نمی‌دانید؟</span>
+            <h2>نمی‌دانید از کجا شروع کنید؟ برایمان بنویسید.</h2>
           </div>
           <Link
             className="sb-btn sb-btn--gold"
             href={whatsappHref("سلام، برای پیدا کردن دسته محصول مناسب راهنمایی می‌خواهم.")}
           >
-            گفت‌وگو با تیم سپید
+            پرسیدن از سپید
             <ArrowIcon />
           </Link>
         </div>

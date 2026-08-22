@@ -6,6 +6,7 @@ import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { buildSeoMetadata } from "../../lib/seo";
 import { whatsappHref } from "../../data";
+import { toReaderFriendlyCopy } from "../../lib/public-copy";
 
 const policies = {
   privacy: {
@@ -140,7 +141,7 @@ export default async function PolicyPage({
         <div className="sb-shell">
           <span className="sb-eyebrow">SEPIID / POLICY</span>
           <h1>{policy.title}</h1>
-          <p>{policy.lead}</p>
+          <p>{toReaderFriendlyCopy(policy.lead)}</p>
           <small>آخرین بازبینی: ۳ مرداد ۱۴۰۵</small>
         </div>
       </header>
@@ -150,8 +151,8 @@ export default async function PolicyPage({
             <article key={section.title}>
               <span>۰{index + 1}</span>
               <div>
-                <h2>{section.title}</h2>
-                <p>{section.text}</p>
+                <h2>{toReaderFriendlyCopy(section.title)}</h2>
+                <p>{toReaderFriendlyCopy(section.text)}</p>
               </div>
             </article>
           ))}
