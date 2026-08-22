@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
 import { DEFAULT_SITE_PRESENTATION, normalizeSitePresentation, type SitePresentation } from "@/app/lib/site-presentation";
 import { encodeArticleHtml } from "@/app/lib/article-html";
@@ -114,6 +114,7 @@ export async function PUT(request: Request) {
       return Response.json({ error: "نامک مقاله‌ها باید یکتا باشد." }, { status: 400 });
     }
     const saved = await updateSitePresentation(presentation);
+    revalidateTag("site-presentation", "max");
     revalidatePath("/", "layout");
     revalidatePath("/magazine");
     revalidatePath("/magazine/[slug]", "page");
