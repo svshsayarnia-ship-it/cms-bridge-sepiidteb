@@ -13,11 +13,33 @@ import { getGuideForArticle } from "../../content-architecture";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
-import { getManagedArticles, getSitePresentation } from "../../lib/site-presentation";
+import {
+  getManagedArticles,
+  getSitePresentation,
+  normalizeSitePresentation,
+} from "../../lib/site-presentation";
+import { getSitePresentation as getRemoteSitePresentation } from "../../lib/woocommerce";
 
 async function getEditableArticle(slug: string) {
-  return getManagedArticles(await getSitePresentation())
+  const initial = getManagedArticles(await getSitePresentation())
     .find((article) => article.slug === slug);
+  if (initial) return initial;
+
+  // A CMS-created article is not part of the static fallback. Before returning
+  // a 404, bypass the cross-request cache once so a transient WordPress timeout
+  // cannot hide an article that is already published.
+  try {
+    const fresh = normalizeSitePresentation(
+      await getRemoteSitePresentation({
+        requestTimeoutMs: 15_000,
+        requestMaxAttempts: 3,
+      }),
+    );
+    return getManagedArticles(fresh)
+      .find((article) => article.slug === slug);
+  } catch {
+    return undefined;
+  }
 }
 
 export const dynamicParams = true;
