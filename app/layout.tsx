@@ -36,11 +36,6 @@ export const metadata: Metadata = {
   },
   description:
     "مرجع انتخاب و استعلام فیلر، اسکین‌بوستر، بوتولینوم و کوکتل‌های تخصصی همراه با راهنمای خرید، بررسی اصالت و پشتیبانی انسانی.",
-  verification: {
-    other: {
-      enamad: "۱۱۶۲۶۴۰۰",
-    },
-  },
   alternates: {
     canonical: "/",
   },
