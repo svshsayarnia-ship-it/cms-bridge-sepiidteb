@@ -21,9 +21,24 @@ import {
 } from "../../lib/site-presentation";
 import { getSitePresentation as getRemoteSitePresentation } from "../../lib/woocommerce";
 
+function canonicalArticleSlug(value: string) {
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    // Keep the original value; an invalid escape sequence simply will not
+    // match a published article.
+  }
+  return decoded.normalize("NFC").trim();
+}
+
 const getEditableArticle = cache(async (slug: string) => {
+  const requestedSlug = canonicalArticleSlug(slug);
+  const matchesRequestedSlug = (article: { slug: string }) =>
+    canonicalArticleSlug(article.slug) === requestedSlug;
+
   const initial = getManagedArticles(await getSitePresentation())
-    .find((article) => article.slug === slug);
+    .find(matchesRequestedSlug);
   if (initial) return initial;
 
   // A CMS-created article is not part of the static fallback. Before returning
@@ -37,7 +52,7 @@ const getEditableArticle = cache(async (slug: string) => {
       }),
     );
     return getManagedArticles(fresh)
-      .find((article) => article.slug === slug);
+      .find(matchesRequestedSlug);
   } catch {
     return undefined;
   }
