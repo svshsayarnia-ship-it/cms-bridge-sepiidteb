@@ -32,6 +32,45 @@ function canonicalArticleSlug(value: string) {
   return decoded.normalize("NFC").trim();
 }
 
+function headingText(value: string) {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function prepareArticleHtml(value: string) {
+  const fragmentByLabel = new Map<string, string>();
+  for (const match of value.matchAll(/<a\b[^>]*href=["']#([a-z][a-z0-9_-]{0,79})["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    fragmentByLabel.set(headingText(match[2]), match[1]);
+  }
+
+  const anchoredHeadings = value.replace(
+    /<h([2-4])\b([^>]*)>([\s\S]*?)<\/h\1>/gi,
+    (full, level: string, attributes: string, contents: string) => {
+      if (/\bid\s*=/i.test(attributes)) return full;
+      const label = headingText(contents);
+      let id = fragmentByLabel.get(label);
+      if (!id && /(?:س[ؤو]الات|پرسش).*(?:متداول|پرتکرار)/i.test(label)) id = "faq";
+      if (!id && /^(?:منابع|references|sources)\b/i.test(label)) id = "sources";
+      return id
+        ? `<h${level}${attributes} id="${id}">${contents}</h${level}>`
+        : full;
+    },
+  );
+
+  return anchoredHeadings.replace(
+    /<table\b([^>]*)>([\s\S]*?)<\/table>/gi,
+    '<div class="sb-article-table sb-article-table--html" role="region" aria-label="جدول مقاله"><table$1>$2</table></div>',
+  );
+}
+
+function hasHtmlAnchor(value: string, id: string) {
+  return new RegExp(`\\bid=["']${id}["']`, "i").test(value);
+}
+
 const getEditableArticle = cache(async (slug: string) => {
   const requestedSlug = canonicalArticleSlug(slug);
   const matchesRequestedSlug = (article: { slug: string }) =>
@@ -101,6 +140,9 @@ export default async function ArticlePage({
   const { slug } = await params;
   const article = await getEditableArticle(slug);
   if (!article) notFound();
+  const renderedHtmlContent = article.contentMode === "html"
+    ? prepareArticleHtml(article.htmlContent ?? "")
+    : "";
 
   const image =
     article.slug === "verify-dermal-filler-authenticity"
@@ -169,8 +211,12 @@ export default async function ArticlePage({
                 {section.heading}
               </a>
             ))}
-            {article.faq?.length ? <a href="#faq">پرسش‌های پرتکرار</a> : null}
-            <a href="#sources">منابع</a>
+            {article.contentMode === "html"
+              ? hasHtmlAnchor(renderedHtmlContent, "faq") && <a href="#faq">پرسش‌های پرتکرار</a>
+              : article.faq?.length ? <a href="#faq">پرسش‌های پرتکرار</a> : null}
+            {article.contentMode === "html"
+              ? hasHtmlAnchor(renderedHtmlContent, "sources") && <a href="#sources">منابع</a>
+              : <a href="#sources">منابع</a>}
           </nav>
           <p>
             آخرین بازبینی محتوایی
@@ -203,7 +249,7 @@ export default async function ArticlePage({
             <section
               className="sb-product-rich-text sb-article-html-content"
               id="article-html"
-              dangerouslySetInnerHTML={{ __html: article.htmlContent ?? "" }}
+              dangerouslySetInnerHTML={{ __html: renderedHtmlContent }}
             />
           ) : article.sections.map((section, index) => (
             <section id={`section-${index + 1}`} key={section.heading}>
