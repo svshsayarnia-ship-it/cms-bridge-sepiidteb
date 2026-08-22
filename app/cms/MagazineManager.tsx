@@ -30,7 +30,7 @@ function editableHtml(article: Article) {
 }
 
 function blankArticle(): Article {
-  return { slug: "", title: "", excerpt: "", category: "راهنمای انتخاب", date: "به‌روزرسانی: امروز", readTime: "۵ دقیقه", image: "/images/magazine-authenticity-v2.webp", lead: "", notice: "این مطلب برای آشنایی و بررسی بهتر محصول است و جایگزین نظر فرد واجد صلاحیت نیست.", sections: [], sources: [], relatedProducts: [], relatedArticles: [], faq: [], datePublished: today(), dateModified: today(), status: "draft", contentMode: "html", htmlContent: "" };
+  return { slug: "", title: "", excerpt: "", category: "راهنمای انتخاب", date: "به‌روزرسانی: امروز", readTime: "۵ دقیقه", image: "/images/magazine-authenticity-v2.webp", lead: "", notice: "این مطلب برای آشنایی و بررسی بهتر محصول است و جایگزین نظر فرد واجد صلاحیت نیست.", sections: [], sources: [], relatedProducts: [], relatedArticles: [], faq: [], datePublished: today(), dateModified: today(), status: "publish", contentMode: "html", htmlContent: "" };
 }
 
 const htmlTemplate = `<h1>عنوان اصلی مقاله</h1>
@@ -93,6 +93,7 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
 
     <fieldset className="spb-editor-box">
       <legend>مقاله</legend>
+      <label className="spb-article-status"><span>وضعیت انتشار</span><select value={article.status ?? "draft"} onChange={(event) => update({ status: event.target.value as Article["status"] })}><option value="publish">منتشرشده — در فهرست مجله نمایش داده می‌شود</option><option value="draft">پیش‌نویس — در سایت نمایش داده نمی‌شود</option></select></label>
       <label className="is-wide"><span>عنوان اصلی مقاله</span><input value={article.title} onChange={(event) => update({ title: event.target.value })} placeholder="مثال: فیلر نورامیس چیست و چه کاربردی دارد؟" /><small>این عنوان، H1 نهایی صفحه است.</small></label>
       <div className="spb-html-entry">
         <div className="spb-html-entry__head"><div><strong>کد کامل HTML مقاله</strong><small>کل مقاله را یک‌جا Paste کن: مقدمه، H2، H3، جدول، لینک داخلی، FAQ و منابع. اگر H1 هم در کد باشد، برای جلوگیری از H1 تکراری فقط عنوان بالا در صفحه نمایش داده می‌شود.</small></div><button type="button" className="spb-button" onClick={() => update({ htmlContent: htmlTemplate })}>درج قالب نمونه</button></div>
@@ -108,7 +109,6 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
     </fieldset>
 
     <details className="spb-editor-box spb-magazine-advanced"><summary>تنظیمات پیشرفتهٔ انتشار و سئو (اختیاری)</summary><div className="spb-form-grid">
-      <label><span>وضعیت</span><select value={article.status ?? "draft"} onChange={(event) => update({ status: event.target.value as Article["status"] })}><option value="draft">پیش‌نویس</option><option value="publish">منتشرشده</option></select></label>
       <label><span>نامک URL</span><input value={article.slug} onChange={(event) => update({ slug: event.target.value })} placeholder="خودکار از عنوان ساخته می‌شود" /></label>
       <label className="is-wide"><span>عنوان سئو</span><input value={article.seoTitle ?? ""} onChange={(event) => update({ seoTitle: event.target.value })} placeholder="در صورت خالی‌بودن، عنوان مقاله استفاده می‌شود" /></label>
       <label className="is-wide"><span>توضیحات متا</span><textarea rows={3} value={article.metaDescription ?? ""} onChange={(event) => update({ metaDescription: event.target.value })} placeholder="در صورت خالی‌بودن، از ابتدای مقاله ساخته می‌شود" /></label>
