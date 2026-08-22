@@ -1,17 +1,30 @@
-/* eslint-disable @next/next/no-img-element */
+"use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { productHref } from "../catalog";
 import type { PublicProduct } from "../lib/public-product";
-import { getProductCutoutSrc } from "../lib/product-image";
 import {
   getCompactBrandLabel,
   getPublicPackagingLabel,
+  getPublicVolumeLabel,
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
+import { ProductVisual } from "./product/ProductVisual";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
+
+type PublicRoleImage = {
+  src: string;
+  alt: string;
+};
+
+type ProductImageRolesResponse = {
+  cardImage: PublicRoleImage | null;
+  variantImages: Record<string, PublicRoleImage>;
+};
 
 function numericPrice(value?: string | number): number | null {
   const parsed = Number(value);
@@ -29,17 +42,48 @@ export function ProductCard({
   product: PublicProduct;
   priority?: boolean;
 }) {
-  const href = productHref(product);
-  const volume = product.volume
-    ?.replace(/\s+(?:در|طبق)\s+فهرست(?:\s+موجودی)?.*$/u, "")
-    .trim();
+  const [cardImage, setCardImage] = useState<PublicRoleImage | null>(null);
 
-  const imageSrc = getProductCutoutSrc(product.image);
-  const imageAlt =
-    product.imageAlt ||
-    `تصویر ${product.nameFa}`;
+  useEffect(() => {
+    if (!product.slug) return;
+
+    const controller = new AbortController();
+    const query = new URLSearchParams({ slug: product.slug });
+
+    void fetch(`/api/product-image-roles?${query.toString()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as ProductImageRolesResponse;
+      })
+      .then((data) => {
+        setCardImage(data?.cardImage?.src ? data.cardImage : null);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.warn("[product-card] role image load failed", error);
+      });
+
+    return () => controller.abort();
+  }, [product.slug]);
+
+  const displayProduct = useMemo<PublicProduct>(() => {
+    if (!cardImage?.src) return product;
+
+    return {
+      ...product,
+      image: cardImage.src,
+      imageAlt: cardImage.alt || product.imageAlt,
+      imageKind: "official",
+    };
+  }, [cardImage, product]);
+
+  const href = productHref(product);
+  const volume = getPublicVolumeLabel(product.volume);
   const brand = getCompactBrandLabel(product.brand);
-  const packagingLabel = getPublicPackagingLabel(product.volume);
+  const packagingLabel = getPublicPackagingLabel(volume);
   const salePrice = numericPrice(product.salePrice);
   const regularPrice = numericPrice(
     product.regularPrice || product.price,
@@ -54,25 +98,18 @@ export function ProductCard({
         href={href}
         aria-label={`مشاهده ${product.nameFa}`}
       >
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          width="1254"
-          height="1254"
-          loading={
-            priority ? "eager" : "lazy"
-          }
-          fetchPriority={
-            priority ? "high" : "auto"
-          }
-          decoding="async"
+        <ProductVisual
+          product={displayProduct}
+          variant="card"
+          priority={priority}
+          sizes={productImageSizes}
         />
 
-        {product.imageKind === "editorial-family" && (
+        {displayProduct.imageKind === "editorial-family" && (
           <span className="sb-product-card__identity" aria-hidden="true">
             <small>{brand || "سپید بیوتی"}</small>
-            <strong>{product.nameFa}</strong>
-            {product.nameEn && <em>{product.nameEn}</em>}
+            <strong>{displayProduct.nameFa}</strong>
+            {displayProduct.nameEn && <em>{displayProduct.nameEn}</em>}
           </span>
         )}
 
@@ -113,7 +150,7 @@ export function ProductCard({
             className={`sb-product-card__price${visiblePrice ? "" : " is-pending"}`}
             aria-label={`قیمت ${product.nameFa}`}
           >
-            <span>{salePrice ? "قیمت ویژه" : "قیمت"}</span>
+            <span>{salePrice ? "قیمت ویژه" : "قیمت فعلی"}</span>
             {visiblePrice ? (
               <div>
                 <strong>{formatPrice(visiblePrice)}</strong>
@@ -122,15 +159,15 @@ export function ProductCard({
                   : null}
               </div>
             ) : (
-            <strong>قیمت روز را بپرسید</strong>
+              <strong>قیمت در صفحه محصول</strong>
             )}
           </div>
           <Link
             className="sb-product-card__cta"
             href={href}
-            aria-label={`مشاهده و استعلام ${product.nameFa}`}
+            aria-label={`مشاهده جزئیات ${product.nameFa}`}
           >
-            <span>مشاهده و استعلام</span>
+            <span>جزئیات محصول</span>
             <ArrowIcon />
           </Link>
         </div>

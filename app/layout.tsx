@@ -3,11 +3,15 @@ import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
+import "./category-commerce-hero.css";
+import "./product-visual.css";
+import "./account-responsive.css";
 import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
-import { SiteHeader } from "./components/SiteHeader";
+import { SiteHeaderServer } from "./components/SiteHeaderServer";
 import { SmartAssistant } from "./components/SmartAssistant";
+import { isApprovedInventorySlug } from "./current-inventory";
 import { siteOrigin } from "./lib/site-url";
 import {
   merchantOrganizationId,
@@ -23,14 +27,15 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
 };
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: {
-    default: "فروشگاه محصولات زیبایی | سپید بیوتی",
+    default: "فروشگاه تخصصی محصولات زیبایی و تزریقی | Sepiid Beauty",
     template: "%s | Sepiid Beauty",
   },
   description:
-    "فیلر، بوتاکس، مزوژل و محصولات حرفه‌ای زیبایی را با نام، حجم، قیمت و راه خرید روشن ببینید.",
+    "مرجع انتخاب و استعلام فیلر، اسکین‌بوستر، بوتولینوم و کوکتل‌های تخصصی همراه با راهنمای خرید، بررسی اصالت و پشتیبانی انسانی.",
   alternates: {
     canonical: "/",
   },
@@ -40,9 +45,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "سپید بیوتی | محصولات زیبایی با اطلاعات روشن",
+    title: "Sepiid Beauty | انتخاب آگاهانه محصولات حرفه‌ای زیبایی",
     description:
-      "محصولات زیبایی، مشخصات بسته و راهنمای ساده برای خریدی روشن‌تر.",
+      "فروشگاه و مجله تخصصی محصولات زیبایی؛ همراه با مسیر بررسی اصالت و خرید حرفه‌ای.",
     locale: "fa_IR",
     type: "website",
     url: "/",
@@ -56,9 +61,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "سپید بیوتی | محصولات زیبایی با اطلاعات روشن",
+    title: "Sepiid Beauty | انتخاب آگاهانه محصولات حرفه‌ای زیبایی",
     description:
-      "فروشگاه محصولات زیبایی همراه با مشخصات بسته، قیمت روز و راهنمای خرید.",
+      "فروشگاه و مجله تخصصی محصولات زیبایی همراه با راهنمای خرید و بررسی اصالت.",
     images: ["/images/drive/hero-rejuvenation.webp"],
   },
   icons: {
@@ -66,6 +71,20 @@ export const metadata: Metadata = {
     shortcut: "/images/sepiid-logo.webp",
   },
 };
+
+const approvedCatalogProducts = catalogProducts.filter((product) =>
+  isApprovedInventorySlug(product.slug),
+);
+
+// `data.ts` intentionally exports the same catalog array by reference. Keep
+// that shared public array aligned with the approved inventory as well, so
+// legacy entries cannot reappear in related-product cards or other static
+// discovery surfaces while their migration data remains defined in catalog.ts.
+catalogProducts.splice(
+  0,
+  catalogProducts.length,
+  ...approvedCatalogProducts,
+);
 
 const headerProducts = catalogProducts
   .filter(isPublicStaticProduct)
@@ -84,14 +103,19 @@ export default async function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
-        <SiteHeader
+        <SiteHeaderServer
           categories={categories}
           products={headerProducts}
           presentation={presentation.header}
         />
         {children}
-        <SiteFooter presentation={{ ...presentation.footer, brandTagline: presentation.header.brandTagline }} />
-       { <SmartAssistant /> }
+        <SiteFooter
+          presentation={{
+            ...presentation.footer,
+            brandTagline: presentation.header.brandTagline,
+          }}
+        />
+        <SmartAssistant />
         <JsonLd
           data={{
             "@context": "https://schema.org",
@@ -105,7 +129,7 @@ export default async function RootLayout({
             telephone: "+989037251266",
             areaServed: "IR",
             description:
-              "فروشگاه محصولات زیبایی با اطلاعات روشن درباره مدل، بسته و راه خرید.",
+              "مرجع انتخاب و استعلام محصولات حرفه‌ای زیبایی با اطلاعات شفاف و مسیر بررسی اصالت.",
             hasMerchantReturnPolicy: merchantReturnPolicy,
             contactPoint: {
               "@type": "ContactPoint",

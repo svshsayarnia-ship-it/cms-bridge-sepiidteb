@@ -14,12 +14,13 @@ import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
 import { applyArticlePresentation, getSitePresentation } from "../../lib/site-presentation";
-import { toReaderFriendlyCopy } from "../../lib/public-copy";
 
 async function getEditableArticle(slug: string) {
   return applyArticlePresentation(articles, await getSitePresentation())
     .find((article) => article.slug === slug);
 }
+
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -92,8 +93,8 @@ export default async function ArticlePage({
         <div className="sb-shell sb-article-header__grid">
           <div className="sb-article-header__content">
             <span className="sb-eyebrow">{article.category}</span>
-            <h1>{toReaderFriendlyCopy(article.title)}</h1>
-            <p>{toReaderFriendlyCopy(article.excerpt)}</p>
+            <h1>{article.title}</h1>
+            <p>{article.excerpt}</p>
             <div className="sb-article-header__meta">
               <span>تحریریه سپید بیوتی</span>
               <span>{article.date}</span>
@@ -126,7 +127,7 @@ export default async function ArticlePage({
             <a href="#summary">خلاصه سریع</a>
             {article.sections.map((section, index) => (
               <a href={`#section-${index + 1}`} key={section.heading}>
-                {toReaderFriendlyCopy(section.heading)}
+                {section.heading}
               </a>
             ))}
             {article.faq?.length ? <a href="#faq">پرسش‌های پرتکرار</a> : null}
@@ -141,19 +142,19 @@ export default async function ArticlePage({
         <article className="sb-article-body">
           <section className="sb-article-summary" id="summary">
             <span>خلاصه سریع</span>
-            <p>{toReaderFriendlyCopy(article.lead)}</p>
+            <p>{article.lead}</p>
           </section>
 
           <div className="sb-article-notice">
             <strong>یادداشت ایمنی</strong>
-            <p>{toReaderFriendlyCopy(article.notice)}</p>
+            <p>{article.notice}</p>
           </div>
 
           {parentGuide ? (
             <div className="sb-article-parent-guide">
               <span>راهنمای مادر این موضوع</span>
               <Link href={`/guides/${parentGuide.slug}`}>
-                {toReaderFriendlyCopy(parentGuide.title)}
+                {parentGuide.title}
                 <ArrowIcon />
               </Link>
             </div>
@@ -162,14 +163,14 @@ export default async function ArticlePage({
           {article.sections.map((section, index) => (
             <section id={`section-${index + 1}`} key={section.heading}>
               <span className="sb-article-body__index">۰{index + 1}</span>
-              <h2>{toReaderFriendlyCopy(section.heading)}</h2>
+              <h2>{section.heading}</h2>
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{toReaderFriendlyCopy(paragraph)}</p>
+                <p key={paragraph}>{paragraph}</p>
               ))}
               {section.bullets && (
                 <ul>
                   {section.bullets.map((bullet) => (
-                    <li key={bullet}>{toReaderFriendlyCopy(bullet)}</li>
+                    <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
               )}
@@ -197,14 +198,14 @@ export default async function ArticlePage({
               )}
               {section.subsections?.map((subsection) => (
                 <div className="sb-article-subsection" key={subsection.heading}>
-                  <h3>{toReaderFriendlyCopy(subsection.heading)}</h3>
+                  <h3>{subsection.heading}</h3>
                   {subsection.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{toReaderFriendlyCopy(paragraph)}</p>
+                    <p key={paragraph}>{paragraph}</p>
                   ))}
                   {subsection.bullets && (
                     <ul>
                       {subsection.bullets.map((bullet) => (
-                    <li key={bullet}>{toReaderFriendlyCopy(bullet)}</li>
+                        <li key={bullet}>{bullet}</li>
                       ))}
                     </ul>
                   )}
@@ -217,10 +218,7 @@ export default async function ArticlePage({
             <section className="sb-article-faq" id="faq">
               <span className="sb-eyebrow">FAQ / پرسش‌های پرتکرار</span>
               <h2>سؤال‌هایی که معمولاً پیش از تصمیم مطرح می‌شوند</h2>
-              <FaqList items={article.faq.map((item) => ({
-                question: toReaderFriendlyCopy(item.question),
-                answer: toReaderFriendlyCopy(item.answer),
-              }))} />
+              <FaqList items={article.faq} />
             </section>
           ) : null}
 

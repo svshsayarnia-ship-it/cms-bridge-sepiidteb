@@ -17,17 +17,17 @@ type Question = {
 
 const questions: Question[] = [
   {
-    title: "برای چه کاری دنبال محصول هستید؟",
-    description: "با یک جواب کوتاه، مسیر مناسب‌تری برایتان باز می‌کنیم.",
+    title: "برای چه نوع خریدی دنبال محصول هستید؟",
+    description: "تا مسیر مناسب‌تری برای دیدن کالاها و استعلام به شما نشان بدهیم.",
     answers: [
       { label: "کلینیک یا مطب", value: "professional" },
       { label: "مرکز یا سالن زیبایی", value: "pro" },
-      { label: "فقط می‌خواهم مدل‌ها را ببینم", value: "browse" },
+      { label: "فقط می‌خواهم محصولات را ببینم", value: "browse" },
     ],
   },
   {
     title: "دنبال کدام گروه محصول هستید؟",
-    description: "گروهی را انتخاب کنید که به چیزی که می‌خواهید نزدیک‌تر است.",
+    description: "دسته‌ای را انتخاب کنید که به خرید شما نزدیک‌تر است.",
     answers: [
       { label: "فیلر و ژل", value: "fillers" },
       { label: "مزوژل و اسکین‌بوستر", value: "skin-boosters" },
@@ -37,8 +37,8 @@ const questions: Question[] = [
     ],
   },
   {
-    title: "الان بیشتر چه چیزی برایتان مهم است؟",
-    description: "در پایان، شما را مستقیم به همان صفحه یا راه ارتباطی می‌بریم.",
+    title: "الان بیشتر به چه کمکی نیاز دارید؟",
+    description: "در پایان، شما را مستقیم به همان مسیر می‌بریم.",
     answers: [
       { label: "دیدن محصولات این دسته", value: "shop" },
       { label: "مقایسه برند و مدل", value: "compare" },
@@ -46,14 +46,14 @@ const questions: Question[] = [
     ],
   },
   {
-    title: "اگر نام مدل را می‌دانید، همین‌جا بنویسید.",
-    description: "مثلاً نورامیس، جالپرو یا رووفیل. اگر پیدا نشد، باز هم می‌توانید از ما بپرسید.",
+    title: "نام برند یا مدل موردنظرتان را بنویسید.",
+    description: "مثلاً نورامیس، جالپرو یا رِووفیل. ما آن را در دستهٔ درست جست‌وجو می‌کنیم.",
     answers: [],
     type: "product-name",
   },
   {
-    title: "چطور ادامه بدهیم؟",
-    description: "محصولات را ببینید یا مستقیم درباره قیمت و موجودی پیام بدهید.",
+    title: "دوست دارید از کدام مسیر ادامه دهید؟",
+    description: "می‌توانید محصولات را ببینید یا مستقیم دربارهٔ موجودی پیام بدهید.",
     answers: [
       { label: "نمایش محصولات", value: "shop" },
       { label: "استعلام در واتساپ", value: "support" },
@@ -109,8 +109,8 @@ export function HomeFinder({
     if (finalChoice === "clinic" && role !== "browse") {
       return {
         eyebrow: "مسیر پیشنهادی برای شما",
-        title: "فهرست سفارش‌تان را بفرستید.",
-        text: "نام محصولات، تعداد و زمان تحویل را بنویسید تا بررسی و هماهنگ کنیم.",
+        title: "فرم سفارش کلینیکی آماده است.",
+        text: "فهرست اقلام و زمان تحویل مدنظرتان را بفرستید تا هماهنگ کنیم.",
         href: "/professional",
         action: "ورود به مسیر کلینیک",
       };
@@ -119,9 +119,9 @@ export function HomeFinder({
     if (finalChoice === "support" || answers[2] === "inquiry") {
       const item = productName ? ` و مدل «${productName}»` : "";
       return {
-        eyebrow: "پیشنهاد سپید",
-        title: "قیمت و موجودی روز را از ما بپرسید.",
-        text: `برای ${categoryTitle}${item} نام مدل، قیمت روز و جزئیات بسته را جواب می‌دهیم.`,
+        eyebrow: "مسیر پیشنهادی برای شما",
+        title: "موجودی و قیمت روز را از ما بپرسید.",
+        text: `برای ${categoryTitle}${item} موجودی، قیمت و جزئیات بسته را بررسی می‌کنیم.`,
         href: whatsappHref(`سلام، برای ${categoryTitle}${item} موجودی و قیمت روز می‌خواهم.`),
         action: "شروع گفت‌وگو",
       };
@@ -129,18 +129,18 @@ export function HomeFinder({
 
     if (productName) {
       return {
-        eyebrow: "پیشنهاد سپید",
-        title: `اول «${productName}» را در فروشگاه ببینید.`,
-        text: "اگر مدل دقیق در فهرست نبود، نامش را برای ما بفرستید تا بررسی کنیم.",
+        eyebrow: "مسیر پیشنهادی برای شما",
+        title: `برای «${productName}» از جست‌وجوی فروشگاه شروع کنید.`,
+        text: "اگر مدل دقیق در فهرست نبود، از همان صفحه موجودی آن را استعلام کنید.",
         href: "/shop",
         action: "جست‌وجو در فروشگاه",
       };
     }
 
     return {
-      eyebrow: "پیشنهاد سپید",
-      title: `محصولات ${categoryTitle} را ببینید.`,
-      text: "مدل‌ها، حجم بسته و اطلاعات هر مورد در همان صفحه کنار هم آمده است.",
+      eyebrow: "مسیر پیشنهادی برای شما",
+      title: `${categoryTitle} آمادهٔ مشاهده است.`,
+      text: "محصولات، برندها و مشخصات هر مورد را در یک صفحه ببینید.",
       href: `/shop/${category}`,
       action: "مشاهده محصولات مرتبط",
     };
@@ -178,9 +178,9 @@ export function HomeFinder({
     <section className="sb-finder" aria-labelledby="finder-title">
       <div className="sb-shell sb-finder__grid">
         <div className="sb-finder__intro">
-          <span className="sb-eyebrow sb-eyebrow--gold">راهنمای کوتاه سپید</span>
-          <h2 id="finder-title">با چند سؤال کوتاه، سریع‌تر به محصول برسید.</h2>
-          <p>لازم نیست از اول همه‌چیز را بدانید؛ قدم‌به‌قدم جلو می‌رویم.</p>
+          <span className="sb-eyebrow sb-eyebrow--gold">SEPIID GUIDE / ۵ QUESTION</span>
+          <h2 id="finder-title">در پنج سؤال، مسیر خریدتان را پیدا کنید.</h2>
+          <p>چند پاسخ کوتاه بدهید تا سریع‌تر به دسته یا محصول موردنظرتان برسید.</p>
           <ol className="sb-finder__steps" aria-label="مراحل راهنمای انتخاب">
             {questions.map((item, index) => (
               <li className={index === step ? "sb-finder__step--active" : index < step ? "sb-finder__step--done" : ""} key={item.title}>
@@ -213,14 +213,14 @@ export function HomeFinder({
                     type="text"
                   />
                   <button type="button" onClick={showNamedProducts}>
-                    پیدا کردن محصول <ArrowIcon />
+                    نمایش محصولات موردنظر <ArrowIcon />
                   </button>
                   <button
                     className="sb-finder__skip-name"
                     type="button"
                     onClick={continueWithProductName}
                   >
-                    نام مدل را نمی‌دانم
+                    نام محصول را نمی‌دانم
                   </button>
                 </div>
               ) : (
@@ -243,7 +243,7 @@ export function HomeFinder({
               <div className="sb-finder__chips"><span>دسته: {categoryLabels[category]}</span><span>پاسخ‌های شما ثبت نمی‌شود.</span></div>
               <div className="sb-finder__actions">
                 <Link className="sb-btn sb-btn--gold" href={recommendation.href}>{recommendation.action}<ArrowIcon /></Link>
-                <button type="button" onClick={restart}>از اول شروع کنیم</button>
+                <button type="button" onClick={restart}>شروع دوباره</button>
               </div>
             </div>
           )}

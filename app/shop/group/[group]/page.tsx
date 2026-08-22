@@ -124,17 +124,18 @@ export default async function ProductGroupPage({
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">
-              گروه‌های این بخش
+                CATEGORY / PATHS
               </span>
 
               <h2>
-                گروهی را انتخاب کنید.
+                مسیر دقیق‌تر را انتخاب کنید.
               </h2>
             </div>
 
             <p>
-              هر گروه، محصولات و توضیحات خودش را دارد. اگر درباره مدل یا روش
-              استفاده سؤال دارید، قبل از خرید بپرسید.
+              هر مسیر، فیلترها و توضیحات مخصوص
+              خود را دارد؛ عنوان دسته جایگزین
+              انتخاب حرفه‌ای نیست.
             </p>
           </div>
 

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
-import { HomeFinder } from "./components/HomeFinder";
+import { DeferredHomeFinder } from "./components/DeferredHomeFinder";
 import { CustomerJourney } from "./components/CustomerJourney";
 import {
   ArrowIcon,
@@ -28,24 +28,24 @@ import {
 
 const faqs = [
   {
-    question: "پیش از ارسال، بسته محصول را چطور بررسی می‌کنید؟",
+    question: "قبل از سفارش چه چیزهایی از بسته محصول را ببینم؟",
     answer:
-      "نام مدل، سلامت جعبه، پلمب، تاریخ و اطلاعات قابل خواندن بسته را با سفارش مقایسه می‌کنیم. اگر سفارش حرفه‌ای دارید، می‌توانید اطلاعات همان بسته را پیش از پرداخت بپرسید.",
+      "نام کامل مدل، حجم، تعداد داخل بسته و سلامت ظاهری محصول را با چیزی که قصد خریدش را دارید مقایسه کنید. اگر برای سفارش مشخصی جزئیات بیشتری لازم دارید، همان محصول و مدل را برای تیم سپید بفرستید.",
   },
   {
-    question: "آیا سپید بیوتی برای من محصول انتخاب می‌کند؟",
+    question: "آیا سپید بیوتی می‌گوید کدام محصول برای من مناسب است؟",
     answer:
-      "خیر. ما درباره خود محصول و خرید آن اطلاعات می‌دهیم. انتخاب محصول تزریقی و روش استفاده باید بعد از معاینه و با نظر پزشک انجام شود.",
+      "سپید بیوتی برای شناخت و مقایسه محصول کمک می‌کند، نه برای تجویز. انتخاب محصول تزریقی، ناحیه و روش استفاده باید پس از ارزیابی توسط فرد واجد صلاحیت انجام شود.",
   },
   {
-    question: "چرا برای بعضی محصولات باید قیمت روز را بپرسیم؟",
+    question: "قیمت نمایش‌داده‌شده برای یک سرنگ است یا جعبه کامل؟",
     answer:
-      "قیمت و موجودی بعضی مدل‌ها زود تغییر می‌کند. برای همین قیمت همان روز را همراه با وضعیت همان بسته اعلام می‌کنیم؛ نه یک عدد قدیمی یا حدسی.",
+      "این موضوع بین محصولات متفاوت است. در صفحه هر محصول تلاش می‌کنیم واحد قیمت، حجم و تعداد داخل بسته را کنار هم نشان دهیم تا قیمت یک سرنگ با قیمت جعبه کامل اشتباه نشود.",
   },
   {
-    question: "برای سفارش کلینیک چه کمکی می‌کنید؟",
+    question: "برای خرید چند محصول برای کلینیک چه کار کنم؟",
     answer:
-      "فهرست محصولات، تعداد، قیمت روز و زمان تحویل را یک‌جا بررسی می‌کنیم و برای پیگیری سفارش، یک مسیر مشخص در اختیار شما می‌گذاریم.",
+      "نام محصول، مدل و تعداد اقلام را یک‌جا بفرستید. موجودی و قیمت هر قلم جداگانه بررسی می‌شود و زمان تحویل در همان مسیر هماهنگ خواهد شد.",
   },
 ];
 
@@ -139,26 +139,26 @@ export default async function Home() {
           <article>
             <ShieldIcon />
             <div>
-              <strong>قبل از ارسال، چک می‌کنیم</strong>
-              <p>نام مدل، تاریخ، پلمب و وضعیت ظاهری بسته را با سفارش مقایسه می‌کنیم.</p>
+              <strong>جزئیات قبل از خرید</strong>
+              <p>مدل، حجم و اطلاعات قابل‌مشاهده بسته را روشن و قابل مقایسه نگه می‌داریم.</p>
             </div>
-            <Link href="/magazine/verify-dermal-filler-authenticity">جزئیات کار</Link>
+            <Link href="/magazine/verify-dermal-filler-authenticity">راهنمای بررسی</Link>
           </article>
           <article>
             <PackageIcon />
             <div>
-              <strong>ارسال را از قبل هماهنگ می‌کنیم</strong>
-              <p>زمان و روش ارسال را بر اساس نوع محصول و شهر مقصد با شما هماهنگ می‌کنیم.</p>
+              <strong>تحویل هماهنگ</strong>
+              <p>زمان و روش ارسال بر اساس نوع محصول و مقصد با شما هماهنگ می‌شود.</p>
             </div>
-            <Link href="/contact">شرایط ارسال</Link>
+            <Link href="/contact">سؤال درباره ارسال</Link>
           </article>
           <article>
             <HeadsetIcon />
             <div>
-              <strong>یک نفر پاسخ‌گوی شماست</strong>
-              <p>برای قیمت، موجودی، پیگیری سفارش و سؤال‌های بعد از تحویل پیام بدهید.</p>
+              <strong>پاسخ‌گویی مستقیم</strong>
+              <p>برای موجودی، جزئیات سفارش و پیگیری، مستقیم با تیم سپید در ارتباطید.</p>
             </div>
-            <Link href={whatsappHref()}>شروع گفت‌وگو</Link>
+            <Link href={whatsappHref()}>گفت‌وگو با سپید</Link>
           </article>
         </div>
       </section>
@@ -169,9 +169,9 @@ export default async function Home() {
             <div className="sb-section-head">
               <div>
                 <span className="sb-eyebrow">SHOP BY CATEGORY</span>
-                <h2>محصول موردنظرتان را از اینجا پیدا کنید</h2>
+                <h2>از کدام گروه شروع می‌کنید؟</h2>
               </div>
-              <p>اگر نام محصول را نمی‌دانید، از گروهی شروع کنید که به نیازتان نزدیک‌تر است.</p>
+              <p>دسته مناسب را باز کنید و همان ابتدا محصولات، مدل‌ها و قیمت‌ها را ببینید.</p>
             </div>
             <div className="sb-category-grid">
               {categories.map((category, index) => (
@@ -214,7 +214,7 @@ export default async function Home() {
         />
       </Reveal>
 
-      <HomeFinder products={products.map(toPublicProduct)} />
+      <DeferredHomeFinder products={products.map(toPublicProduct)} />
 
       <Reveal>
         <section className="sb-section sb-professional-home">
@@ -231,18 +231,17 @@ export default async function Home() {
             </div>
             <div className="sb-professional-home__content">
               <span className="sb-eyebrow">FOR CLINICS / پزشکان و کلینیک‌ها</span>
-              <h2>سفارش کلینیک نباید بین چند پیام گم شود.</h2>
+              <h2>چند محصول را یک‌جا مدیریت کنید.</h2>
               <p>
-                فهرست اقلام، تعداد، موجودی و زمان تحویل را یک‌جا بفرستید تا
-                لازم نباشد برای هر مورد چند بار پیام بدهید.
+                فهرست خرید کلینیک را یک‌جا بفرستید و موجودی، مدل، قیمت و زمان تحویل هر قلم را بدون چند گفت‌وگوی پراکنده پیگیری کنید.
               </p>
               <ul>
-                <li>بررسی چند محصول در یک پیام</li>
-                <li>اعلام جداگانه قیمت و وضعیت هر مدل</li>
-                <li>هماهنگی سفارش‌های بعدی با یک مسیر مشخص</li>
+                <li>چند محصول در یک درخواست</li>
+                <li>مدل و بسته مشخص برای هر قلم</li>
+                <li>پیگیری مستقیم تا زمان تحویل</li>
               </ul>
               <Link className="sb-btn sb-btn--dark" href="/professional">
-                سفارش برای کلینیک
+                خرید حرفه‌ای کلینیک‌ها
                 <ArrowIcon />
               </Link>
             </div>
@@ -257,17 +256,16 @@ export default async function Home() {
               <div>
                 <span className="sb-eyebrow">SEPIID JOURNAL / 2026</span>
                 <h2>
-                  قبل از خرید،
-                  <em>چند نکته ساده را بخوانید.</em>
+                  مقاله‌هایی برای
+                  <em>سؤال‌های واقعی.</em>
                 </h2>
               </div>
               <div>
                 <p>
-                  مقاله‌ها کمک می‌کنند نام مدل، بسته و سؤال‌های مهم را بهتر بشناسید.
-                  این نوشته‌ها جای معاینه و نظر پزشک را نمی‌گیرند.
+                  اگر قبل از خرید درباره تفاوت مدل‌ها، اصالت، نگهداری یا کاربرد یک گروه سؤال دارید، مجله سپید برای همین مرحله است. مقاله‌ها منبع و تاریخ بازبینی دارند و جایگزین تصمیم پزشکی نیستند.
                 </p>
                 <Link className="sb-text-link" href="/magazine">
-                  خواندن مقاله‌ها
+                  خواندن مجله سپید
                   <ArrowIcon />
                 </Link>
               </div>
@@ -297,7 +295,7 @@ export default async function Home() {
             ))}
           </div>
           <Link className="sb-text-link" href="/brands">
-            راهنمای برندها
+            مقایسه محصولات بر اساس برند
             <ArrowIcon />
           </Link>
         </div>
@@ -308,8 +306,8 @@ export default async function Home() {
           <div className="sb-shell sb-faq-section__grid">
             <div>
               <span className="sb-eyebrow">QUESTIONS / ANSWERS</span>
-              <h2>سؤال‌تان را قبل از خرید جواب بگیرید.</h2>
-              <p>پاسخ کوتاه و روشن برای چیزهایی که هنگام خرید مهم‌اند.</p>
+              <h2>سؤال‌هایی که قبل از خرید طبیعی است داشته باشید.</h2>
+              <p>پاسخ کوتاه به ابهام‌هایی که ممکن است بین دو مدل، دو بسته یا دو قیمت ایجاد شود.</p>
               <Link className="sb-text-link" href="/contact">
                 سؤال دیگری دارید؟
                 <ArrowIcon />

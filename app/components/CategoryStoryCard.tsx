@@ -19,43 +19,43 @@ const categoryDetails: Record<
 > = {
   fillers: {
     displayTitle: "فیلر",
-    note: "مدل، حجم و شکل بسته",
-    summary: "مدل‌ها را بر اساس نام، حجم و تعداد بسته کنار هم ببینید",
+    note: "فرم و حجم طبیعی",
+    summary: "انتخاب بر اساس ناحیه، فرم و حجم موردنیاز",
   },
   "skin-boosters": {
     displayTitle: "مزوژل",
-    note: "مزوژل و اسکین‌بوستر",
-    summary: "محصولات مرتبط با ظاهر و کیفیت پوست را جداگانه ببینید",
+    note: "آبرسانی و کیفیت پوست",
+    summary: "محصولات مرتبط با رطوبت، شفافیت و بافت پوست",
   },
   "botulinum-toxins": {
     displayTitle: "بوتاکس",
-    note: "محصولات بوتولینوم",
-    summary: "نام محصول، تعداد واحد و شرایط نگهداری را بررسی کنید",
+    note: "کنترل خطوط پویا",
+    summary: "محصولات مرتبط با خطوط پیشانی، اخم و دور چشم",
   },
   "rejuvenation-cocktails": {
     displayTitle: "جوان‌سازی",
-    note: "کوکتل‌های پوستی",
-    summary: "مدل‌ها و محتویات بسته را قبل از سفارش بخوانید",
+    note: "بازسازی و شادابی",
+    summary: "کوکتل‌های مرتبط با طراوت و کیفیت ظاهری پوست",
   },
   "brightening-cocktails": {
     displayTitle: "روشن‌کننده",
-    note: "محصولات روشن‌کننده",
-    summary: "نام مدل و ترکیبات نوشته‌شده روی بسته را مقایسه کنید",
+    note: "روشنایی و یکنواختی",
+    summary: "محصولات مرتبط با لک، تیرگی و یکنواختی رنگ پوست",
   },
   "eye-cocktails": {
     displayTitle: "دور چشم",
-    note: "محصولات دور چشم",
-    summary: "این گروه را با توجه به حساسیت ناحیه، دقیق‌تر بررسی کنید",
+    note: "مراقبت ظریف دور چشم",
+    summary: "محصولات مرتبط با تیرگی، پف و خطوط ظریف",
   },
   "hair-cocktails": {
     displayTitle: "تقویت مو",
     note: "مو و پوست سر",
-    summary: "مدل‌ها را بشناسید؛ علت ریزش را پزشک بررسی می‌کند",
+    summary: "کوکتل‌های مرتبط با ریزش، تراکم و مراقبت پوست سر",
   },
   "hyaluronidase-products": {
     displayTitle: "هیالورونیداز",
-    note: "محصولات مصرف حرفه‌ای",
-    summary: "قدرت و تعداد بسته را از روی اطلاعات همان محصول بخوانید",
+    note: "اصلاح و بازگشت",
+    summary: "محصولات حرفه‌ای مرتبط با اصلاح و بازگشت تعادل",
   },
 };
 
@@ -73,8 +73,8 @@ export function CategoryStoryCard({
   const [previewed, setPreviewed] = useState(false);
   const detail = categoryDetails[slug] ?? {
     displayTitle: title,
-    note: "محصولات این گروه",
-    summary: "محصولات و مشخصات این گروه را ببینید",
+    note: "انتخاب تخصصی",
+    summary: "مشاهده محصولات و مشخصات این دسته",
   };
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {

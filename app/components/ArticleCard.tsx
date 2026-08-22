@@ -2,7 +2,6 @@
 import Link from "next/link";
 import type { Article } from "../data";
 import { ArrowIcon, ClockIcon } from "./Icons";
-import { toReaderFriendlyCopy } from "../lib/public-copy";
 
 export function ArticleCard({
   article,
@@ -41,11 +40,11 @@ export function ArticleCard({
           </span>
         </div>
         <Link href={`/magazine/${article.slug}`}>
-          <h3>{toReaderFriendlyCopy(article.title)}</h3>
+          <h3>{article.title}</h3>
         </Link>
-        <p>{toReaderFriendlyCopy(article.excerpt)}</p>
+        <p>{article.excerpt}</p>
         <Link className="sb-text-link" href={`/magazine/${article.slug}`}>
-          خواندن مقاله
+          مطالعه مقاله
           <ArrowIcon />
         </Link>
       </div>

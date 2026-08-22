@@ -6,9 +6,9 @@ import { ProfessionalForm } from "../components/ProfessionalForm";
 import { buildSeoMetadata } from "../lib/seo";
 
 export const metadata = buildSeoMetadata({
-  title: "سفارش محصولات برای کلینیک‌ها",
+  title: "خرید حرفه‌ای پزشکان و کلینیک‌ها",
   description:
-    "برای کلینیک‌ها: فهرست چند محصول، قیمت روز، موجودی، زمان تحویل و پیگیری سفارش را یک‌جا هماهنگ کنید.",
+    "فهرست چندمحصولی کلینیک را یک‌جا ارسال کنید و موجودی، قیمت، مدل و زمان تحویل هر قلم را در یک مسیر مشخص پیگیری کنید.",
   path: "/professional",
   image: "/images/professional-clinic-v2.webp",
   imageAlt: "خرید حرفه‌ای پزشکان و کلینیک‌ها",
@@ -24,23 +24,22 @@ export default function ProfessionalPage() {
       <section className="sb-professional-hero">
         <div className="sb-shell sb-professional-hero__grid">
           <div>
-            <span className="sb-eyebrow">سفارش کلینیک</span>
-            <h1>فهرست سفارش‌تان را یک‌جا بفرستید.</h1>
+            <span className="sb-eyebrow">PROFESSIONAL ACCESS</span>
+            <h1>خرید چندقلمی، بدون رفت‌وبرگشت‌های بی‌پایان.</h1>
             <p>
-              نام محصولات، تعداد و زمان تحویل را بفرستید. ما قیمت روز و وضعیت هر
-              مدل را جداگانه بررسی می‌کنیم و پاسخ می‌دهیم.
+              اگر برای کلینیک یا مرکز زیبایی چند محصول را هم‌زمان تهیه می‌کنید، فهرست را یک‌جا بفرستید. نام محصول، مدل، تعداد و زمان موردنیاز مشخص می‌شود و وضعیت هر قلم در همان مسیر پیگیری می‌شود.
             </p>
             <div className="sb-professional-hero__actions">
               <a className="sb-btn sb-btn--gold" href="#brief">
-                فرستادن فهرست سفارش
+                ارسال فهرست خرید
                 <ArrowIcon />
               </a>
               <Link className="sb-btn sb-btn--light-outline" href="/shop">
-                مرور فروشگاه
+                دیدن محصولات
               </Link>
             </div>
             <small>
-              انتخاب و استفاده از محصولات بر عهده پزشک و مسئول فنی مرکز است.
+              انتخاب و استفاده از محصولات حرفه‌ای بر عهده پزشک یا مسئول فنی واجد صلاحیت مرکز است.
             </small>
           </div>
           <figure>
@@ -51,7 +50,7 @@ export default function ProfessionalPage() {
               height="941"
               fetchPriority="high"
             />
-            <figcaption>Clinic inventory / controlled workflow</figcaption>
+            <figcaption>Clinic inventory / one clear workflow</figcaption>
           </figure>
         </div>
       </section>
@@ -60,16 +59,16 @@ export default function ProfessionalPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">روند سفارش</span>
-              <h2>از پیام اول تا تحویل، چهار قدم ساده</h2>
+              <span className="sb-eyebrow">WORKFLOW / روند همکاری</span>
+              <h2>از فهرست خرید تا تحویل، چهار مرحله ساده</h2>
             </div>
           </div>
           <ol>
             {[
-              ["فرستادن فهرست", "نام مدل، تعداد و اولویت‌ها را می‌فرستید."],
-              ["بررسی هر مدل", "بسته، قیمت و موجودی هر مورد جداگانه بررسی می‌شود."],
-              ["هماهنگی سفارش", "قیمت روز و زمان تحویل را یک‌جا اعلام می‌کنیم."],
-              ["پیگیری تا تحویل", "برای سفارش فعلی و سفارش بعدی، مسیر مشخص دارید."],
+              ["فهرست را بفرستید", "نام دقیق محصولات، مدل و تعداد موردنیاز را می‌فرستید."],
+              ["وضعیت هر قلم مشخص می‌شود", "موجودی، مدل و شکل بسته هر محصول جداگانه بررسی می‌شود."],
+              ["سفارش نهایی می‌شود", "قیمت و زمان تحویل اقلام در یک پاسخ یکپارچه جمع‌بندی می‌شود."],
+              ["یک مسیر برای پیگیری دارید", "برای پیگیری یا سفارش بعدی لازم نیست همه چیز را از اول توضیح دهید."],
             ].map(([title, text], index) => (
               <li key={title}>
                 <span>۰{index + 1}</span>
@@ -85,19 +84,19 @@ export default function ProfessionalPage() {
         <div className="sb-shell sb-professional-benefits__grid">
           <div>
             <span className="sb-eyebrow">FOR YOUR TEAM</span>
-            <h2>برای مسئول خرید و مسئول فنی</h2>
+            <h2>برای تیم‌هایی که نمی‌خواهند خرید پراکنده باشد</h2>
             <p>
-              اطلاعات پراکنده را در یک پیام بفرستید تا پاسخ‌گویی و پیگیری ساده‌تر شود.
+              به‌جای چند گفت‌وگوی جدا، فهرست خرید را یک‌جا مدیریت کنید و وضعیت هر محصول را واضح ببینید.
             </p>
           </div>
           <div>
             {[
-              "بررسی چند محصول در یک پیام",
-              "اعلام جداگانه قیمت و مشخصات بسته",
-              "مشخص بودن وضعیت هر قلم",
+              "چند محصول در یک درخواست",
+              "نام مدل و بسته برای هر قلم",
+              "وضعیت موجودی هر محصول به‌صورت جداگانه",
               "هماهنگی زمان و روش تحویل",
-              "کمک به برنامه‌ریزی سفارش بعدی",
-              "پاسخ‌گویی بعد از تحویل",
+              "امکان برنامه‌ریزی سفارش‌های تکرارشونده",
+              "پاسخ‌گویی مستقیم برای پیگیری",
             ].map((item) => (
               <p key={item}>
                 <CheckIcon />
