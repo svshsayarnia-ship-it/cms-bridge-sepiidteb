@@ -209,7 +209,7 @@ async function loadSitePresentation() {
 const getCachedSitePresentation = unstable_cache(
   loadSitePresentation,
   ["site-presentation-v3-editorial"],
-  { revalidate: 300 },
+  { revalidate: 300, tags: ["site-presentation"] },
 );
 
 export const getSitePresentation = cache(
