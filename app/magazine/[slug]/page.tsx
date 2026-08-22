@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ArticleCard } from "../../components/ArticleCard";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { FaqList } from "../../components/FaqList";
@@ -20,7 +21,7 @@ import {
 } from "../../lib/site-presentation";
 import { getSitePresentation as getRemoteSitePresentation } from "../../lib/woocommerce";
 
-async function getEditableArticle(slug: string) {
+const getEditableArticle = cache(async (slug: string) => {
   const initial = getManagedArticles(await getSitePresentation())
     .find((article) => article.slug === slug);
   if (initial) return initial;
@@ -40,7 +41,7 @@ async function getEditableArticle(slug: string) {
   } catch {
     return undefined;
   }
-}
+});
 
 export const dynamicParams = true;
 
