@@ -54,6 +54,29 @@ const botulinumComparisonChecks = [
   },
 ] as const;
 
+const skinBoosterFaq = [
+  {
+    question: "مزوژل و اسکین‌بوستر چه تفاوتی دارند؟",
+    answer:
+      "این دو عنوان در بازار همیشه تعریف یکسانی ندارند و به‌تنهایی نوع محصول را مشخص نمی‌کنند. نام رسمی مدل، ترکیبات درج‌شده، حجم و نوع بسته را بررسی کنید.",
+  },
+  {
+    question: "برای مقایسه مزوژل به چه چیزهایی توجه کنیم؟",
+    answer:
+      "مدل دقیق، حجم، تعداد سرنگ یا ویال، قیمت به‌ازای واحد یا جعبه، منبع اطلاعات و وضعیت بسته را کنار هم ببینید. عدد یا نام یک مدل را خودکار با محصول دیگری معادل نگیرید.",
+  },
+  {
+    question: "آیا اسکین‌بوستر همان فیلر است؟",
+    answer:
+      "نه لزوماً. برخی محصولات این گروه برای بهبود کیفیت ظاهری پوست معرفی می‌شوند و برخی محصولات ژل یا بیورویتالایزر هستند؛ طبقه‌بندی و ویژگی‌های هر مدل باید از منبع همان محصول خوانده شود.",
+  },
+  {
+    question: "قیمت مزوژل برای یک سرنگ است یا یک جعبه؟",
+    answer:
+      "واحد قیمت بین محصولات یکسان نیست. در صفحه هر محصول، تعداد سرنگ یا ویال و عبارت واحد قیمت را بررسی کنید و در صورت ابهام پیش از سفارش استعلام بگیرید.",
+  },
+] as const;
+
 type PriceSource = {
   salePrice?: string | number;
   regularPrice?: string | number;
@@ -149,9 +172,13 @@ export async function generateMetadata({
   return buildSeoMetadata({
     title: isBotulinumCategory
       ? "خرید بوتاکس | قیمت و مقایسه فرآورده‌های بوتولینوم"
+      : category.slug === "skin-boosters"
+        ? "خرید مزوژل و اسکین‌بوستر | قیمت و مقایسه مدل‌ها"
       : `خرید و قیمت ${category.title}`,
     description: isBotulinumCategory
       ? "قیمت و مقایسه بوتاکس و فرآورده‌های بوتولینوم بر اساس نام دقیق، تعداد واحد، بسته‌بندی و شرایط نگهداری؛ همراه با راهنمای خرید حرفه‌ای."
+      : category.slug === "skin-boosters"
+        ? "قیمت و مقایسه مزوژل و اسکین‌بوستر بر اساس مدل، حجم، تعداد سرنگ یا ویال، بسته‌بندی و منبع اطلاعات؛ همراه با راهنمای انتخاب حرفه‌ای."
       : `مشاهده قیمت و مقایسه محصولات ${category.title}. ${editorial.intro}`,
     path: `/shop/${category.slug}`,
     image: category.image,
@@ -509,6 +536,34 @@ export default async function CategoryPage({
         </section>
       ) : null}
 
+      {category.slug === "skin-boosters" ? (
+        <section
+          className={styles.faqSection}
+          aria-labelledby="skin-booster-faq-title"
+        >
+          <div className={`sb-shell ${styles.faqGrid}`}>
+            <div className={styles.faqHead}>
+              <p className={styles.kicker}>راهنمای انتخاب</p>
+              <h2 id="skin-booster-faq-title">
+                سؤال‌های مهم درباره مزوژل و اسکین‌بوستر
+              </h2>
+              <p>
+                قبل از مقایسه قیمت، مدل و واحد بسته هر محصول را روشن کنید.
+              </p>
+            </div>
+
+            <div className={styles.faqList}>
+              {skinBoosterFaq.map((item) => (
+                <details className={styles.faqItem} key={item.question}>
+                  <summary>{item.question}</summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -540,6 +595,23 @@ export default async function CategoryPage({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: botulinumGuide.faq.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+          }}
+        />
+      ) : null}
+
+      {category.slug === "skin-boosters" ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: skinBoosterFaq.map((item) => ({
               "@type": "Question",
               name: item.question,
               acceptedAnswer: {
