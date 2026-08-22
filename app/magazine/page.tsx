@@ -6,6 +6,10 @@ import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
 import { buildSeoMetadata } from "../lib/seo";
 
+// The magazine list is CMS-managed. Rendering it dynamically guarantees a
+// newly published article is visible immediately after cache invalidation.
+export const dynamic = "force-dynamic";
+
 export const metadata = buildSeoMetadata({
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
   description:
