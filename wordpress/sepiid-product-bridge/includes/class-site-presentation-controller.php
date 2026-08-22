@@ -19,7 +19,7 @@ final class Site_Presentation_Controller {
 		return true;
 	}
 	public function get_presentation() {
-		$value = get_option( self::OPTION_KEY, null );
+		$value = $this->read_presentation();
 		$response = new \WP_REST_Response( array( 'exists' => is_array( $value ), 'presentation' => is_array( $value ) ? $value : null ), 200 );
 		$response->header( 'Cache-Control', 'no-store' );
 		return $response;
@@ -31,8 +31,34 @@ final class Site_Presentation_Controller {
 		}
 		$value = $this->sanitize_value( $value, 0, '' );
 		if ( is_wp_error( $value ) ) return $value;
-		update_option( self::OPTION_KEY, $value, false );
+
+		// Store a JSON string rather than a nested PHP-serialized array. Large
+		// HTML articles can otherwise be acknowledged by the REST response while
+		// failing to round-trip through some object-cache/database combinations.
+		$encoded = wp_json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+		if ( ! is_string( $encoded ) || '' === $encoded ) {
+			return new \WP_Error( 'sepiid_presentation_encode_failed', 'ذخیره محتوای مقاله قابل انجام نیست.', array( 'status' => 500 ) );
+		}
+
+		$updated = update_option( self::OPTION_KEY, $encoded, false );
+		$persisted = $this->read_presentation();
+		if ( ! is_array( $persisted ) || wp_json_encode( $persisted ) !== wp_json_encode( $value ) ) {
+			return new \WP_Error( 'sepiid_presentation_persist_failed', 'ذخیره مقاله در وردپرس تأیید نشد؛ تغییرات منتشر نشده‌اند.', array( 'status' => 500 ) );
+		}
+
+		// update_option returns false when the value was already identical; that is
+		// still a valid, verified save.
+		unset( $updated );
 		return new \WP_REST_Response( array( 'saved' => true, 'presentation' => $value ), 200 );
+	}
+	private function read_presentation() {
+		$value = get_option( self::OPTION_KEY, null );
+		if ( is_string( $value ) ) {
+			$decoded = json_decode( $value, true );
+			return is_array( $decoded ) ? $decoded : null;
+		}
+		// Backward compatibility with presentations saved by versions up to 1.8.6.
+		return is_array( $value ) ? $value : null;
 	}
 	private function sanitize_value( $value, $depth, $field ) {
 		if ( $depth > 8 ) return new \WP_Error( 'sepiid_presentation_too_deep', 'ساختار محتوا بیش از حد تو در تو است.', array( 'status' => 400 ) );
