@@ -41,6 +41,52 @@ function headingText(value: string) {
     .trim();
 }
 
+const neuramisVariantLinks = {
+  Deep: "/product/neuramis-deep-lidocaine?variant=deep-1ml",
+  Volume: "/product/neuramis-deep-lidocaine?variant=volume-1ml",
+  Lido: "/product/neuramis-deep-lidocaine?variant=lido-10ml",
+} as const;
+
+function prepareNeuramisGuideHtml(value: string) {
+  let html = value
+    .replace(/Neuramis Light/gi, "Neuramis Lido")
+    .replace(/نورامیس Light/gi, "نورامیس Lido")
+    .replace(/مدل Light/gi, "مدل Lido")
+    .replace(
+      /مدل Lido معمولاً در دسته ژل‌های ظریف‌تر قرار می‌گیرد و برای خطوط سطحی‌تر یا نواحی ظریف‌تر مورد\s*توجه قرار می‌گیرد\. انتخاب نهایی باید با تشخیص متخصص انجام شود؛ زیرا ضخامت پوست و محل درمان در\s*نتیجه نهایی نقش تعیین‌کننده دارند\./gi,
+      "نام Lido به وجود لیدوکائین در این مدل اشاره دارد. مدل موجود سپید بیوتی به‌صورت بسته ۱۰ عددی از سرنگ‌های یک‌میلی‌لیتری ارائه می‌شود؛ مشخصات روی جعبه و انتخاب نهایی باید پیش از خرید با نیاز حرفه‌ای و نظر متخصص تطبیق داده شود.",
+    )
+    .replace(/Light ظریف‌تر، Deep/gi, "Lido حاوی لیدوکائین، Deep")
+    .replace(/بافت ظریف‌تر/gi, "حاوی لیدوکائین")
+    .replace(/رسیدگی به خطوط ظریف‌تر، با تشخیص متخصص/gi, "بررسی مدل لیدوکائین‌دار در بسته ۱۰ × ۱ میلی‌لیتری")
+    .replace(
+      /https?:\/\/(?:www\.)?sepiidbeauty\.ir\/product\/neuramis(?=["'])/gi,
+      "/product/neuramis-deep-lidocaine",
+    );
+
+  for (const [model, href] of Object.entries(neuramisVariantLinks)) {
+    const headingPattern = new RegExp(
+      `(<h[23]\\b[^>]*>\\s*)(نورامیس\\s+${model})(\\s*</h[23]>)`,
+      "gi",
+    );
+    html = html.replace(
+      headingPattern,
+      `$1<a href="${href}">$2</a>$3`,
+    );
+
+    const cellPattern = new RegExp(
+      `(<td\\b[^>]*>\\s*)(Neuramis\\s+${model})(\\s*</td>)`,
+      "gi",
+    );
+    html = html.replace(
+      cellPattern,
+      `$1<a href="${href}">$2</a>$3`,
+    );
+  }
+
+  return html;
+}
+
 function prepareArticleHtml(value: string) {
   const fragmentByLabel = new Map<string, string>();
   for (const match of value.matchAll(/<a\b[^>]*href=["']#([a-z][a-z0-9_-]{0,79})["'][^>]*>([\s\S]*?)<\/a>/gi)) {
@@ -141,7 +187,11 @@ export default async function ArticlePage({
   const article = await getEditableArticle(slug);
   if (!article) notFound();
   const renderedHtmlContent = article.contentMode === "html"
-    ? prepareArticleHtml(article.htmlContent ?? "")
+    ? prepareArticleHtml(
+        /(?:نورامیس|neuramis)/i.test(article.slug)
+          ? prepareNeuramisGuideHtml(article.htmlContent ?? "")
+          : article.htmlContent ?? "",
+      )
     : "";
   const hasEmbeddedSources = hasHtmlAnchor(renderedHtmlContent, "sources");
   const hasSourceSection = hasEmbeddedSources || article.sources.length > 0;
