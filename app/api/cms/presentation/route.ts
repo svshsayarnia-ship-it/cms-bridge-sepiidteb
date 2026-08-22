@@ -15,8 +15,8 @@ function plainText(value: string) {
     .trim();
 }
 
-function htmlSection(html: string, pattern: RegExp) {
-  const match = html.match(new RegExp(`<h2[^>]*>${pattern.source}<\\/h2>([\\s\\S]*?)(?=<h2\\b|$)`, "i"));
+function htmlSection(html: string, pattern: string) {
+  const match = html.match(new RegExp(`<h2[^>]*>${pattern}<\\/h2>([\\s\\S]*?)(?=<h2\\b|$)`, "i"));
   return match?.[1] ?? "";
 }
 
