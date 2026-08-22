@@ -2,7 +2,11 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
 import { DEFAULT_SITE_PRESENTATION, normalizeSitePresentation, type SitePresentation } from "@/app/lib/site-presentation";
 import { encodeArticleHtml } from "@/app/lib/article-html";
-import { errorResponse, getSitePresentation, updateSitePresentation } from "@/app/lib/woocommerce";
+import {
+  errorResponse,
+  getSitePresentation as getRemoteSitePresentation,
+  updateSitePresentation,
+} from "@/app/lib/woocommerce";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +50,7 @@ export async function GET(request: Request) {
   const denied = await cmsApiGuard(request);
   if (denied) return denied;
   try {
-    const presentation = await getSitePresentation();
+    const presentation = await getRemoteSitePresentation();
     return Response.json({ presentation: normalizeSitePresentation(presentation ?? DEFAULT_SITE_PRESENTATION) });
   } catch (error) {
     return errorResponse(error);
@@ -113,14 +117,40 @@ export async function PUT(request: Request) {
     if (new Set(slugs).size !== slugs.length) {
       return Response.json({ error: "نامک مقاله‌ها باید یکتا باشد." }, { status: 400 });
     }
-    const saved = await updateSitePresentation(presentation);
+    await updateSitePresentation(presentation);
+
+    // A few WordPress hosts acknowledge update_option() before the value is
+    // visible to a following request (or an old bridge can echo the request
+    // without persisting it).  Do a fresh, uncached read before telling the
+    // editor the article has actually been published.
+    const confirmed = await getRemoteSitePresentation({
+      requestTimeoutMs: 8_000,
+      requestMaxAttempts: 2,
+    });
+    const confirmedArticles = confirmed?.articles ?? [];
+    const unconfirmed = presentation.articles.find((article) => {
+      const stored = confirmedArticles.find((item) => item.slug === article.slug);
+      if (!stored) return true;
+      return stored.title !== article.title
+        || stored.status !== article.status
+        || JSON.stringify(stored.htmlContentChunks ?? []) !== JSON.stringify(article.htmlContentChunks ?? []);
+    });
+    if (unconfirmed) {
+      return Response.json(
+        {
+          error: `وردپرس انتشار «${unconfirmed.title || unconfirmed.slug}» را تأیید نکرد. افزونهٔ Sepiid Product Bridge فعال یا به‌روز نیست؛ مقاله در سایت منتشر نشده است.`,
+          code: "wordpress_persistence_unverified",
+        },
+        { status: 502 },
+      );
+    }
     revalidateTag("site-presentation", "max");
     revalidatePath("/", "layout");
     revalidatePath("/magazine");
     revalidatePath("/magazine/[slug]", "page");
     revalidatePath("/brands/[slug]", "page");
     revalidatePath("/sitemap.xml");
-    return Response.json({ presentation: normalizeSitePresentation(saved) });
+    return Response.json({ presentation: normalizeSitePresentation(confirmed) });
   } catch (error) {
     return errorResponse(error);
   }
