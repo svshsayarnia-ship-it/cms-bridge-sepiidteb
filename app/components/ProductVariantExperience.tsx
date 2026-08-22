@@ -256,9 +256,11 @@ export function ProductVariantExperience({
     !hasVariants && liveShortDescription ? liveShortDescription : displaySummary,
     getSupplierTerms(product.brand),
   );
-  const editorialDescription = hasVariants ? "" : toPublicCopy(liveDescription);
+  const editorialDescription = hasVariants
+    ? ""
+    : toPublicCopy(liveDescription || product.summary);
   const variantEditorialDescription = hasVariants
-    ? conciseProductCopy(displaySummary, getSupplierTerms(product.brand))
+    ? toPublicCopy(displaySummary)
     : "";
   const selectedSpecLabels = new Set(
     selectedVariant?.specs.map(([label]) => label) ?? [],
