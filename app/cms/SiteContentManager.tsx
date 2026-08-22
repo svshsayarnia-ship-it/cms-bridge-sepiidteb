@@ -8,7 +8,7 @@ type Section = "header" | "footer" | "home" | "articles";
 
 export function SiteContentManager() {
   const [content, setContent] = useState<SitePresentation | null>(null);
-  const [section, setSection] = useState<Section>("header");
+  const [section, setSection] = useState<Section>("articles");
   const [articleIndex, setArticleIndex] = useState(0);
   const [message, setMessage] = useState("در حال دریافت محتوای سایت…");
   const [saving, setSaving] = useState(false);
@@ -56,13 +56,13 @@ export function SiteContentManager() {
   return (
     <section className="spb-site-content">
       <div className="spb-site-content__head">
-        <div><span>SITE CONTENT</span><h2>ویرایش بخش‌های سایت</h2></div>
+        <div><span>SEPIID MAGAZINE</span><h2>مدیریت مقاله‌های مجله سپید</h2></div>
         <button type="button" className="spb-button is-primary" disabled={saving} onClick={() => void save()}>
           {saving ? "در حال ذخیره…" : "ذخیره و انتشار"}
         </button>
       </div>
       <nav className="spb-site-content__tabs">
-        {([['header','هدر'],['footer','فوتر'],['home','صفحه اصلی'],['articles','مجله سپید']] as const).map(([key,label]) =>
+        {([['articles','مقاله‌ها و مجله سپید'],['header','هدر'],['footer','فوتر'],['home','صفحه اصلی']] as const).map(([key,label]) =>
           <button type="button" className={section === key ? "is-active" : ""} onClick={() => setSection(key)} key={key}>{label}</button>)}
       </nav>
       <div className="spb-form-grid spb-site-content__form">

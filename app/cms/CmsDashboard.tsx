@@ -565,8 +565,8 @@ export function CmsDashboard({ userName }: { userName: string }) {
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
 
-      <PricingManager />
       <SiteContentManager />
+      <PricingManager />
 
       {categories.length > 0 && (
         <CategoryManager
