@@ -36,6 +36,7 @@ import {
   getEnglishBrandLabel,
   toPublicCopy,
 } from "../../lib/public-copy";
+import { fillerCopyOverrides } from "../../lib/filler-copy";
 import {
   getProductBySlug as getCmsProductBySlug,
   WooCommerceError,
@@ -588,7 +589,7 @@ export async function generateMetadata({
         liveProduct?.description ||
         "",
     ) ||
-    getPublicSummary(product.summary) ||
+    getPublicSummary(fillerCopyOverrides[product.slug]?.summary ?? product.summary) ||
     `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
   const image =
