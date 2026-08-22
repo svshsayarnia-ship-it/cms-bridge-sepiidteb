@@ -56,7 +56,8 @@ function normalizeNeuramisModelCopy(value: string) {
     .replace(/Neuramis Light/gi, "Neuramis Lido")
     .replace(/نورامیس Light/gi, "نورامیس Lido")
     .replace(/مدل Light/gi, "مدل Lido")
-    .replace(/Light ظریف‌تر، Deep/gi, "Lido لیدوکائین‌دار، Deep");
+    .replace(/Light ظریف‌تر، Deep/gi, "Lido لیدوکائین‌دار، Deep")
+    .replace(/\bLight\b/gi, "Lido");
 }
 
 function absoluteArticleImage(value: string) {
