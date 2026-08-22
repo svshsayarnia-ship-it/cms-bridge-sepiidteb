@@ -13,14 +13,14 @@ import { getGuideForArticle } from "../../content-architecture";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
-import { applyArticlePresentation, getSitePresentation } from "../../lib/site-presentation";
+import { getManagedArticles, getSitePresentation } from "../../lib/site-presentation";
 
 async function getEditableArticle(slug: string) {
-  return applyArticlePresentation(articles, await getSitePresentation())
+  return getManagedArticles(await getSitePresentation())
     .find((article) => article.slug === slug);
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -74,9 +74,10 @@ export default async function ArticlePage({
     article.relatedProducts.includes(product.slug),
   );
   const parentGuide = getGuideForArticle(article.slug);
+  const managedArticles = getManagedArticles(await getSitePresentation());
   const relatedArticles = article.relatedArticles?.length
-    ? articles.filter((item) => article.relatedArticles?.includes(item.slug)).slice(0, 2)
-    : articles.filter((item) => item.slug !== article.slug).slice(0, 2);
+    ? managedArticles.filter((item) => article.relatedArticles?.includes(item.slug)).slice(0, 2)
+    : managedArticles.filter((item) => item.slug !== article.slug).slice(0, 2);
 
   return (
     <main id="main-content">
@@ -125,7 +126,7 @@ export default async function ArticlePage({
           <strong>در این مقاله</strong>
           <nav>
             <a href="#summary">خلاصه سریع</a>
-            {article.sections.map((section, index) => (
+            {article.contentMode === "html" ? <a href="#article-html">متن کامل مقاله</a> : article.sections.map((section, index) => (
               <a href={`#section-${index + 1}`} key={section.heading}>
                 {section.heading}
               </a>
@@ -160,7 +161,13 @@ export default async function ArticlePage({
             </div>
           ) : null}
 
-          {article.sections.map((section, index) => (
+          {article.contentMode === "html" ? (
+            <section
+              className="sb-product-rich-text sb-article-html-content"
+              id="article-html"
+              dangerouslySetInnerHTML={{ __html: article.htmlContent ?? "" }}
+            />
+          ) : article.sections.map((section, index) => (
             <section id={`section-${index + 1}`} key={section.heading}>
               <span className="sb-article-body__index">۰{index + 1}</span>
               <h2>{section.heading}</h2>
@@ -174,6 +181,16 @@ export default async function ArticlePage({
                   ))}
                 </ul>
               )}
+              {section.links?.length ? (
+                <div className="sb-article-parent-guide">
+                  <span>برای بررسی بیشتر</span>
+                  {section.links.map((link) => (
+                    <Link href={link.href} key={`${link.href}-${link.label}`}>
+                      {link.label}<ArrowIcon />
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
               {section.table && (
                 <div className="sb-article-table" role="region" aria-label={section.heading}>
                   <table>
@@ -241,12 +258,22 @@ export default async function ArticlePage({
             </ol>
           </section>
 
+          {article.cta?.label && article.cta.href ? (
+            <div className="sb-article-parent-guide">
+              <span>{article.cta.eyebrow || "ادامه مسیر"}</span>
+              {article.cta.text ? <p>{article.cta.text}</p> : null}
+              <Link href={article.cta.href}>{article.cta.label}<ArrowIcon /></Link>
+            </div>
+          ) : null}
+
           <footer className="sb-article-author">
             <span>نویسنده</span>
             <div>
-              <strong>تحریریه سپید بیوتی</strong>
+              <strong>{article.authorName || "تحریریه سپید بیوتی"}</strong>
               <p>
-                محتوای آموزشی برای خرید آگاهانه؛ بدون معرفی پزشک یا بازبین ساختگی.
+                {article.reviewerName
+                  ? `بازبینی محتوا: ${article.reviewerName}${article.reviewerRole ? `، ${article.reviewerRole}` : ""}`
+                  : "محتوای آموزشی برای خرید آگاهانه؛ بدون معرفی پزشک یا بازبین ساختگی."}
               </p>
             </div>
           </footer>
@@ -302,7 +329,7 @@ export default async function ArticlePage({
           inLanguage: "fa-IR",
           author: {
             "@type": "Organization",
-            name: "تحریریه سپید بیوتی",
+            name: article.authorName || "تحریریه سپید بیوتی",
           },
           publisher: {
             "@type": "Organization",

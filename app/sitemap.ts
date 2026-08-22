@@ -5,7 +5,8 @@ import {
   concerns,
   guides,
 } from "./content-architecture";
-import { articles, categories } from "./data";
+import { categories } from "./data";
+import { getManagedArticles, getSitePresentation } from "./lib/site-presentation";
 import { getCompactBrandLabel } from "./lib/public-copy";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
@@ -27,6 +28,7 @@ function getProductLastModified(
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const managedArticles = getManagedArticles(await getSitePresentation());
   const staticRoutes = [
     "",
     "/shop",
@@ -151,7 +153,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.72,
       })),
 
-    ...articles.map((article) => ({
+    ...managedArticles.map((article) => ({
       url: `${siteOrigin}/magazine/${article.slug}`,
       lastModified: getProductLastModified(
         article.dateModified ||

@@ -11,11 +11,11 @@ import {
   brandPages,
   getBrandPage,
 } from "../../content-architecture";
-import { articles } from "../../data";
 import { getCompactBrandLabel, toPublicCopy } from "../../lib/public-copy";
 import { buildSeoMetadata } from "../../lib/seo";
 import { siteOrigin } from "../../lib/site-url";
 import { getStorefrontCatalog } from "../../lib/storefront-catalog";
+import { getManagedArticles, getSitePresentation } from "../../lib/site-presentation";
 
 export const revalidate = 300;
 
@@ -116,8 +116,9 @@ export default async function BrandPage({
         ],
   );
 
-  const relatedArticles = articles.filter((article) =>
-    brand.articleSlugs.includes(article.slug),
+  const managedArticles = getManagedArticles(await getSitePresentation());
+  const relatedArticles = managedArticles.filter((article) =>
+    brand.articleSlugs.includes(article.slug) || article.brandSlugs?.includes(brand.slug),
   );
   const publicFaq = brand.faq.map((item) => ({
     question: toPublicCopy(item.question),

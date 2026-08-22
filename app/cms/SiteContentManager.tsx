@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { SitePresentation } from "../lib/site-presentation";
+import { MagazineManager } from "./MagazineManager";
 
 type Section = "header" | "footer" | "home" | "articles";
 
@@ -52,8 +53,6 @@ export function SiteContentManager() {
         <input value={value} onChange={(e) => onChange(e.target.value)} />}
     </label>
   );
-  const article = content.articles[articleIndex];
-
   return (
     <section className="spb-site-content">
       <div className="spb-site-content__head">
@@ -63,7 +62,7 @@ export function SiteContentManager() {
         </button>
       </div>
       <nav className="spb-site-content__tabs">
-        {([['header','هدر'],['footer','فوتر'],['home','صفحه اصلی'],['articles','نوشته‌ها']] as const).map(([key,label]) =>
+        {([['header','هدر'],['footer','فوتر'],['home','صفحه اصلی'],['articles','مجله سپید']] as const).map(([key,label]) =>
           <button type="button" className={section === key ? "is-active" : ""} onClick={() => setSection(key)} key={key}>{label}</button>)}
       </nav>
       <div className="spb-form-grid spb-site-content__form">
@@ -94,14 +93,12 @@ export function SiteContentManager() {
           {field("متن دکمه اصلی", content.home.hero.primaryCtaLabel, v => setContent({...content,home:{hero:{...content.home.hero,primaryCtaLabel:v}}}))}
           {field("لینک دکمه اصلی", content.home.hero.primaryCtaHref, v => setContent({...content,home:{hero:{...content.home.hero,primaryCtaHref:v}}}))}
         </>}
-        {section === "articles" && article && <>
-          <label className="is-wide"><span>انتخاب نوشته</span><select value={articleIndex} onChange={e => setArticleIndex(Number(e.target.value))}>{content.articles.map((item,index)=><option value={index} key={item.slug}>{item.title}</option>)}</select></label>
-          {field("عنوان نوشته", article.title, v => { const articles=[...content.articles]; articles[articleIndex]={...article,title:v}; setContent({...content,articles}); }, true)}
-          {field("دسته نوشته", article.category, v => { const articles=[...content.articles]; articles[articleIndex]={...article,category:v}; setContent({...content,articles}); })}
-          {field("خلاصه", article.excerpt, v => { const articles=[...content.articles]; articles[articleIndex]={...article,excerpt:v}; setContent({...content,articles}); }, true)}
-          {field("مقدمه", article.lead, v => { const articles=[...content.articles]; articles[articleIndex]={...article,lead:v}; setContent({...content,articles}); }, true)}
-          {field("هشدار/نکته", article.notice, v => { const articles=[...content.articles]; articles[articleIndex]={...article,notice:v}; setContent({...content,articles}); }, true)}
-        </>}
+        {section === "articles" && <MagazineManager
+          articles={content.articles}
+          selectedIndex={articleIndex}
+          onSelect={setArticleIndex}
+          onChange={(articles) => setContent({ ...content, articles })}
+        />}
       </div>
       {message && <p className="spb-site-content__message">{message}</p>}
     </section>

@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
-import { articles } from "../data";
-import { applyArticlePresentation, getSitePresentation } from "../lib/site-presentation";
+import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
 import { buildSeoMetadata } from "../lib/seo";
 
 export const metadata = buildSeoMetadata({
@@ -17,7 +16,7 @@ export const metadata = buildSeoMetadata({
 });
 
 export default async function MagazinePage() {
-  const editableArticles = applyArticlePresentation(articles, await getSitePresentation());
+  const editableArticles = getManagedArticles(await getSitePresentation());
   const featured =
     editableArticles.find((article) => article.slug === "neuramis-vs-revofil-guide") ??
     editableArticles[0];

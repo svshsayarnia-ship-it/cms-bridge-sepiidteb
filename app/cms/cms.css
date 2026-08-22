@@ -1433,7 +1433,42 @@ body:has(.spb-cms-login) {
 .spb-site-content__form textarea { resize:vertical; }
 .spb-inline-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; grid-column:1/-1; }
 .spb-site-content__message { margin:16px 0 0; color:#496b58; }
+.spb-magazine-manager { display:grid; gap:18px; }
+.spb-magazine-toolbar { display:flex; align-items:end; gap:10px; padding:16px; border:1px solid #e6dfd4; border-radius:14px; background:#faf8f4; }
+.spb-magazine-toolbar label { flex:1; }
+.spb-editor-box { margin:0; padding:18px; border:1px solid #ded8cc; border-radius:16px; background:#fff; }
+.spb-editor-box legend { padding:0 10px; color:#244438; font-weight:800; }
+.spb-editor-box small { display:block; margin-top:6px; color:#7b766e; line-height:1.7; }
+.spb-content-mode { display:flex; gap:8px; margin-bottom:18px; padding:5px; width:fit-content; border:1px solid #ddd5c8; border-radius:999px; background:#f5f1eb; }
+.spb-content-mode button { border:0; border-radius:999px; padding:9px 15px; background:transparent; cursor:pointer; }
+.spb-content-mode button.is-active { color:#fff; background:#18352b; }
+.spb-html-entry { display:grid; gap:12px; }
+.spb-html-entry__head { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+.spb-html-entry__head small { margin:4px 0 0; }
+.spb-html-code { width:100%; min-height:520px; padding:18px; border:1px solid #cfc7bb; border-radius:12px; background:#17211d; color:#e9f3ed; font:14px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; text-align:left; tab-size:2; resize:vertical; }
+.spb-html-tags { display:flex; flex-wrap:wrap; gap:8px; color:#655f57; }
+.spb-html-tags code { direction:ltr; }
+.spb-repeat-list { display:grid; gap:14px; margin-bottom:12px; }
+.spb-repeat-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:16px; border:1px solid #e7e0d6; border-radius:14px; background:#fbfaf7; }
+.spb-repeat-card > .is-wide, .spb-repeat-card__head, .spb-subsection-list { grid-column:1/-1; }
+.spb-repeat-card__head { display:flex; justify-content:space-between; align-items:center; }
+.spb-repeat-card__head button, .spb-source-row button { border:0; background:transparent; color:#a23a32; cursor:pointer; }
+.spb-subsection-list { display:grid; gap:10px; padding-top:10px; border-top:1px dashed #d8d0c4; }
+.spb-section-links, .spb-section-table { grid-column:1/-1; display:grid; gap:10px; padding:12px; border-radius:12px; background:#f4f7f4; }
+.spb-section-table { background:#f7f3ed; }
+.spb-section-table > button { justify-self:start; border:0; background:transparent; color:#a23a32; cursor:pointer; }
+.spb-subsection-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:14px; border-radius:12px; background:#f2eee7; }
+.spb-subsection-card > .is-wide, .spb-subsection-card .spb-repeat-card__head { grid-column:1/-1; }
+.spb-source-row { display:grid; grid-template-columns:1fr 1.5fr auto; gap:10px; align-items:center; }
+.spb-seo-preview { grid-column:1/-1; display:grid; gap:5px; padding:16px; border-radius:12px; background:#f7f9f7; direction:rtl; }
+.spb-seo-preview strong { color:#1d4f91; font-size:18px; }
+.spb-seo-preview span { direction:ltr; text-align:left; color:#47765b; overflow-wrap:anywhere; }
+.spb-seo-preview p { margin:0; color:#4e514f; }
+.spb-empty-state { padding:36px; text-align:center; border:1px dashed #cfc6b8; border-radius:14px; color:#736d64; }
+.spb-button.is-danger { color:#9a312b; border-color:#e5bbb6; background:#fff7f6; }
 @media (max-width: 720px) { .spb-site-content { margin:12px; padding:16px; } .spb-site-content__head { align-items:flex-start; flex-direction:column; } .spb-inline-fields { grid-template-columns:1fr; } }
+@media (max-width: 720px) { .spb-magazine-toolbar { align-items:stretch; flex-direction:column; } .spb-repeat-card, .spb-subsection-card, .spb-source-row { grid-template-columns:1fr; } .spb-source-row > * { grid-column:1; } }
+@media (max-width: 720px) { .spb-content-mode, .spb-html-entry__head { align-items:stretch; flex-direction:column; width:100%; } .spb-html-code { min-height:420px; font-size:12px; } }
 
 /* CMS responsive safety: uploaded images and long API values must stay inside
    their cards, while form fields remain usable on iOS-sized viewports. */

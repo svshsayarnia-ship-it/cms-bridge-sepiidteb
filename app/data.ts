@@ -83,6 +83,7 @@ export type ArticleSection = {
     headers: string[];
     rows: string[][];
   };
+  links?: Array<{ label: string; href: string }>;
 };
 
 export type Article = {
@@ -108,6 +109,15 @@ export type Article = {
   focusKeyword?: string;
   datePublished?: string;
   dateModified?: string;
+  status?: "draft" | "publish";
+  brandSlugs?: string[];
+  cta?: { eyebrow: string; text: string; label: string; href: string };
+  authorName?: string;
+  reviewerName?: string;
+  reviewerRole?: string;
+  contentMode?: "structured" | "html";
+  htmlContent?: string;
+  htmlContentChunks?: string[];
 };
 
 // The live catalog is maintained in app/catalog.ts.

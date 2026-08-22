@@ -2,18 +2,12 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { articles } from "../data";
+import { articles, type Article } from "../data";
+import { decodeArticleHtml } from "./article-html";
 import { getSitePresentation as getRemotePresentation } from "./woocommerce";
 
 export type NavItem = { label: string; href: string };
-export type ArticlePresentation = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  lead: string;
-  notice: string;
-};
+export type ArticlePresentation = Article;
 export type SitePresentation = {
   header: {
     brandTagline: string;
@@ -86,9 +80,7 @@ export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
     editorialLabel: "SEPIID EDITORIAL / 01", editorialCaption: "کمتر حدس بزنید، دقیق‌تر انتخاب کنید",
     qualityTitle: "چیزی که واقعاً می‌خرید", qualitySubtitle: "MODEL / PACK / PRICE",
   } },
-  articles: articles.map(({ slug, title, excerpt, category, lead, notice }) => ({
-    slug, title, excerpt, category, lead, notice: notice ?? "",
-  })),
+  articles: articles.map((article) => ({ ...article, status: "publish" })),
 };
 
 const EDITORIAL_IDENTITY_COPY = {
@@ -129,24 +121,57 @@ function restoreCanonicalKeys(value: unknown, template: unknown): unknown {
   if (!value || typeof value !== "object" || !template || typeof template !== "object") return value;
   const source = value as Record<string, unknown>;
   const result: Record<string, unknown> = {};
-  for (const [canonicalKey, templateValue] of Object.entries(template)) {
-    const actualKey = Object.keys(source).find((key) => key.toLowerCase() === canonicalKey.toLowerCase());
-    if (actualKey) result[canonicalKey] = restoreCanonicalKeys(source[actualKey], templateValue);
+  for (const [actualKey, actualValue] of Object.entries(source)) {
+    const canonicalEntry = Object.entries(template).find(
+      ([canonicalKey]) => canonicalKey.toLowerCase() === actualKey.toLowerCase(),
+    );
+    const outputKey = canonicalEntry?.[0] ?? actualKey;
+    result[outputKey] = restoreCanonicalKeys(actualValue, canonicalEntry?.[1]);
   }
   return result;
 }
 
-function mergePresentation(rawValue: Partial<SitePresentation> | null): SitePresentation {
+function normalizeArticle(value: Partial<Article>, base?: Article): Article {
+  const fallback: Article = base ?? {
+    slug: "", title: "", excerpt: "", category: "راهنمای انتخاب",
+    date: "", readTime: "۵ دقیقه", image: "/images/magazine-authenticity-v2.webp",
+    lead: "", notice: "", sections: [], sources: [], relatedProducts: [],
+  };
+  return {
+    ...fallback,
+    ...value,
+    sections: value.sections ?? fallback.sections ?? [],
+    sources: value.sources ?? fallback.sources ?? [],
+    relatedProducts: value.relatedProducts ?? fallback.relatedProducts ?? [],
+    relatedArticles: value.relatedArticles ?? fallback.relatedArticles ?? [],
+    faq: value.faq ?? fallback.faq ?? [],
+    brandSlugs: value.brandSlugs ?? fallback.brandSlugs ?? [],
+    status: value.status ?? fallback.status ?? "publish",
+    contentMode: value.contentMode ?? fallback.contentMode ?? "structured",
+    htmlContent: value.htmlContent ?? decodeArticleHtml(value.htmlContentChunks),
+    htmlContentChunks: value.htmlContentChunks ?? [],
+  };
+}
+
+export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | null): SitePresentation {
   const value = rawValue
     ? restoreCanonicalKeys(rawValue, DEFAULT_SITE_PRESENTATION) as Partial<SitePresentation>
     : null;
   if (!value) return DEFAULT_SITE_PRESENTATION;
 
+  const remoteArticles = value.articles ?? [];
+  const remoteBySlug = new Map(remoteArticles.map((article) => [article.slug, article]));
+  const staticSlugs = new Set(articles.map((article) => article.slug));
+  const normalizedArticles = [
+    ...articles.map((article) => normalizeArticle(remoteBySlug.get(article.slug) ?? {}, article)),
+    ...remoteArticles.filter((article) => !staticSlugs.has(article.slug)).map((article) => normalizeArticle(article)),
+  ];
+
   const merged: SitePresentation = {
     header: { ...DEFAULT_SITE_PRESENTATION.header, ...value.header },
     footer: { ...DEFAULT_SITE_PRESENTATION.footer, ...value.footer },
     home: { hero: { ...DEFAULT_SITE_PRESENTATION.home.hero, ...value.home?.hero } },
-    articles: value.articles?.length ? value.articles : DEFAULT_SITE_PRESENTATION.articles,
+    articles: normalizedArticles,
   };
 
   return {
@@ -170,7 +195,7 @@ function mergePresentation(rawValue: Partial<SitePresentation> | null): SitePres
 
 async function loadSitePresentation() {
   try {
-    return mergePresentation(
+    return normalizeSitePresentation(
       await getRemotePresentation({
         requestTimeoutMs: 2_500,
         requestMaxAttempts: 1,
@@ -193,5 +218,16 @@ export const getSitePresentation = cache(
 
 export function applyArticlePresentation<T extends { slug: string }>(items: T[], presentation: SitePresentation) {
   const overrides = new Map(presentation.articles.map((item) => [item.slug, item]));
-  return items.map((item) => ({ ...item, ...overrides.get(item.slug) }));
+  const merged = items.map((item) => ({ ...item, ...overrides.get(item.slug) }));
+  const known = new Set(items.map((item) => item.slug));
+  const created = presentation.articles.filter((item) => !known.has(item.slug));
+  return [...merged, ...created] as Array<T & ArticlePresentation>;
+}
+
+export function getManagedArticles(
+  presentation: SitePresentation,
+  options: { includeDrafts?: boolean } = {},
+) {
+  const managed = applyArticlePresentation(articles, presentation);
+  return options.includeDrafts ? managed : managed.filter((article) => article.status !== "draft");
 }
