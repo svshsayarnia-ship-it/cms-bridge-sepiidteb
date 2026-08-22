@@ -3887,6 +3887,13 @@ contain: paint;
   font-size: 0.67rem;
 }
 
+.sb-article-toc nav a.is-subheading {
+  padding-right: 12px;
+  color: var(--sb-muted);
+  opacity: 0.9;
+  font-size: 0.62rem;
+}
+
 .sb-article-toc > p {
   margin: 15px 0 0;
   display: grid;

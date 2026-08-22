@@ -14,6 +14,7 @@ import { getGuideForArticle } from "../../content-architecture";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
+import { getArticleHeadings } from "../../lib/article-html";
 import {
   getManagedArticles,
   getSitePresentation,
@@ -226,6 +227,9 @@ export default async function ArticlePage({
   const relatedArticles = article.relatedArticles?.length
     ? managedArticles.filter((item) => article.relatedArticles?.includes(item.slug)).slice(0, 2)
     : managedArticles.filter((item) => item.slug !== article.slug).slice(0, 2);
+  const articleHeadings = article.contentMode === "html"
+    ? getArticleHeadings(article.htmlContent ?? "")
+    : [];
 
   return (
     <main id="main-content">
@@ -274,7 +278,11 @@ export default async function ArticlePage({
           <strong>در این مقاله</strong>
           <nav>
             <a href="#summary">خلاصه سریع</a>
-            {article.contentMode === "html" ? <a href="#article-html">متن کامل مقاله</a> : article.sections.map((section, index) => (
+            {article.contentMode === "html" ? articleHeadings.map((heading) => (
+              <a className={heading.level === 3 ? "is-subheading" : undefined} href={`#${heading.id}`} key={heading.id}>
+                {heading.text}
+              </a>
+            )) : article.sections.map((section, index) => (
               <a href={`#section-${index + 1}`} key={section.heading}>
                 {section.heading}
               </a>

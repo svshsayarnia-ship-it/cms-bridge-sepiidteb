@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Article } from "../data";
 import type { CmsImage } from "../lib/cms-types";
+import { analyzeArticleSeo } from "../lib/article-seo";
 import { ArticleImageUploader } from "./ArticleImageUploader";
+import { ArticleVisualEditor, visualEditorSafety } from "./ArticleVisualEditor";
 
 type Props = { articles: Article[]; selectedIndex: number; onSelect(index: number): void; onChange(articles: Article[]): void };
 
@@ -33,8 +35,7 @@ function blankArticle(): Article {
   return { slug: "", title: "", excerpt: "", category: "راهنمای انتخاب", date: "به‌روزرسانی: امروز", readTime: "۵ دقیقه", image: "/images/magazine-authenticity-v2.webp", lead: "", notice: "این مطلب برای آشنایی و بررسی بهتر محصول است و جایگزین نظر فرد واجد صلاحیت نیست.", sections: [], sources: [], relatedProducts: [], relatedArticles: [], faq: [], datePublished: today(), dateModified: today(), status: "publish", contentMode: "html", htmlContent: "" };
 }
 
-const htmlTemplate = `<h1>عنوان اصلی مقاله</h1>
-<p>مقدمه کوتاه و روشن مقاله را اینجا بنویسید.</p>
+const htmlTemplate = `<p>مقدمه کوتاه و روشن مقاله را اینجا بنویسید.</p>
 
 <h2>عنوان بخش اول</h2>
 <p>متن بخش اول...</p>
@@ -52,6 +53,19 @@ const htmlTemplate = `<h1>عنوان اصلی مقاله</h1>
 export function MagazineManager({ articles, selectedIndex, onSelect, onChange }: Props) {
   const article = articles[selectedIndex];
   const htmlEditorRef = useRef<HTMLTextAreaElement>(null);
+  const [bodyMode, setBodyMode] = useState<"visual" | "source">("visual");
+  const html = article ? editableHtml(article) : "";
+  const visualEditorReasons = visualEditorSafety(html);
+  const canUseVisualEditor = visualEditorReasons.length === 0;
+  const seoChecks = article ? analyzeArticleSeo({
+    title: article.seoTitle || article.title,
+    metaDescription: article.metaDescription,
+    excerpt: article.excerpt,
+    html,
+    image: article.image,
+    imageAlt: article.imageAlt,
+  }) : [];
+  const passedSeoChecks = seoChecks.filter((check) => check.state === "pass").length;
   function update(patch: Partial<Article>) {
     if (!article) return;
     const next = [...articles];
@@ -73,11 +87,11 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
     const html = editableHtml(article);
     const start = editor?.selectionStart ?? html.length;
     const end = editor?.selectionEnd ?? start;
-    const figure = `\n<figure>\n  <img src="${escapeHtml(image.src)}" alt="${escapeHtml(alt)}" loading="lazy" />\n  <figcaption>${escapeHtml(alt)}</figcaption>\n</figure>\n`;
-    update({ htmlContent: `${html.slice(0, start)}${figure}${html.slice(end)}` });
+    const imageHtml = `\n<img src="${escapeHtml(image.src)}" alt="${escapeHtml(alt)}" loading="lazy" />\n`;
+    update({ htmlContent: `${html.slice(0, start)}${imageHtml}${html.slice(end)}` });
     requestAnimationFrame(() => {
       if (!editor) return;
-      const nextPosition = start + figure.length;
+      const nextPosition = start + imageHtml.length;
       editor.focus();
       editor.setSelectionRange(nextPosition, nextPosition);
     });
@@ -96,8 +110,17 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
       <label className="spb-article-status"><span>وضعیت انتشار</span><select value={article.status ?? "draft"} onChange={(event) => update({ status: event.target.value as Article["status"] })}><option value="publish">منتشرشده — در فهرست مجله نمایش داده می‌شود</option><option value="draft">پیش‌نویس — در سایت نمایش داده نمی‌شود</option></select></label>
       <label className="is-wide"><span>عنوان اصلی مقاله</span><input value={article.title} onChange={(event) => update({ title: event.target.value })} placeholder="مثال: فیلر نورامیس چیست و چه کاربردی دارد؟" /><small>این عنوان، H1 نهایی صفحه است.</small></label>
       <div className="spb-html-entry">
-        <div className="spb-html-entry__head"><div><strong>کد کامل HTML مقاله</strong><small>کل مقاله را یک‌جا Paste کن: مقدمه، H2، H3، جدول، لینک داخلی، FAQ و منابع. اگر H1 هم در کد باشد، برای جلوگیری از H1 تکراری فقط عنوان بالا در صفحه نمایش داده می‌شود.</small></div><button type="button" className="spb-button" onClick={() => update({ htmlContent: htmlTemplate })}>درج قالب نمونه</button></div>
-        <textarea ref={htmlEditorRef} className="spb-html-code" dir="ltr" rows={32} spellCheck={false} value={editableHtml(article)} onChange={(event) => update({ htmlContent: event.target.value })} placeholder={htmlTemplate} />
+        <div className="spb-html-entry__head"><div><strong>محتوای کامل مقاله</strong><small>با ویرایشگر بصری، تیتر، فهرست، جدول و لینک را بدون کدنویسی تغییر بده. HTML خام همیشه به‌عنوان مسیر امنِ جایگزین در دسترس است.</small></div><button type="button" className="spb-button" onClick={() => update({ htmlContent: htmlTemplate })}>درج قالب نمونه</button></div>
+        <div className="spb-editor-mode-switch" role="group" aria-label="حالت ویرایش مقاله">
+          <button type="button" className={bodyMode === "visual" && canUseVisualEditor ? "is-active" : ""} disabled={!canUseVisualEditor} onClick={() => setBodyMode("visual")}>ویرایش بصری</button>
+          <button type="button" className={bodyMode === "source" || !canUseVisualEditor ? "is-active" : ""} onClick={() => setBodyMode("source")}>HTML خام</button>
+        </div>
+        {bodyMode === "visual" && canUseVisualEditor ? (
+          <ArticleVisualEditor html={html} onChange={(htmlContent) => update({ htmlContent })} onUseSource={() => setBodyMode("source")} />
+        ) : <>
+          {!canUseVisualEditor ? <p className="spb-visual-editor-warning"><strong>این مقاله برای حفظ کامل محتوا فقط با HTML خام باز شده است.</strong> {visualEditorReasons.join("، ")}؛ برای جلوگیری از حذف یا تغییر ناخواستهٔ این بخش‌ها، ویرایشگر بصری غیرفعال است.</p> : null}
+          <textarea ref={htmlEditorRef} className="spb-html-code" dir="ltr" rows={32} spellCheck={false} value={html} onChange={(event) => update({ htmlContent: event.target.value })} placeholder={htmlTemplate} />
+        </>}
         <div className="spb-html-tags"><strong>تگ‌های مجاز:</strong><code>h1, h2, h3, h4, p, strong, em, a, ul, ol, li, blockquote, table, figure, img</code></div>
         <ArticleImageUploader
           key={article.slug || `article-${selectedIndex}`}
@@ -106,6 +129,19 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
           onInsertIntoArticle={insertImage}
         />
       </div>
+
+      <section className="spb-article-seo-health" aria-live="polite">
+        <div className="spb-article-seo-health__head">
+          <div><strong>کنترل کیفیت سئو و انتشار</strong><small>راهنمایی است، نه مانع انتشار. نتیجه را بر اساس موضوع و نیت جست‌وجو قضاوت کن.</small></div>
+          <b>{passedSeoChecks} از {seoChecks.length} مورد آماده</b>
+        </div>
+        <ul>
+          {seoChecks.map((check) => <li className={`is-${check.state}`} key={check.id}>
+            <span aria-hidden="true">{check.state === "pass" ? "✓" : "!"}</span>
+            <div><strong>{check.label}</strong><p>{check.detail}</p></div>
+          </li>)}
+        </ul>
+      </section>
     </fieldset>
 
     <details className="spb-editor-box spb-magazine-advanced"><summary>تنظیمات پیشرفتهٔ انتشار و سئو (اختیاری)</summary><div className="spb-form-grid">

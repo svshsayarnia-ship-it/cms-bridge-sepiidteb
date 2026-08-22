@@ -3,7 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { articles, type Article } from "../data";
-import { decodeArticleHtml } from "./article-html";
+import { decodeArticleHtml, normalizeArticleHtml } from "./article-html";
 import { getSitePresentation as getRemotePresentation } from "./woocommerce";
 
 export type NavItem = { label: string; href: string };
@@ -137,6 +137,7 @@ function normalizeArticle(value: Partial<Article>, base?: Article): Article {
     date: "", readTime: "۵ دقیقه", image: "/images/magazine-authenticity-v2.webp",
     lead: "", notice: "", sections: [], sources: [], relatedProducts: [],
   };
+  const rawHtml = value.htmlContent ?? decodeArticleHtml(value.htmlContentChunks);
   return {
     ...fallback,
     ...value,
@@ -148,7 +149,7 @@ function normalizeArticle(value: Partial<Article>, base?: Article): Article {
     brandSlugs: value.brandSlugs ?? fallback.brandSlugs ?? [],
     status: value.status ?? fallback.status ?? "publish",
     contentMode: value.contentMode ?? fallback.contentMode ?? "structured",
-    htmlContent: value.htmlContent ?? decodeArticleHtml(value.htmlContentChunks),
+    htmlContent: rawHtml ? normalizeArticleHtml(rawHtml) : "",
     htmlContentChunks: value.htmlContentChunks ?? [],
   };
 }
