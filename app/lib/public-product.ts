@@ -33,6 +33,8 @@ export type PublicProduct = Pick<
   price?: string;
   regularPrice?: string;
   salePrice?: string;
+  /** Volumes of selectable variants, used by catalog package-volume filters. */
+  variantVolumes?: Array<string | null | undefined>;
 };
 
 const placeholderImagePattern =
@@ -67,6 +69,7 @@ export function toPublicProduct(
     price?: string;
     regularPrice?: string;
     salePrice?: string;
+    variants?: Array<{ volume?: string | null }>;
   },
 ): PublicProduct {
   return {
@@ -94,6 +97,7 @@ export function toPublicProduct(
     price: product.price,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
+    variantVolumes: product.variants?.map((variant) => variant.volume),
   };
 }
 
