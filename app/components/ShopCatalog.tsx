@@ -236,7 +236,7 @@ export function ShopCatalog({
       )}
       {showVolumeFilter && (
         <fieldset className="sb-catalog__fieldset sb-catalog__fieldset--volume">
-          <legend>حجم هر سرنگ یا ویال</legend>
+          <legend>حجم محصول یا بسته</legend>
           <label>
             <input
               type="radio"
@@ -254,11 +254,11 @@ export function ShopCatalog({
               checked={highVolumeOnly}
               onChange={() => setHighVolumeOverride(true)}
             />
-            بیشتر از ۲ میلی‌لیتر
+            محصولات و بسته‌های بالاتر از ۲ میلی‌لیتر
             <small>{fillerCounts.highVolume}</small>
           </label>
           <p>
-            این گزینه فقط فیلرهایی را نشان می‌دهد که حجم هر سرنگ یا ویالشان بیشتر از ۲ میلی‌لیتر است.
+            این گزینه فیلرهایی را نشان می‌دهد که حجم خود محصول یا حداقل یکی از مدل‌ها و بسته‌های قابل انتخابشان بیشتر از ۲ میلی‌لیتر است.
           </p>
         </fieldset>
       )}
