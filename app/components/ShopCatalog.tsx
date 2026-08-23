@@ -179,7 +179,7 @@ export function ShopCatalog({
     return { total, highVolume };
   }, [items]);
 
-  const filters = (
+  const filters = (scope: "sidebar" | "drawer") => (
     <>
       <div className="sb-catalog__filter-head">
         <div>
@@ -205,7 +205,7 @@ export function ShopCatalog({
           <label>
             <input
               type="radio"
-              name="category"
+              name={`category-${scope}`}
               checked={category === "all"}
               onChange={() => {
                 setCategory("all");
@@ -219,7 +219,7 @@ export function ShopCatalog({
             <label key={item.slug}>
               <input
                 type="radio"
-                name="category"
+                name={`category-${scope}`}
                 checked={category === item.slug}
                 onChange={() => {
                   setCategory(item.slug);
@@ -240,7 +240,7 @@ export function ShopCatalog({
           <label>
             <input
               type="radio"
-              name="filler-volume"
+              name={`filler-volume-${scope}`}
               checked={!highVolumeOnly}
               onChange={() => setHighVolumeOverride(false)}
             />
@@ -250,7 +250,7 @@ export function ShopCatalog({
           <label>
             <input
               type="radio"
-              name="filler-volume"
+              name={`filler-volume-${scope}`}
               checked={highVolumeOnly}
               onChange={() => setHighVolumeOverride(true)}
             />
@@ -267,7 +267,7 @@ export function ShopCatalog({
         <label>
           <input
             type="radio"
-            name="brand"
+            name={`brand-${scope}`}
             checked={brand === "all"}
             onChange={() => setBrand("all")}
           />
@@ -278,7 +278,7 @@ export function ShopCatalog({
           <label key={item.label}>
             <input
               type="radio"
-              name="brand"
+              name={`brand-${scope}`}
               checked={brand === item.label}
               onChange={() => setBrand(item.label)}
             />
@@ -293,7 +293,7 @@ export function ShopCatalog({
   return (
     <div className="sb-catalog">
       <aside className="sb-catalog__sidebar" aria-label="فیلترهای محصولات">
-        {filters}
+        {filters("sidebar")}
       </aside>
       <div className="sb-catalog__main">
         <div className="sb-catalog__toolbar">
@@ -358,7 +358,7 @@ export function ShopCatalog({
               <CloseIcon />
             </button>
           </div>
-          <div className="sb-filter-drawer__content">{filters}</div>
+          <div className="sb-filter-drawer__content">{filters("drawer")}</div>
           <button
             className="sb-btn sb-btn--dark sb-filter-drawer__apply"
             type="button"
