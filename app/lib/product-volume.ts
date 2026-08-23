@@ -11,9 +11,9 @@ function normalizeDigits(value: string): string {
 }
 
 /**
- * Returns true when a filler has at least one stated syringe or vial volume
- * above 2 mL. Package counts such as "2 syringes × 1 mL" remain 1 mL and do
- * not get promoted to the high-volume filter.
+ * Returns true when a stated product, vial, syringe, or package volume is
+ * above 2 mL. A 10 × 1 mL option is included only when its own variant label
+ * explicitly states the 10 mL package total.
  */
 export function hasVolumeAboveTwoMl(volume?: string | null): boolean {
   if (!volume) return false;
@@ -29,6 +29,11 @@ export function hasVolumeAboveTwoMl(volume?: string | null): boolean {
 export function isHighVolumeFiller(product: {
   category: string;
   volume?: string | null;
+  variantVolumes?: Array<string | null | undefined>;
 }): boolean {
-  return product.category === "fillers" && hasVolumeAboveTwoMl(product.volume);
+  if (product.category !== "fillers") return false;
+
+  return [product.volume, ...(product.variantVolumes ?? [])].some(
+    hasVolumeAboveTwoMl,
+  );
 }
