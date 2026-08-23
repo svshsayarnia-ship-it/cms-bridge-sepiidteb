@@ -14,6 +14,7 @@ function requireSeed(slug: string, seeds: ProductSeed[]): ProductSeed {
 const alcarisa = requireSeed("alcarisa-family", fillerInventorySeeds);
 const revofil = requireSeed("revofil-ultra", fillerInventorySeeds);
 const rabianca = requireSeed("rabianca", fillerInventorySeeds);
+const eptq = requireSeed("eptq-1ml", fillerInventorySeeds);
 const neuramis = requireSeed("neuramis-deep-lidocaine", fillerInventorySeeds);
 const perleux = requireSeed("perleux", fillerInventorySeeds);
 const audrey = requireSeed("audrey-m", fillerInventorySeeds);
@@ -295,6 +296,7 @@ export const currentInventorySeeds: ProductSeed[] = [
   alcarisaSeed,
   revofilSeed,
   rabianca,
+  eptq,
   neurafillSeed,
   neuramisSeed,
   perleuxSeed,
