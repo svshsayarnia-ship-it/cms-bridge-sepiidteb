@@ -11,7 +11,11 @@ import { getCompactBrandLabel } from "./lib/public-copy";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
-// Update only after a substantive public-site change; do not use deployment time\n// so sitemap lastmod remains a truthful freshness signal.\nconst fallbackLastModified = new Date(\n  "2026-08-23T00:00:00.000Z",\n);
+// Update only after a substantive public-site change; do not use deployment time
+// so sitemap lastmod remains a truthful freshness signal.
+const fallbackLastModified = new Date(
+  "2026-08-23T00:00:00.000Z",
+);
 
 function getProductLastModified(
   dateModifiedGmt: string,
