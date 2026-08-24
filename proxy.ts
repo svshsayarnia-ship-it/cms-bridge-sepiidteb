@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import {
   catalogCategories,
   catalogGroups,
@@ -6,6 +6,13 @@ import {
 } from "./app/catalog";
 import { isApprovedInventorySlug } from "./app/current-inventory";
 import { articles } from "./app/data";
+import {
+  articlePath,
+  articleSlugRedirects,
+  articleSlugForStorage,
+  canonicalArticleSlug,
+  isLegacyArticleSlug,
+} from "./app/lib/article-url";
 import { isPublicStaticProduct } from "./app/lib/public-product";
 
 type WooProductProbe = {
@@ -33,7 +40,10 @@ const staticProducts = new Map(
 );
 
 const publicArticleSlugs = new Set(
-  articles.map((article) => article.slug),
+  [
+    ...articles.map((article) => canonicalArticleSlug(article.slug)),
+    ...Object.values(articleSlugRedirects),
+  ],
 );
 
 const publicCategorySlugs = new Set([
@@ -384,11 +394,42 @@ export async function proxy(request: NextRequest) {
     return;
   }
 
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, "");
+
+  // Vercel serves both configured hosts unless the app explicitly chooses one.
+  // A canonical tag is only a hint, so use a permanent redirect to ensure that
+  // links, crawls, and cache entries all converge on the sitemap's www host.
+  if (host === "sepiidbeauty.ir") {
+    const destination = new URL(
+      request.nextUrl.pathname,
+      "https://www.sepiidbeauty.ir",
+    );
+    destination.search = request.nextUrl.search;
+    return NextResponse.redirect(destination, 308);
+  }
+
   const articleSlug = articleSlugFromPath(request.nextUrl.pathname);
   if (articleSlug) {
-    if (publicArticleSlugs.has(articleSlug)) return;
+    if (isLegacyArticleSlug(articleSlug)) {
+      return NextResponse.redirect(
+        new URL(
+          articlePath(articleSlug),
+          "https://www.sepiidbeauty.ir",
+        ),
+        308,
+      );
+    }
 
-    const remoteStatus = await probePublishedArticle(articleSlug);
+    const canonicalSlug = canonicalArticleSlug(articleSlug);
+    if (publicArticleSlugs.has(canonicalSlug)) return;
+
+    const remoteStatus = await probePublishedArticle(
+      articleSlugForStorage(canonicalSlug),
+    );
     // On a temporary WordPress/auth failure, let App Router make the final
     // decision instead of turning a valid CMS article into a hard 404.
     if (remoteStatus !== false) return;
@@ -432,13 +473,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/product/:slug",
-    "/magazine/:slug",
-    "/shop/:category",
-    "/shop/group/:group",
-    "/brands/:slug",
-    "/guides/:slug",
-    "/concerns/:slug",
-    "/policies/:slug",
+    "/((?!api|_next/static|_next/image|favicon.ico|images/).*)",
   ],
 };

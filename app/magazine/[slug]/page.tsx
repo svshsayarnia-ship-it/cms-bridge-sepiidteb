@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- local editorial imagery */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { ArticleCard } from "../../components/ArticleCard";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
@@ -12,6 +12,11 @@ import { ProductCard } from "../../components/ProductCard";
 import { articles } from "../../data";
 import { getGuideForArticle } from "../../content-architecture";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
+import {
+  articlePath,
+  canonicalArticleSlug,
+  isLegacyArticleSlug,
+} from "../../lib/article-url";
 import { siteOrigin } from "../../lib/site-url";
 import { buildSeoMetadata } from "../../lib/seo";
 import { getArticleHeadings } from "../../lib/article-html";
@@ -22,17 +27,6 @@ import {
 } from "../../lib/site-presentation";
 import { getSitePresentation as getRemoteSitePresentation } from "../../lib/woocommerce";
 
-function canonicalArticleSlug(value: string) {
-  let decoded = value;
-  try {
-    decoded = decodeURIComponent(value);
-  } catch {
-    // Keep the original value; an invalid escape sequence simply will not
-    // match a published article.
-  }
-  return decoded.normalize("NFC").trim();
-}
-
 function headingText(value: string) {
   return value
     .replace(/<[^>]+>/g, " ")
@@ -41,7 +35,6 @@ function headingText(value: string) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
 const neuramisVariantLinks = {
   Deep: "/product/neuramis-deep-lidocaine?variant=deep-1ml",
   Volume: "/product/neuramis-deep-lidocaine?variant=volume-1ml",
@@ -169,6 +162,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  if (isLegacyArticleSlug(slug)) return {};
   const article = await getEditableArticle(slug);
   if (!article) return {};
 
@@ -183,7 +177,7 @@ export async function generateMetadata({
     description: isNeuramisGuide(article.slug)
       ? normalizeNeuramisModelCopy(description)
       : description,
-    path: `/magazine/${article.slug}`,
+    path: articlePath(article.slug),
     image,
     imageAlt:
       article.imageAlt || article.title,
@@ -201,6 +195,9 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (isLegacyArticleSlug(slug)) {
+    permanentRedirect(articlePath(slug));
+  }
   const article = await getEditableArticle(slug);
   if (!article) notFound();
   const renderedHtmlContent = article.contentMode === "html"
@@ -504,7 +501,7 @@ export default async function ArticlePage({
           },
           datePublished: article.datePublished || "2026-07-25",
           dateModified: article.dateModified || article.datePublished || "2026-07-25",
-          mainEntityOfPage: `${siteOrigin}/magazine/${article.slug}`,
+          mainEntityOfPage: `${siteOrigin}${articlePath(article.slug)}`,
         }}
       />
       {article.faq?.length ? (

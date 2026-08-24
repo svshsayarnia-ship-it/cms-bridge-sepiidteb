@@ -8,25 +8,33 @@ import {
 import { categories } from "./data";
 import { getManagedArticles, getSitePresentation } from "./lib/site-presentation";
 import { getCompactBrandLabel } from "./lib/public-copy";
+import { articlePath } from "./lib/article-url";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { siteOrigin } from "./lib/site-url";
 
-// Update only after a substantive public-site change; do not use deployment time
-// so sitemap lastmod remains a truthful freshness signal.
-const fallbackLastModified = new Date(
-  "2026-08-23T00:00:00.000Z",
-);
-
 function getProductLastModified(
   dateModifiedGmt: string,
-): Date {
+): Date | undefined {
   const modified = new Date(
     dateModifiedGmt || "",
   );
 
   return Number.isNaN(modified.getTime())
-    ? fallbackLastModified
+    ? undefined
     : modified;
+}
+
+function sitemapEntry(
+  url: string,
+  dateModifiedGmt?: string,
+) {
+  const lastModified = dateModifiedGmt
+    ? getProductLastModified(dateModifiedGmt)
+    : undefined;
+
+  return lastModified
+    ? { url, lastModified }
+    : { url };
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -53,20 +61,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const productRoutes =
     catalog.products.map((product) => ({
-      url: `${siteOrigin}/product/${product.slug}`,
-      lastModified: product.live
-        ? getProductLastModified(
-            product.dateModifiedGmt ||
-              product.reviewedAt,
-          )
-        : getProductLastModified(
-            product.reviewedAt,
-          ),
-      changeFrequency:
-        "weekly" as const,
-      priority: product.live
-        ? 0.78
-        : 0.75,
+      ...sitemapEntry(
+        `${siteOrigin}/product/${product.slug}`,
+        product.live
+          ? product.dateModifiedGmt || product.reviewedAt
+          : product.reviewedAt,
+      ),
     }));
 
   const categoryRoutes = categories.filter(
@@ -96,75 +96,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticRoutes.map((route) => ({
       url: `${siteOrigin}${route}`,
-      lastModified:
-        fallbackLastModified,
-      changeFrequency:
-        route === ""
-          ? ("weekly" as const)
-          : ("monthly" as const),
-      priority:
-        route === ""
-          ? 1
-          : route === "/shop"
-            ? 0.9
-            : 0.7,
     })),
 
     ...categoryRoutes.map((category) => ({
       url: `${siteOrigin}/shop/${category.slug}`,
-      lastModified:
-        fallbackLastModified,
-      changeFrequency:
-        "weekly" as const,
-      priority: 0.8,
     })),
 
     ...groupRoutes.map((group) => ({
       url: `${siteOrigin}/shop/group/${group.slug}`,
-      lastModified:
-        fallbackLastModified,
-      changeFrequency:
-        "weekly" as const,
-      priority: 0.82,
     })),
 
     ...productRoutes,
 
     ...brandRoutes.map((brand) => ({
       url: `${siteOrigin}/brands/${brand.slug}`,
-      lastModified: fallbackLastModified,
-      changeFrequency: "weekly" as const,
-      priority: 0.76,
     })),
 
     ...guides
       .filter((guide) => guide.indexable)
       .map((guide) => ({
         url: `${siteOrigin}/guides/${guide.slug}`,
-        lastModified: fallbackLastModified,
-        changeFrequency: "monthly" as const,
-        priority: 0.8,
       })),
 
     ...concerns
       .filter((concern) => concern.indexable)
       .map((concern) => ({
         url: `${siteOrigin}/concerns/${concern.slug}`,
-        lastModified: fallbackLastModified,
-        changeFrequency: "monthly" as const,
-        priority: 0.72,
       })),
 
     ...managedArticles.map((article) => ({
-      url: `${siteOrigin}/magazine/${article.slug}`,
-      lastModified: getProductLastModified(
-        article.dateModified ||
-          article.datePublished ||
-          "",
+      ...sitemapEntry(
+        `${siteOrigin}${articlePath(article.slug)}`,
+        article.dateModified || article.datePublished || "",
       ),
-      changeFrequency:
-        "monthly" as const,
-      priority: 0.7,
     })),
   ];
 }

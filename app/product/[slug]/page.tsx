@@ -567,10 +567,11 @@ export async function generateMetadata({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ variant?: string | string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { slug } = await params;
   const variantParam = await searchParams;
+  const hasSearchParams = Object.keys(variantParam).length > 0;
   const variantId = Array.isArray(variantParam.variant)
     ? variantParam.variant[0]
     : variantParam.variant;
@@ -640,6 +641,14 @@ export async function generateMetadata({
   return {
     ...metadata,
     title: { absolute: title },
+    ...(hasSearchParams
+      ? {
+          robots: {
+            index: false,
+            follow: true,
+          },
+        }
+      : {}),
   };
 }
 export default async function ProductPage({

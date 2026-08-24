@@ -123,10 +123,16 @@ export function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ category: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
-  const { category: slug } = await params;
+  const [{ category: slug }, activeSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const hasSearchParams = Object.keys(activeSearchParams).length > 0;
 
   if (slug === "body-fillers") {
     return {
@@ -169,7 +175,7 @@ export async function generateMetadata({
   const isBotulinumCategory =
     category.slug === BOTULINUM_CATEGORY_SLUG;
 
-  return buildSeoMetadata({
+  const metadata = buildSeoMetadata({
     title: isBotulinumCategory
       ? "خرید بوتاکس | قیمت و مقایسه فرآورده‌های بوتولینوم"
       : category.slug === "skin-boosters"
@@ -184,6 +190,16 @@ export async function generateMetadata({
     image: category.image,
     imageAlt: category.title,
   });
+
+  // Filter and pagination URLs change the client-side catalogue, but do not
+  // represent standalone landing pages. Keep their canonical signal pointed at
+  // the category while preventing parameter combinations from entering index.
+  return hasSearchParams
+    ? {
+        ...metadata,
+        robots: { index: false, follow: true },
+      }
+    : metadata;
 }
 
 export default async function CategoryPage({

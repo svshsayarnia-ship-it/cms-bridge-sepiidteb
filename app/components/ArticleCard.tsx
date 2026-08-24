@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- local editorial imagery */
 import Link from "next/link";
 import type { Article } from "../data";
+import { articlePath } from "../lib/article-url";
 import { ArrowIcon, ClockIcon } from "./Icons";
 
 export function ArticleCard({
@@ -14,7 +15,7 @@ export function ArticleCard({
     <article className={`sb-article-card ${featured ? "sb-article-card--featured" : ""}`}>
       <Link
         className="sb-article-card__image"
-        href={`/magazine/${article.slug}`}
+        href={articlePath(article.slug)}
         aria-label={`مطالعه مقاله ${article.title}`}
       >
         <img
@@ -39,11 +40,11 @@ export function ArticleCard({
             {article.readTime}
           </span>
         </div>
-        <Link href={`/magazine/${article.slug}`}>
+        <Link href={articlePath(article.slug)}>
           <h3>{article.title}</h3>
         </Link>
         <p>{article.excerpt}</p>
-        <Link className="sb-text-link" href={`/magazine/${article.slug}`}>
+        <Link className="sb-text-link" href={articlePath(article.slug)}>
           مطالعه مقاله
           <ArrowIcon />
         </Link>

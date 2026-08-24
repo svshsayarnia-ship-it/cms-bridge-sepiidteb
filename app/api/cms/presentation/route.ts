@@ -2,6 +2,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
 import { DEFAULT_SITE_PRESENTATION, normalizeSitePresentation, type SitePresentation } from "@/app/lib/site-presentation";
 import { encodeArticleHtml } from "@/app/lib/article-html";
+import { toAsciiArticleSlug } from "@/app/lib/article-url";
 import {
   errorResponse,
   getSitePresentation as getRemoteSitePresentation,
@@ -39,11 +40,7 @@ function extractHtmlArticleData(html: string) {
 }
 
 function automaticSlug(value: string) {
-  return value
-    .toLocaleLowerCase("fa-IR")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 90);
+  return toAsciiArticleSlug(value);
 }
 
 export async function GET(request: Request) {
