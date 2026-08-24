@@ -10,7 +10,7 @@ import { catalogProducts } from "./catalog";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeaderServer } from "./components/SiteHeaderServer";
-import { SmartAssistant } from "./components/SmartAssistant";
+import { DeferredSmartAssistant } from "./components/DeferredSmartAssistant";
 import { isApprovedInventorySlug } from "./current-inventory";
 import { siteOrigin } from "./lib/site-url";
 import {
@@ -115,7 +115,7 @@ export default async function RootLayout({
             brandTagline: presentation.header.brandTagline,
           }}
         />
-        <SmartAssistant />
+        <DeferredSmartAssistant />
         <JsonLd
           data={{
             "@context": "https://schema.org",
