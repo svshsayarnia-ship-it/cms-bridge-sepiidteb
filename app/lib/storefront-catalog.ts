@@ -131,11 +131,32 @@ function humanizeStorefrontProduct(product: StorefrontProduct): StorefrontProduc
 function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProduct {
   const primaryCategory = product.categories?.[0];
   const sourceCategorySlug = primaryCategory?.slug || fallback?.category || "products";
-  const categorySlug = sourceCategorySlug === "body-fillers" ? "fillers" : sourceCategorySlug;
+  const normalizedCategorySlug =
+    sourceCategorySlug === "body-fillers"
+      ? "fillers"
+      : sourceCategorySlug;
+  const fallbackCategorySlug = fallback?.category &&
+    catalogCategories.some((category) => category.slug === fallback.category)
+    ? fallback.category
+    : null;
+  // Never let a stale or newly-created WooCommerce category silently remove a
+  // product from the public catalogue. Keep a known static category as the
+  // safe fallback until the CMS taxonomy is reconciled.
+  const categorySlug = catalogCategories.some(
+    (category) => category.slug === normalizedCategorySlug,
+  )
+    ? normalizedCategorySlug
+    : fallbackCategorySlug ?? normalizedCategorySlug;
+  const categoryDefinition = catalogCategories.find(
+    (item) => item.slug === categorySlug,
+  );
   const categoryTitle =
-    (sourceCategorySlug === "body-fillers"
-      ? catalogCategories.find((item) => item.slug === "fillers")?.title
-      : primaryCategory?.name) || fallback?.categoryTitle || "محصولات";
+    (categorySlug === normalizedCategorySlug
+      ? primaryCategory?.name?.trim()
+      : categoryDefinition?.title) ||
+    fallback?.categoryTitle ||
+    categoryDefinition?.title ||
+    "محصولات";
   const group = getGroupForCategory(categorySlug);
 
   const verifiedFallbackImage =
