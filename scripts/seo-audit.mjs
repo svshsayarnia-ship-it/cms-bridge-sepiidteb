@@ -8,6 +8,8 @@ const canonicalOrigin = (
 ).replace(/\/$/, "");
 const skipLinkCheck =
   process.env.SEO_SKIP_LINK_CHECK === "1";
+const assertPublicRedirects =
+  process.env.SEO_ASSERT_PUBLIC_REDIRECTS === "1";
 
 function decodeHtml(value = "") {
   return value
@@ -159,6 +161,31 @@ async function get(url) {
         url: String(url),
       },
       html: "",
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
+    };
+  }
+}
+
+async function getManualRedirect(url) {
+  try {
+    const response = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(20_000),
+      headers: {
+        "user-agent": "SepiidTechnicalSeoAudit/1.0",
+      },
+    });
+
+    return { response, error: "" };
+  } catch (error) {
+    return {
+      response: {
+        status: 0,
+        headers: new Headers(),
+      },
       error:
         error instanceof Error
           ? error.message
@@ -385,12 +412,97 @@ for (const directive of [
   "Disallow: /api/",
   "Disallow: /cms/",
   `Sitemap: ${canonicalOrigin}/sitemap.xml`,
-  `Host: ${canonicalOrigin}`,
 ]) {
   if (!robotsText.includes(directive)) {
     technicalIssues.push(
       `robots.txt missing ${directive}`,
     );
+  }
+}
+
+for (const deprecatedTag of ["<priority>", "<changefreq>"]) {
+  if (sitemapXml.includes(deprecatedTag)) {
+    technicalIssues.push(
+      `sitemap should not emit ${deprecatedTag}`,
+    );
+  }
+}
+
+for (const [path, expectedCanonical] of [
+  ["/shop/fillers?brand=neuramis", "/shop/fillers"],
+  ["/shop/fillers?page=2", "/shop/fillers"],
+  [
+    "/product/neuramis-deep-lidocaine?variant=deep-1ml",
+    "/product/neuramis-deep-lidocaine",
+  ],
+]) {
+  const { response, html, error } = await get(
+    new URL(path, baseUrl),
+  );
+  const canonical = link(html, "canonical");
+  const robots = meta(html, "name", "robots");
+  const expected = `${canonicalOrigin}${expectedCanonical}`;
+
+  if (response.status !== 200 || error) {
+    technicalIssues.push(
+      `${path} did not return a crawlable 200 response`,
+    );
+  } else if (normalizeUrl(canonical) !== normalizeUrl(expected)) {
+    technicalIssues.push(
+      `${path} canonical mismatch: ${canonical}`,
+    );
+  } else if (!/noindex/i.test(robots)) {
+    technicalIssues.push(
+      `${path} should be noindex`,
+    );
+  }
+}
+
+if (assertPublicRedirects) {
+  const apexOrigin = process.env.SEO_NON_WWW_ORIGIN ?? "https://sepiidbeauty.ir";
+  const { response, error } = await getManualRedirect(
+    new URL("/", apexOrigin),
+  );
+  const destination = response.headers.get("location") ?? "";
+
+  if (
+    error ||
+    ![301, 308].includes(response.status) ||
+    !destination ||
+    normalizeUrl(destination) !== normalizeUrl(`${canonicalOrigin}/`)
+  ) {
+    technicalIssues.push(
+      `non-www host must redirect permanently to ${canonicalOrigin}/`,
+    );
+  }
+
+  for (const [legacySlug, canonicalSlug] of [
+    [
+      "فیلر-نورامیس-چیست-راهنمای-کامل-مدل-ها-کاربردها-و-تشخیص-اصالت",
+      "neuramis-filler-guide",
+    ],
+    [
+      "۱۰-فیلر-برتر-بازار-ایران-راهنمای-انتخاب-آگاهانه",
+      "best-fillers-iran-guide",
+    ],
+  ]) {
+    const { response: redirectResponse, error: redirectError } =
+      await getManualRedirect(
+        new URL(`/magazine/${legacySlug}`, baseUrl),
+      );
+    const redirectLocation = redirectResponse.headers.get("location") ?? "";
+    const expectedLocation = `${canonicalOrigin}/magazine/${canonicalSlug}`;
+
+    if (
+      redirectError ||
+      ![301, 308].includes(redirectResponse.status) ||
+      !redirectLocation ||
+      normalizeUrl(redirectLocation) !== normalizeUrl(expectedLocation)
+    ) {
+      technicalIssues.push(
+        `legacy article ${legacySlug} is not permanently redirected`,
+      );
+    }
   }
 }
 

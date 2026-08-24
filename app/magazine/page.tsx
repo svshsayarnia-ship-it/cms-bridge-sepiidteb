@@ -4,6 +4,7 @@ import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
+import { articlePath } from "../lib/article-url";
 import { buildSeoMetadata } from "../lib/seo";
 
 // The magazine list is CMS-managed. Rendering it dynamically guarantees a
@@ -44,7 +45,7 @@ export default async function MagazinePage() {
         </div>
 
         <article className="sb-magazine-featured sb-shell">
-          <Link href={`/magazine/${featured.slug}`} className="sb-magazine-featured__image">
+          <Link href={articlePath(featured.slug)} className="sb-magazine-featured__image">
             <img
               src={featured.image}
               alt={featured.imageAlt ?? featured.title}
@@ -64,7 +65,7 @@ export default async function MagazinePage() {
                 {featured.readTime}
               </span>
             </div>
-            <Link className="sb-btn sb-btn--dark" href={`/magazine/${featured.slug}`}>
+            <Link className="sb-btn sb-btn--dark" href={articlePath(featured.slug)}>
               مطالعه مقاله شاخص
               <ArrowIcon />
             </Link>

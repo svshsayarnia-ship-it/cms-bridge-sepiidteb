@@ -9,6 +9,5 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/api/", "/cms/"],
     },
     sitemap: `${siteOrigin}/sitemap.xml`,
-    host: siteOrigin,
   };
 }
