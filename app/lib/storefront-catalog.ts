@@ -1,6 +1,6 @@
 import "server-only";
 
-import { connection } from "next/server";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
   catalogCategories,
@@ -320,7 +320,6 @@ function preferSnapshot(
 }
 
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
-  await connection();
 
   // SepiidTeb is the temporary source of truth for which product families may
   // appear publicly. Keep the large legacy catalog intact for migration and
@@ -379,7 +378,16 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 // Confirmed CMS writes populate the storefront snapshot and invalidate affected
 // routes; if WordPress is slow or unavailable, the public site still renders
 // immediately from the last confirmed snapshot plus the local migration data.
-export const getStorefrontCatalog = cache(loadStorefrontCatalog);
+const getCachedStorefrontCatalog = unstable_cache(
+  loadStorefrontCatalog,
+  ["storefront-catalog-v4"],
+  {
+    revalidate: 300,
+    tags: [STOREFRONT_CATALOG_TAG],
+  },
+);
+
+export const getStorefrontCatalog = cache(getCachedStorefrontCatalog);
 
 export async function getStorefrontProducts(): Promise<StorefrontProduct[]> {
   const catalog = await getStorefrontCatalog();
