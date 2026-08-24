@@ -39,6 +39,13 @@ const staticProducts = new Map(
   catalogProducts.map((product) => [product.slug, product]),
 );
 
+// Preserve the one historic Neuramis product URL still present in a CMS
+// article and in older external links. The destination is the canonical
+// family page that exposes the current variants.
+const legacyProductSlugRedirects = new Map([
+  ["neuramis", "neuramis-deep-lidocaine"],
+]);
+
 const publicArticleSlugs = new Set(
   [
     ...articles.map((article) => canonicalArticleSlug(article.slug)),
@@ -450,6 +457,16 @@ export async function proxy(request: NextRequest) {
 
   const slug = productSlugFromPath(request.nextUrl.pathname);
   if (!slug) return;
+
+  const canonicalSlug = legacyProductSlugRedirects.get(slug);
+  if (canonicalSlug) {
+    const destination = new URL(
+      `/product/${canonicalSlug}`,
+      "https://www.sepiidbeauty.ir",
+    );
+    destination.search = request.nextUrl.search;
+    return NextResponse.redirect(destination, 308);
+  }
 
   // SepiidTeb is temporarily the inventory source of truth. A legacy static
   // seed or a still-published WooCommerce row must never make an unapproved

@@ -476,6 +476,28 @@ if (assertPublicRedirects) {
     );
   }
 
+  for (const [legacyProductSlug, canonicalProductSlug] of [
+    ["neuramis", "neuramis-deep-lidocaine"],
+  ]) {
+    const { response: redirectResponse, error: redirectError } =
+      await getManualRedirect(
+        new URL(`/product/${legacyProductSlug}`, baseUrl),
+      );
+    const redirectLocation = redirectResponse.headers.get("location") ?? "";
+    const expectedLocation = `${canonicalOrigin}/product/${canonicalProductSlug}`;
+
+    if (
+      redirectError ||
+      ![301, 308].includes(redirectResponse.status) ||
+      !redirectLocation ||
+      normalizeUrl(redirectLocation, baseUrl) !== normalizeUrl(expectedLocation)
+    ) {
+      technicalIssues.push(
+        `legacy product ${legacyProductSlug} is not permanently redirected`,
+      );
+    }
+  }
+
   for (const [legacySlug, canonicalSlug] of [
     [
       "فیلر-نورامیس-چیست-راهنمای-کامل-مدل-ها-کاربردها-و-تشخیص-اصالت",
