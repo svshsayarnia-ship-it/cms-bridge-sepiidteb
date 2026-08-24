@@ -78,8 +78,8 @@ function elementText(html, name) {
   );
 }
 
-function normalizeUrl(value) {
-  const url = new URL(value);
+function normalizeUrl(value, base) {
+  const url = new URL(value, base);
   url.hash = "";
 
   if (url.pathname !== "/") {
@@ -469,7 +469,7 @@ if (assertPublicRedirects) {
     error ||
     ![301, 308].includes(response.status) ||
     !destination ||
-    normalizeUrl(destination) !== normalizeUrl(`${canonicalOrigin}/`)
+    normalizeUrl(destination, apexOrigin) !== normalizeUrl(`${canonicalOrigin}/`)
   ) {
     technicalIssues.push(
       `non-www host must redirect permanently to ${canonicalOrigin}/`,
@@ -497,7 +497,7 @@ if (assertPublicRedirects) {
       redirectError ||
       ![301, 308].includes(redirectResponse.status) ||
       !redirectLocation ||
-      normalizeUrl(redirectLocation) !== normalizeUrl(expectedLocation)
+      normalizeUrl(redirectLocation, baseUrl) !== normalizeUrl(expectedLocation)
     ) {
       technicalIssues.push(
         `legacy article ${legacySlug} is not permanently redirected`,

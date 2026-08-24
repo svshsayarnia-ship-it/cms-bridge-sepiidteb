@@ -69,6 +69,10 @@ function prepareNeuramisGuideHtml(value: string) {
     .replace(
       /https?:\/\/(?:www\.)?sepiidbeauty\.ir\/product\/neuramis(?=["'])/gi,
       "/product/neuramis-deep-lidocaine",
+    )
+    .replace(
+      /(href=["'])\/product\/neuramis(?=["'])/gi,
+      "$1/product/neuramis-deep-lidocaine",
     );
 
   for (const [model, href] of Object.entries(neuramisVariantLinks)) {
