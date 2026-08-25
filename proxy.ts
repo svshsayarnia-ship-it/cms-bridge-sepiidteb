@@ -409,11 +409,11 @@ export async function proxy(request: NextRequest) {
 
   // Vercel serves both configured hosts unless the app explicitly chooses one.
   // A canonical tag is only a hint, so use a permanent redirect to ensure that
-  // links, crawls, and cache entries all converge on the sitemap's www host.
-  if (host === "sepiidbeauty.ir") {
+  // links, crawls, and cache entries all converge on the sitemap's non-www host.
+  if (host === "www.sepiidbeauty.ir") {
     const destination = new URL(
       request.nextUrl.pathname,
-      "https://www.sepiidbeauty.ir",
+      "https://sepiidbeauty.ir",
     );
     destination.search = request.nextUrl.search;
     return NextResponse.redirect(destination, 308);
@@ -425,7 +425,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(
         new URL(
           articlePath(articleSlug),
-          "https://www.sepiidbeauty.ir",
+          "https://sepiidbeauty.ir",
         ),
         308,
       );
@@ -462,7 +462,7 @@ export async function proxy(request: NextRequest) {
   if (canonicalSlug) {
     const destination = new URL(
       `/product/${canonicalSlug}`,
-      "https://www.sepiidbeauty.ir",
+      "https://sepiidbeauty.ir",
     );
     destination.search = request.nextUrl.search;
     return NextResponse.redirect(destination, 308);
