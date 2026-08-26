@@ -7,6 +7,10 @@ import {
   productHref,
 } from "../../catalog";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
+import {
+  FillerCategoryGuide,
+  FillerCategoryIntro,
+} from "../../components/FillerCategoryContent";
 import { ArrowIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductVisual } from "../../components/product/ProductVisual";
@@ -553,6 +557,8 @@ export default async function CategoryPage({
         </div>
       </div>
 
+      {category.slug === "fillers" ? <FillerCategoryIntro /> : null}
+
       <section id="category-products" className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
@@ -561,6 +567,8 @@ export default async function CategoryPage({
           />
         </div>
       </section>
+
+      {category.slug === "fillers" ? <FillerCategoryGuide /> : null}
 
       {isBotulinumCategory ? (
         <section
