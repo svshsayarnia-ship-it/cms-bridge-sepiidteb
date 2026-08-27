@@ -5,6 +5,7 @@ import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
 import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
 import { articlePath } from "../lib/article-url";
+import { sortArticlesNewestFirst } from "../lib/article-order";
 import { buildSeoMetadata } from "../lib/seo";
 
 // The magazine list is CMS-managed. Rendering it dynamically guarantees a
@@ -21,10 +22,10 @@ export const metadata = buildSeoMetadata({
 });
 
 export default async function MagazinePage() {
-  const editableArticles = getManagedArticles(await getSitePresentation());
-  const featured =
-    editableArticles.find((article) => article.slug === "neuramis-vs-revofil-guide") ??
-    editableArticles[0];
+  const editableArticles = sortArticlesNewestFirst(
+    getManagedArticles(await getSitePresentation()),
+  );
+  const featured = editableArticles[0];
 
   return (
     <main id="main-content">
