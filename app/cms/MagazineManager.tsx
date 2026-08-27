@@ -69,7 +69,13 @@ export function MagazineManager({ articles, selectedIndex, onSelect, onChange }:
   function update(patch: Partial<Article>) {
     if (!article) return;
     const next = [...articles];
-    next[selectedIndex] = { ...article, htmlContent: editableHtml(article), ...patch, contentMode: "html" };
+    next[selectedIndex] = {
+      ...article,
+      htmlContent: editableHtml(article),
+      dateModified: today(),
+      ...patch,
+      contentMode: "html",
+    };
     onChange(next);
   }
   function addArticle() { const next = [...articles, blankArticle()]; onChange(next); onSelect(next.length - 1); }

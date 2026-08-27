@@ -154,6 +154,24 @@ function normalizeArticle(value: Partial<Article>, base?: Article): Article {
   };
 }
 
+function articleTimestamp(article?: Partial<Article>) {
+  const rawDate = article?.dateModified ?? article?.datePublished;
+  const parsed = rawDate ? Date.parse(rawDate) : Number.NaN;
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function articleOverlay(remote: Article | undefined, base: Article): Partial<Article> {
+  if (!remote) return {};
+
+  // A newer editorial revision shipped with the site must not be replaced by
+  // an older CMS snapshot. Publication status stays CMS-managed either way.
+  if (articleTimestamp(base) > articleTimestamp(remote)) {
+    return { status: remote.status };
+  }
+
+  return remote;
+}
+
 export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | null): SitePresentation {
   const value = rawValue
     ? restoreCanonicalKeys(rawValue, DEFAULT_SITE_PRESENTATION) as Partial<SitePresentation>
@@ -164,7 +182,7 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
   const remoteBySlug = new Map(remoteArticles.map((article) => [article.slug, article]));
   const staticSlugs = new Set(articles.map((article) => article.slug));
   const normalizedArticles = [
-    ...articles.map((article) => normalizeArticle(remoteBySlug.get(article.slug) ?? {}, article)),
+    ...articles.map((article) => normalizeArticle(articleOverlay(remoteBySlug.get(article.slug), article), article)),
     ...remoteArticles.filter((article) => !staticSlugs.has(article.slug)).map((article) => normalizeArticle(article)),
   ];
 
@@ -205,7 +223,7 @@ async function loadRemoteSitePresentation() {
 
 const getCachedSitePresentation = unstable_cache(
   loadRemoteSitePresentation,
-  ["site-presentation-v4-remote-only"],
+  ["site-presentation-v5-newest-article-wins"],
   { revalidate: 300, tags: ["site-presentation"] },
 );
 
