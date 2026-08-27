@@ -163,11 +163,16 @@ function articleTimestamp(article?: Partial<Article>) {
 function articleHasBody(article?: Partial<Article>) {
   if (!article) return false;
   if (article.contentMode === "html") {
-    return Boolean(article.htmlContent?.trim() || article.htmlContentChunks?.length);
+    return Boolean(article.htmlContent?.trim() || decodeArticleHtml(article.htmlContentChunks).trim());
   }
   return Boolean(article.sections?.some((section) =>
     section.heading.trim() && section.paragraphs.some((paragraph) => paragraph.trim()),
   ));
+}
+
+function articleHasHtmlBody(article?: Partial<Article>) {
+  if (!article) return false;
+  return Boolean(article.htmlContent?.trim() || decodeArticleHtml(article.htmlContentChunks).trim());
 }
 
 function articleOverlay(remote: Article | undefined, base: Article): Partial<Article> {
@@ -177,7 +182,7 @@ function articleOverlay(remote: Article | undefined, base: Article): Partial<Art
   // temporarily absent or unavailable. Never let that partial snapshot blank
   // a complete editorial body shipped with the application, even when the
   // CMS timestamp is newer than the static editorial revision.
-  if (!articleHasBody(remote) && articleHasBody(base)) {
+  if (!articleHasHtmlBody(remote) && articleHasHtmlBody(base)) {
     return {
       ...remote,
       contentMode: base.contentMode,
