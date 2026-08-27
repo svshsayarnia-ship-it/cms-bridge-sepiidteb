@@ -14,6 +14,11 @@ import {
 } from "../lib/pricing-types";
 
 type ApiError = { error?: string };
+type AlertDelivery = {
+  channel: "telegram" | "email";
+  delivered: boolean;
+  error?: string;
+};
 
 async function pricingApi<T>(options?: RequestInit): Promise<T> {
   const response = await fetch("/api/cms/pricing", {
@@ -41,6 +46,18 @@ function persianDate(value: string): string {
 
 function sanitizePriceInput(value: string): string {
   return value.replace(/[^0-9]/g, "");
+}
+
+function alertDeliverySummary(deliveries?: AlertDelivery[]): string {
+  if (!deliveries?.length) return "";
+  return deliveries
+    .map((delivery) => {
+      const label = delivery.channel === "telegram" ? "تلگرام" : "ایمیل";
+      if (delivery.delivered) return `${label}: ارسال شد`;
+      if (delivery.error?.includes("not configured")) return `${label}: تنظیم نشده`;
+      return `${label}: ارسال ناموفق`;
+    })
+    .join("، ");
 }
 
 const PROVIDER_HELP: Record<MarketProvider, string> = {
@@ -237,6 +254,7 @@ export function PricingManager() {
       const result = await pricingApi<{
         product?: MarketPricingProduct;
         summary?: MarketPricingScanSummary;
+        deliveries?: AlertDelivery[];
       }>({
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -254,17 +272,23 @@ export function PricingManager() {
           });
         }
       }
+      const deliveryStatus = alertDeliverySummary(result.deliveries);
       if (result.summary) {
         setNotice(
           `${successMessage} ${result.summary.catalogProductsAdded} کالای سایت به ووکامرس افزوده شد، ` +
             `${result.summary.pricesApplied} قیمت اعمال شد، ` +
             `${result.summary.proposalsCreated} پیشنهاد ساخته شد، ` +
             `${result.summary.insufficientProducts} محصول داده کافی نداشت و ` +
-            `${result.summary.failedProducts} بررسی ناموفق بود.`,
+            `${result.summary.failedProducts} بررسی ناموفق بود.` +
+            (deliveryStatus ? ` وضعیت اعلان: ${deliveryStatus}.` : ""),
         );
         await load();
       } else {
-        setNotice(successMessage);
+        setNotice(
+          deliveryStatus
+            ? `${successMessage} وضعیت اعلان: ${deliveryStatus}.`
+            : successMessage,
+        );
       }
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "عملیات قیمت‌گذاری ناموفق بود.");
@@ -299,10 +323,20 @@ export function PricingManager() {
             type="button"
             className="spb-button is-secondary"
             disabled={Boolean(busy) || loading}
+            onClick={() =>
+              void postAction("test-alert", {}, "تست اعلان اجرا شد.")
+            }
+          >
+            {busy === "test-alert-all" ? "در حال تست اعلان..." : "تست تلگرام و ایمیل"}
+          </button>
+          <button
+            type="button"
+            className="spb-button is-secondary"
+            disabled={Boolean(busy) || loading}
             onClick={() => {
               if (
                 window.confirm(
-                  "قیمت اولیه کالاهایی که حداقل سه قیمت معتبر از فروشنده‌های هم‌واحد دارند مستقیماً روی ووکامرس اعمال شود؟ این مجوز برای هر کالا فقط یک بار استفاده می‌شود.",
+                  "قیمت اولیه کالاهایی که حداقل یک منبع دقیق و به‌روز دارند مستقیماً روی ووکامرس اعمال شود؟ این مجوز برای هر کالا فقط یک بار استفاده می‌شود.",
                 )
               ) {
                 void postAction(
