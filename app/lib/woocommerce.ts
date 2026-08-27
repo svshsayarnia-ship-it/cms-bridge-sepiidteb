@@ -86,6 +86,10 @@ type WooRequestResult<T> = {
   status: number;
 };
 
+function arrayValue<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 const DEFAULT_WOO_TIMEOUT_MS = 20_000;
 const MEDIA_UPLOAD_TIMEOUT_MS = 90_000;
 const PRODUCT_BATCH_TIMEOUT_MS = 90_000;
@@ -402,7 +406,7 @@ function getProductMeta(
   product: WooProduct,
   key: string,
 ): string {
-  const meta = (product.meta_data ?? []).find(
+  const meta = arrayValue<WooMetaData>(product.meta_data).find(
     (item) => item.key === key,
   );
 
@@ -458,9 +462,11 @@ function mapProduct(product: WooProduct): CmsProduct {
     manageStock: product.manage_stock,
     stockQuantity: product.stock_quantity,
     stockStatus: product.stock_status,
-    categories: product.categories,
-    brands: product.brands ?? [],
-    images: product.images.map(mapImage),
+    // WooCommerce can omit these fields for one damaged or partially synced
+    // product. A single record must never abort the entire CMS price scan.
+    categories: arrayValue<WooCategoryRef>(product.categories),
+    brands: arrayValue<WooBrandRef>(product.brands),
+    images: arrayValue<WooImage>(product.images).map(mapImage),
     permalink: product.permalink,
     dateModifiedGmt: product.date_modified_gmt,
     pricing: parsePricingState(
