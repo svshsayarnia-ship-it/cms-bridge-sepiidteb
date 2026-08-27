@@ -30,6 +30,27 @@ async function pricingApi<T>(options?: RequestInit): Promise<T> {
   return body;
 }
 
+/**
+ * The CMS must remain usable if an older deployment, a proxy, or a failed
+ * WooCommerce response omits one of the dashboard lists. The server already
+ * returns these fields, but keeping this guard in the client prevents a
+ * missing array from ever reaching a JSX `.map()` call.
+ */
+function normalizeDashboard(value: MarketPricingDashboard): MarketPricingDashboard {
+  const payload = value as Partial<MarketPricingDashboard>;
+  const products = Array.isArray(payload.products) ? payload.products : [];
+  return {
+    products,
+    editableProducts: Array.isArray(payload.editableProducts)
+      ? payload.editableProducts
+      : products,
+    generatedAt:
+      typeof payload.generatedAt === "string"
+        ? payload.generatedAt
+        : new Date().toISOString(),
+  };
+}
+
 function money(value: number | null): string {
   return value === null
     ? "ثبت نشده"
@@ -128,7 +149,9 @@ export function PricingManager() {
     setLoading(true);
     setError("");
     try {
-      const data = await pricingApi<MarketPricingDashboard>();
+      const data = normalizeDashboard(
+        await pricingApi<MarketPricingDashboard>(),
+      );
       setDashboard(data);
       announcePendingPrices(data);
       setSelectedId(
@@ -147,7 +170,9 @@ export function PricingManager() {
 
     async function initialize() {
       try {
-        const data = await pricingApi<MarketPricingDashboard>();
+        const data = normalizeDashboard(
+          await pricingApi<MarketPricingDashboard>(),
+        );
         if (cancelled) return;
         setDashboard(data);
         announcePendingPrices(data);
@@ -172,18 +197,18 @@ export function PricingManager() {
   }, [announcePendingPrices]);
 
   const pending = useMemo(
-    () => dashboard?.products.filter((product) => product.pricing.proposal) ?? [],
+    () => (dashboard?.products ?? []).filter((product) => product.pricing.proposal),
     [dashboard],
   );
   const configuredCount = useMemo(
     () =>
-      dashboard?.products.filter((product) =>
+      (dashboard?.products ?? []).filter((product) =>
         product.pricing.sources.some((source) => source.enabled && source.url),
-      ).length ?? 0,
+      ).length,
     [dashboard],
   );
   const selected =
-    dashboard?.editableProducts.find((product) => product.id === selectedId) ?? null;
+    (dashboard?.editableProducts ?? []).find((product) => product.id === selectedId) ?? null;
   const selectedPriceDraft = selected ? priceDrafts[selected.id] : undefined;
   const regularPriceDraft =
     selectedPriceDraft?.regularPrice ?? selected?.regularPrice ?? "";
@@ -357,7 +382,7 @@ export function PricingManager() {
       <div className="spb-pricing-stats">
         <div><strong>{pending.length}</strong><span>منتظر تأیید شما</span></div>
         <div><strong>{configuredCount}</strong><span>محصول با لینک اختصاصی منبع</span></div>
-        <div><strong>{dashboard?.products.length ?? 0}</strong><span>محصول منتشرشده</span></div>
+        <div><strong>{dashboard?.products?.length ?? 0}</strong><span>محصول منتشرشده</span></div>
         <div>
           <strong>۹:۰۰ و ۱۵:۰۰</strong>
           <span>دو بررسی روزانه به وقت ایران</span>
@@ -396,7 +421,7 @@ export function PricingManager() {
               value={selectedId ?? ""}
               onChange={(event) => setSelectedId(Number(event.target.value))}
             >
-              {dashboard?.editableProducts.map((product) => (
+              {(dashboard?.editableProducts ?? []).map((product) => (
                 <option value={product.id} key={product.id}>{product.name}</option>
               ))}
             </select>
@@ -567,7 +592,7 @@ export function PricingManager() {
               value={selectedId ?? ""}
               onChange={(event) => setSelectedId(Number(event.target.value))}
             >
-              {dashboard?.products.map((product) => (
+              {(dashboard?.products ?? []).map((product) => (
                 <option value={product.id} key={product.id}>{product.name}</option>
               ))}
             </select>
