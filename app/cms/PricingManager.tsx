@@ -47,8 +47,9 @@ const PROVIDER_HELP: Record<MarketProvider, string> = {
   sayancenter: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه سایان به‌صورت خودکار انجام می‌شود.",
   rokateb: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه روکاطب به‌صورت خودکار انجام می‌شود.",
   torob: "لینک دقیق صفحه همان مدل و حجم را از ترب وارد کنید؛ جست‌وجوی خودکار ترب انجام نمی‌شود.",
-  digikala: "فقط پس از فعال‌سازی دسترسی رسمی API یا افیلیت دیجی‌کالا استفاده می‌شود.",
 };
+
+const PRICE_NOTIFICATION_STORAGE_KEY = "sepiid-cms-seen-price-proposals";
 
 function currentPrice(product: MarketPricingProduct): number | null {
   const value = Number(product.salePrice || product.regularPrice || product.price);
@@ -65,6 +66,46 @@ export function PricingManager() {
   const [priceDrafts, setPriceDrafts] = useState<
     Record<number, { regularPrice: string; salePrice: string }>
   >({});
+  const [priceAlert, setPriceAlert] = useState("");
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("unsupported");
+
+  const announcePendingPrices = useCallback((data: MarketPricingDashboard) => {
+    const proposals = data.products.filter((product) => product.pricing.proposal);
+    if (!proposals.length) {
+      setPriceAlert("");
+      return;
+    }
+
+    setPriceAlert(`${proposals.length} پیشنهاد قیمت جدید منتظر تأیید شماست.`);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    setNotificationPermission(Notification.permission);
+    const stored = window.localStorage.getItem(PRICE_NOTIFICATION_STORAGE_KEY);
+    const seen = new Set<string>(stored ? (JSON.parse(stored) as string[]) : []);
+    const unseen = proposals.filter((product) => !seen.has(product.pricing.proposal!.id));
+    if (Notification.permission === "granted" && unseen.length) {
+      new Notification("سپید بیوتی: قیمت جدید آماده تأیید است", {
+        body: unseen.length === 1
+          ? `برای «${unseen[0].name}» یک قیمت پیشنهادی جدید ثبت شد.`
+          : `${unseen.length} قیمت پیشنهادی جدید برای بررسی دارید.`,
+      });
+    }
+    unseen.forEach((product) => seen.add(product.pricing.proposal!.id));
+    window.localStorage.setItem(
+      PRICE_NOTIFICATION_STORAGE_KEY,
+      JSON.stringify([...seen].slice(-100)),
+    );
+  }, []);
+
+  const enableBrowserNotifications = useCallback(async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotificationPermission("unsupported");
+      return;
+    }
+    setNotificationPermission(await Notification.requestPermission());
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,6 +113,7 @@ export function PricingManager() {
     try {
       const data = await pricingApi<MarketPricingDashboard>();
       setDashboard(data);
+      announcePendingPrices(data);
       setSelectedId(
         (current) =>
           current ?? data.editableProducts[0]?.id ?? data.products[0]?.id ?? null,
@@ -81,7 +123,7 @@ export function PricingManager() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [announcePendingPrices]);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +133,7 @@ export function PricingManager() {
         const data = await pricingApi<MarketPricingDashboard>();
         if (cancelled) return;
         setDashboard(data);
+        announcePendingPrices(data);
         setSelectedId(data.editableProducts[0]?.id ?? data.products[0]?.id ?? null);
       } catch (loadError) {
         if (!cancelled) {
@@ -109,7 +152,7 @@ export function PricingManager() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [announcePendingPrices]);
 
   const pending = useMemo(
     () => dashboard?.products.filter((product) => product.pricing.proposal) ?? [],
@@ -174,7 +217,7 @@ export function PricingManager() {
           ) ?? {
             provider: itemProvider,
             url: "",
-            enabled: itemProvider !== "digikala",
+            enabled: true,
           };
           return itemProvider === provider ? { ...current, ...patch } : current;
         }),
@@ -237,7 +280,7 @@ export function PricingManager() {
           <span>SMART MARKET PRICING</span>
           <h2>پیشنهاد هوشمند قیمت بازار</h2>
           <p>
-            قیمت‌ها ساعت ۹ و ۱۵ بررسی می‌شوند. اعمال مستقیم فقط برای قیمت‌گذاری اولیه است؛
+            قیمت‌ها ساعت ۹ و ۱۵ بررسی می‌شوند. یک منبع دقیق و به‌روز برای پیشنهاد کافی است؛
             تغییرهای بعدی همیشه منتظر تأیید شما می‌مانند.
           </p>
         </div>
@@ -289,6 +332,23 @@ export function PricingManager() {
 
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
+      {priceAlert && (
+        <div className="spb-cms-alert is-price-notification" role="status">
+          <div>
+            <strong>اعلان قیمت</strong>
+            <span>{priceAlert}</span>
+          </div>
+          {notificationPermission !== "granted" && notificationPermission !== "unsupported" && (
+            <button
+              type="button"
+              className="spb-button is-secondary"
+              onClick={() => void enableBrowserNotifications()}
+            >
+              فعال‌سازی اعلان مرورگر
+            </button>
+          )}
+        </div>
+      )}
 
       <details className="spb-pricing-panel" open>
         <summary>
@@ -485,7 +545,7 @@ export function PricingManager() {
                 {MARKET_PROVIDERS.map((provider) => {
                   const source = selected.pricing.sources.find(
                     (item) => item.provider === provider,
-                  ) ?? { provider, url: "", enabled: provider !== "digikala" };
+                  ) ?? { provider, url: "", enabled: true };
                   return (
                     <div className="spb-source-card" key={provider}>
                       <label className="spb-source-card__toggle">
@@ -506,9 +566,7 @@ export function PricingManager() {
                         placeholder={
                           provider === "torob"
                             ? "https://torob.com/p/..."
-                            : provider === "digikala"
-                              ? "لینک مجاز API/افیلیت"
-                              : "اختیاری؛ کشف خودکار فعال است"
+                            : "اختیاری؛ کشف خودکار فعال است"
                         }
                         onChange={(event) => editSource(provider, { url: event.target.value })}
                       />

@@ -28,7 +28,9 @@ const FETCH_TIMEOUT_MS = 14_000;
 const MIN_VALID_PRICE_TOMAN = 100_000;
 const MAX_VALID_PRICE_TOMAN = 1_000_000_000;
 const MAX_HISTORY_ITEMS = 30;
-const MIN_VALID_SOURCES = 3;
+// One exact-match source is enough to create a review proposal. The CMS admin
+// still decides whether the price is applied to WooCommerce.
+const MIN_VALID_SAMPLES = 1;
 
 type MarketPricingScanMode = "review" | "initial-apply";
 
@@ -36,7 +38,6 @@ const PROVIDER_HOSTS: Record<MarketProvider, string[]> = {
   sayancenter: ["sayancenter.com", "www.sayancenter.com"],
   rokateb: ["rokateb.ir", "www.rokateb.ir"],
   torob: ["torob.com", "www.torob.com"],
-  digikala: ["digikala.com", "www.digikala.com", "affiliate.digikala.com"],
 };
 
 const AUTO_DISCOVERY_BASE: Partial<Record<MarketProvider, string>> = {
@@ -218,6 +219,11 @@ export type MarketPricingScanSummary = {
   insufficientProducts: number;
   failedProducts: number;
   skippedProducts: number;
+};
+
+export type MarketPricingProposalAlert = {
+  productName: string;
+  proposal: MarketPriceProposal;
 };
 
 async function synchronizeCatalogProductsForPricing(): Promise<{
@@ -576,10 +582,6 @@ async function sampleFromUrl(
   product: CmsProduct,
   source: MarketSourceConfig,
 ): Promise<MarketPriceSample[]> {
-  if (source.provider === "digikala" && process.env.DIGIKALA_PRICE_ACCESS_ENABLED !== "true") {
-    throw new Error("دسترسی رسمی API یا افیلیت دیجی‌کالا هنوز فعال نشده است.");
-  }
-
   const url = validateSourceUrl(source.provider, source.url);
   const page = extractPage(await fetchText(url));
   if (!page.name || !page.pricesToman.length) {
@@ -594,7 +596,7 @@ async function sampleFromUrl(
 
   const checkedAt = new Date().toISOString();
   const offerPrices =
-    source.provider === "torob" && page.sellerPricesToman.length >= MIN_VALID_SOURCES
+    source.provider === "torob" && page.sellerPricesToman.length >= MIN_VALID_SAMPLES
       ? page.sellerPricesToman.slice(0, 4)
       : [Math.round(median(page.pricesToman))];
 
@@ -758,7 +760,7 @@ async function scanProduct(
   const excluded = unique.filter((sample) => !included.includes(sample));
   const oldHistory = supersededHistory(product.pricing, checkedAt);
 
-  if (included.length < MIN_VALID_SOURCES) {
+  if (included.length < MIN_VALID_SAMPLES) {
     await updateProductPricingState(product.id, {
       ...product.pricing,
       sources,
@@ -768,7 +770,7 @@ async function scanProduct(
       lastStatus: errors.length && !included.length ? "error" : "insufficient",
       lastMessage:
         included.length > 0
-          ? `فقط ${included.length} قیمت فروشنده معتبر پیدا شد؛ حداقل ${MIN_VALID_SOURCES} نمونه لازم است.`
+          ? "قیمت معتبر از منبع انتخاب‌شده پیدا شد، اما برای ساخت پیشنهاد کافی نبود."
           : errors.slice(0, 3).join(" | ") || "قیمت معتبر کافی پیدا نشد.",
     });
     return errors.length && !included.length ? "failed" : "insufficient";
@@ -793,6 +795,19 @@ async function scanProduct(
       lastMessage: "قیمت فعلی با میانگین معتبر بازار برابر است؛ تغییری لازم نیست.",
     });
     return "insufficient";
+  }
+
+  // Keep a pending proposal when a later scan reaches the same proposed price.
+  // Otherwise both external channels would receive the same alert on every run.
+  if (product.pricing.proposal?.proposedPriceToman === proposed) {
+    await updateProductPricingState(product.id, {
+      ...product.pricing,
+      sources,
+      lastCheckedAt: checkedAt,
+      lastStatus: "pending",
+      lastMessage: "پیشنهاد قبلی هنوز معتبر است؛ قیمت پیشنهادی تغییری نکرده است.",
+    });
+    return "skipped";
   }
 
   const proposal: MarketPriceProposal = {
@@ -844,7 +859,7 @@ async function scanProduct(
     history: oldHistory,
     lastCheckedAt: checkedAt,
     lastStatus: "pending",
-    lastMessage: `پیشنهاد جدید از ${included.length} قیمت فروشنده معتبر آماده تأیید است.`,
+    lastMessage: `پیشنهاد جدید بر اساس ${included.length} قیمت معتبر آماده تأیید است.`,
   });
   return "proposal";
 }
@@ -944,6 +959,17 @@ export async function runMarketPricingScan(
   };
 }
 
+export async function listNewMarketPricingProposalAlerts(
+  startedAt: string,
+): Promise<MarketPricingProposalAlert[]> {
+  const products = await listAllProductsForPricing();
+  return products.flatMap((product) => {
+    const proposal = product.pricing.proposal;
+    if (!proposal || proposal.createdAt < startedAt) return [];
+    return [{ productName: product.name, proposal }];
+  });
+}
+
 export function normalizeSourceConfigs(value: unknown): MarketSourceConfig[] {
   if (!Array.isArray(value)) {
     throw new WooCommerceError("فهرست منابع معتبر نیست.", 400, "invalid_market_sources");
@@ -967,7 +993,7 @@ export function normalizeSourceConfigs(value: unknown): MarketSourceConfig[] {
       byProvider.get(provider) ?? {
         provider,
         url: "",
-        enabled: provider !== "digikala",
+        enabled: true,
       },
   );
 }

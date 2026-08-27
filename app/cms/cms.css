@@ -181,6 +181,26 @@ body:has(.spb-cms-login) {
   color: #175c43;
 }
 
+.spb-cms-alert.is-price-notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: #8cbfac;
+  background: #e7f6ef;
+  color: #12553e;
+}
+
+.spb-cms-alert.is-price-notification > div {
+  display: grid;
+  gap: 2px;
+}
+
+.spb-cms-alert.is-price-notification strong,
+.spb-cms-alert.is-price-notification span {
+  display: block;
+}
+
 .spb-article-seo-health {
   margin-top: 18px;
   padding: 16px;

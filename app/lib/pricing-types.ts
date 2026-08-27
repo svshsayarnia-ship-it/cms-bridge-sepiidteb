@@ -2,7 +2,6 @@ export const MARKET_PROVIDERS = [
   "sayancenter",
   "rokateb",
   "torob",
-  "digikala",
 ] as const;
 
 export type MarketProvider = (typeof MARKET_PROVIDERS)[number];
@@ -11,7 +10,6 @@ export const MARKET_PROVIDER_LABELS: Record<MarketProvider, string> = {
   sayancenter: "سایان سنتر",
   rokateb: "روکاطب",
   torob: "ترب",
-  digikala: "دیجی‌کالا",
 };
 
 export type MarketSourceConfig = {
@@ -69,7 +67,7 @@ export function emptyPricingState(): CmsPricingState {
     sources: MARKET_PROVIDERS.map((provider) => ({
       provider,
       url: "",
-      enabled: provider !== "digikala",
+      enabled: true,
     })),
     proposal: null,
     history: [],
@@ -141,7 +139,7 @@ export function parsePricingState(value: string): CmsPricingState {
         sourceMap.get(provider) ?? {
           provider,
           url: "",
-          enabled: provider !== "digikala",
+          enabled: true,
         },
     );
 
