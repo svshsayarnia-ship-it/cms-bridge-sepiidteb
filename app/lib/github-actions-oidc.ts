@@ -85,7 +85,7 @@ export async function verifyGithubActionsOidc(request: Request): Promise<boolean
     claims.repository !== EXPECTED_REPOSITORY ||
     claims.ref !== EXPECTED_REF ||
     claims.workflow_ref !== EXPECTED_WORKFLOW_REF ||
-    !["schedule", "workflow_dispatch"].includes(claims.event_name ?? "") ||
+    !["schedule", "workflow_dispatch", "push"].includes(claims.event_name ?? "") ||
     typeof claims.exp !== "number" ||
     claims.exp < now - 30 ||
     (typeof claims.nbf === "number" && claims.nbf > now + 30) ||
