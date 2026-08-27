@@ -9,6 +9,7 @@ import { FaqList } from "../../components/FaqList";
 import { ArrowIcon, ClockIcon } from "../../components/Icons";
 import { JsonLd } from "../../components/JsonLd";
 import { ProductCard } from "../../components/ProductCard";
+import { NeuramisModelComparison } from "../../components/NeuramisModelComparison";
 import { articles } from "../../data";
 import { getGuideForArticle } from "../../content-architecture";
 import { getStorefrontProducts } from "../../lib/storefront-catalog";
@@ -40,6 +41,8 @@ const neuramisVariantLinks = {
   Volume: "/product/neuramis-deep-lidocaine?variant=volume-1ml",
   Lido: "/product/neuramis-deep-lidocaine?variant=lido-10ml",
 } as const;
+
+const neuramisModelsGuideSlug = "neuramis-deep-volume-lido-difference";
 
 function isNeuramisGuide(slug: string) {
   return /(?:نورامیس|neuramis)/i.test(slug);
@@ -306,6 +309,8 @@ export default async function ArticlePage({
             <span>خلاصه سریع</span>
             <p>{article.lead}</p>
           </section>
+
+          {article.slug === neuramisModelsGuideSlug ? <NeuramisModelComparison /> : null}
 
           <div className="sb-article-notice">
             <strong>یادداشت ایمنی</strong>

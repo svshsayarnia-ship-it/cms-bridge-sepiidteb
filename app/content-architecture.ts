@@ -270,7 +270,7 @@ export const guides: GuidePage[] = [
     ],
     categorySlugs: ["fillers"],
     productSlugs: ["neuramis-deep-lidocaine", "revofil-ultra", "eptq-1ml"],
-    articleSlugs: ["neuramis-vs-revofil-guide", "verify-dermal-filler-authenticity"],
+    articleSlugs: ["neuramis-deep-volume-lido-difference", "neuramis-vs-revofil-guide", "verify-dermal-filler-authenticity"],
     concernSlugs: ["volume-loss"],
     sources: [
       {
@@ -794,7 +794,7 @@ export const brandPages: BrandPage[] = [
           "نه لزوماً. قیمت به مدل، حجم و وضعیت موجودی همان روز بستگی دارد.",
       },
     ],
-    articleSlugs: ["neuramis-vs-revofil-guide"],
+    articleSlugs: ["neuramis-deep-volume-lido-difference", "neuramis-vs-revofil-guide"],
     guideSlugs: ["dermal-fillers", "product-authenticity"],
     minProductCount: 1,
     indexable: true,
