@@ -1,9 +1,11 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
+import { sendMarketPriceAlerts } from "@/app/lib/market-price-alerts";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import {
   approveMarketProposal,
   getMarketPricingDashboard,
+  listNewMarketPricingProposalAlerts,
   rejectMarketProposal,
   runMarketPricingScan,
   saveMarketSources,
@@ -78,6 +80,13 @@ function invalidatePricePages(slug: string) {
   if (slug) revalidatePath(`/product/${slug}`);
 }
 
+async function runPricingScanWithAlerts(mode: "review" | "initial-apply" = "review") {
+  const summary = await runMarketPricingScan(mode);
+  const alerts = await listNewMarketPricingProposalAlerts(summary.startedAt);
+  const deliveries = await sendMarketPriceAlerts(alerts);
+  return { summary, deliveries };
+}
+
 export async function GET(request: Request) {
   const denied = await cmsApiGuard(request);
   if (denied) return denied;
@@ -102,12 +111,10 @@ export async function POST(request: Request) {
     };
 
     if (body.action === "run") {
-      return Response.json({ summary: await runMarketPricingScan() });
+      return Response.json(await runPricingScanWithAlerts());
     }
     if (body.action === "initial-apply") {
-      return Response.json({
-        summary: await runMarketPricingScan("initial-apply"),
-      });
+      return Response.json(await runPricingScanWithAlerts("initial-apply"));
     }
 
     const id = productId(body.productId);
