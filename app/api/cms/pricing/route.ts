@@ -1,6 +1,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
-import { sendMarketPriceAlerts } from "@/app/lib/market-price-alerts";
+import {
+  sendMarketPriceAlerts,
+  sendMarketPriceAlertTest,
+} from "@/app/lib/market-price-alerts";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import {
   approveMarketProposal,
@@ -115,6 +118,9 @@ export async function POST(request: Request) {
     }
     if (body.action === "initial-apply") {
       return Response.json(await runPricingScanWithAlerts("initial-apply"));
+    }
+    if (body.action === "test-alert") {
+      return Response.json({ deliveries: await sendMarketPriceAlertTest() });
     }
 
     const id = productId(body.productId);
