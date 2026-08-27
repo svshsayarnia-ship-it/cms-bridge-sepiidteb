@@ -4,10 +4,10 @@ import {
   sendMarketPriceAlerts,
   sendMarketPriceAlertTest,
 } from "@/app/lib/market-price-alerts";
+import { getMarketPricingDashboardDirect } from "@/app/lib/market-pricing-dashboard-direct";
 import { STOREFRONT_CATALOG_TAG } from "@/app/lib/storefront-catalog";
 import {
   approveMarketProposal,
-  getMarketPricingDashboard,
   listNewMarketPricingProposalAlerts,
   rejectMarketProposal,
   runMarketPricingScan,
@@ -94,7 +94,10 @@ export async function GET(request: Request) {
   const denied = await cmsApiGuard(request);
   if (denied) return denied;
   try {
-    return Response.json(await getMarketPricingDashboard());
+    // Use a narrow WooCommerce projection for the pricing dashboard. This
+    // deliberately excludes media/category fields so one malformed product
+    // cannot crash the whole pricing UI with an undefined .map().
+    return Response.json(await getMarketPricingDashboardDirect());
   } catch (error) {
     return errorResponse(error);
   }
