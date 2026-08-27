@@ -6,6 +6,7 @@ import {
   CmsProductImageManager,
   type CmsImageFamilyDefinition,
 } from "./CmsProductImageManager";
+import { PricingAlertSettings } from "./PricingAlertSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ export default async function CmsPage() {
   return (
     <>
       <CmsProductImageManager families={imageFamilies} />
+      <PricingAlertSettings />
       <CmsDashboard userName={authorization.user.displayName} />
     </>
   );
