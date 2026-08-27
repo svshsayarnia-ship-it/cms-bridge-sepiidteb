@@ -211,7 +211,19 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
   const remoteBySlug = new Map(remoteArticles.map((article) => [article.slug, article]));
   const staticSlugs = new Set(articles.map((article) => article.slug));
   const normalizedArticles = [
-    ...articles.map((article) => normalizeArticle(articleOverlay(remoteBySlug.get(article.slug), article), article)),
+    ...articles.map((article) => {
+      const normalized = normalizeArticle(articleOverlay(remoteBySlug.get(article.slug), article), article);
+      if (articleHasHtmlBody(article) && !articleHasHtmlBody(normalized)) {
+        return normalizeArticle({
+          ...normalized,
+          contentMode: article.contentMode,
+          htmlContent: article.htmlContent,
+          htmlContentChunks: article.htmlContentChunks,
+          sections: article.sections,
+        }, article);
+      }
+      return normalized;
+    }),
     ...remoteArticles.filter((article) => !staticSlugs.has(article.slug)).map((article) => normalizeArticle(article)),
   ];
 
