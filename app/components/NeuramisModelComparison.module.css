@@ -1,0 +1,94 @@
+.root {
+  margin: 30px 0;
+  padding: 24px;
+  border: 1px solid #e5dbcf;
+  border-radius: var(--sb-radius-md);
+  background: linear-gradient(135deg, #fffdfa, #f8f1e8);
+}
+
+.head > span {
+  color: var(--sb-gold-dark);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.head h2 {
+  margin: 6px 0 8px;
+  font-size: 1.28rem;
+}
+
+.head p {
+  max-width: 620px;
+  margin: 0;
+  color: #5e554d;
+  font-size: 0.79rem;
+  line-height: 2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid #e5dbcf;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.card > span {
+  color: var(--sb-gold-dark);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.card h3 {
+  margin: 8px 0;
+  font-size: 1rem;
+}
+
+.card p {
+  margin: 0;
+  color: #514b45;
+  font-size: 0.76rem;
+  line-height: 2;
+}
+
+.card small {
+  margin-top: 12px;
+  color: #776b60;
+  font-size: 0.69rem;
+  line-height: 1.9;
+}
+
+.card a {
+  margin-top: auto;
+  padding-top: 13px;
+  color: var(--sb-gold-dark);
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .root {
+    padding: 18px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+}

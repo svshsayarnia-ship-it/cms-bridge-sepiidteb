@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./NeuramisModelComparison.module.css";
 
 const models = [
   {
@@ -26,15 +27,15 @@ const models = [
 
 export function NeuramisModelComparison() {
   return (
-    <section className="sb-neuramis-comparison" aria-labelledby="neuramis-comparison-title">
-      <div className="sb-neuramis-comparison__head">
+    <section className={styles.root} aria-labelledby="neuramis-comparison-title">
+      <div className={styles.head}>
         <span>مقایسه سریع</span>
         <h2 id="neuramis-comparison-title">تفاوت مدل‌ها در یک نگاه</h2>
         <p>این مقایسه برای شناخت مدل و بسته است؛ انتخاب و استفاده از فیلر باید با نظر فرد واجد صلاحیت انجام شود.</p>
       </div>
-      <div className="sb-neuramis-comparison__grid">
+      <div className={styles.grid}>
         {models.map((model) => (
-          <article className="sb-neuramis-comparison__card" key={model.en}>
+          <article className={styles.card} key={model.en}>
             <span>{model.en}</span>
             <h3>{model.name}</h3>
             <p>{model.summary}</p>
