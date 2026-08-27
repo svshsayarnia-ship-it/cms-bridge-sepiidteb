@@ -94,3 +94,13 @@ export async function sendMarketPriceAlerts(
   const message = messageFor(alerts);
   return Promise.all([telegram(message), email(message)]);
 }
+
+export async function sendMarketPriceAlertTest(): Promise<MarketPriceAlertDelivery[]> {
+  const message = [
+    "تست اعلان قیمت سپید بیوتی",
+    "",
+    "اگر این پیام را دریافت کرده‌اید، اتصال اعلان قیمت این کانال فعال است.",
+    `مدیریت قیمت‌ها: ${cmsUrl()}`,
+  ].join("\n");
+  return Promise.all([telegram(message), email(message)]);
+}
