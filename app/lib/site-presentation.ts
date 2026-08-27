@@ -160,6 +160,16 @@ function articleTimestamp(article?: Partial<Article>) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function articleHasBody(article?: Partial<Article>) {
+  if (!article) return false;
+  if (article.contentMode === "html") {
+    return Boolean(article.htmlContent?.trim() || article.htmlContentChunks?.length);
+  }
+  return Boolean(article.sections?.some((section) =>
+    section.heading.trim() && section.paragraphs.some((paragraph) => paragraph.trim()),
+  ));
+}
+
 function articleOverlay(remote: Article | undefined, base: Article): Partial<Article> {
   if (!remote) return {};
 
@@ -167,6 +177,19 @@ function articleOverlay(remote: Article | undefined, base: Article): Partial<Art
   // an older CMS snapshot. Publication status stays CMS-managed either way.
   if (articleTimestamp(base) > articleTimestamp(remote)) {
     return { status: remote.status };
+  }
+
+  // A CMS snapshot can contain the article metadata while its encoded body is
+  // temporarily absent or unavailable. Never let that partial snapshot blank
+  // a complete editorial body shipped with the application.
+  if (!articleHasBody(remote) && articleHasBody(base)) {
+    return {
+      ...remote,
+      contentMode: base.contentMode,
+      htmlContent: base.htmlContent,
+      htmlContentChunks: base.htmlContentChunks,
+      sections: base.sections,
+    };
   }
 
   return remote;
