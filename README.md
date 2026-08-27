@@ -96,12 +96,22 @@ identity headers when those variables are present.
 The market-pricing review queue also requires `CRON_SECRET` in the production
 environment. Vercel calls `/api/cron/market-prices` every day at 05:30 and
 11:30 UTC (09:00 and 15:00 Iran time) and sends this value as a bearer token.
-Each product requires at least three valid, non-duplicate market sources. The
-one-time initial import may apply a price directly after an explicit CMS
-confirmation; every later market change is saved as a pending proposal and must
-be approved by a CMS administrator. Direct Digikala monitoring remains disabled unless
-an authorized API or affiliate integration is configured and
-`DIGIKALA_PRICE_ACCESS_ENABLED=true` is set.
+One valid, exact-match market source is enough to create a pending proposal; a
+Torob page with multiple sellers uses its available seller prices for the
+suggested value. The one-time initial import may apply a price directly after
+an explicit CMS confirmation; every later market change is saved as a pending
+proposal and must be approved by a CMS administrator. The monitor uses Torob,
+Sayan Center, and Roka Teb only; Digikala is not part of this workflow.
+
+To deliver a newly created proposal outside the CMS, configure the following
+production environment variables. They are optional; a delivery failure never
+stops the pricing scan or removes its CMS proposal.
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_PRICE_ALERT_CHAT_ID`
+- `RESEND_API_KEY`
+- `PRICE_ALERT_EMAIL`
+- `PRICE_ALERT_EMAIL_FROM` (a Resend-verified sender, for example `Sepiid Beauty <prices@sepiidbeauty.ir>`)
 
 ## Diagnostic Commands
 
