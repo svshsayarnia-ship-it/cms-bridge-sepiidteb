@@ -33,6 +33,10 @@ function decodeSegment<T>(segment: string): T | null {
   }
 }
 
+function decodeBytes(value: string): ArrayBuffer {
+  return Uint8Array.from(Buffer.from(value, "base64url")).buffer;
+}
+
 function audienceMatches(value: string | string[] | undefined): boolean {
   if (typeof value === "string") return value === EXPECTED_AUDIENCE;
   return Array.isArray(value) && value.includes(EXPECTED_AUDIENCE);
@@ -97,7 +101,7 @@ export async function verifyGithubActionsOidc(request: Request): Promise<boolean
     return await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5",
       key,
-      Buffer.from(signaturePart, "base64url"),
+      decodeBytes(signaturePart),
       new TextEncoder().encode(`${headerPart}.${payloadPart}`),
     );
   } catch {
