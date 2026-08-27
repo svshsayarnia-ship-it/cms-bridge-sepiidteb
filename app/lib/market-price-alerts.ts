@@ -1,9 +1,18 @@
 import type { MarketPricingProposalAlert } from "./market-pricing";
+import { getMarketPriceAlertConfig } from "./market-price-alert-config";
 
 export type MarketPriceAlertDelivery = {
   channel: "telegram" | "email";
   delivered: boolean;
   error?: string;
+};
+
+type ResolvedAlertConfig = {
+  telegramBotToken: string;
+  telegramChatId: string;
+  resendApiKey: string;
+  emailRecipient: string;
+  emailFrom: string;
 };
 
 function toman(value: number | null): string {
@@ -28,9 +37,30 @@ function messageFor(alerts: MarketPricingProposalAlert[]): string {
   return `پیشنهاد قیمت جدید سپید بیوتی\n\n${lines.join("\n\n")}`;
 }
 
-async function telegram(message: string): Promise<MarketPriceAlertDelivery> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_PRICE_ALERT_CHAT_ID;
+async function resolvedConfig(): Promise<ResolvedAlertConfig> {
+  let stored: Awaited<ReturnType<typeof getMarketPriceAlertConfig>> | null = null;
+  try {
+    stored = await getMarketPriceAlertConfig();
+  } catch (error) {
+    console.warn("[market-price-alert] Stored alert config unavailable", error);
+  }
+
+  return {
+    telegramBotToken: (process.env.TELEGRAM_BOT_TOKEN ?? "").trim() || stored?.telegramBotToken || "",
+    telegramChatId:
+      (process.env.TELEGRAM_PRICE_ALERT_CHAT_ID ?? "").trim() || stored?.telegramChatId || "",
+    resendApiKey: (process.env.RESEND_API_KEY ?? "").trim() || stored?.resendApiKey || "",
+    emailRecipient: (process.env.PRICE_ALERT_EMAIL ?? "").trim() || stored?.emailRecipient || "",
+    emailFrom: (process.env.PRICE_ALERT_EMAIL_FROM ?? "").trim() || stored?.emailFrom || "",
+  };
+}
+
+async function telegram(
+  message: string,
+  config: ResolvedAlertConfig,
+): Promise<MarketPriceAlertDelivery> {
+  const token = config.telegramBotToken;
+  const chatId = config.telegramChatId;
   if (!token || !chatId) {
     return { channel: "telegram", delivered: false, error: "Telegram is not configured." };
   }
@@ -53,10 +83,13 @@ async function telegram(message: string): Promise<MarketPriceAlertDelivery> {
   }
 }
 
-async function email(message: string): Promise<MarketPriceAlertDelivery> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const recipient = process.env.PRICE_ALERT_EMAIL;
-  const sender = process.env.PRICE_ALERT_EMAIL_FROM;
+async function email(
+  message: string,
+  config: ResolvedAlertConfig,
+): Promise<MarketPriceAlertDelivery> {
+  const apiKey = config.resendApiKey;
+  const recipient = config.emailRecipient;
+  const sender = config.emailFrom;
   if (!apiKey || !recipient || !sender) {
     return { channel: "email", delivered: false, error: "Email is not configured." };
   }
@@ -92,7 +125,8 @@ export async function sendMarketPriceAlerts(
 ): Promise<MarketPriceAlertDelivery[]> {
   if (!alerts.length) return [];
   const message = messageFor(alerts);
-  return Promise.all([telegram(message), email(message)]);
+  const config = await resolvedConfig();
+  return Promise.all([telegram(message, config), email(message, config)]);
 }
 
 export async function sendMarketPriceAlertTest(): Promise<MarketPriceAlertDelivery[]> {
@@ -102,5 +136,6 @@ export async function sendMarketPriceAlertTest(): Promise<MarketPriceAlertDelive
     "اگر این پیام را دریافت کرده‌اید، اتصال اعلان قیمت این کانال فعال است.",
     `مدیریت قیمت‌ها: ${cmsUrl()}`,
   ].join("\n");
-  return Promise.all([telegram(message), email(message)]);
+  const config = await resolvedConfig();
+  return Promise.all([telegram(message, config), email(message, config)]);
 }
