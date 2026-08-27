@@ -190,8 +190,9 @@ function encode(bytes: ArrayBuffer | Uint8Array): string {
   );
 }
 
-function decode(value: string): Uint8Array {
-  return new Uint8Array(Buffer.from(value, "base64url"));
+function decode(value: string): ArrayBuffer {
+  const bytes = Uint8Array.from(Buffer.from(value, "base64url"));
+  return bytes.buffer;
 }
 
 async function encrypt(config: MarketPriceAlertConfig): Promise<string> {
