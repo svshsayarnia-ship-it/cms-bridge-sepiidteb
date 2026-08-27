@@ -173,15 +173,10 @@ function articleHasBody(article?: Partial<Article>) {
 function articleOverlay(remote: Article | undefined, base: Article): Partial<Article> {
   if (!remote) return {};
 
-  // A newer editorial revision shipped with the site must not be replaced by
-  // an older CMS snapshot. Publication status stays CMS-managed either way.
-  if (articleTimestamp(base) > articleTimestamp(remote)) {
-    return { status: remote.status };
-  }
-
   // A CMS snapshot can contain the article metadata while its encoded body is
   // temporarily absent or unavailable. Never let that partial snapshot blank
-  // a complete editorial body shipped with the application.
+  // a complete editorial body shipped with the application, even when the
+  // CMS timestamp is newer than the static editorial revision.
   if (!articleHasBody(remote) && articleHasBody(base)) {
     return {
       ...remote,
@@ -190,6 +185,12 @@ function articleOverlay(remote: Article | undefined, base: Article): Partial<Art
       htmlContentChunks: base.htmlContentChunks,
       sections: base.sections,
     };
+  }
+
+  // A newer editorial revision shipped with the site must not be replaced by
+  // an older CMS snapshot. Publication status stays CMS-managed either way.
+  if (articleTimestamp(base) > articleTimestamp(remote)) {
+    return { status: remote.status };
   }
 
   return remote;
