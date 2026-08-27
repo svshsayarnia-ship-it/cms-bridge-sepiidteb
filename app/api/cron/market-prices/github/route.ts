@@ -13,6 +13,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  if (url.searchParams.get("health") === "1") {
+    return Response.json({ ok: true, authorized: true });
+  }
+
   try {
     const summary = await runMarketPricingScan();
     const alerts = await listNewMarketPricingProposalAlerts(summary.startedAt);
