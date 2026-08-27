@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "30 5,11 * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/market-price-scan.yml"
 
 permissions:
   contents: read
@@ -35,9 +40,31 @@ jobs:
           OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "Authorization: Bearer ${OIDC_TOKEN}" \
-            --header "Content-Type: application/json" \
-            https://sepiidbeauty.ir/api/cron/market-prices/github
-          echo
+          TARGET="https://sepiidbeauty.ir/api/cron/market-prices/github"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            TARGET="${TARGET}?health=1"
+          fi
+
+          for attempt in $(seq 1 18); do
+            STATUS="$(curl --silent --show-error \
+              --output /tmp/sepiid-price-response.txt \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer ${OIDC_TOKEN}" \
+              --header "Content-Type: application/json" \
+              "$TARGET" || true)"
+
+            if [[ "$STATUS" =~ ^2 ]]; then
+              cat /tmp/sepiid-price-response.txt
+              echo
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}: HTTP ${STATUS}"
+            cat /tmp/sepiid-price-response.txt || true
+            echo
+            sleep 10
+          done
+
+          echo "GitHub OIDC call did not become ready in time."
+          exit 1
