@@ -13,9 +13,9 @@ export function DeferredSmartAssistant() {
     let cancelled = false;
 
     const load = async () => {
-      const module = await import("./SmartAssistant");
+      const assistantModule = await import("./SmartAssistant");
       if (!cancelled) {
-        setAssistant(() => module.SmartAssistant);
+        setAssistant(() => assistantModule.SmartAssistant);
       }
     };
 

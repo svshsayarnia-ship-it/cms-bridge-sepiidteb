@@ -160,16 +160,6 @@ function articleTimestamp(article?: Partial<Article>) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function articleHasBody(article?: Partial<Article>) {
-  if (!article) return false;
-  if (article.contentMode === "html") {
-    return Boolean(article.htmlContent?.trim() || decodeArticleHtml(article.htmlContentChunks).trim());
-  }
-  return Boolean(article.sections?.some((section) =>
-    section.heading.trim() && section.paragraphs.some((paragraph) => paragraph.trim()),
-  ));
-}
-
 function articleHasHtmlBody(article?: Partial<Article>) {
   if (!article) return false;
   return Boolean(article.htmlContent?.trim() || decodeArticleHtml(article.htmlContentChunks).trim());

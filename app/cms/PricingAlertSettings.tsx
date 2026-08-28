@@ -47,8 +47,7 @@ export function PricingAlertSettings() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
-  async function load() {
-    const next = await jsonRequest<AlertStatus>("/api/cms/pricing/alerts");
+  function applyStatus(next: AlertStatus) {
     setStatus(next);
     setTelegramChatId(next.telegramChatId);
     setEmailRecipient(next.emailRecipient);
@@ -56,9 +55,20 @@ export function PricingAlertSettings() {
   }
 
   useEffect(() => {
-    void load().catch((loadError) => {
-      setError(loadError instanceof Error ? loadError.message : "دریافت تنظیمات اعلان ناموفق بود.");
-    });
+    let active = true;
+    void jsonRequest<AlertStatus>("/api/cms/pricing/alerts")
+      .then((next) => {
+        if (active) applyStatus(next);
+      })
+      .catch((loadError) => {
+        if (active) {
+          setError(loadError instanceof Error ? loadError.message : "دریافت تنظیمات اعلان ناموفق بود.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function save() {
@@ -77,7 +87,7 @@ export function PricingAlertSettings() {
           emailFrom,
         }),
       });
-      setStatus(next);
+      applyStatus(next);
       setTelegramBotToken("");
       setResendApiKey("");
       setNotice("تنظیمات اعلان با رمزگذاری ذخیره شد.");

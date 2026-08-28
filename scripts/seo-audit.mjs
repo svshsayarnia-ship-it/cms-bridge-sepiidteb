@@ -4,7 +4,7 @@ const baseUrl = new URL(
 );
 const canonicalOrigin = (
   process.env.SEO_CANONICAL_ORIGIN ??
-  "https://www.sepiidbeauty.ir"
+  "https://sepiidbeauty.ir"
 ).replace(/\/$/, "");
 const skipLinkCheck =
   process.env.SEO_SKIP_LINK_CHECK === "1";
