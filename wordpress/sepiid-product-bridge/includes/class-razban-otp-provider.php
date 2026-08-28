@@ -34,7 +34,10 @@ final class Razban_Otp_Provider {
 			return $result;
 		}
 
-		$provider = strtolower( $this->config_value( 'SEPIID_SMS_PROVIDER', 'kavenegar' ) );
+		// Sepiid Beauty uses Razban/IPPanel for OTP delivery. Keep this as the
+		// default so a missing selector cannot silently route requests to the
+		// unrelated Kavenegar adapter.
+		$provider = strtolower( $this->config_value( 'SEPIID_SMS_PROVIDER', 'razban' ) );
 		if ( 'razban' !== $provider ) {
 			return $result;
 		}
