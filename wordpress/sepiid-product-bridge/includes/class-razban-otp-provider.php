@@ -99,7 +99,7 @@ final class Razban_Otp_Provider {
 				'headers'     => array(
 					'Accept'        => 'application/json',
 					'Content-Type'  => 'application/json; charset=utf-8',
-					'Authorization' => $config['api_token'],
+					'Authorization' => 'Bearer ' . $config['api_token'],
 				),
 				'body'        => wp_json_encode( $payload ),
 			)
