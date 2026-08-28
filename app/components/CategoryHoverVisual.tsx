@@ -41,7 +41,7 @@ export function CategoryHoverVisual({
       <span className="sb-category-visual__veil" aria-hidden="true" />
 
       <span className="sb-category-visual__title">
-        <small>دسته تخصصی</small>
+        <small>بر اساس نیاز شما</small>
         <strong>{displayTitle}</strong>
       </span>
 

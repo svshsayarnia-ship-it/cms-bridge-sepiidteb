@@ -92,17 +92,6 @@ function selectRotatingProducts(products: FeaturedCarouselProduct[], seed: numbe
     .slice(0, visibleProductCount);
 }
 
-function formatCountdown(remainingMs: number) {
-  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1_000));
-  const hours = Math.floor(totalSeconds / 3_600);
-  const minutes = Math.floor((totalSeconds % 3_600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return [hours, minutes, seconds]
-    .map((value) => numberFormatter.format(value))
-    .join(":");
-}
-
 function getDiscountPercent(regularPrice: string, salePrice: string) {
   const regular = Number(regularPrice);
   const sale = Number(salePrice);
@@ -132,17 +121,12 @@ function cleanVolume(value?: string) {
 
 export function FeaturedProductCarousel({
   products: productPool,
-  initialRotationRemainingMs,
   initialRotationSeed,
 }: {
   products: FeaturedCarouselProduct[];
-  initialRotationRemainingMs: number;
   initialRotationSeed: number;
 }) {
   const [rotationSeed, setRotationSeed] = useState(initialRotationSeed);
-  const [rotationRemainingMs, setRotationRemainingMs] = useState(
-    initialRotationRemainingMs,
-  );
   const products = useMemo(
     () => selectRotatingProducts(productPool, rotationSeed),
     [productPool, rotationSeed],
@@ -158,7 +142,6 @@ export function FeaturedProductCarousel({
   useEffect(() => {
     const syncRotation = () => {
       const rotation = getRotationWindow(Date.now());
-      setRotationRemainingMs(rotation.remainingMs);
       setRotationSeed((currentSeed) =>
         currentSeed === rotation.seed ? currentSeed : rotation.seed,
       );
@@ -272,25 +255,18 @@ export function FeaturedProductCarousel({
           <div>
             <span className="sb-eyebrow">چند انتخاب از فروشگاه</span>
             <h2 id="featured-products-title">
-              شاید محصول بعدی‌تان
-              <em>اینجا باشد.</em>
+              اگر می‌خواهید از چند مدل شروع کنید
+              <em>این چند انتخاب را مقایسه کنید.</em>
             </h2>
           </div>
           <div className="sb-featured-carousel__intro">
             <p>
-              چند محصول را هر بار اینجا می‌آوریم تا بدون گشتن بین همه دسته‌ها، مدل، قیمت و جزئیاتشان را سریع ببینید.
+              این فهرست فقط برای شروع مقایسه است؛ مدل، حجم، بسته و قیمت هر گزینه را در صفحه خودش بررسی کنید.
             </p>
             <Link className="sb-text-link" href="/shop">
               دیدن همه محصولات
               <ArrowIcon />
             </Link>
-            <div
-              className="sb-featured-carousel__rotation"
-              aria-label={`زمان باقی‌مانده تا تغییر محصولات پیشنهادی: ${formatCountdown(rotationRemainingMs)}`}
-            >
-              <span>پیشنهادهای بعدی تا</span>
-              <time>{formatCountdown(rotationRemainingMs)}</time>
-            </div>
           </div>
         </div>
 

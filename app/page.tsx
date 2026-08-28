@@ -81,9 +81,6 @@ export default async function Home() {
   const initialRotationSeed = Math.floor(
     shiftedRotationNow / featuredRotationIntervalMs,
   );
-  const initialRotationRemainingMs =
-    (initialRotationSeed + 1) * featuredRotationIntervalMs -
-    shiftedRotationNow;
 
   const availableBrands = Array.from(
     new Set(
@@ -136,27 +133,27 @@ export default async function Home() {
 
       <section className="sb-proof-strip">
         <div className="sb-shell sb-proof-strip__grid">
-          <article>
-            <ShieldIcon />
-            <div>
-              <strong>بدانید دقیقاً چه مدلی می‌خرید</strong>
-              <p>مدل، حجم و اطلاعات روی بسته را واضح می‌بینید تا مقایسه بین گزینه‌ها راحت‌تر باشد.</p>
+            <article>
+              <ShieldIcon />
+              <div>
+                <strong>مدل و بسته را دقیق ببینید</strong>
+                <p>نام مدل، حجم و تعداد داخل بسته را جدا می‌کنیم تا گزینه‌های شبیه به هم قاطی نشوند.</p>
             </div>
             <Link href="/magazine/verify-dermal-filler-authenticity">چطور بررسی کنم؟</Link>
           </article>
           <article>
             <PackageIcon />
             <div>
-              <strong>ارسال را از قبل هماهنگ کنید</strong>
-              <p>زمان و روش تحویل به نوع محصول و مقصد بستگی دارد؛ قبل از نهایی‌کردن سفارش با شما هماهنگ می‌کنیم.</p>
+                <strong>قیمت را برای همان واحد بخوانید</strong>
+                <p>قیمت یک سرنگ، ویال یا جعبه کامل یکی نیست؛ واحد و تعداد را پیش از سفارش روشن می‌کنیم.</p>
             </div>
-            <Link href="/contact">سؤال درباره ارسال</Link>
+            <Link href="/shop">دیدن قیمت و بسته‌ها</Link>
           </article>
           <article>
             <HeadsetIcon />
             <div>
-              <strong>اگر چیزی مبهم است، بپرسید</strong>
-              <p>برای موجودی، جزئیات سفارش یا پیگیری، مستقیم با تیم سپید صحبت می‌کنید.</p>
+                <strong>استعلام را مستقیم انجام دهید</strong>
+                <p>برای موجودی، بچ‌کد، بسته‌بندی و زمان تحویل، اسم دقیق محصول را بفرستید تا همان مورد بررسی شود.</p>
             </div>
             <Link href={whatsappHref()}>پیام به سپید</Link>
           </article>
@@ -189,7 +186,6 @@ export default async function Home() {
 
       <Reveal>
         <FeaturedProductCarousel
-          initialRotationRemainingMs={initialRotationRemainingMs}
           initialRotationSeed={initialRotationSeed}
           products={featuredProducts.map((product) => ({
             slug: product.slug,
