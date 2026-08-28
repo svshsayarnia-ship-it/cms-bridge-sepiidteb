@@ -17,7 +17,7 @@ export default function GlobalError({
   return (
     <main className="sb-system-page" id="main-content">
       <div className="sb-system-page__card">
-        <span className="sb-eyebrow">SEPIID BEAUTY</span>
+        <span className="sb-eyebrow">سپید بیوتی</span>
         <h1>نمایش این بخش موقتاً با مشکل روبه‌رو شد.</h1>
         <p>اطلاعات شما از بین نرفته است. یک‌بار دوباره تلاش کنید یا به صفحه اصلی برگردید.</p>
         <div>

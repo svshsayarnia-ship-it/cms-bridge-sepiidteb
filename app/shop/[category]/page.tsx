@@ -425,7 +425,7 @@ export default async function CategoryPage({
         <div className="sb-shell sb-category-commerce-hero__grid">
           <div className="sb-category-commerce-hero__copy">
             <span className="sb-eyebrow">
-              {category.en}
+              این دسته از محصولات
             </span>
 
             <h1>خرید و قیمت {category.title}</h1>
@@ -477,7 +477,7 @@ export default async function CategoryPage({
             aria-label={`تصویر و محصول منتخب ${category.title}`}
           >
             <span className="sb-category-commerce-hero__editorial-label">
-              SEPIID EDITORIAL / {category.en}
+              راهنمای این دسته
             </span>
 
             {featuredEntry ? (

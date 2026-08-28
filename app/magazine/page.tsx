@@ -36,7 +36,7 @@ export default async function MagazinePage() {
       <section className="sb-magazine-hero">
         <div className="sb-shell sb-magazine-hero__head">
           <div>
-            <span className="sb-eyebrow">SEPIID JOURNAL / 2026</span>
+            <span className="sb-eyebrow">مجله سپید</span>
             <h1>مجله راهنمای محصولات زیبایی و خرید آگاهانه</h1>
           </div>
           <p>
@@ -91,7 +91,7 @@ export default async function MagazinePage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">LATEST / ARTICLES</span>
+              <span className="sb-eyebrow">تازه‌ترین مطالب</span>
               <h2>تازه‌ترین راهنماها</h2>
             </div>
             <p>{editableArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
@@ -107,7 +107,7 @@ export default async function MagazinePage() {
       <section className="sb-editorial-policy">
         <div className="sb-shell sb-editorial-policy__grid">
           <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">EDITORIAL STANDARD</span>
+            <span className="sb-eyebrow sb-eyebrow--gold">روش کار تحریریه</span>
             <h2>استاندارد تحریریه سپید</h2>
           </div>
           <ol>

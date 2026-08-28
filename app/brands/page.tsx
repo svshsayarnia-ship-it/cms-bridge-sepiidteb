@@ -65,7 +65,7 @@ export default async function BrandsPage() {
 
       <section className="sb-page-hero sb-brands-hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">BRANDS / INDEX</span>
+          <span className="sb-eyebrow">فهرست برندها</span>
 
           <h1>محصولات را برندبه‌برند مقایسه کنید.</h1>
 

@@ -322,7 +322,7 @@ export function SiteHeader({
               >
                 <div className="sb-mega-menu__grid">
                   <div className="sb-mega-menu__intro">
-                    <span>SHOP / CATEGORIES</span>
+                    <span>دسته‌بندی محصولات</span>
                     <h2>اسم محصول را نمی‌دانید؟ از دسته شروع کنید.</h2>
                     <p>
                       نزدیک‌ترین گروه را انتخاب کنید و بعد مدل، حجم، بسته و قیمت محصولات را کنار هم ببینید. برای محصولات تزریقی، انتخاب نهایی باید توسط فرد واجد صلاحیت انجام شود.
@@ -337,7 +337,7 @@ export function SiteHeader({
                       <section className="sb-mega-menu__group" key={group.slug}>
                         <Link href={`/shop/group/${group.slug}`}>
                           <strong>{group.title}</strong>
-                          <small>{group.en}</small>
+                          <small>دسته‌بندی اصلی</small>
                         </Link>
                         <div>
                           {categories
@@ -349,7 +349,7 @@ export function SiteHeader({
                                 <span>•</span>
                                 <div>
                                   <strong>{category.title}</strong>
-                                  <small>{category.en}</small>
+                                  <small>مشاهده مدل‌ها و قیمت‌ها</small>
                                 </div>
                                 <ArrowIcon />
                               </Link>
@@ -409,7 +409,7 @@ export function SiteHeader({
           <div className="sb-search-modal__panel" ref={searchPanel}>
             <div className="sb-search-modal__top">
               <div>
-                <span>SEARCH / جستجو</span>
+                <span>جست‌وجوی محصولات</span>
                 <h2 id="search-title">چه محصولی دنبالش هستید؟</h2>
               </div>
               <button

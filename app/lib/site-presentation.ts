@@ -77,8 +77,8 @@ export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
     microproofItems: ["مدل و حجم مشخص", "قیمت جلوی چشم", "پاسخ‌گویی واقعی"],
     image: "/images/drive/hero-rejuvenation.webp",
     imageAlt: "تصویر ادیتوریال سپید بیوتی برای محصولات حرفه‌ای زیبایی",
-    editorialLabel: "SEPIID EDITORIAL / 01", editorialCaption: "کمتر حدس بزنید، دقیق‌تر انتخاب کنید",
-    qualityTitle: "چیزی که واقعاً می‌خرید", qualitySubtitle: "MODEL / PACK / PRICE",
+    editorialLabel: "تصویر منتخب سپید", editorialCaption: "کمتر حدس بزنید، دقیق‌تر انتخاب کنید",
+    qualityTitle: "چیزی که واقعاً می‌خرید", qualitySubtitle: "مدل · بسته · قیمت",
   } },
   articles: articles.map((article) => ({ ...article, status: "publish" })),
 };

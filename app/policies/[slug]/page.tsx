@@ -138,7 +138,7 @@ export default async function PolicyPage({
       </div>
       <header className="sb-policy-hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">SEPIID / POLICY</span>
+          <span className="sb-eyebrow">اطلاعات و قوانین سپید</span>
           <h1>{policy.title}</h1>
           <p>{policy.lead}</p>
           <small>آخرین بازبینی: ۳ مرداد ۱۴۰۵</small>

@@ -52,7 +52,7 @@ export default async function ShopPage() {
         <div className="sb-shell sb-shop-hero__grid">
           <div>
             <span className="sb-eyebrow">
-              SHOP / SEPIID BEAUTY
+              فروشگاه سپید بیوتی
             </span>
 
             <h1>فروشگاه سپید بیوتی</h1>

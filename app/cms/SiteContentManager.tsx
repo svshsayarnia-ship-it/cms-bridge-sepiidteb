@@ -56,7 +56,7 @@ export function SiteContentManager() {
   return (
     <section className="spb-site-content">
       <div className="spb-site-content__head">
-        <div><span>SEPIID MAGAZINE</span><h2>مدیریت مقاله‌های مجله سپید</h2></div>
+        <div><span>مدیریت محتوای مجله</span><h2>مدیریت مقاله‌های مجله سپید</h2></div>
         <button type="button" className="spb-button is-primary" disabled={saving} onClick={() => void save()}>
           {saving ? "در حال ذخیره…" : "ذخیره و انتشار"}
         </button>
@@ -72,35 +72,239 @@ export function SiteContentManager() {
           {content.header.navigation.map((item, index) => <div className="spb-inline-fields" key={`${item.href}-${index}`}>
             {field(`عنوان منو ${index + 1}`, item.label, (value) => { const navigation=[...content.header.navigation]; navigation[index]={...item,label:value}; setContent({...content,header:{...content.header,navigation}}); })}
             {field("لینک", item.href, (value) => { const navigation=[...content.header.navigation]; navigation[index]={...item,href:value}; setContent({...content,header:{...content.header,navigation}}); })}
-          </div>)}
-        </>}
-        {section === "footer" && <>
-          {field("عنوان کوچک پشتیبانی", content.footer.supportEyebrow, v => setContent({...content,footer:{...content.footer,supportEyebrow:v}}))}
-          {field("عنوان پشتیبانی", content.footer.supportTitle, v => setContent({...content,footer:{...content.footer,supportTitle:v}}))}
-          {field("توضیح پشتیبانی", content.footer.supportText, v => setContent({...content,footer:{...content.footer,supportText:v}}), true)}
-          {field("متن دکمه", content.footer.supportButtonLabel, v => setContent({...content,footer:{...content.footer,supportButtonLabel:v}}))}
-          {field("معرفی برند", content.footer.brandDescription, v => setContent({...content,footer:{...content.footer,brandDescription:v}}), true)}
-          {field("شماره تماس", content.footer.phone, v => setContent({...content,footer:{...content.footer,phone:v}}))}
-          {field("ساعات کاری", content.footer.hours, v => setContent({...content,footer:{...content.footer,hours:v}}))}
-          {field("متن حقوقی", content.footer.legalNotice, v => setContent({...content,footer:{...content.footer,legalNotice:v}}), true)}
-        </>}
-        {section === "home" && <>
-          {field("بالانویس Hero", content.home.hero.eyebrow, v => setContent({...content,home:{hero:{...content.home.hero,eyebrow:v}}}))}
-          {field("عنوان Hero", content.home.hero.title, v => setContent({...content,home:{hero:{...content.home.hero,title:v}}}), true)}
-          {field("توضیح Hero", content.home.hero.description, v => setContent({...content,home:{hero:{...content.home.hero,description:v}}}), true)}
-          {field("تصویر Hero", content.home.hero.image, v => setContent({...content,home:{hero:{...content.home.hero,image:v}}}))}
-          {field("ALT تصویر", content.home.hero.imageAlt, v => setContent({...content,home:{hero:{...content.home.hero,imageAlt:v}}}))}
-          {field("متن دکمه اصلی", content.home.hero.primaryCtaLabel, v => setContent({...content,home:{hero:{...content.home.hero,primaryCtaLabel:v}}}))}
-          {field("لینک دکمه اصلی", content.home.hero.primaryCtaHref, v => setContent({...content,home:{hero:{...content.home.hero,primaryCtaHref:v}}}))}
-        </>}
-        {section === "articles" && <MagazineManager
-          articles={content.articles}
-          selectedIndex={articleIndex}
-          onSelect={setArticleIndex}
-          onChange={(articles) => setContent({ ...content, articles })}
-        />}
-      </div>
-      {message && <p className="spb-site-content__message">{message}</p>}
-    </section>
+     �����$z{-���jם)}</b>
+          </p>
+        </aside>
+
+        <article className="sb-article-body">
+          <section className="sb-article-summary" id="summary">
+            <span>خلاصه سریع</span>
+            <p>{article.lead}</p>
+          </section>
+
+          {article.slug === neuramisModelsGuideSlug ? <NeuramisModelComparison /> : null}
+
+          <div className="sb-article-notice">
+            <strong>یادداشت ایمنی</strong>
+            <p>{article.notice}</p>
+          </div>
+
+          {parentGuide ? (
+            <div className="sb-article-parent-guide">
+              <span>راهنمای مادر این موضوع</span>
+              <Link href={`/guides/${parentGuide.slug}`}>
+                {parentGuide.title}
+                <ArrowIcon />
+              </Link>
+            </div>
+          ) : null}
+
+          {article.contentMode === "html" ? (
+            <section
+              className="sb-product-rich-text sb-article-html-content"
+              id="article-html"
+              dangerouslySetInnerHTML={{ __html: renderedHtmlContent }}
+            />
+          ) : article.sections.map((section, index) => (
+            <section id={`section-${index + 1}`} key={section.heading}>
+              <span className="sb-article-body__index">۰{index + 1}</span>
+              <h2>{section.heading}</h2>
+              {section.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+              {section.bullets && (
+                <ul>
+                  {section.bullets.map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+              {section.links?.length ? (
+                <div className="sb-article-parent-guide">
+                  <span>برای بررسی بیشتر</span>
+                  {section.links.map((link) => (
+                    <Link href={link.href} key={`${link.href}-${link.label}`}>
+                      {link.label}<ArrowIcon />
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+              {section.table && (
+                <div className="sb-article-table" role="region" aria-label={section.heading}>
+                  <table>
+                    <thead>
+                      <tr>
+                        {section.table.headers.map((header) => (
+                          <th scope="col" key={header}>{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.table.rows.map((row) => (
+                        <tr key={row.join("|")}>
+                          {row.map((cell, cellIndex) => (
+                            <td key={`${cellIndex}-${cell}`}>{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {section.subsections?.map((subsection) => (
+                <div className="sb-article-subsection" key={subsection.heading}>
+                  <h3>{subsection.heading}</h3>
+                  {subsection.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                  {subsection.bullets && (
+                    <ul>
+                      {subsection.bullets.map((bullet) => (
+                        <li key={bullet}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </section>
+          ))}
+
+          {article.contentMode !== "html" && article.faq?.length ? (
+            <section className="sb-article-faq" id="faq">
+                <span className="sb-eyebrow">پرسش‌های پرتکرار</span>
+              <h2>سؤال‌هایی که معمولاً پیش از تصمیم مطرح می‌شوند</h2>
+              <FaqList items={article.faq} />
+            </section>
+          ) : null}
+
+          {(article.contentMode !== "html" || (!hasEmbeddedSources && article.sources.length > 0)) ? <section className="sb-article-sources" id="sources">
+            <span className="sb-eyebrow">منابع این مطلب</span>
+            <h2>منابع مستقیم و قابل بررسی</h2>
+            <p>
+              لینک‌ها برای بررسی بیشتر ارائه شده‌اند. منابع ممکن است در آینده
+              به‌روزرسانی شوند؛ تاریخ بازبینی مقاله را بالای صفحه ببینید.
+            </p>
+            <ol>
+              {article.sources.map((source) => (
+                <li key={source.href}>
+                  <a href={source.href} rel="noreferrer" target="_blank">
+                    {source.label}
+                    <span>↗</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section> : null}
+
+          {article.cta?.label && article.cta.href ? (
+            <div className="sb-article-parent-guide">
+              <span>{article.cta.eyebrow || "ادامه مسیر"}</span>
+              {article.cta.text ? <p>{article.cta.text}</p> : null}
+              <Link href={article.cta.href}>{article.cta.label}<ArrowIcon /></Link>
+            </div>
+          ) : null}
+
+          <footer className="sb-article-author">
+            <span>نویسنده</span>
+            <div>
+              <strong>{article.authorName || "تحریریه سپید بیوتی"}</strong>
+              <p>
+                {article.reviewerName
+                  ? `بازبینی محتوا: ${article.reviewerName}${article.reviewerRole ? `، ${article.reviewerRole}` : ""}`
+                  : "محتوای آموزشی برای خرید آگاهانه؛ بدون معرفی پزشک یا بازبین ساختگی."}
+              </p>
+            </div>
+          </footer>
+        </article>
+      </section>
+
+      {relatedProducts.length > 0 && (
+        <section className="sb-section sb-article-products">
+          <div className="sb-shell">
+            <div className="sb-section-head">
+              <div>
+                <span className="sb-eyebrow">محصولات مرتبط</span>
+                <h2>مشاهده مشخصات محصولات مرتبط</h2>
+              </div>
+              <p>نمایش محصول به معنی مناسب‌بودن آن برای خواننده نیست.</p>
+            </div>
+            <div className="sb-product-grid sb-product-grid--three">
+              {relatedProducts.map((product) => (
+                <ProductCard product={product} key={product.slug} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="sb-section sb-related-articles">
+        <div className="sb-shell">
+          <div className="sb-section-head">
+            <div>
+              <span className="sb-eyebrow">مطالب مرتبط</span>
+              <h2>ادامه مسیر مطالعه</h2>
+            </div>
+            <Link className="sb-text-link" href="/magazine">
+              همه مقاله‌ها
+              <ArrowIcon />
+            </Link>
+          </div>
+          <div className="sb-article-grid sb-article-grid--two">
+            {relatedArticles.map((item) => (
+              <ArticleCard article={item} key={item.slug} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: article.title,
+          description: isNeuramisGuide(article.slug)
+            ? normalizeNeuramisModelCopy(article.excerpt)
+            : article.excerpt,
+          image: absoluteArticleImage(image),
+          inLanguage: "fa-IR",
+          author: {
+            "@type": "Organization",
+            name: article.authorName || "تحریریه سپید بیوتی",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "Sepiid Beauty",
+            url: siteOrigin,
+            logo: {
+              "@type": "ImageObject",
+              url: `${siteOrigin}/images/sepiid-logo.webp`,
+            },
+          },
+          datePublished: article.datePublished || "2026-07-25",
+          dateModified: article.dateModified || article.datePublished || "2026-07-25",
+          mainEntityOfPage: `${siteOrigin}${articlePath(article.slug)}`,
+        }}
+      />
+      {article.faq?.length ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: article.faq.map((item) => ({
+              "@type": "Question",
+              name: isNeuramisGuide(article.slug)
+                ? normalizeNeuramisModelCopy(item.question)
+                : item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: isNeuramisGuide(article.slug)
+                  ? normalizeNeuramisModelCopy(item.answer)
+                  : item.answer,
+              },
+            })),
+          }}
+        />
+      ) : null}
+    </main>
   );
 }

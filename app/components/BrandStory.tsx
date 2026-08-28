@@ -13,7 +13,7 @@ export function BrandStory() {
     <section className="sb-brand-story" aria-labelledby="brand-story-title">
       <div className="sb-shell sb-brand-story__grid">
         <div className="sb-brand-story__intro">
-          <span className="sb-eyebrow sb-eyebrow--gold">SEPIID METHOD / 03 STEPS</span>
+          <span className="sb-eyebrow sb-eyebrow--gold">روش انتخاب سپید</span>
           <h2 id="brand-story-title">خرید حرفه‌ای، از یک انتخاب روشن شروع می‌شود.</h2>
           <p>
             سپید بیوتی قرار نیست جای تصمیم تخصصی را بگیرد؛ فقط کمک می‌کند مسیر بررسی محصول،

@@ -67,7 +67,7 @@ export function PasswordResetForm({ login, resetKey }: { login: string; resetKey
       <section className="sb-account-hero">
         <div className="sb-shell sb-account-hero__grid">
           <div>
-            <span className="sb-eyebrow">PASSWORD RECOVERY</span>
+            <span className="sb-eyebrow">بازیابی دسترسی</span>
             <h1>انتخاب رمز جدید</h1>
             <p>رمز جدید فقط از مسیر امن حساب سپید بیوتی به WordPress ارسال می‌شود و نشست‌های قبلی حساب باطل می‌شوند.</p>
           </div>

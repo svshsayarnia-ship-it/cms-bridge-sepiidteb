@@ -24,7 +24,7 @@ export default function ProfessionalPage() {
       <section className="sb-professional-hero">
         <div className="sb-shell sb-professional-hero__grid">
           <div>
-            <span className="sb-eyebrow">FOR CLINICS / همکاری با کلینیک‌ها</span>
+            <span className="sb-eyebrow">همکاری با پزشکان و کلینیک‌ها</span>
             <h1>چند محصول می‌خواهید؟ همه را یک‌جا بفرستید.</h1>
             <p>
               اگر برای کلینیک یا مرکز زیبایی چند قلم می‌خواهید، لازم نیست برای هر محصول جدا پیام بدهید. اسم محصول، مدل، تعداد و زمانی که نیاز دارید را یک‌جا بفرستید تا موجودی و قیمت هر مورد را با هم جلو ببریم.

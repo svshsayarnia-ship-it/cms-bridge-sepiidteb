@@ -168,7 +168,7 @@ export default async function Home() {
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <span className="sb-eyebrow">SHOP BY CATEGORY</span>
+                <span className="sb-eyebrow">دسته‌بندی محصولات</span>
                 <h2>دنبال چه نوع محصولی هستید؟</h2>
               </div>
               <p>دسته موردنظر را باز کنید؛ مدل‌ها و قیمت‌ها همان‌جا جلوی چشم شماست.</p>
@@ -180,7 +180,6 @@ export default async function Home() {
                   key={category.slug}
                   slug={category.slug}
                   title={category.title}
-                  en={category.en}
                 />
               ))}
             </div>
@@ -227,10 +226,10 @@ export default async function Home() {
                 height="941"
                 loading="lazy"
               />
-              <span>PROFESSIONAL ACCESS</span>
+              <span>خرید حرفه‌ای برای کلینیک‌ها</span>
             </div>
             <div className="sb-professional-home__content">
-              <span className="sb-eyebrow">FOR CLINICS / پزشکان و کلینیک‌ها</span>
+              <span className="sb-eyebrow">برای پزشکان و کلینیک‌ها</span>
               <h2>چند قلم می‌خواهید؟ همه را یک‌جا بفرستید.</h2>
               <p>
                 اگر برای کلینیک چند محصول می‌خواهید، لازم نیست برای هرکدام جدا پیام بدهید. فهرست را یک‌جا بفرستید تا موجودی، مدل، قیمت و زمان تحویل هر قلم را در همان گفت‌وگو پیگیری کنیم.
@@ -254,7 +253,7 @@ export default async function Home() {
           <div className="sb-shell">
             <div className="sb-section-head sb-section-head--split">
               <div>
-                <span className="sb-eyebrow">SEPIID JOURNAL / 2026</span>
+                <span className="sb-eyebrow">از مجله سپید</span>
                 <h2>
                   جواب سؤال‌هایی که
                   <em>قبل از خرید پیش می‌آید.</em>
@@ -286,7 +285,7 @@ export default async function Home() {
 
       <section className="sb-section sb-brands-home">
         <div className="sb-shell">
-          <span className="sb-eyebrow">BRANDS / INDEX</span>
+          <span className="sb-eyebrow">برندهای موجود</span>
           <div className="sb-brands-home__row">
             {homeBrands.map((brand) => (
               <Link href={brand.href} key={brand.label}>
@@ -305,7 +304,7 @@ export default async function Home() {
         <section className="sb-section sb-faq-section">
           <div className="sb-shell sb-faq-section__grid">
             <div>
-              <span className="sb-eyebrow">QUESTIONS / ANSWERS</span>
+              <span className="sb-eyebrow">پاسخ به سؤال‌های رایج</span>
               <h2>چند سؤال رایج قبل از خرید</h2>
               <p>اگر جواب چیزی را اینجا پیدا نکردید، مستقیم از تیم سپید بپرسید.</p>
               <Link className="sb-text-link" href="/contact">

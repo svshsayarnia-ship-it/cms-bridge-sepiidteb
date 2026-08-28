@@ -54,7 +54,7 @@ export default async function GuidesPage() {
       <section className="sb-guides-hero">
         <div className="sb-shell sb-guides-hero__grid">
           <div>
-            <span className="sb-eyebrow">SEPIID DECISION GUIDE</span>
+            <span className="sb-eyebrow">راهنمای انتخاب سپید</span>
             <h1>اگر هنوز دقیقاً نمی‌دانید کدام محصول را باید ببینید، از اینجا شروع کنید.</h1>
             <p>
               این بخش برای زمانی است که اسم چند محصول را شنیده‌اید اما تفاوت دسته، مدل یا بسته‌ها هنوز روشن نیست. از موضوع یا نیاز شروع کنید و قدم‌به‌قدم به محصولات مرتبط برسید.
@@ -136,7 +136,7 @@ export default async function GuidesPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">START / CATEGORY</span>
+              <span className="sb-eyebrow">انتخاب از روی دسته</span>
               <h2>دسته‌ها را با سؤال درست مقایسه کنید.</h2>
             </div>
             <p>در هر گروه، معیار مقایسه کمی متفاوت است.</p>
@@ -152,7 +152,7 @@ export default async function GuidesPage() {
               return (
                 <article key={category.slug}>
                   <span>۰{index + 1}</span>
-                  <small>{category.en}</small>
+                  <small>راهنمای {category.title}</small>
                   <h3>{category.title}</h3>
                   <p>{editorial.intro}</p>
                   <div>
@@ -173,7 +173,7 @@ export default async function GuidesPage() {
       <section className="sb-guide-comparison">
         <div className="sb-shell sb-guide-comparison__grid">
           <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">BOUNDARIES / مرزها</span>
+            <span className="sb-eyebrow sb-eyebrow--gold">مرز این راهنما</span>
             <h2>شناخت محصول با انتخاب درمان یکی نیست.</h2>
           </div>
           <div className="sb-guide-comparison__cards">
@@ -201,7 +201,7 @@ export default async function GuidesPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">READ / NEXT</span>
+              <span className="sb-eyebrow">برای مطالعه بیشتر</span>
               <h2>سه مقاله برای شروع</h2>
             </div>
             <Link className="sb-text-link" href="/magazine">

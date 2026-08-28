@@ -10,7 +10,6 @@ type CategoryStoryCardProps = {
   index: number;
   slug: string;
   title: string;
-  en: string;
 };
 
 const categoryDetails: Record<
@@ -68,7 +67,6 @@ export function CategoryStoryCard({
   index,
   slug,
   title,
-  en,
 }: CategoryStoryCardProps) {
   const [previewed, setPreviewed] = useState(false);
   const detail = categoryDetails[slug] ?? {
@@ -108,7 +106,7 @@ export function CategoryStoryCard({
         </span>
         <div>
           <h3>{title}</h3>
-          <small>{en}</small>
+          <small>{detail.note}</small>
         </div>
         <span className="sb-category-card__arrow" aria-hidden="true">
           <ArrowIcon />

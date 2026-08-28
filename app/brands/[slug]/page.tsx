@@ -138,7 +138,7 @@ export default async function BrandPage({
 
       <header className="sb-content-landing__hero sb-brand-page__hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">BRAND / {brand.name}</span>
+          <span className="sb-eyebrow">صفحه برند {brand.name}</span>
           <h1>{brand.title}</h1>
           <p>{toPublicCopy(brand.intro)}</p>
           <div className="sb-brand-page__stats">

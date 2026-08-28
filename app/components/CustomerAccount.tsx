@@ -358,7 +358,7 @@ export function CustomerAccount({
       <section className="sb-account-hero">
         <div className="sb-shell sb-account-hero__grid">
           <div>
-            <span className="sb-eyebrow">SECURE CUSTOMER ACCOUNT</span>
+            <span className="sb-eyebrow">حساب کاربری</span>
             <h1>حساب کاربری سپید بیوتی</h1>
             <p>
               ورود با کد یک‌بارمصرف پیامکی انجام می‌شود و هر شماره موبایل فقط می‌تواند
@@ -392,7 +392,7 @@ export function CustomerAccount({
             {mode === "login" && (
               <form className="sb-account-form" onSubmit={verifyLoginOtp}>
                 <div>
-                  <span className="sb-eyebrow">SMS LOGIN</span>
+                  <span className="sb-eyebrow">ورود با پیامک</span>
                   <h2>ورود با کد پیامکی</h2>
                   <p>شماره موبایل حساب را وارد کن؛ ورود فقط با رمز یک‌بارمصرف انجام می‌شود.</p>
                 </div>
@@ -462,7 +462,7 @@ export function CustomerAccount({
             {mode === "forgot" && (
               <form className="sb-account-form" onSubmit={submitForgot}>
                 <div>
-                  <span className="sb-eyebrow">RECOVERY</span>
+                  <span className="sb-eyebrow">بازیابی حساب</span>
                   <h2>بازیابی رمز حساب</h2>
                   <p>برای مدیریت رمز WooCommerce، موبایل یا ایمیل حساب را وارد کن.</p>
                 </div>
@@ -480,7 +480,7 @@ export function CustomerAccount({
             {mode === "register" && (
               <form className="sb-account-form" onSubmit={submitRegister}>
                 <div>
-                  <span className="sb-eyebrow">VERIFIED REGISTER</span>
+                  <span className="sb-eyebrow">ساخت حساب</span>
                   <h2>ساخت حساب با شماره یکتا</h2>
                   <p>هر شماره فقط یک عضویت دارد و قبل از ساخت حساب باید همان شماره با SMS تأیید شود.</p>
                 </div>
@@ -642,7 +642,7 @@ export function CustomerAccount({
             {mode === "profile" && user && (
               <form className="sb-account-form" onSubmit={submitProfile}>
                 <div>
-                  <span className="sb-eyebrow">PROFILE</span>
+                  <span className="sb-eyebrow">مشخصات حساب</span>
                   <h2>مشخصات حساب</h2>
                   <p>شماره موبایل هویت ورود حساب است و تغییر آن نیاز به تأیید پیامکی دوباره دارد.</p>
                 </div>

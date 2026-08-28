@@ -326,7 +326,7 @@ export function PricingManager() {
     <section className="spb-pricing-manager" aria-busy={loading || Boolean(busy)}>
       <div className="spb-pricing-manager__head">
         <div>
-          <span>SMART MARKET PRICING</span>
+          <span>پایش قیمت بازار</span>
           <h2>پیشنهاد هوشمند قیمت بازار</h2>
           <p>
             قیمت‌ها ساعت ۹ و ۱۵ بررسی می‌شوند. یک منبع دقیق و به‌روز برای پیشنهاد کافی است؛

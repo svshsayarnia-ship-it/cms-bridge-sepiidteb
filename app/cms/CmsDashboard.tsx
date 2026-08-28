@@ -691,7 +691,7 @@ export function CmsDashboard({ userName }: { userName: string }) {
 
               <div className="spb-premium-panel">
                 <div>
-                  <span>PREMIUM PUBLISH CHECK</span>
+                  <span>چک‌لیست آماده‌سازی انتشار</span>
                   <h3>آماده‌سازی محصول برای نسخه پریمیوم سایت</h3>
                   <p>
                     قبل از انتشار، این چک‌لیست کمک می‌کند کارت محصول، صفحه محصول و
@@ -716,7 +716,7 @@ export function CmsDashboard({ userName }: { userName: string }) {
                     <input required value={selected.name} onChange={(event) => edit({ name: event.target.value })} />
                   </label>
                   <label>
-                    <span>SKU</span>
+                  <span>کد محصول (SKU)</span>
                     <input value={selected.sku} onChange={(event) => edit({ sku: event.target.value })} />
                   </label>
                   <label>

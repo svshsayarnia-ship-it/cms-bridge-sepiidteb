@@ -22,7 +22,7 @@ export default function ContactPage() {
       <section className="sb-contact-hero">
         <div className="sb-shell sb-contact-hero__grid">
           <div>
-            <span className="sb-eyebrow">CONTACT / SUPPORT</span>
+            <span className="sb-eyebrow">تماس و پشتیبانی</span>
             <h1>سؤالی دارید؟ مستقیم با خودمان حرف بزنید.</h1>
             <p>
               اسم محصول، مدل، تعداد و شهر مقصد را همان پیام اول بفرستید تا سریع‌تر بتوانیم موجودی و شرایط سفارش را برایتان چک کنیم.

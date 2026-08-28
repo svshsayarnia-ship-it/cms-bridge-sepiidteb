@@ -18,7 +18,7 @@ export default async function CmsLoginPage({
     <main id="main-content" className="spb-cms-login">
       <section className="spb-cms-login__panel" aria-labelledby="cms-login-title">
         <div className="spb-cms-login__brand">
-          <span>Sepiid CMS</span>
+          <span>مدیریت سپید بیوتی</span>
           <strong>ورود پنل مدیریت</strong>
         </div>
         <h1 id="cms-login-title">ورود امن به CMS سپید</h1>

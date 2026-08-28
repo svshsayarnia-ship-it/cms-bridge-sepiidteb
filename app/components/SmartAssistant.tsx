@@ -35,7 +35,7 @@ export function SmartAssistant() {
       {open && (
         <section id="sepiid-smart-assistant-panel" className="sb-smart-assistant__panel" aria-live="polite">
           <div className="sb-smart-assistant__head">
-            <div><span>SEPIID ASSIST</span><strong>دستیار هوشمند سپید</strong></div>
+            <div><span>کمک برای انتخاب</span><strong>دستیار سپید</strong></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="بستن دستیار">×</button>
           </div>
           {!answer ? (

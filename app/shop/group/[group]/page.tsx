@@ -126,7 +126,7 @@ export default async function ProductGroupPage({
       <section className="sb-page-hero sb-group-hero">
         <div className="sb-shell">
           <span className="sb-eyebrow">
-            {group.en}
+            گروه محصولات
           </span>
 
           <h1>{group.title}</h1>
@@ -150,7 +150,7 @@ export default async function ProductGroupPage({
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">
-                CATEGORY / COLLECTIONS
+                دسته‌های این گروه
               </span>
 
               <h2>
@@ -219,7 +219,7 @@ export default async function ProductGroupPage({
           <div className="sb-section-head">
             <div>
               <span className="sb-eyebrow">
-                PRODUCT / PICKS
+                چند پیشنهاد از این گروه
               </span>
 
               <h2>

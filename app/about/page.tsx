@@ -21,7 +21,7 @@ export default function AboutPage() {
       <section className="sb-about-hero">
         <div className="sb-shell sb-about-hero__grid">
           <div>
-            <span className="sb-eyebrow">ABOUT / SEPIID BEAUTY</span>
+            <span className="sb-eyebrow">درباره سپید بیوتی</span>
             <h1>سپید بیوتی برای انتخاب روشن‌تر ساخته شده است.</h1>
             <p>
               بازار محصولات حرفه‌ای زیبایی پر از نام‌های مشابه، مدل‌های متعدد و بسته‌هایی است که همیشه به‌سادگی قابل مقایسه نیستند. ما این جزئیات را کنار هم می‌آوریم تا قبل از خرید بدانید دقیقاً کدام محصول را می‌بینید.
@@ -44,7 +44,7 @@ export default function AboutPage() {
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">THE SEPIID STANDARD</span>
+              <span className="sb-eyebrow">معیارهای سپید بیوتی</span>
               <h2>سه چیزی که باید قبل از خرید روشن باشد</h2>
             </div>
           </div>

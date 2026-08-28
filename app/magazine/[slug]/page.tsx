@@ -399,14 +399,14 @@ export default async function ArticlePage({
 
           {article.contentMode !== "html" && article.faq?.length ? (
             <section className="sb-article-faq" id="faq">
-              <span className="sb-eyebrow">FAQ / پرسش‌های پرتکرار</span>
+                <span className="sb-eyebrow">پرسش‌های پرتکرار</span>
               <h2>سؤال‌هایی که معمولاً پیش از تصمیم مطرح می‌شوند</h2>
               <FaqList items={article.faq} />
             </section>
           ) : null}
 
           {(article.contentMode !== "html" || (!hasEmbeddedSources && article.sources.length > 0)) ? <section className="sb-article-sources" id="sources">
-            <span className="sb-eyebrow">SOURCES / منابع</span>
+            <span className="sb-eyebrow">منابع این مطلب</span>
             <h2>منابع مستقیم و قابل بررسی</h2>
             <p>
               لینک‌ها برای بررسی بیشتر ارائه شده‌اند. منابع ممکن است در آینده
@@ -451,7 +451,7 @@ export default async function ArticlePage({
           <div className="sb-shell">
             <div className="sb-section-head">
               <div>
-                <span className="sb-eyebrow">PRODUCT / REFERENCE</span>
+                <span className="sb-eyebrow">محصولات مرتبط</span>
                 <h2>مشاهده مشخصات محصولات مرتبط</h2>
               </div>
               <p>نمایش محصول به معنی مناسب‌بودن آن برای خواننده نیست.</p>
@@ -469,7 +469,7 @@ export default async function ArticlePage({
         <div className="sb-shell">
           <div className="sb-section-head">
             <div>
-              <span className="sb-eyebrow">KEEP READING</span>
+              <span className="sb-eyebrow">مطالب مرتبط</span>
               <h2>ادامه مسیر مطالعه</h2>
             </div>
             <Link className="sb-text-link" href="/magazine">

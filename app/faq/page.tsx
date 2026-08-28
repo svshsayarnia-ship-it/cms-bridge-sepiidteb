@@ -82,7 +82,7 @@ export default function FaqPage() {
 
       <header className="sb-content-landing__hero">
         <div className="sb-shell">
-          <span className="sb-eyebrow">FAQ / پرسش‌های متداول</span>
+          <span className="sb-eyebrow">پرسش‌های متداول</span>
           <h1>پرسش‌های متداول خرید از سپید بیوتی</h1>
           <p>
             پاسخ‌های کوتاه درباره قیمت، موجودی، اصالت و ارسال. اگر سؤال شما به یک مدل مشخص مربوط است، نام کامل آن را برای پشتیبانی بفرستید.
