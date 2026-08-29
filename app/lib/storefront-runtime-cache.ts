@@ -8,6 +8,7 @@ const PRODUCT_TTL_SECONDS = 60 * 60 * 24 * 30;
 const PRODUCT_INDEX_KEY = "products:index";
 const PRODUCT_INDEX_NAME = "cms-product-index";
 const PRODUCT_INDEX_MAX_ATTEMPTS = 3;
+const PUBLIC_CACHE_READ_TIMEOUT_MS = 350;
 
 function productKey(slug: string) {
   return `product:${slug.trim()}`;
@@ -19,6 +20,25 @@ function productTag(slug: string) {
 
 function cache() {
   return getCache({ namespace: CACHE_NAMESPACE });
+}
+
+// Runtime Cache is an optional freshness layer for public pages. A delayed
+// cache-region call must behave as a cache miss, not delay the first byte of
+// HTML. Confirmed CMS data is still available from the Next Data Cache and
+// checked-in fallback catalogue.
+async function readPublicCache(key: string): Promise<unknown> {
+  const cacheRead = cache().get(key).catch((error) => {
+    console.warn("[storefront-runtime-cache] read failed", {
+      key,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return undefined;
+  });
+  const timeout = new Promise<undefined>((resolve) => {
+    setTimeout(resolve, PUBLIC_CACHE_READ_TIMEOUT_MS);
+  });
+
+  return Promise.race([cacheRead, timeout]);
 }
 
 function isCmsProduct(value: unknown): value is CmsProduct {
@@ -62,6 +82,11 @@ async function getRuntimeStorefrontProductSlugs(): Promise<string[]> {
     });
     return [];
   }
+}
+
+async function getPublicRuntimeStorefrontProductSlugs(): Promise<string[]> {
+  const value = await readPublicCache(PRODUCT_INDEX_KEY);
+  return isProductSlugIndex(value) ? normalizeSlugs(value) : [];
 }
 
 async function ensureRuntimeStorefrontProductSlugs(slugs: string[]) {
@@ -126,7 +151,7 @@ export async function getRuntimeStorefrontProduct(
   if (!cleanSlug) return null;
 
   try {
-    const value = await cache().get(productKey(cleanSlug));
+    const value = await readPublicCache(productKey(cleanSlug));
     return isCmsProduct(value) ? value : null;
   } catch (error) {
     console.warn("[storefront-runtime-cache] read failed", {
@@ -144,7 +169,7 @@ export async function getRuntimeStorefrontProduct(
  * PDP reads, while the Next Data Cache remains the cross-request snapshot.
  */
 export async function getRuntimeStorefrontProducts(): Promise<CmsProduct[]> {
-  const slugs = await getRuntimeStorefrontProductSlugs();
+  const slugs = await getPublicRuntimeStorefrontProductSlugs();
   if (slugs.length === 0) return [];
 
   const products = await Promise.all(

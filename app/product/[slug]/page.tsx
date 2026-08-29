@@ -37,14 +37,9 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import { fillerCopyOverrides } from "../../lib/filler-copy";
-import {
-  getProductBySlug as getCmsProductBySlug,
-  WooCommerceError,
-} from "../../lib/woocommerce";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
 import {
   getRuntimeStorefrontProduct,
-  rememberRuntimeStorefrontProducts,
 } from "../../lib/storefront-runtime-cache";
 
 export const revalidate = 300;
@@ -197,36 +192,12 @@ const getLiveProduct = cache(async (
     return snapshot;
   }
 
-  try {
-    const product = await getCmsProductBySlug(slug, {
-      requestTimeoutMs: 35_000,
-      requestMaxAttempts: 1,
-    });
-
-    if (product) {
-      try {
-        await rememberRuntimeStorefrontProducts([product]);
-      } catch (cacheError) {
-        console.warn("[storefront-product] cold cache warm failed", {
-          slug,
-          error: cacheError instanceof Error ? cacheError.message : String(cacheError),
-        });
-      }
-    }
-
-    return product;
-  } catch (error) {
-    if (error instanceof WooCommerceError) {
-      console.warn("[storefront-product] live WooCommerce read failed", {
-        slug,
-        code: error.code,
-        status: error.status,
-      });
-      return null;
-    }
-
-    throw error;
-  }
+  // Public product pages never fetch WooCommerce on demand. A CMS mutation
+  // writes and verifies its storefront snapshot before revalidating routes;
+  // if that snapshot is unavailable, the checked-in catalogue remains the
+  // safe fallback. This keeps crawler and customer TTFB independent of a
+  // slow WordPress origin.
+  return null;
 });
 
 function isUsableLiveProduct(
