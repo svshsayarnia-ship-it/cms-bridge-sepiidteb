@@ -247,8 +247,14 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
 async function loadRemoteSitePresentation() {
   return normalizeSitePresentation(
     await getRemotePresentation({
-      requestTimeoutMs: 12_000,
-      requestMaxAttempts: 2,
+      // This runs in the public layout.  The application already ships a
+      // complete, safe presentation fallback, so a slow WordPress response
+      // must never turn into multi-second TTFB for visitors or crawlers.
+      // CMS mutations explicitly invalidate this cache; a successful quick
+      // response is still picked up without making every first visit wait for
+      // a remote system.
+      requestTimeoutMs: 1_500,
+      requestMaxAttempts: 1,
     }),
   );
 }
@@ -256,7 +262,7 @@ async function loadRemoteSitePresentation() {
 const getCachedSitePresentation = unstable_cache(
   loadRemoteSitePresentation,
   ["site-presentation-v5-newest-article-wins"],
-  { revalidate: 300, tags: ["site-presentation"] },
+  { revalidate: 3600, tags: ["site-presentation"] },
 );
 
 export const getSitePresentation = cache(async () => {

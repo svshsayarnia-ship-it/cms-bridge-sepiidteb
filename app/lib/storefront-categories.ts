@@ -9,7 +9,10 @@ import { listCategories } from "./woocommerce";
 
 export const STOREFRONT_CATEGORIES_TAG =
   "storefront-categories";
-const PUBLIC_WOO_TIMEOUT_MS = 6_000;
+// Category edits are tag-invalidated after a confirmed CMS write.  On the
+// storefront, prefer the complete checked-in category data to holding up the
+// entire page while WordPress is slow or temporarily unavailable.
+const PUBLIC_WOO_TIMEOUT_MS = 1_500;
 
 export type StorefrontCategory =
   Category & {
@@ -87,7 +90,7 @@ const getCachedStorefrontCategories =
     loadStorefrontCategories,
     ["storefront-categories-v3"],
     {
-      revalidate: 300,
+      revalidate: 3600,
       tags: [
         STOREFRONT_CATEGORIES_TAG,
       ],
