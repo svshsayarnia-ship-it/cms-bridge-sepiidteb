@@ -4,7 +4,7 @@ Tags: woocommerce, rest-api, cms, media
 Requires at least: 6.9
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.8.11
+Stable tag: 1.8.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,11 @@ Sepiid Product Bridge قابلیت‌های تکمیلی موردنیاز Sepiid
 صحیح است. مرورگر بدون Consumer Key و Consumer Secret نباید به این مسیر دسترسی داشته باشد. آزمون واقعی باید از CMS یا ابزار API امن انجام شود.
 
 == Changelog ==
+
+= 1.8.12 =
+
+* شناسایی حساب‌های قدیمی از متادیتای رایج افزونه‌های ورود موبایلی، از جمله `digits_phone` و `digits_phone_no`.
+* محدودکردن جست‌وجوی شماره به کلیدهای شناخته‌شده و حفظ تشخیص تعارض بین حساب‌ها.
 
 = 1.8.11 =
 

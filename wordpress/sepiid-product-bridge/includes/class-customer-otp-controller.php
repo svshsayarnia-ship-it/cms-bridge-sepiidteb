@@ -390,8 +390,23 @@ final class Customer_Otp_Controller {
 		}
 
 		global $wpdb;
+		$legacy_meta_keys = array(
+			'billing_phone',
+			'digits_phone',
+			'digits_phone_no',
+			'digt_phone',
+			'digt_phone_no',
+			'phone',
+			'mobile',
+			'mobile_number',
+			'user_phone',
+		);
+		$placeholders = implode( ', ', array_fill( 0, count( $legacy_meta_keys ), '%s' ) );
 		$rows = $wpdb->get_results(
-			"SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = 'billing_phone' AND meta_value <> ''"
+			$wpdb->prepare(
+				"SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key IN ({$placeholders}) AND meta_value <> ''",
+				$legacy_meta_keys
+			)
 		);
 		foreach ( $rows as $row ) {
 			if ( ! hash_equals( $phone, $this->normalize_phone( (string) $row->meta_value ) ) ) {
