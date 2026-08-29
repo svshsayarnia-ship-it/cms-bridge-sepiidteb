@@ -310,6 +310,16 @@ final class Customer_Otp_Controller {
 		if ( ! $user ) {
 			return $this->invalid_otp();
 		}
+
+		// Successful OTP verification proves ownership of the number. Persist the
+		// canonical value so legacy accounts that used the phone as user_login are
+		// indexed by the current account system from this point forward.
+		$verified_phone = $this->normalize_phone( (string) $data['phone'] );
+		if ( $this->is_valid_phone( $verified_phone ) ) {
+			update_user_meta( (int) $user->ID, 'billing_phone', $verified_phone );
+			update_user_meta( (int) $user->ID, 'sepiid_phone_normalized', $verified_phone );
+		}
+
 		return $this->success(
 			array(
 				'token' => $this->create_session( $user, $request ),
@@ -356,6 +366,17 @@ final class Customer_Otp_Controller {
 	 */
 	private function find_users_by_phone( $phone ) {
 		$matched = array();
+
+		// Older WooCommerce/SMS setups commonly stored the mobile number as the
+		// WordPress username without also populating billing_phone. Keep those
+		// accounts login-compatible across the common Iranian number formats.
+		foreach ( $this->legacy_phone_login_candidates( $phone ) as $login ) {
+			$user = get_user_by( 'login', $login );
+			if ( $user ) {
+				$matched[ (int) $user->ID ] = $user;
+			}
+		}
+
 		$indexed = get_users(
 			array(
 				'number'      => 10,
@@ -383,6 +404,30 @@ final class Customer_Otp_Controller {
 		}
 		ksort( $matched, SORT_NUMERIC );
 		return array_values( $matched );
+	}
+
+	/**
+	 * Return historic username forms for a canonical Iranian mobile number.
+	 *
+	 * @param string $phone Canonical 09xxxxxxxxx phone.
+	 * @return string[]
+	 */
+	private function legacy_phone_login_candidates( $phone ) {
+		if ( ! $this->is_valid_phone( $phone ) ) {
+			return array();
+		}
+
+		$national = substr( $phone, 1 );
+		return array_values(
+			array_unique(
+				array(
+					$phone,
+					'98' . $national,
+					'+98' . $national,
+					$national,
+				)
+			)
+		);
 	}
 
 	/** @return int */

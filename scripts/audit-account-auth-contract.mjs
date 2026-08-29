@@ -34,7 +34,15 @@ const checks = [
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-customer-otp-controller.php",
-    needles: ["/auth/otp/request", "/auth/otp/verify", "sepiid_send_otp_sms", "random_int( 100000, 999999 )"],
+    needles: [
+      "/auth/otp/request",
+      "/auth/otp/verify",
+      "sepiid_send_otp_sms",
+      "random_int( 100000, 999999 )",
+      "legacy_phone_login_candidates",
+      "get_user_by( 'login', $login )",
+      "update_user_meta( (int) $user->ID, 'sepiid_phone_normalized', $verified_phone )",
+    ],
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",
