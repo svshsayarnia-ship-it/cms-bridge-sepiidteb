@@ -366,6 +366,24 @@ final class Customer_Otp_Controller {
 	 */
 	private function find_users_by_phone( $phone ) {
 		$matched = array();
+		global $wpdb;
+
+		// The registration flow reserves and attaches each verified number in this
+		// table. Consult it first so OTP login follows the same source of truth as
+		// registration even if older profile metadata is incomplete.
+		$identity_table = $wpdb->prefix . 'sepiid_customer_identity';
+		$identity_ids   = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT user_id FROM {$identity_table} WHERE phone_normalized = %s AND user_id IS NOT NULL",
+				$phone
+			)
+		);
+		foreach ( $identity_ids as $identity_id ) {
+			$user = get_user_by( 'id', (int) $identity_id );
+			if ( $user ) {
+				$matched[ (int) $user->ID ] = $user;
+			}
+		}
 
 		// Older WooCommerce/SMS setups commonly stored the mobile number as the
 		// WordPress username without also populating billing_phone. Keep those
@@ -389,7 +407,6 @@ final class Customer_Otp_Controller {
 			$matched[ (int) $user->ID ] = $user;
 		}
 
-		global $wpdb;
 		$legacy_meta_keys = array(
 			'billing_phone',
 			'digits_phone',

@@ -41,11 +41,17 @@ const checks = [
       "random_int( 100000, 999999 )",
       "legacy_phone_login_candidates",
       "get_user_by( 'login', $login )",
+      "sepiid_customer_identity",
+      "phone_normalized = %s AND user_id IS NOT NULL",
       "'digits_phone'",
       "'digits_phone_no'",
       "WHERE meta_key IN ({$placeholders})",
       "update_user_meta( (int) $user->ID, 'sepiid_phone_normalized', $verified_phone )",
     ],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/includes/class-customer-auth-controller.php",
+    needles: ["update_user_meta( $user_id, 'sepiid_phone_normalized', $phone )"],
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",

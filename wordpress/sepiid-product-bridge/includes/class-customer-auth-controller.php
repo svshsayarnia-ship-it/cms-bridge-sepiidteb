@@ -326,6 +326,7 @@ final class Customer_Auth_Controller {
 		update_user_meta( $user_id, 'billing_first_name', $first_name );
 		update_user_meta( $user_id, 'billing_last_name', $last_name );
 		update_user_meta( $user_id, 'billing_phone', $phone );
+		update_user_meta( $user_id, 'sepiid_phone_normalized', $phone );
 		update_user_meta( $user_id, 'billing_city', $city );
 		update_user_meta( $user_id, 'sepiid_clinic_name', $clinic_name );
 		update_user_meta( $user_id, 'sepiid_account_type', $account_type );
