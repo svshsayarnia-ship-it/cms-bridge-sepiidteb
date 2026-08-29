@@ -120,15 +120,26 @@ final class Customer_Auth_Controller {
 			return $this->error( 'sepiid_registration_failed', 'ساخت حساب انجام نشد. دوباره تلاش کن.', 400 );
 		}
 
-		$this->save_profile( $user_id, $full_name, $phone, $city, $clinic_name, $account_type );
+		$profile_saved = $this->save_profile( $user_id, $full_name, $phone, $city, $clinic_name, $account_type );
+		if ( is_wp_error( $profile_saved ) ) {
+			$this->audit( 'registration_profile_failed', $user_id, $phone );
+			return $this->error( 'sepiid_registration_incomplete', 'حساب ساخته شد اما اطلاعات آن کامل ذخیره نشد. دوباره تلاش کن.', 500 );
+		}
 		$user = get_user_by( 'id', $user_id );
 		if ( ! $user ) {
+			$this->audit( 'registration_user_missing', $user_id, $phone );
 			return $this->error( 'sepiid_registration_failed', 'ساخت حساب تکمیل نشد.', 500 );
 		}
+		$token = $this->create_session( $user, $request );
+		if ( is_wp_error( $token ) ) {
+			$this->audit( 'registration_session_failed', $user_id, $phone );
+			return $this->error( 'sepiid_registration_incomplete', 'حساب ساخته شد اما ورود خودکار کامل نشد. از ورود با پیامک استفاده کن.', 500 );
+		}
+		$this->audit( 'registration_completed', $user_id, $phone );
 
 		return $this->success(
 			array(
-				'token' => $this->create_session( $user, $request ),
+				'token' => $token,
 				'user'  => $this->public_user( $user ),
 			),
 			201
@@ -163,9 +174,14 @@ final class Customer_Auth_Controller {
 			return $this->invalid_credentials();
 		}
 
+		$token = $this->create_session( $authenticated, $request );
+		if ( is_wp_error( $token ) ) {
+			return $this->error( 'sepiid_login_incomplete', 'ورود کامل نشد. دوباره تلاش کن.', 500 );
+		}
+
 		return $this->success(
 			array(
-				'token' => $this->create_session( $authenticated, $request ),
+				'token' => $token,
 				'user'  => $this->public_user( $authenticated ),
 			)
 		);
@@ -228,8 +244,16 @@ final class Customer_Auth_Controller {
 			return $this->error( 'sepiid_phone_in_use', 'این شماره موبایل به حساب دیگری متصل است.', 409 );
 		}
 
-		$this->save_profile( $user_id, $full_name, $phone, $city, $clinic_name, $account_type );
+		$profile_saved = $this->save_profile( $user_id, $full_name, $phone, $city, $clinic_name, $account_type );
+		if ( is_wp_error( $profile_saved ) ) {
+			$this->audit( 'profile_save_failed', $user_id, $phone );
+			return $this->error( 'sepiid_profile_incomplete', 'ذخیره اطلاعات حساب کامل نشد. دوباره تلاش کن.', 500 );
+		}
 		$user = get_user_by( 'id', $user_id );
+		if ( ! $user ) {
+			$this->audit( 'profile_user_missing', $user_id, $phone );
+			return $this->error( 'sepiid_profile_incomplete', 'حساب کاربری پیدا نشد. دوباره وارد شو.', 500 );
+		}
 		return $this->success( array( 'user' => $this->public_user( $user ) ) );
 	}
 
@@ -308,14 +332,14 @@ final class Customer_Auth_Controller {
 	 * @param string $city City.
 	 * @param string $clinic_name Clinic.
 	 * @param string $account_type Account type.
-	 * @return void
+	 * @return true|\WP_Error
 	 */
 	private function save_profile( $user_id, $full_name, $phone, $city, $clinic_name, $account_type ) {
 		$parts      = preg_split( '/\s+/u', trim( $full_name ), 2 );
 		$first_name = isset( $parts[0] ) ? $parts[0] : '';
 		$last_name  = isset( $parts[1] ) ? $parts[1] : '';
 
-		wp_update_user(
+		$updated = wp_update_user(
 			array(
 				'ID'           => $user_id,
 				'display_name' => $full_name,
@@ -323,6 +347,9 @@ final class Customer_Auth_Controller {
 				'last_name'    => $last_name,
 			)
 		);
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
 		update_user_meta( $user_id, 'billing_first_name', $first_name );
 		update_user_meta( $user_id, 'billing_last_name', $last_name );
 		update_user_meta( $user_id, 'billing_phone', $phone );
@@ -330,12 +357,18 @@ final class Customer_Auth_Controller {
 		update_user_meta( $user_id, 'billing_city', $city );
 		update_user_meta( $user_id, 'sepiid_clinic_name', $clinic_name );
 		update_user_meta( $user_id, 'sepiid_account_type', $account_type );
+
+		$stored_phone = $this->normalize_phone( (string) get_user_meta( $user_id, 'billing_phone', true ) );
+		if ( ! hash_equals( $phone, $stored_phone ) ) {
+			return new \WP_Error( 'sepiid_profile_not_persisted', 'شماره موبایل حساب ذخیره نشد.' );
+		}
+		return true;
 	}
 
 	/**
 	 * @param \WP_User         $user User.
 	 * @param \WP_REST_Request $request Request.
-	 * @return string
+	 * @return string|\WP_Error
 	 */
 	private function create_session( $user, $request ) {
 		global $wpdb;
@@ -346,7 +379,7 @@ final class Customer_Auth_Controller {
 		$now        = gmdate( 'Y-m-d H:i:s' );
 		$expires    = gmdate( 'Y-m-d H:i:s', time() + self::SESSION_TTL );
 
-		$wpdb->insert(
+		$inserted = $wpdb->insert(
 			$this->table_name,
 			array(
 				'token_hash'      => $token_hash,
@@ -359,9 +392,19 @@ final class Customer_Auth_Controller {
 			),
 			array( '%s', '%d', '%s', '%s', '%s', '%s', '%s' )
 		);
+		if ( false === $inserted ) {
+			return new \WP_Error( 'sepiid_session_not_persisted', 'نشست حساب ذخیره نشد.' );
+		}
 
 		$this->trim_user_sessions( (int) $user->ID );
 		return $token;
+	}
+
+	/** @return void */
+	private function audit( $event, $user_id, $phone ) {
+		error_log(
+			'[Sepiid customer auth] ' . $event . ' user=' . (int) $user_id . ' phone_hash=' . substr( hash( 'sha256', (string) $phone ), 0, 12 )
+		);
 	}
 
 	/**

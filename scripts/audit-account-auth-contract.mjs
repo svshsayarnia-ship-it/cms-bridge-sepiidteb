@@ -28,6 +28,9 @@ const checks = [
       'accountRequest<OtpRequestResult>("otp-request"',
       'accountRequest<OtpVerifyResult>("otp-verify"',
       'accountRequest<{ user: CustomerUser }>("register"',
+      'await completeRegistration(result.phoneProof)',
+      'function registrationValidationError()',
+      'normalizeIranMobileInput(result.user.phone) !== profile.phone',
       '"profile"',
       '"logout"',
     ],
@@ -51,7 +54,20 @@ const checks = [
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-customer-auth-controller.php",
-    needles: ["update_user_meta( $user_id, 'sepiid_phone_normalized', $phone )"],
+    needles: [
+      "update_user_meta( $user_id, 'sepiid_phone_normalized', $phone )",
+      "sepiid_registration_incomplete",
+      "sepiid_session_not_persisted",
+      "registration_completed",
+      "phone_hash=",
+    ],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/includes/class-customer-identity-controller.php",
+    needles: [
+      "const RESERVATION_TTL = 1200",
+      "user_id IS NULL AND created_at < %s",
+    ],
   },
   {
     file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",

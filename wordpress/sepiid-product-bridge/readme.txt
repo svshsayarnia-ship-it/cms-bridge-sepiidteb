@@ -4,7 +4,7 @@ Tags: woocommerce, rest-api, cms, media
 Requires at least: 6.9
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.8.13
+Stable tag: 1.8.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 

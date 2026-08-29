@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 final class Customer_Identity_Controller {
 	const SCHEMA_VERSION = 1;
+	const RESERVATION_TTL = 1200;
 
 	/** @var string */
 	private $table_name;
@@ -89,6 +90,16 @@ final class Customer_Identity_Controller {
 		}
 
 		global $wpdb;
+		// A fatal error or an interrupted response must not permanently reserve a
+		// verified phone. Active proofs live for ten minutes, so twenty minutes is
+		// enough to preserve an in-flight request while recovering abandoned rows.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$this->table_name} WHERE phone_normalized = %s AND user_id IS NULL AND created_at < %s",
+				$phone,
+				gmdate( 'Y-m-d H:i:s', time() - self::RESERVATION_TTL )
+			)
+		);
 		$now = gmdate( 'Y-m-d H:i:s' );
 		$inserted = $wpdb->query(
 			$wpdb->prepare(

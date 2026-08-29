@@ -90,6 +90,17 @@ export function CustomerAccount({
   const registerPhoneError = iranMobileValidationMessage(profile.phone);
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
+  function registrationValidationError() {
+    if (!registerPhoneValid) return "شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.";
+    if (!profile.fullName.trim()) return "نام و نام خانوادگی را وارد کن.";
+    if (!profile.email.trim()) return "ایمیل را وارد کن.";
+    if (emailHasPersianInput) return "به نظر می‌رسد کیبورد روی فارسی است. ایمیل را با کیبورد English وارد کن.";
+    if (passwordHasPersianInput || confirmPasswordHasPersianInput) return "به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.";
+    if (!passwordPolicy.valid) return "رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.";
+    if (!passwordsMatch) return "تکرار رمز عبور با رمز انتخاب‌شده یکسان نیست.";
+    return null;
+  }
+
   useEffect(() => {
     if (initialUser) return;
 
@@ -153,6 +164,13 @@ export function CustomerAccount({
       setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
       return;
     }
+    if (purpose === "register") {
+      const validationError = registrationValidationError();
+      if (validationError) {
+        setMessage(validationError);
+        return;
+      }
+    }
 
     setPending(true);
     setMessage("");
@@ -210,56 +228,10 @@ export function CustomerAccount({
     }
   }
 
-  async function verifyRegisterOtp() {
-    if (!registerPhoneValid) {
-      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
-      return;
-    }
-
-    setPending(true);
-    setMessage("");
-    try {
-      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
-        challenge: registerChallenge,
-        code: registerCode,
-        purpose: "register",
-      });
-      if (!result.phoneProof) throw new Error("تأیید شماره تکمیل نشد. دوباره کد بگیر.");
-      setPhoneProof(result.phoneProof);
-      setRegisterCode("");
-      setMessage("شماره موبایل تأیید شد. حالا می‌توانی عضویت را کامل کنی.");
-    } catch (error) {
-      setPhoneProof("");
-      setMessage(errorMessage(error));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function submitRegister(event: FormEvent) {
-    event.preventDefault();
-    if (!registerPhoneValid) {
-      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
-      return;
-    }
-    if (!phoneProof) {
-      setMessage("قبل از ساخت حساب، شماره موبایل را با کد پیامکی تأیید کن.");
-      return;
-    }
-    if (emailHasPersianInput) {
-      setMessage("به نظر می‌رسد کیبورد روی فارسی است. ایمیل را با کیبورد English وارد کن.");
-      return;
-    }
-    if (passwordHasPersianInput || confirmPasswordHasPersianInput) {
-      setMessage("به نظر می‌رسد کیبورد روی فارسی است. برای رمز عبور کیبورد را روی English بگذار.");
-      return;
-    }
-    if (!passwordPolicy.valid) {
-      setMessage("رمز باید حداقل ۱۰ کاراکتر، شامل حرف انگلیسی و عدد انگلیسی و حداقل سه گروه کاراکتری باشد.");
-      return;
-    }
-    if (!passwordsMatch) {
-      setMessage("تکرار رمز عبور با رمز انتخاب‌شده یکسان نیست.");
+  async function completeRegistration(proof: string) {
+    const validationError = registrationValidationError();
+    if (validationError) {
+      setMessage(validationError);
       return;
     }
 
@@ -274,14 +246,18 @@ export function CustomerAccount({
         city: profile.city,
         clinicName: profile.clinicName,
         accountType: profile.accountType,
-        phoneProof,
+        phoneProof: proof,
       });
+      if (!result.user?.id || normalizeIranMobileInput(result.user.phone) !== profile.phone) {
+        throw new Error("ساخت حساب کامل نشد. دوباره تلاش کن.");
+      }
       setUser(result.user);
       setProfile(profileFromUser(result.user));
       setPassword("");
       setConfirmPassword("");
       setPhoneProof("");
       setRegisterChallenge("");
+      setRegisterCode("");
       setMode("profile");
       setMessage("حساب ساخته شد و شماره موبایل به‌صورت یکتا به همین حساب متصل شد.");
     } catch (error) {
@@ -289,6 +265,39 @@ export function CustomerAccount({
     } finally {
       setPending(false);
     }
+  }
+
+  async function verifyRegisterOtp() {
+    if (!registerPhoneValid) {
+      setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<OtpVerifyResult>("otp-verify", {
+        challenge: registerChallenge,
+        code: registerCode,
+        purpose: "register",
+      });
+      if (!result.phoneProof) throw new Error("تأیید شماره تکمیل نشد. دوباره کد بگیر.");
+      setPhoneProof(result.phoneProof);
+      setRegisterCode("");
+      await completeRegistration(result.phoneProof);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function submitRegister(event: FormEvent) {
+    event.preventDefault();
+    if (!phoneProof) {
+      setMessage("برای ساخت حساب، ابتدا کد تأیید موبایل را وارد کن.");
+      return;
+    }
+    void completeRegistration(phoneProof);
   }
 
   async function submitProfile(event: FormEvent) {
@@ -578,7 +587,7 @@ export function CustomerAccount({
                   <button
                     type="button"
                     className="sb-btn sb-btn--ghost"
-                    disabled={pending || !registerPhoneValid}
+                    disabled={pending || Boolean(registrationValidationError())}
                     onClick={() => void requestOtp("register")}
                   >
                     {pending ? "در حال ارسال..." : "ارسال کد تأیید موبایل"}
@@ -610,7 +619,7 @@ export function CustomerAccount({
                   </div>
                 )}
 
-                {phoneProof && <p className="sb-account-message" role="status">شماره موبایل تأیید شده است.</p>}
+                {phoneProof && <p className="sb-account-message" role="status">شماره تأیید شد؛ ساخت حساب کامل نشده است. دوباره تلاش کن.</p>}
                 <p className="sb-account-note">
                   رمز حداقل ۱۰ کاراکتر باشد، حتماً یک حرف انگلیسی و یک عدد انگلیسی داشته باشد و از حداقل سه گروهِ حروف کوچک، حروف بزرگ، عدد یا نشانه تشکیل شود.
                 </p>
@@ -633,7 +642,7 @@ export function CustomerAccount({
                     emailHasPersianInput
                   }
                 >
-                  {pending ? "در حال ساخت حساب..." : "ساخت حساب"}
+                  {pending ? "در حال ساخت حساب..." : phoneProof ? "تلاش دوباره برای ساخت حساب" : "ساخت حساب"}
                 </button>
                 <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>بازیابی رمز حساب</button>
               </form>
