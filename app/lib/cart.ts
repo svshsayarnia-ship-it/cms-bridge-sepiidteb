@@ -11,16 +11,35 @@ export type CartProduct = {
 };
 
 export type CartItem = CartProduct & { quantity: number };
+export type CartTarget = string | Pick<CartItem, "slug" | "volume">;
+
 const CART_KEY = "sepiid-beauty-cart-v2";
 const CART_EVENT = "sepiid-cart-updated";
+
+export function cartItemKey(item: Pick<CartItem, "slug" | "volume">) {
+  return `${item.slug}::${item.volume ?? "default"}`;
+}
+
+function sameCartItem(item: CartItem, target: CartTarget) {
+  if (typeof target === "string") {
+    return cartItemKey(item) === target || item.slug === target;
+  }
+  return cartItemKey(item) === cartItemKey(target);
+}
 
 export function readCart(): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
     const value = JSON.parse(window.localStorage.getItem(CART_KEY) ?? "[]");
-    return Array.isArray(value)
-      ? value.filter((item) => item && typeof item.slug === "string" && item.quantity > 0)
-      : [];
+    if (!Array.isArray(value)) return [];
+
+    return value
+      .filter((item) => item && typeof item.slug === "string" && Number(item.quantity) > 0)
+      .map((item) => ({
+        ...item,
+        quantity: Math.min(99, Math.max(1, Math.trunc(Number(item.quantity)))),
+        priceToman: Number(item.priceToman) > 0 ? Number(item.priceToman) : undefined,
+      }));
   } catch {
     return [];
   }
@@ -33,22 +52,35 @@ function notify(items: CartItem[]) {
 
 export function addToCart(product: CartProduct, quantity = 1) {
   const items = readCart();
-  const existing = items.find((item) => item.slug === product.slug && item.volume === product.volume);
-  if (existing) existing.quantity += quantity;
-  else items.push({ ...product, quantity });
+  const existing = items.find((item) => cartItemKey(item) === cartItemKey(product));
+  if (existing) existing.quantity = Math.min(99, existing.quantity + Math.max(1, quantity));
+  else items.push({ ...product, quantity: Math.max(1, quantity) });
   notify(items);
 }
 
-export function updateCartQuantity(slug: string, quantity: number) {
-  notify(readCart().map((item) => item.slug === slug ? { ...item, quantity } : item).filter((item) => item.quantity > 0));
+export function updateCartQuantity(target: CartTarget, quantity: number) {
+  const safeQuantity = Math.min(99, Math.max(0, Math.trunc(Number(quantity))));
+  notify(
+    readCart()
+      .map((item) => sameCartItem(item, target) ? { ...item, quantity: safeQuantity } : item)
+      .filter((item) => item.quantity > 0),
+  );
 }
 
-export function removeFromCart(slug: string) {
-  notify(readCart().filter((item) => item.slug !== slug));
+export function removeFromCart(target: CartTarget) {
+  notify(readCart().filter((item) => !sameCartItem(item, target)));
 }
 
 export function cartCount(items = readCart()) {
   return items.reduce((total, item) => total + item.quantity, 0);
+}
+
+export function cartSubtotal(items = readCart()) {
+  return items.reduce((total, item) => total + (item.priceToman ?? 0) * item.quantity, 0);
+}
+
+export function cartHasUnknownPrice(items = readCart()) {
+  return items.some((item) => !item.priceToman || item.priceToman <= 0);
 }
 
 export function onCartUpdated(callback: () => void) {
