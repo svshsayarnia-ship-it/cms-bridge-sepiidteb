@@ -7,6 +7,7 @@ import type { Product, ProductVariant } from "../data";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
+import { AddToCartButton } from "./AddToCartButton";
 
 type Pricing = {
   label: string;
@@ -42,6 +43,7 @@ type ProductExperienceVariant = Pick<
 
 export type ProductExperienceProduct = Pick<
   Product,
+  | "slug"
   | "nameFa"
   | "nameEn"
   | "brand"
@@ -444,6 +446,15 @@ export function ProductVariantExperience({
                 <ArrowIcon />
               </Link>
             </div>
+            <AddToCartButton product={{
+              slug: product.slug,
+              nameFa: displayName,
+              nameEn: displayNameEn,
+              brand: product.brand,
+              image: displayImage,
+              volume: displayVolume,
+              priceToman: selectedVariant?.priceToman ?? product.priceToman,
+            }} />
             <p className="sb-product-summary__notice">
               ویژه استفاده حرفه‌ای
             </p>

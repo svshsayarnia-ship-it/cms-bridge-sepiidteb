@@ -12,6 +12,7 @@ import {
 } from "../lib/public-copy";
 import { ArrowIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
+import { addToCart } from "../lib/cart";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
@@ -90,6 +91,15 @@ export function ProductCard({
   );
   const visiblePrice =
     salePrice || regularPrice || numericPrice(product.priceToman);
+  const cartProduct = {
+    slug: product.slug,
+    nameFa: product.nameFa,
+    nameEn: product.nameEn,
+    brand,
+    image: displayProduct.image,
+    volume,
+    priceToman: visiblePrice ?? undefined,
+  };
 
   return (
     <article className="sb-product-card" data-category={product.category}>
@@ -171,6 +181,9 @@ export function ProductCard({
             <ArrowIcon />
           </Link>
         </div>
+        <button className="sb-product-card__cart" type="button" onClick={() => addToCart(cartProduct)}>
+          افزودن به سبد خرید
+        </button>
       </div>
     </article>
   );

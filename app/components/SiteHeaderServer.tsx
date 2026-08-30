@@ -2,6 +2,7 @@ import type { Category } from "../data";
 import type { PublicProduct } from "../lib/public-product";
 import type { SitePresentation } from "../lib/site-presentation";
 import { SiteHeader } from "./SiteHeader";
+import { getCustomerUser } from "../lib/customer-auth";
 
 type HeaderCategory = Pick<Category, "slug" | "title" | "en">;
 
@@ -29,7 +30,7 @@ type HeaderProduct = Pick<
  * below. Keeping category/profile/scale/offset metadata prevents search results
  * from silently falling back to a different image geometry than cards/PDPs.
  */
-export function SiteHeaderServer({
+export async function SiteHeaderServer({
   categories,
   products,
   presentation,
@@ -38,6 +39,7 @@ export function SiteHeaderServer({
   products: PublicProduct[];
   presentation: SitePresentation["header"];
 }) {
+  const initialUser = await getCustomerUser().catch(() => null);
   const headerCategories: HeaderCategory[] = categories.map(
     ({ slug, title, en }) => ({ slug, title, en }),
   );
@@ -84,6 +86,7 @@ export function SiteHeaderServer({
       categories={headerCategories as Category[]}
       products={headerProducts as PublicProduct[]}
       presentation={presentation}
+      initialUser={initialUser}
     />
   );
 }

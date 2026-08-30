@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { Breadcrumbs } from "../../components/Breadcrumbs";
 import { FaqList } from "../../components/FaqList";
@@ -414,6 +414,7 @@ function getProductExperience(
   cmsProduct: CmsProduct | null,
 ): ProductExperienceProduct {
   return {
+    slug: product.slug,
     nameFa: product.nameFa,
     nameEn: product.nameEn,
     brand: getCompactBrandLabel(product.brand),
@@ -662,6 +663,16 @@ export default async function ProductPage({
 
   if (!product) {
     notFound();
+  }
+
+  // WooCommerce may preserve an old slug and append -2, -3, … to a newer
+  // record. The public URL must remain the curated catalogue slug; serving
+  // both as 200 pages would create a duplicate product URL in Google's index.
+  if (slug !== product.slug) {
+    const variant = initialVariantId
+      ? `?variant=${encodeURIComponent(initialVariantId)}`
+      : "";
+    permanentRedirect(`/product/${product.slug}${variant}`);
   }
 
   // Related cards are editorial discovery content. Keeping them local prevents a

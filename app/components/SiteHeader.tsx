@@ -19,6 +19,8 @@ import {
   SearchIcon,
 } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
+import { cartCount, onCartUpdated, readCart } from "../lib/cart";
+import type { CustomerUser } from "../lib/customer-auth";
 
 const navItems = [
   { href: "/shop", label: "فروشگاه" },
@@ -61,16 +63,19 @@ export function SiteHeader({
   categories,
   products,
   presentation,
+  initialUser = null,
 }: {
   categories: Category[];
   products: PublicProduct[];
   presentation: SitePresentation["header"];
+  initialUser?: Pick<CustomerUser, "fullName" | "email"> | null;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [cartItems, setCartItems] = useState(() => readCart());
   const searchInput = useRef<HTMLInputElement>(null);
   const searchPanel = useRef<HTMLDivElement>(null);
   const mobilePanel = useRef<HTMLDivElement>(null);
@@ -82,6 +87,12 @@ export function SiteHeader({
     setCategoriesOpen(false);
     setSearchOpen(true);
   };
+
+  useEffect(() => {
+    const syncCart = () => setCartItems(readCart());
+    syncCart();
+    return onCartUpdated(syncCart);
+  }, []);
 
   const searchResults = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("fa");
@@ -242,8 +253,13 @@ export function SiteHeader({
           </button>
 
           <div className="sb-header__actions">
-            <Link className="sb-header__account" href="/account">
-              ورود / عضویت
+            <Link className="sb-header__cart" href="/cart" aria-label={`سبد خرید، ${cartCount(cartItems)} قلم`}>
+              <span aria-hidden="true">🛒</span>
+              <span>سبد خرید</span>
+              {cartCount(cartItems) > 0 && <b>{cartCount(cartItems)}</b>}
+            </Link>
+            <Link className="sb-header__account" href="/account" title={initialUser ? initialUser.fullName || initialUser.email : "ورود و عضویت"}>
+              {initialUser ? initialUser.fullName || initialUser.email : "ورود / عضویت"}
             </Link>
             <Link className="sb-btn sb-btn--ghost sb-header__consult" href={whatsappHref()}>
               {presentation.consultationLabel}

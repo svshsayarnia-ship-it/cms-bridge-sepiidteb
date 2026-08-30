@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CustomerAccount } from "../../components/CustomerAccount";
+import { getCustomerUser } from "../../lib/customer-auth";
 
 export const metadata: Metadata = {
   title: "ثبت‌نام کاربر",
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RegisterPage() {
-  return <CustomerAccount initialMode="register" />;
+export default async function RegisterPage() {
+  const user = await getCustomerUser().catch(() => null);
+  return <CustomerAccount initialMode="register" initialUser={user} />;
 }
