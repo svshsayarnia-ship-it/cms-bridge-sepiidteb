@@ -252,6 +252,10 @@ export default async function ArticlePage({
             <span className="sb-eyebrow">{article.category}</span>
             <h1>{article.title}</h1>
             <p>{article.excerpt}</p>
+            <div className="sb-preferred-source sb-preferred-source--article" aria-label="منبع ترجیحی گوگل">
+              <div google-add-preferred-source-btn></div>
+              <small>افزودن سپید بیوتی به منابع ترجیحی گوگل</small>
+            </div>
             <div className="sb-article-header__meta">
               <span>تحریریه سپید بیوتی</span>
               <span>{article.date}</span>
