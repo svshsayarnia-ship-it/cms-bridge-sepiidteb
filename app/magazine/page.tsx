@@ -95,6 +95,10 @@ export default async function MagazinePage() {
               <h2>تازه‌ترین راهنماها</h2>
             </div>
             <p>{editableArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
+          <div className="sb-preferred-source" aria-label="منبع ترجیحی گوگل">
+            <div google-add-preferred-source-btn></div>
+            <small>اگر مطالب سپید برایتان مفید است، آن را به منابع ترجیحی گوگل اضافه کنید.</small>
+          </div>
           </div>
           <div className="sb-article-grid">
             {editableArticles.map((article) => (
