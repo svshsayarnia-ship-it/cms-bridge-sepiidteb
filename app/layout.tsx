@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./ui-audit.css";
@@ -103,6 +104,7 @@ export default async function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
+        <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
         <SiteHeaderServer
           categories={categories}
           products={headerProducts}
