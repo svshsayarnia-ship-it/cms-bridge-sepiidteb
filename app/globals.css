@@ -9886,3 +9886,32 @@ footer {
     animation: none;
   }
 }
+
+
+/* Google Preferred Source: a discreet editorial utility for magazine readers. */
+.sb-preferred-source {
+  margin-top: 18px;
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+}
+
+.sb-preferred-source > div {
+  min-height: 32px;
+}
+
+.sb-preferred-source small {
+  color: var(--sb-muted);
+  font-size: 0.64rem;
+  line-height: 1.8;
+}
+
+.sb-preferred-source--article {
+  margin-top: 14px;
+}
+
+@media (max-width: 560px) {
+  .sb-preferred-source {
+    margin-top: 14px;
+  }
+}
