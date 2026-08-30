@@ -17,6 +17,7 @@ import {
   CloseIcon,
   MenuIcon,
   SearchIcon,
+  SepiidCartIcon,
 } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
 import { cartCount, onCartUpdated, readCart } from "../lib/cart";
@@ -254,7 +255,7 @@ export function SiteHeader({
 
           <div className="sb-header__actions">
             <Link className="sb-header__cart" href="/cart" aria-label={`سبد خرید، ${cartCount(cartItems)} قلم`}>
-              <span aria-hidden="true">🛒</span>
+              <span className="sb-header__cart-icon"><SepiidCartIcon /></span>
               <span>سبد خرید</span>
               {cartCount(cartItems) > 0 && <b>{cartCount(cartItems)}</b>}
             </Link>

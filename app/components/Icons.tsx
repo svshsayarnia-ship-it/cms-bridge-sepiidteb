@@ -15,6 +15,19 @@ export const SearchIcon = ({ className = "" }: IconProps) => (
   </svg>
 );
 
+/** A bespoke Sepiid Beauty basket mark: a soft tray silhouette with a single
+ *  botanical-style handle, instead of a generic emoji or library glyph. */
+export const SepiidCartIcon = ({ className = "" }: IconProps) => (
+  <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M8.2 12.2h15.6l-1.3 10.1a2.1 2.1 0 0 1-2.1 1.8h-5.8a2.1 2.1 0 0 1-2.1-1.8L11.1 16" />
+    <path d="M8.2 12.2 6.5 9.8" />
+    <path d="M8.6 12.2c.8-3.9 3.2-6 7.4-6s6.6 2.1 7.4 6" />
+    <path d="M12.2 16.2h7.6" />
+    <circle cx="12.8" cy="27" r="1.2" />
+    <circle cx="21.2" cy="27" r="1.2" />
+  </svg>
+);
+
 export const MenuIcon = ({ className = "" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 7h16M4 12h16M4 17h16" />
@@ -78,4 +91,3 @@ export const ClockIcon = ({ className = "" }: IconProps) => (
     <path d="M12 7v5l3 2" />
   </svg>
 );
-
