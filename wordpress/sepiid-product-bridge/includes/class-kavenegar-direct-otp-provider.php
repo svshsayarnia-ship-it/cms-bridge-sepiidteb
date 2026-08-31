@@ -36,6 +36,14 @@ final class Kavenegar_Direct_Otp_Provider {
 			return $result;
 		}
 
+		// Honor an explicit provider choice. If the selector is absent, the
+		// earlier Razban adapter auto-selects itself when its configuration is
+		// complete; otherwise this adapter remains the backwards-compatible path.
+		$provider = strtolower( $this->config_value( 'SEPIID_SMS_PROVIDER' ) );
+		if ( '' !== $provider && 'kavenegar' !== $provider ) {
+			return $result;
+		}
+
 		$api_key = $this->config_value( 'SEPIID_KAVENEGAR_API_KEY' );
 		if ( ! $api_key ) {
 			return $this->error(
