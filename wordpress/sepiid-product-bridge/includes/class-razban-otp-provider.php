@@ -34,7 +34,13 @@ final class Razban_Otp_Provider {
 			return $result;
 		}
 
-		$provider = strtolower( $this->config_value( 'SEPIID_SMS_PROVIDER', 'kavenegar' ) );
+		$provider = strtolower( $this->config_value( 'SEPIID_SMS_PROVIDER' ) );
+		if ( '' === $provider ) {
+			// Production can lose the selector during a plugin/config refresh while
+			// the actual Razban credentials remain intact. Prefer the configured
+			// transport instead of silently falling through to another provider.
+			$provider = $this->has_complete_razban_config() ? 'razban' : 'kavenegar';
+		}
 		if ( 'razban' !== $provider ) {
 			return $result;
 		}
@@ -190,6 +196,16 @@ final class Razban_Otp_Provider {
 		}
 
 		return '';
+	}
+
+	/** @return bool */
+	private function has_complete_razban_config() {
+		foreach ( array( 'SEPIID_RAZBAN_API_TOKEN', 'SEPIID_RAZBAN_PATTERN', 'SEPIID_RAZBAN_FROM_NUMBER' ) as $name ) {
+			if ( '' === $this->config_value( $name ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** @return string */
