@@ -73,6 +73,8 @@ const checks = [
     file: "wordpress/sepiid-product-bridge/includes/class-razban-otp-provider.php",
     needles: [
       "SEPIID_SMS_PROVIDER",
+      "has_complete_razban_config()",
+      "? 'razban' : 'kavenegar'",
       "SEPIID_RAZBAN_API_TOKEN",
       "SEPIID_RAZBAN_PATTERN",
       "SEPIID_RAZBAN_FROM_NUMBER",
@@ -85,6 +87,19 @@ const checks = [
       "provider_message",
       "sepiid_razban_otp_transport",
     ],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/includes/class-kavenegar-direct-otp-provider.php",
+    needles: [
+      "SEPIID_SMS_PROVIDER",
+      "'kavenegar' !== $provider",
+      "SEPIID_KAVENEGAR_API_KEY",
+      "SEPIID_KAVENEGAR_SENDER",
+    ],
+  },
+  {
+    file: "wordpress/sepiid-product-bridge/sepiid-product-bridge.php",
+    needles: ["Version:           1.8.15", "const VERSION = '1.8.15';"],
   },
 ];
 
