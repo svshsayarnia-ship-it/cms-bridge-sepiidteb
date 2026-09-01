@@ -11,6 +11,18 @@ const reviewDateFormatter = new Intl.DateTimeFormat("fa-IR", {
 const placeholderValuePattern =
   /^(?:-|—|n\/?a|none|null|undefined)|در حال تکمیل|تکمیل می‌شود|نامشخص|ثبت نشده|بدون اطلاعات|pending|todo/iu;
 
+type VerifiedSourceFallback = {
+  sourceName: string;
+  sourceUrl: string;
+  sourceCheckedAt: string;
+};
+
+const NEURAMIS_OFFICIAL_SOURCE: VerifiedSourceFallback = {
+  sourceName: "Medytox — صفحه رسمی Neuramis®",
+  sourceUrl: "https://medytox.com/page/neuramis_en?site_id=en",
+  sourceCheckedAt: "2026-09-01",
+};
+
 function cleanPublicValue(value: string | null | undefined) {
   const clean = (value ?? "").replace(/\s+/g, " ").trim();
   if (!clean || placeholderValuePattern.test(clean)) return "";
@@ -91,6 +103,19 @@ async function getProductProvenance(slug: string) {
   return latestProduct(products);
 }
 
+function getVerifiedSourceFallback(slug: string): VerifiedSourceFallback | null {
+  const normalizedSlug = slug.trim().toLowerCase();
+
+  // Medytox's official Neuramis page covers the Neuramis family, including
+  // Deep Lidocaine and Volume Lidocaine. Keep this as a fallback only: if the
+  // CMS has a product-specific source, the CMS source wins.
+  if (normalizedSlug.startsWith("neuramis")) {
+    return NEURAMIS_OFFICIAL_SOURCE;
+  }
+
+  return null;
+}
+
 export default async function ProductDetailLayout({
   children,
   params,
@@ -100,17 +125,27 @@ export default async function ProductDetailLayout({
 }) {
   const { slug } = await params;
   const product = await getProductProvenance(slug);
+  const verifiedFallback = getVerifiedSourceFallback(slug);
 
-  const sourceUrl = safeExternalUrl(product?.sourceUrl);
-  const sourceName = cleanPublicValue(product?.sourceName);
+  const cmsSourceUrl = safeExternalUrl(product?.sourceUrl);
+  const fallbackSourceUrl = safeExternalUrl(verifiedFallback?.sourceUrl);
+  const sourceUrl = cmsSourceUrl || fallbackSourceUrl;
+  const sourceName =
+    cleanPublicValue(product?.sourceName) ||
+    (fallbackSourceUrl ? verifiedFallback?.sourceName ?? "" : "");
   const reviewerName = cleanPublicValue(product?.reviewerName);
   const reviewerRole = cleanPublicValue(product?.reviewerRole);
   const reviewedAt = formatReviewDate(product?.reviewedAt);
+  const sourceCheckedAt = cmsSourceUrl
+    ? ""
+    : formatReviewDate(verifiedFallback?.sourceCheckedAt);
 
   const hasSource = Boolean(sourceUrl);
   const hasReviewer = Boolean(reviewerName);
   const hasReviewDate = Boolean(reviewedAt);
-  const hasProvenance = hasSource || hasReviewer || hasReviewDate;
+  const hasSourceCheckDate = Boolean(sourceCheckedAt);
+  const hasProvenance =
+    hasSource || hasReviewer || hasReviewDate || hasSourceCheckDate;
 
   return (
     <>
@@ -126,15 +161,15 @@ export default async function ProductDetailLayout({
             <div>
               <h2 id="product-provenance-title">منبع و بازبینی اطلاعات محصول</h2>
               <p>
-                این بخش فقط اطلاعات منبع و بازبینی ثبت‌شده برای همین محصول را
-                نمایش می‌دهد و جایگزین نظر پزشک یا دستور مصرف حرفه‌ای نیست.
+                این بخش فقط منبع رسمی یا اطلاعات بازبینی ثبت‌شده برای همین محصول
+                را نمایش می‌دهد و جایگزین نظر پزشک یا دستور مصرف حرفه‌ای نیست.
               </p>
             </div>
 
             <dl className="sb-spec-table">
               {hasSource ? (
                 <div>
-                  <dt>منبع اطلاعات</dt>
+                  <dt>منبع رسمی اطلاعات</dt>
                   <dd>
                     <a href={sourceUrl} rel="noreferrer" target="_blank">
                       {sourceName || new URL(sourceUrl).hostname.replace(/^www\./u, "")}
@@ -143,9 +178,16 @@ export default async function ProductDetailLayout({
                 </div>
               ) : null}
 
+              {hasSourceCheckDate ? (
+                <div>
+                  <dt>تاریخ بررسی منبع رسمی</dt>
+                  <dd>{sourceCheckedAt}</dd>
+                </div>
+              ) : null}
+
               {hasReviewDate ? (
                 <div>
-                  <dt>آخرین بازبینی</dt>
+                  <dt>آخرین بازبینی محتوا</dt>
                   <dd>{reviewedAt}</dd>
                 </div>
               ) : null}
