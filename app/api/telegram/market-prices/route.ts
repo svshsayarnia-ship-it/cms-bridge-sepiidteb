@@ -18,13 +18,36 @@ export const maxDuration = 30;
 
 const MAIN_KEYBOARD: TelegramReplyMarkup = {
   keyboard: [
-    [{ text: "💰 قیمت محصولات" }, { text: "🔎 جستجوی قیمت" }],
-    [{ text: "📡 وضعیت ربات" }, { text: "✅ تست اتصال" }],
-    [{ text: "❓ راهنما" }],
+    [{ text: "🔎 جستجوی محصول" }, { text: "💰 قیمت محصولات" }],
+    [{ text: "🗂 دسته‌بندی‌ها" }],
   ],
   resize_keyboard: true,
   is_persistent: true,
   input_field_placeholder: "نام محصول را هرطور راحتی بنویس…",
+};
+
+const CATEGORY_OPTIONS = [
+  { slug: "fillers", label: "💉 فیلرها" },
+  { slug: "skin-boosters", label: "✨ مزوژل و اسکین‌بوستر" },
+  { slug: "botulinum-toxins", label: "🧊 بوتاکس" },
+  { slug: "rejuvenation-cocktails", label: "🌿 کوکتل جوان‌سازی" },
+  { slug: "brightening-cocktails", label: "☀️ روشن‌کننده و ضدلک" },
+  { slug: "eye-cocktails", label: "👁 دور چشم" },
+  { slug: "hair-cocktails", label: "💇 مو و پوست سر" },
+  { slug: "hyaluronidase-products", label: "🧬 هیالورونیداز" },
+] as const;
+
+const CATEGORY_KEYBOARD: TelegramReplyMarkup = {
+  keyboard: [
+    [{ text: CATEGORY_OPTIONS[0].label }, { text: CATEGORY_OPTIONS[1].label }],
+    [{ text: CATEGORY_OPTIONS[2].label }, { text: CATEGORY_OPTIONS[3].label }],
+    [{ text: CATEGORY_OPTIONS[4].label }, { text: CATEGORY_OPTIONS[5].label }],
+    [{ text: CATEGORY_OPTIONS[6].label }, { text: CATEGORY_OPTIONS[7].label }],
+    [{ text: "⬅️ منوی اصلی" }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+  input_field_placeholder: "یک دسته را انتخاب کن…",
 };
 
 const PRICE_LIST_MESSAGE_LIMIT = 3500;
@@ -212,17 +235,20 @@ function productMatchScore(product: StorefrontProduct, query: string): number {
   const strongCoverage = tokenScores.filter((score) => score >= 0.86).length / tokenScores.length;
 
   const queryRepresentations = [normalizeBasic(query), canonicalize(query)].filter(Boolean);
-  const fieldRepresentations = fields.flatMap((field) => [normalizeBasic(field), canonicalize(field)]).filter(Boolean);
+  const fieldRepresentations = fields
+    .flatMap((field) => [normalizeBasic(field), canonicalize(field)])
+    .filter(Boolean);
   const compactQuery = queryRepresentations.map((value) => value.replace(/\s+/gu, ""));
   const compactFields = fieldRepresentations.map((value) => value.replace(/\s+/gu, ""));
 
-  const exactPhrase = compactQuery.some((queryValue) => compactFields.some((field) => field === queryValue));
+  const exactPhrase = compactQuery.some((queryValue) =>
+    compactFields.some((field) => field === queryValue),
+  );
   const containedPhrase = compactQuery.some(
     (queryValue) => queryValue.length >= 3 && compactFields.some((field) => field.includes(queryValue)),
   );
 
   if (exactPhrase) return 1;
-
   let score = average * 0.58 + coverage * 0.27 + strongCoverage * 0.15;
   if (containedPhrase) score += 0.12;
   return Math.min(1, score);
@@ -235,12 +261,21 @@ function fuzzyProductMatches(products: StorefrontProduct[], query: string): Stor
   const ranked: ScoredProduct[] = products
     .map((product) => ({ product, score: productMatchScore(product, query) }))
     .filter(({ score }) => score >= (queryTokens.length === 1 ? 0.62 : 0.56))
-    .sort((left, right) => right.score - left.score || left.product.nameFa.localeCompare(right.product.nameFa, "fa"));
+    .sort(
+      (left, right) =>
+        right.score - left.score || left.product.nameFa.localeCompare(right.product.nameFa, "fa"),
+    );
 
   if (!ranked.length) return [];
   const bestScore = ranked[0].score;
-  const relativeFloor = Math.max(queryTokens.length === 1 ? 0.62 : 0.56, bestScore - (queryTokens.length === 1 ? 0.08 : 0.2));
-  return ranked.filter(({ score }) => score >= relativeFloor).slice(0, 10).map(({ product }) => product);
+  const relativeFloor = Math.max(
+    queryTokens.length === 1 ? 0.62 : 0.56,
+    bestScore - (queryTokens.length === 1 ? 0.08 : 0.2),
+  );
+  return ranked
+    .filter(({ score }) => score >= relativeFloor)
+    .slice(0, 10)
+    .map(({ product }) => product);
 }
 
 function numberValue(value: string): number | null {
@@ -249,36 +284,37 @@ function numberValue(value: string): number | null {
 }
 
 function toman(value: number | null): string {
-  return value ? `${priceFormatter.format(Math.round(value))} تومان` : "بدون قیمت ثبت‌شده";
+  return value ? `${priceFormatter.format(Math.round(value))} تومان` : "قیمت در حال بررسی";
 }
 
 function activeProductPrice(product: StorefrontProduct): number | null {
   return (
-    (Number.isFinite(product.priceToman) && Number(product.priceToman) > 0 ? Number(product.priceToman) : null) ??
+    (Number.isFinite(product.priceToman) && Number(product.priceToman) > 0
+      ? Number(product.priceToman)
+      : null) ??
     numberValue(product.salePrice) ??
     numberValue(product.price) ??
     numberValue(product.regularPrice)
   );
 }
 
-function helpText(): string {
+function welcomeText(): string {
   return [
-    "ربات قیمت سپید بیوتی آماده است ✅",
+    "سلام 👋 خوش اومدی به ربات قیمت سپید بیوتی",
     "",
-    "💰 قیمت محصولات — نمایش لیست قیمت فعلی محصولات",
-    "🔎 جستجوی قیمت — نام محصول را هرطور راحتی بنویس؛ لازم نیست املای دقیق باشد.",
+    "اینجا می‌تونی خیلی سریع قیمت محصولات تخصصی زیبایی رو پیدا کنی:",
+    "🔎 اسم محصول رو حتی با فاصله متفاوت یا غلط املایی جزئی بنویس",
+    "💰 لیست قیمت همه محصولات رو ببین",
+    "🗂 از دسته‌بندی‌ها مستقیم به قیمت‌های همون گروه برو",
     "",
-    "/prices — لیست قیمت محصولات",
-    "/price نورامیس — جستجوی قیمت یک محصول",
-    "/status — وضعیت وب‌هوک و پایش خودکار",
-    "/ping — تست اتصال ربات",
+    "مثال: «فیوژن F هرمن»، «نورمیس دیپ» یا «Revofil»",
     "",
-    "مثال: «فیوژن F هرمن»، «فیوژن اف هیر من»، «Fusion F Hair Men» و شکل‌های نزدیک به آن، همگی با جستجوی هوشمند بررسی می‌شوند.",
+    "یکی از گزینه‌های پایین رو انتخاب کن یا همین الان اسم محصول رو بفرست.",
   ].join("\n");
 }
 
 function compactProductLine(product: StorefrontProduct): string {
-  return `• ${product.nameFa}\n  قیمت فعلی: ${toman(activeProductPrice(product))}`;
+  return `• ${product.nameFa}\n  ${toman(activeProductPrice(product))}`;
 }
 
 function formatModifiedAt(value: string | null | undefined): string | null {
@@ -300,54 +336,78 @@ function detailedProductText(product: StorefrontProduct): string {
   const regular = numberValue(product.regularPrice);
   const sale = numberValue(product.salePrice);
   const modifiedAt = formatModifiedAt(product.dateModifiedGmt);
-  const lines = [`💰 ${product.nameFa}`, `قیمت فعلی: ${toman(active)}`];
+  const lines = [`💰 ${product.nameFa}`];
 
   if (product.nameEn && normalizeBasic(product.nameEn) !== normalizeBasic(product.nameFa)) {
-    lines.splice(1, 0, product.nameEn);
+    lines.push(product.nameEn);
   }
+  lines.push(`قیمت فعلی: ${toman(active)}`);
   if (sale && regular && sale !== regular) {
     lines.push(`قیمت عادی: ${toman(regular)}`, `قیمت فروش ویژه: ${toman(sale)}`);
   }
-  if (modifiedAt) lines.push(`آخرین بروزرسانی ثبت‌شده: ${modifiedAt}`);
-  if (product.sku) lines.push(`SKU: ${product.sku}`);
+  if (product.categoryTitle) lines.push(`دسته: ${product.categoryTitle}`);
+  if (modifiedAt) lines.push(`آخرین بروزرسانی: ${modifiedAt}`);
   return lines.join("\n");
 }
 
-function chunkPriceList(products: StorefrontProduct[]): string[] {
-  if (!products.length) return ["هیچ محصولی برای نمایش قیمت پیدا نشد."];
+function chunkPriceList(products: StorefrontProduct[], title: string): string[] {
+  if (!products.length) return ["در این بخش هنوز محصول قابل‌نمایشی پیدا نشد."];
 
   const messages: string[] = [];
-  let current = "💰 لیست قیمت فعلی محصولات سپید بیوتی\n\n";
+  let current = `${title}\n\n`;
   for (const product of products) {
     const line = compactProductLine(product);
     if (current.length + line.length + 2 > PRICE_LIST_MESSAGE_LIMIT) {
       messages.push(current.trim());
-      current = "💰 ادامه لیست قیمت\n\n";
+      current = `${title} · ادامه\n\n`;
     }
     current += `${line}\n\n`;
   }
-  current += "برای جزئیات فقط نام محصول را بفرست؛ حتی اگر املایش دقیق نباشد.";
+  current += "برای جزئیات فقط اسم محصول رو بفرست؛ لازم نیست املای دقیق باشه.";
   messages.push(current.trim());
   return messages;
 }
 
 async function priceReplies(query?: string): Promise<string[]> {
   try {
-    const products = (await getStorefrontProducts()).sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
-    if (!query) return chunkPriceList(products);
+    const products = (await getStorefrontProducts()).sort((a, b) =>
+      a.nameFa.localeCompare(b.nameFa, "fa"),
+    );
+    if (!query) return chunkPriceList(products, "💰 لیست قیمت محصولات سپید بیوتی");
 
     const matches = fuzzyProductMatches(products, query);
     if (!matches.length) {
       return [
-        `برای «${query}» نتیجه مطمئنی پیدا نکردم. یک بخش دیگر از نام، برند یا مدل را هم بنویس؛ لازم نیست املای دقیق باشد.`,
+        `برای «${query}» نتیجه مطمئنی پیدا نکردم. یک بخش دیگه از اسم، برند یا مدل رو هم بنویس؛ لازم نیست املای دقیق باشه.`,
       ];
     }
-
     return matches.map(detailedProductText);
   } catch (error) {
     console.error("[telegram-market-prices] loading fast product snapshot failed", error);
-    return ["دریافت قیمت محصولات موقتاً با خطا روبه‌رو شد. چند لحظه بعد دوباره امتحان کن."];
+    return ["دریافت قیمت‌ها موقتاً با خطا روبه‌رو شد. چند لحظه بعد دوباره امتحان کن."];
   }
+}
+
+async function categoryMenuText(): Promise<string> {
+  const products = await getStorefrontProducts();
+  const lines = ["🗂 دسته‌بندی محصولات", "", "یک دسته رو انتخاب کن:"];
+  for (const option of CATEGORY_OPTIONS) {
+    const count = products.filter((product) => product.category === option.slug).length;
+    lines.push(`${option.label} · ${priceFormatter.format(count)} محصول`);
+  }
+  return lines.join("\n");
+}
+
+async function categoryPriceReplies(slug: string, label: string): Promise<string[]> {
+  const products = (await getStorefrontProducts())
+    .filter((product) => product.category === slug)
+    .sort((a, b) => a.nameFa.localeCompare(b.nameFa, "fa"));
+  return chunkPriceList(products, `${label} · قیمت‌ها`);
+}
+
+function categoryFromInput(value: string): (typeof CATEGORY_OPTIONS)[number] | null {
+  const normalized = normalizeBasic(value);
+  return CATEGORY_OPTIONS.find((option) => normalizeBasic(option.label) === normalized) ?? null;
 }
 
 async function getFastAlertConfig(): Promise<MarketPriceAlertConfig> {
@@ -373,10 +433,15 @@ export async function GET() {
       ok: true,
       service: "sepiid-market-price-telegram",
       endpoint: "/api/telegram/market-prices",
-      capabilities: ["fast-price-snapshot", "fuzzy-product-search", "prices", "status", "ping"],
+      capabilities: [
+        "fast-price-snapshot",
+        "fuzzy-product-search",
+        "categories",
+        "clean-user-menu",
+      ],
       automaticScan: {
         enabled: true,
-        schedule: "17 5,17 * * *",
+        schedule: "30 5,11 * * *",
         runner: "github-actions-oidc",
       },
       webhook,
@@ -407,65 +472,65 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, ignored: true, reason: "unsupported-update" });
   }
 
-  const command = commandName(text);
-  const normalized = normalizeBasic(text);
-  const isPriceList =
-    command === "/prices" ||
-    normalized === normalizeBasic("💰 قیمت محصولات") ||
-    normalized === "قیمت محصولات" ||
-    normalized === "لیست قیمت";
-  const isPriceSearch = command === "/price" || (!command.startsWith("/") && normalized !== normalizeBasic("🔎 جستجوی قیمت"));
-  const priceQuery = command === "/price" ? commandArgument(text) : text;
-  const prefetchedPriceReplies = isPriceList
-    ? priceReplies()
-    : isPriceSearch && priceQuery
-      ? priceReplies(priceQuery)
-      : null;
-
   try {
-    const config = await getFastAlertConfig();
-    if (!config.telegramBotToken || !config.telegramChatId) {
-      return Response.json({ ok: true, ignored: true, reason: "telegram-not-configured" });
-    }
+    const configPromise = getFastAlertConfig();
+    const command = commandName(text);
+    const normalized = normalizeBasic(text);
+    const category = categoryFromInput(text);
 
-    if (String(incomingChatId) !== config.telegramChatId) {
-      return Response.json({ ok: true, ignored: true, reason: "chat-not-authorized" });
-    }
+    let repliesPromise: Promise<string[]>;
+    let replyMarkup: TelegramReplyMarkup = MAIN_KEYBOARD;
 
-    let replies: string[] = [];
     if (
       command === "/start" ||
       command === "/help" ||
-      normalized === normalizeBasic("❓ راهنما")
+      normalized === normalizeBasic("⬅️ منوی اصلی")
     ) {
-      replies = [helpText()];
+      repliesPromise = Promise.resolve([welcomeText()]);
     } else if (
-      command === "/ping" ||
-      normalized === normalizeBasic("✅ تست اتصال")
+      command === "/categories" ||
+      normalized === normalizeBasic("🗂 دسته‌بندی‌ها")
     ) {
-      replies = ["اتصال ربات سپید بیوتی برقرار است ✅"];
+      repliesPromise = categoryMenuText().then((value) => [value]);
+      replyMarkup = CATEGORY_KEYBOARD;
+    } else if (category) {
+      repliesPromise = categoryPriceReplies(category.slug, category.label);
     } else if (
-      command === "/status" ||
-      normalized === normalizeBasic("📡 وضعیت ربات")
+      command === "/prices" ||
+      normalized === normalizeBasic("💰 قیمت محصولات") ||
+      normalized === "قیمت محصولات" ||
+      normalized === "لیست قیمت"
     ) {
-      const webhook = await ensureMarketPriceTelegramWebhook();
-      replies = [
-        webhook.ok
-          ? "پایش خودکار قیمت و وب‌هوک تلگرام فعال‌اند ✅"
-          : `پایش زمان‌بندی‌شده فعال است؛ وضعیت وب‌هوک نیاز به بررسی دارد: ${webhook.error || webhook.lastErrorMessage || "نامشخص"}`,
-      ];
-    } else if (isPriceList) {
-      replies = await prefetchedPriceReplies!;
-    } else if (normalized === normalizeBasic("🔎 جستجوی قیمت")) {
-      replies = ["نام محصول را هرطور راحتی بنویس؛ فاصله، نیم‌فاصله، فارسی/انگلیسی و غلط املایی جزئی را جستجوی هوشمند تحمل می‌کند."];
+      repliesPromise = priceReplies();
+    } else if (normalized === normalizeBasic("🔎 جستجوی محصول")) {
+      repliesPromise = Promise.resolve([
+        "🔎 اسم محصول رو بفرست. می‌تونی فارسی یا انگلیسی بنویسی و لازم نیست فاصله‌ها یا املای اسم کاملاً دقیق باشه.",
+      ]);
     } else if (command === "/price") {
-      replies = priceQuery
-        ? await prefetchedPriceReplies!
-        : ["بعد از /price بخشی از نام محصول را بنویس؛ مثلاً: /price فیوژن هرمن"];
+      const query = commandArgument(text);
+      repliesPromise = query
+        ? priceReplies(query)
+        : Promise.resolve([
+            "بعد از /price بخشی از اسم محصول رو بنویس؛ مثلاً: /price فیوژن هرمن",
+          ]);
+    } else if (command === "/ping") {
+      repliesPromise = Promise.resolve(["اتصال ربات برقرار است ✅"]);
+    } else if (command === "/status") {
+      repliesPromise = ensureMarketPriceTelegramWebhook().then((webhook) => [
+        webhook.ok ? "پایش قیمت و وب‌هوک فعال‌اند ✅" : "وضعیت وب‌هوک نیاز به بررسی دارد.",
+      ]);
     } else if (command.startsWith("/")) {
-      replies = [helpText()];
+      repliesPromise = Promise.resolve([welcomeText()]);
     } else {
-      replies = await prefetchedPriceReplies!;
+      repliesPromise = priceReplies(text);
+    }
+
+    const [config, replies] = await Promise.all([configPromise, repliesPromise]);
+    if (!config.telegramBotToken || !config.telegramChatId) {
+      return Response.json({ ok: true, ignored: true, reason: "telegram-not-configured" });
+    }
+    if (String(incomingChatId) !== config.telegramChatId) {
+      return Response.json({ ok: true, ignored: true, reason: "chat-not-authorized" });
     }
 
     let delivered = true;
@@ -475,7 +540,7 @@ export async function POST(request: Request) {
         replies[index],
         {
           botToken: config.telegramBotToken,
-          replyMarkup: index === replies.length - 1 ? MAIN_KEYBOARD : undefined,
+          replyMarkup: index === replies.length - 1 ? replyMarkup : undefined,
         },
       );
       if (!delivery.ok) {

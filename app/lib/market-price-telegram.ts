@@ -38,6 +38,8 @@ export type MarketPriceTelegramWebhookStatus = {
   error?: string;
 };
 
+let presentationConfiguredToken = "";
+
 function expectedWebhookUrl(): string {
   return (process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_URL ?? DEFAULT_WEBHOOK_URL).trim();
 }
@@ -72,6 +74,47 @@ async function telegramRequest<T>(
   }
 }
 
+async function configureMarketPriceTelegramPresentation(token: string): Promise<void> {
+  if (!token || presentationConfiguredToken === token) return;
+
+  const updates = await Promise.allSettled([
+    telegramRequest<boolean>(token, "setMyName", {
+      name: "Sepiid Price | قیمت سپید بیوتی",
+    }),
+    telegramRequest<boolean>(token, "setMyDescription", {
+      description:
+        "ربات قیمت سپید بیوتی برای جستجوی سریع محصولات تخصصی زیبایی، مشاهده دسته‌بندی‌ها و دسترسی به قیمت‌های به‌روز بازار. نام محصول را حتی با املای نزدیک یا فارسی/انگلیسی بفرست.",
+    }),
+    telegramRequest<boolean>(token, "setMyShortDescription", {
+      short_description: "جستجوی هوشمند محصول، دسته‌بندی و قیمت‌های سپید بیوتی",
+    }),
+    telegramRequest<boolean>(token, "setMyCommands", {
+      commands: [
+        { command: "start", description: "شروع و نمایش منوی اصلی" },
+        { command: "prices", description: "لیست قیمت محصولات" },
+        { command: "categories", description: "دسته‌بندی محصولات" },
+        { command: "price", description: "جستجوی قیمت یک محصول" },
+      ],
+    }),
+  ]);
+
+  const failures = updates.filter((result) => result.status === "rejected");
+  if (failures.length) {
+    console.warn("[telegram-market-prices] bot presentation partially failed", {
+      failures: failures.map((result) =>
+        result.status === "rejected"
+          ? result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason)
+          : "",
+      ),
+    });
+    return;
+  }
+
+  presentationConfiguredToken = token;
+}
+
 function toStatus(
   info: TelegramWebhookInfo,
   configured: boolean,
@@ -85,7 +128,9 @@ function toStatus(
     expectedUrl,
     currentUrl,
     matchesExpected: currentUrl === expectedUrl,
-    pendingUpdateCount: Number.isFinite(info.pending_update_count) ? Number(info.pending_update_count) : 0,
+    pendingUpdateCount: Number.isFinite(info.pending_update_count)
+      ? Number(info.pending_update_count)
+      : 0,
     lastErrorDate: Number.isFinite(info.last_error_date) ? Number(info.last_error_date) : null,
     lastErrorMessage: info.last_error_message?.trim() || null,
     repaired,
@@ -111,7 +156,12 @@ export async function ensureMarketPriceTelegramWebhook(): Promise<MarketPriceTel
       };
     }
 
-    let info = await telegramRequest<TelegramWebhookInfo>(config.telegramBotToken, "getWebhookInfo");
+    await configureMarketPriceTelegramPresentation(config.telegramBotToken);
+
+    let info = await telegramRequest<TelegramWebhookInfo>(
+      config.telegramBotToken,
+      "getWebhookInfo",
+    );
     if ((info.url ?? "").trim() === expectedUrl) {
       return toStatus(info, true, false);
     }

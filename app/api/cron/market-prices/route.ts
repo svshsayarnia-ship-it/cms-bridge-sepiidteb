@@ -1,7 +1,5 @@
-import {
-  listNewMarketPricingProposalAlerts,
-  runMarketPricingScan,
-} from "@/app/lib/market-pricing";
+import { listNewMarketPricingProposalAlerts } from "@/app/lib/market-pricing";
+import { runComprehensiveMarketPricingScan } from "@/app/lib/market-pricing-comprehensive";
 import { sendMarketPriceAlerts } from "@/app/lib/market-price-alerts";
 import { ensureMarketPriceTelegramWebhook } from "@/app/lib/market-price-telegram";
 
@@ -17,7 +15,7 @@ export async function GET(request: Request) {
   const telegramWebhook = await ensureMarketPriceTelegramWebhook();
 
   try {
-    const summary = await runMarketPricingScan();
+    const summary = await runComprehensiveMarketPricingScan();
     const alerts = await listNewMarketPricingProposalAlerts(summary.startedAt);
     const deliveries = await sendMarketPriceAlerts(alerts);
     return Response.json({ ok: true, summary, deliveries, telegramWebhook });
