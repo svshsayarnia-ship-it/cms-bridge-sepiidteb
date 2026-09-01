@@ -145,9 +145,12 @@ export default async function RootLayout({
           data={{
             "@context": "https://schema.org",
             "@type": "WebSite",
+            "@id": `${siteOrigin}/#website`,
             name: "Sepiid Beauty",
+            alternateName: "سپید بیوتی",
             url: siteOrigin,
             inLanguage: "fa-IR",
+            publisher: { "@id": merchantOrganizationId },
           }}
         />
       </body>
