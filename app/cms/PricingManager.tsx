@@ -85,6 +85,8 @@ const PROVIDER_HELP: Record<MarketProvider, string> = {
   sayancenter: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه سایان به‌صورت خودکار انجام می‌شود.",
   rokateb: "اگر لینک خالی باشد، تطبیق دقیق از فروشگاه روکاطب به‌صورت خودکار انجام می‌شود.",
   torob: "لینک دقیق صفحه همان مدل و حجم را از ترب وارد کنید؛ جست‌وجوی خودکار ترب انجام نمی‌شود.",
+  emalls: "لینک دقیق همان مدل در ایمالز را وارد کنید؛ قیمت چند فروشنده و زمان به‌روزرسانی قابل مقایسه است.",
+  noavaransalamat: "اگر لینک خالی باشد، تطبیق دقیق از نوآوران سلامت به‌صورت خودکار انجام می‌شود.",
 };
 
 const PRICE_NOTIFICATION_STORAGE_KEY = "sepiid-cms-seen-price-proposals";
@@ -101,6 +103,7 @@ export function PricingManager() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [productQuery, setProductQuery] = useState("");
   const [priceDrafts, setPriceDrafts] = useState<
     Record<number, { regularPrice: string; salePrice: string }>
   >({});
@@ -209,6 +212,14 @@ export function PricingManager() {
   );
   const selected =
     (dashboard?.editableProducts ?? []).find((product) => product.id === selectedId) ?? null;
+  const filteredEditableProducts = useMemo(() => {
+    const query = productQuery.trim().toLocaleLowerCase("fa");
+    const products = dashboard?.editableProducts ?? [];
+    if (!query) return products;
+    return products.filter((product) =>
+      `${product.name} ${product.sku} ${product.slug}`.toLocaleLowerCase("fa").includes(query),
+    );
+  }, [dashboard, productQuery]);
   const selectedPriceDraft = selected ? priceDrafts[selected.id] : undefined;
   const regularPriceDraft =
     selectedPriceDraft?.regularPrice ?? selected?.regularPrice ?? "";
@@ -327,10 +338,9 @@ export function PricingManager() {
       <div className="spb-pricing-manager__head">
         <div>
           <span>پایش قیمت بازار</span>
-          <h2>پیشنهاد هوشمند قیمت بازار</h2>
+          <h2>قیمت‌ها؛ ساده و سریع</h2>
           <p>
-            قیمت‌ها ساعت ۹ و ۱۵ بررسی می‌شوند. یک منبع دقیق و به‌روز برای پیشنهاد کافی است؛
-            تغییرهای بعدی همیشه منتظر تأیید شما می‌مانند.
+            فقط قیمت پیشنهادی را ببین، تأیید کن یا قیمت دلخواه را ثبت کن. هیچ دانش فنی لازم نیست.
           </p>
         </div>
         <div className="spb-pricing-manager__actions">
@@ -416,12 +426,21 @@ export function PricingManager() {
         </summary>
         <div className="spb-pricing-source-editor">
           <label>
+            <span>پیدا کردن سریع محصول</span>
+            <input
+              type="search"
+              value={productQuery}
+              placeholder="نام، کد یا نامک محصول…"
+              onChange={(event) => setProductQuery(event.target.value)}
+            />
+          </label>
+          <label>
             <span>محصول</span>
             <select
               value={selectedId ?? ""}
               onChange={(event) => setSelectedId(Number(event.target.value))}
             >
-              {(dashboard?.editableProducts ?? []).map((product) => (
+              {filteredEditableProducts.map((product) => (
                 <option value={product.id} key={product.id}>{product.name}</option>
               ))}
             </select>
@@ -493,7 +512,7 @@ export function PricingManager() {
         </div>
       </details>
 
-      <details className="spb-pricing-panel" open>
+      <details className="spb-pricing-panel" open={pending.length > 0}>
         <summary>
           <span>پیشنهادهای منتظر تأیید</span>
           <b>{pending.length}</b>
@@ -582,7 +601,7 @@ export function PricingManager() {
 
       <details className="spb-pricing-panel">
         <summary>
-          <span>تنظیم منابع هر محصول</span>
+          <span>تنظیمات پیشرفته منابع</span>
           <b>{configuredCount}</b>
         </summary>
         <div className="spb-pricing-source-editor">

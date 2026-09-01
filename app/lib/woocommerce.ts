@@ -750,6 +750,24 @@ export async function approveProductPricingProposal(
   return mapProduct(response.data);
 }
 
+/** Update only the two price fields. The generic product editor performs
+ * conflict/SKU/full-payload work that is unnecessary and slow for an operator
+ * changing a price from the dedicated pricing screen. */
+export async function updateProductPriceFields(
+  id: number,
+  regularPrice: string,
+  salePrice: string,
+): Promise<CmsProduct> {
+  const response = await wooRequest<WooProduct>(`products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      regular_price: regularPrice,
+      sale_price: salePrice,
+    }),
+  });
+  return mapProduct(response.data);
+}
+
 export async function getProductBySlug(
   slug: string,
   options: {

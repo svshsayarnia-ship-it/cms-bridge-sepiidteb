@@ -24,7 +24,10 @@ import {
   WooCommerceError,
 } from "./woocommerce";
 
-const FETCH_TIMEOUT_MS = 14_000;
+// A dead market source must not hold an entire operator request for 14 seconds.
+// Providers for a product are queried in parallel below, so this is a per-source
+// ceiling rather than a cumulative delay.
+const FETCH_TIMEOUT_MS = 8_000;
 const MIN_VALID_PRICE_TOMAN = 100_000;
 const MAX_VALID_PRICE_TOMAN = 1_000_000_000;
 const MAX_HISTORY_ITEMS = 30;
@@ -38,11 +41,14 @@ const PROVIDER_HOSTS: Record<MarketProvider, string[]> = {
   sayancenter: ["sayancenter.com", "www.sayancenter.com"],
   rokateb: ["rokateb.ir", "www.rokateb.ir"],
   torob: ["torob.com", "www.torob.com"],
+  emalls: ["emalls.ir", "www.emalls.ir"],
+  noavaransalamat: ["noavaransalamat.ir", "www.noavaransalamat.ir"],
 };
 
 const AUTO_DISCOVERY_BASE: Partial<Record<MarketProvider, string>> = {
   sayancenter: "https://sayancenter.com",
   rokateb: "https://rokateb.ir",
+  noavaransalamat: "https://noavaransalamat.ir",
 };
 
 // Direct product pages are curated because Torob search pages are not crawled.
@@ -711,9 +717,9 @@ async function scanProduct(
   const samples: MarketPriceSample[] = [];
   const errors: string[] = [];
 
-  for (const provider of MARKET_PROVIDERS) {
+  await Promise.all(MARKET_PROVIDERS.map(async (provider) => {
     const source = sources.find((item) => item.provider === provider);
-    if (!source?.enabled) continue;
+    if (!source?.enabled) return;
 
     try {
       if (!source.url && provider === "torob" && CURATED_TOROB_URLS[product.slug]) {
@@ -724,13 +730,13 @@ async function scanProduct(
         const discovered = await discoverWooStoreSample(product, provider);
         if (!discovered) {
           errors.push(`${MARKET_PROVIDER_LABELS[provider]}: تطبیق خودکار پیدا نشد`);
-          continue;
+          return;
         }
         Object.assign(source, discovered.source);
         samples.push(discovered.sample);
-        continue;
+        return;
       }
-      if (!source.url) continue;
+      if (!source.url) return;
       samples.push(...(await sampleFromUrl(product, source)));
     } catch (error) {
       errors.push(
@@ -739,7 +745,7 @@ async function scanProduct(
         }`,
       );
     }
-  }
+  }));
 
   if (!samples.length && !sources.some((source) => source.url) && !errors.length) {
     return "skipped";
@@ -937,7 +943,9 @@ export async function runMarketPricingScan(
   const startedAt = new Date().toISOString();
   const synchronized = await synchronizeCatalogProductsForPricing();
   const products = synchronized.products;
-  const results = await mapWithConcurrency(products, 3, async (product) => {
+  // Six products × parallel providers keeps the scan well inside the function
+  // window while remaining polite to WooCommerce and third-party stores.
+  const results = await mapWithConcurrency(products, 6, async (product) => {
     try {
       return await scanProduct(product, mode);
     } catch {

@@ -17,7 +17,7 @@ import {
 import {
   errorResponse,
   getProduct,
-  updateProduct,
+  updateProductPriceFields,
   WooCommerceError,
 } from "@/app/lib/woocommerce";
 import { rememberStorefrontProduct } from "@/app/lib/storefront-product-snapshots";
@@ -134,32 +134,7 @@ export async function POST(request: Request) {
       const regularPrice = priceValue(body.regularPrice, "قیمت عادی");
       const salePrice = priceValue(body.salePrice, "قیمت فروش ویژه");
 
-      const product = await updateProduct(id, {
-        name: current.name,
-        slug: current.slug,
-        sku: current.sku,
-        status: current.status,
-        catalogVisibility: current.catalogVisibility,
-        featured: current.featured,
-        description: current.description,
-        shortDescription: current.shortDescription,
-        seoTitle: current.seoTitle,
-        metaDescription: current.metaDescription,
-        focusKeyword: current.focusKeyword,
-        sourceName: current.sourceName,
-        sourceUrl: current.sourceUrl,
-        reviewerName: current.reviewerName,
-        reviewerRole: current.reviewerRole,
-        reviewedAt: current.reviewedAt,
-        regularPrice,
-        salePrice,
-        manageStock: current.manageStock,
-        stockQuantity: current.stockQuantity,
-        stockStatus: current.stockStatus,
-        categoryIds: current.categories.map((category) => category.id),
-        images: current.images,
-        expectedModifiedGmt: current.dateModifiedGmt || undefined,
-      });
+      const product = await updateProductPriceFields(id, regularPrice, salePrice);
 
       // Never report success unless WooCommerce itself returned the exact values requested.
       assertPricePersisted(product, regularPrice, salePrice);

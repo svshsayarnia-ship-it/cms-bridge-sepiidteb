@@ -2,6 +2,8 @@ export const MARKET_PROVIDERS = [
   "sayancenter",
   "rokateb",
   "torob",
+  "emalls",
+  "noavaransalamat",
 ] as const;
 
 export type MarketProvider = (typeof MARKET_PROVIDERS)[number];
@@ -10,6 +12,8 @@ export const MARKET_PROVIDER_LABELS: Record<MarketProvider, string> = {
   sayancenter: "سایان سنتر",
   rokateb: "روکاطب",
   torob: "ترب",
+  emalls: "ایمالز",
+  noavaransalamat: "نوآوران سلامت",
 };
 
 export type MarketSourceConfig = {
