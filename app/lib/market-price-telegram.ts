@@ -38,8 +38,6 @@ export type MarketPriceTelegramWebhookStatus = {
   error?: string;
 };
 
-let presentationConfiguredToken = "";
-
 function expectedWebhookUrl(): string {
   return (process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_URL ?? DEFAULT_WEBHOOK_URL).trim();
 }
@@ -75,7 +73,7 @@ async function telegramRequest<T>(
 }
 
 async function configureMarketPriceTelegramPresentation(token: string): Promise<void> {
-  if (!token || presentationConfiguredToken === token) return;
+  if (!token) return;
 
   const updates = await Promise.allSettled([
     telegramRequest<boolean>(token, "setMyName", {
@@ -112,7 +110,6 @@ async function configureMarketPriceTelegramPresentation(token: string): Promise<
     return;
   }
 
-  presentationConfiguredToken = token;
 }
 
 function toStatus(
@@ -156,8 +153,6 @@ export async function ensureMarketPriceTelegramWebhook(): Promise<MarketPriceTel
       };
     }
 
-    await configureMarketPriceTelegramPresentation(config.telegramBotToken);
-
     let info = await telegramRequest<TelegramWebhookInfo>(
       config.telegramBotToken,
       "getWebhookInfo",
@@ -175,6 +170,10 @@ export async function ensureMarketPriceTelegramWebhook(): Promise<MarketPriceTel
     if (secret) payload.secret_token = secret;
 
     await telegramRequest<boolean>(config.telegramBotToken, "setWebhook", payload);
+    // Presentation settings are static. Applying them on every serverless invocation
+    // quickly exhausts Telegram's flood limits because process memory is not shared.
+    // Refresh them only when the webhook actually needed repair.
+    await configureMarketPriceTelegramPresentation(config.telegramBotToken);
     info = await telegramRequest<TelegramWebhookInfo>(config.telegramBotToken, "getWebhookInfo");
     return toStatus(info, true, true);
   } catch (error) {
