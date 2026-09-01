@@ -517,26 +517,6 @@ export default async function ArticlePage({
           mainEntityOfPage: `${siteOrigin}${articlePath(article.slug)}`,
         }}
       />
-      {article.faq?.length ? (
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: article.faq.map((item) => ({
-              "@type": "Question",
-              name: isNeuramisGuide(article.slug)
-                ? normalizeNeuramisModelCopy(item.question)
-                : item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: isNeuramisGuide(article.slug)
-                  ? normalizeNeuramisModelCopy(item.answer)
-                  : item.answer,
-              },
-            })),
-          }}
-        />
-      ) : null}
     </main>
   );
 }

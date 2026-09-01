@@ -738,39 +738,6 @@ export default async function CategoryPage({
         }}
       />
 
-      {isBotulinumCategory && botulinumGuide ? (
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: botulinumGuide.faq.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
-            })),
-          }}
-        />
-      ) : null}
-
-      {categoryFaq[category.slug as keyof typeof categoryFaq] ? (
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: categoryFaq[category.slug as keyof typeof categoryFaq].map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
-            })),
-          }}
-        />
-      ) : null}
     </main>
   );
 }

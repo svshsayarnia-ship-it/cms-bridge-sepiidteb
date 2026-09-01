@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { FaqList } from "../components/FaqList";
 import { ArrowIcon } from "../components/Icons";
-import { JsonLd } from "../components/JsonLd";
 import { buildSeoMetadata } from "../lib/seo";
 
 export const metadata = buildSeoMetadata({
@@ -71,8 +70,6 @@ const faqGroups = [
   },
 ];
 
-const allFaqs = faqGroups.flatMap((group) => group.items);
-
 export default function FaqPage() {
   return (
     <main id="main-content">
@@ -108,20 +105,6 @@ export default function FaqPage() {
         </div>
       </section>
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: allFaqs.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: item.answer,
-            },
-          })),
-        }}
-      />
     </main>
   );
 }

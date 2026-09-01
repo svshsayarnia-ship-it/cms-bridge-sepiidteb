@@ -764,9 +764,6 @@ export default async function ProductPage({
           : {}),
       };
     });
-  const hasProductOffer = Boolean(
-    schemaPrice || variantSchemas.length > 0,
-  );
   return (
     <main id="main-content">
       <div className="sb-shell">
@@ -848,9 +845,8 @@ export default async function ProductPage({
           }}
         />
       )}
-      {hasProductOffer && (
-        <JsonLd
-          data={{
+      <JsonLd
+        data={{
             "@context": "https://schema.org",
             "@type": "Product",
             name: product.nameFa,
@@ -876,22 +872,8 @@ export default async function ProductPage({
                   },
                 }
               : {}),
-          }}
-        />
-      )}
-      {customerFaqs.length > 0 && (
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: customerFaqs.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: { "@type": "Answer", text: item.answer },
-            })),
-          }}
-        />
-      )}
+        }}
+      />
     </main>
   );
 }

@@ -10,7 +10,6 @@ import {
   PackageIcon,
   ShieldIcon,
 } from "./components/Icons";
-import { JsonLd } from "./components/JsonLd";
 import { CategoryStoryCard } from "./components/CategoryStoryCard";
 import { FeaturedProductCarousel } from "./components/FeaturedProductCarousel";
 import { Reveal } from "./components/Reveal";
@@ -313,20 +312,6 @@ export default async function Home() {
         </section>
       </Reveal>
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faqs.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: item.answer,
-            },
-          })),
-        }}
-      />
     </main>
   );
 }
