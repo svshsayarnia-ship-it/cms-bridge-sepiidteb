@@ -26,11 +26,21 @@ function visibleText(element: Element | null) {
   return (element?.textContent ?? "").replace(/\s+/gu, " ").trim().slice(0, 160);
 }
 
+function ensureGaQueue(measurementId: string) {
+  window.dataLayer = window.dataLayer || [];
+  if (typeof window.gtag !== "function") {
+    window.gtag = (...args: unknown[]) => {
+      window.dataLayer?.push(args);
+    };
+    window.gtag("js", new Date());
+    window.gtag("config", measurementId, { send_page_view: false });
+  }
+}
+
 function trackRoute(pathname: string) {
-  const pageLocation = window.location.href;
   trackGaEvent("page_view", {
     page_title: document.title,
-    page_location: pageLocation,
+    page_location: window.location.href,
     page_path: `${window.location.pathname}${window.location.search}`,
   });
 
@@ -54,18 +64,20 @@ function trackRoute(pathname: string) {
 
   if (pathname.startsWith("/product/")) {
     const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() ?? "");
-    const heading = visibleText(document.querySelector("h1"));
-    const category = document.querySelector<HTMLElement>(".sb-product-detail")?.dataset.category;
-    trackGaEvent("view_item", {
-      currency: "IRR",
-      items: [
-        toGaItem({
-          slug,
-          nameFa: heading || document.title.split("|")[0]?.trim() || slug,
-          category,
-        }),
-      ],
-    });
+    window.setTimeout(() => {
+      const heading = visibleText(document.querySelector("h1"));
+      const category = document.querySelector<HTMLElement>(".sb-product-detail")?.dataset.category;
+      trackGaEvent("view_item", {
+        currency: "IRR",
+        items: [
+          toGaItem({
+            slug,
+            nameFa: heading || document.title.split("|")[0]?.trim() || slug,
+            category,
+          }),
+        ],
+      });
+    }, 300);
     return;
   }
 
@@ -106,11 +118,13 @@ export function GoogleAnalytics() {
 
   useEffect(() => {
     if (!measurementId) return;
+    ensureGaQueue(measurementId);
     trackRoute(pathname);
   }, [measurementId, pathname]);
 
   useEffect(() => {
     if (!measurementId) return;
+    ensureGaQueue(measurementId);
 
     function handleClick(event: MouseEvent) {
       const target = event.target instanceof Element ? event.target : null;
@@ -168,13 +182,13 @@ export function GoogleAnalytics() {
 
   return (
     <>
+      <Script id="sepiid-ga4-queue" strategy="afterInteractive">
+        {`window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','${measurementId}',{send_page_view:false});`}
+      </Script>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
         strategy="afterInteractive"
       />
-      <Script id="sepiid-ga4" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config','${measurementId}',{send_page_view:false});`}
-      </Script>
     </>
   );
 }
