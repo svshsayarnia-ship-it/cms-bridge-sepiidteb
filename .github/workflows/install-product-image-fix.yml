@@ -1,0 +1,62 @@
+name: Validate direct store pricing APIs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/install-product-image-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Probe Woo Store APIs concurrently
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import concurrent.futures, json, urllib.parse, urllib.request, time
+          tests=[
+            ('tebsoo-ejal','https://tebsoo.co','ejal'),
+            ('tebsoo-perleux','https://tebsoo.co','perleux'),
+            ('mesotop-audrey','https://mesotop.com','audrey'),
+            ('capsoll-siax','https://capsoll.ir','siax'),
+          ]
+          headers={'User-Agent':'Mozilla/5.0','Accept':'application/json'}
+          def one(t):
+            key,base,q=t
+            url=base+'/wp-json/wc/store/v1/products?'+urllib.parse.urlencode({'search':q,'per_page':10})
+            start=time.time()
+            try:
+              req=urllib.request.Request(url,headers=headers)
+              with urllib.request.urlopen(req,timeout=12) as r:
+                rows=json.load(r); status=r.status
+              elapsed=round(time.time()-start,2)
+              compact=[]
+              for x in rows if isinstance(rows,list) else []:
+                compact.append({'name':x.get('name'),'price':(x.get('prices') or {}).get('price'),'currency':(x.get('prices') or {}).get('currency_code'),'minor':(x.get('prices') or {}).get('currency_minor_unit'),'stock':x.get('is_in_stock'),'buy':x.get('is_purchasable'),'url':x.get('permalink')})
+              return key,{'ok':True,'status':status,'elapsed':elapsed,'rows':compact[:5]}
+            except Exception as e:
+              return key,{'ok':False,'elapsed':round(time.time()-start,2),'error':repr(e)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+            results=dict(ex.map(one,tests))
+          for k,v in results.items(): print(k,json.dumps(v,ensure_ascii=False))
+          print('SUMMARY',json.dumps(results,ensure_ascii=False))
+          PY
+      - name: Remove one-time validation workflow
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/install-product-image-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/install-product-image-fix.yml
+          git commit -m "chore: remove direct API validation" || exit 0
+          git push
