@@ -1,116 +1,35 @@
-name: Install Sepiid product image fix
+name: Apply market pricing patch
 
 on:
   push:
+    branches: [main]
     paths:
-      - ".image-staging/READY"
-  schedule:
-    - cron: "*/5 * * * *"
+      - ".github/workflows/install-product-image-fix.yml"
 
 permissions:
   contents: write
 
 jobs:
-  install:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Rebuild approved product images
+      - name: Patch comprehensive market scanner
+        run: python3 scripts/patch_direct_market_fallbacks.py
+      - name: Verify patch
+        run: git diff --check
+      - name: Commit and clean temporary patch files
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p public/images/products/editorial/site
-          cat .image-staging/alcarisa-* | base64 -d > public/images/products/editorial/site/alcarisa-28.webp
-          cat .image-staging/lido-* | base64 -d > public/images/products/editorial/site/neurafill-lido.webp
-          cat .image-staging/volume-* | base64 -d > public/images/products/editorial/site/neurafill-volume.webp
-
-          python - <<'PY'
-          from pathlib import Path
-
-          inv = Path('app/current-inventory.ts')
-          s = inv.read_text()
-          s = s.replace('/images/products/alcarisa-28.webp', '/images/products/editorial/site/alcarisa-28.webp')
-          s = s.replace('/images/products/neurafill-lidocaine.webp', '/images/products/editorial/site/neurafill-lido.webp')
-
-          old_volume = '''      image: "/images/products/editorial/fillers-family.webp",
-      imageAlt: "نمای ادیتوریال هم‌خانواده برای نورافیل والیوم؛ تصویر بسته هنگام استعلام تطبیق می‌شود",
-      imageVerified: false,
-      imageKind: "editorial-family",
-      imageApproved: true,'''
-          new_volume = '''      image: "/images/products/editorial/site/neurafill-volume.webp",
-      imageAlt: "نمای ادیتوریال نورافیل والیوم با بسته واقعی محصول",
-      imageVerified: true,
-      imageKind: "market-reference",
-      imageApproved: true,'''
-          if old_volume not in s:
-              raise SystemExit('Neurafill Volume inventory block was not found')
-          s = s.replace(old_volume, new_volume, 1)
-
-          s = s.replace('''      imageAlt: "تصویر واقعی بسته نورافیل لیدوکائین",
-      imageVerified: true,
-      imageKind: "official",
-      imageApproved: true,''', '''      imageAlt: "نمای ادیتوریال نورافیل لیدو با بسته واقعی محصول",
-      imageVerified: true,
-      imageKind: "market-reference",
-      imageApproved: true,''', 1)
-          s = s.replace('''    imageAlt: "تصویر واقعی بسته آلکاریسا ۲۸",
-    imageVerified: true,
-    imageKind: "official" as const,''', '''    imageAlt: "نمای ادیتوریال آلکاریسا ۲۸ با بسته واقعی محصول",
-    imageVerified: true,
-    imageKind: "market-reference" as const,''', 1)
-          inv.write_text(s)
-
-          comp = Path('app/components/ProductVariantExperience.tsx')
-          c = comp.read_text()
-          marker = '  const isEditorialFamilyImage = displayImageKind === "editorial-family";\n'
-          addition = marker + '  const isFullBleedProductPhoto = displayImage.startsWith("/images/products/editorial/site/");\n'
-          if 'const isFullBleedProductPhoto' not in c:
-              if marker not in c:
-                  raise SystemExit('ProductVariantExperience image marker was not found')
-              c = c.replace(marker, addition, 1)
-          visual_marker = '''              <ProductVisual
-                key={displayImage}
-                product={{'''
-          visual_replacement = '''              <ProductVisual
-                key={displayImage}
-                className={isFullBleedProductPhoto ? "product-visual--photo" : undefined}
-                showBackground={!isFullBleedProductPhoto}
-                product={{'''
-          if 'className={isFullBleedProductPhoto' not in c:
-              if visual_marker not in c:
-                  raise SystemExit('ProductVisual call marker was not found')
-              c = c.replace(visual_marker, visual_replacement, 1)
-          comp.write_text(c)
-
-          css = Path('app/product-visual.css')
-          styles = css.read_text()
-          photo_css = '''
-
-/* Full-bleed editorial product photography approved for selected PDP variants. */
-.product-visual--photo .product-visual__stage {
-  inset: 0;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-.product-visual--photo .product-visual__image {
-  object-fit: cover !important;
-  object-position: center !important;
-  transform: none !important;
-  filter: none !important;
-}
-'''
-          if '.product-visual--photo .product-visual__stage' not in styles:
-              css.write_text(styles.rstrip() + photo_css + '\n')
-          PY
-
-          rm -rf .image-staging
           rm -f .github/workflows/install-product-image-fix.yml
-
+          rm -f .github/workflows/patch-direct-market-fallbacks.yml
+          rm -f .github/workflows/run-direct-fallback-patch.yml
+          rm -f scripts/patch_direct_market_fallbacks.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/current-inventory.ts app/components/ProductVariantExperience.tsx app/product-visual.css public/images/products/editorial/site .image-staging .github/workflows/install-product-image-fix.yml
-          git commit -m "Fix Alcarisa and Neurafill product imagery"
+          git add app/lib/market-pricing-comprehensive.ts .github/workflows/install-product-image-fix.yml .github/workflows/patch-direct-market-fallbacks.yml .github/workflows/run-direct-fallback-patch.yml scripts/patch_direct_market_fallbacks.py
+          git commit -m "Pricing: add verified direct market fallbacks"
           git push
