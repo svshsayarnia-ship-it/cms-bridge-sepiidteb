@@ -25,6 +25,8 @@ type ResolvedAlertConfig = {
   emailFrom: string;
 };
 
+const TELEGRAM_SAFE_MESSAGE_LENGTH = 3_600;
+
 function toman(value: number | null): string {
   return value === null
     ? "ثبت نشده"
@@ -37,14 +39,37 @@ function cmsUrl(): string {
   return `${base}/cms`;
 }
 
-function messageFor(alerts: MarketPricingProposalAlert[]): string {
-  const lines = alerts.map(({ productName, proposal }) => [
+function alertBlock({ productName, proposal }: MarketPricingProposalAlert): string {
+  return [
     `• ${productName}`,
     `قیمت فعلی: ${toman(proposal.currentPriceToman)}`,
     `قیمت پیشنهادی: ${toman(proposal.proposedPriceToman)}`,
     `بررسی و تأیید: ${cmsUrl()}`,
-  ].join("\n"));
-  return `پیشنهاد قیمت جدید سپید بیوتی\n\n${lines.join("\n\n")}`;
+  ].join("\n");
+}
+
+function messageFor(alerts: MarketPricingProposalAlert[]): string {
+  return `پیشنهاد قیمت جدید سپید بیوتی\n\n${alerts.map(alertBlock).join("\n\n")}`;
+}
+
+function telegramMessagesFor(alerts: MarketPricingProposalAlert[]): string[] {
+  const header = "پیشنهاد قیمت جدید سپید بیوتی";
+  const chunks: string[] = [];
+  let current = header;
+
+  for (const alert of alerts) {
+    const block = alertBlock(alert);
+    const next = `${current}\n\n${block}`;
+    if (next.length <= TELEGRAM_SAFE_MESSAGE_LENGTH) {
+      current = next;
+      continue;
+    }
+    if (current !== header) chunks.push(current);
+    current = `${header}\n\n${block}`;
+  }
+
+  if (current !== header) chunks.push(current);
+  return chunks;
 }
 
 function priceChangeMessage(alert: MarketPriceChangeAlert): string {
@@ -97,7 +122,10 @@ async function telegram(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text: message, disable_web_page_preview: true }),
     });
-    if (!response.ok) throw new Error(`Telegram returned ${response.status}`);
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 300);
+      throw new Error(`Telegram returned ${response.status}${detail ? `: ${detail}` : ""}`);
+    }
     return { channel: "telegram", delivered: true };
   } catch (error) {
     console.error("[market-price-alert] Telegram delivery failed", error);
@@ -107,6 +135,23 @@ async function telegram(
       error: error instanceof Error ? error.message : "Telegram delivery failed.",
     };
   }
+}
+
+async function telegramBatch(
+  messages: string[],
+  config: ResolvedAlertConfig,
+): Promise<MarketPriceAlertDelivery> {
+  for (let index = 0; index < messages.length; index += 1) {
+    const delivery = await telegram(messages[index], config);
+    if (!delivery.delivered) {
+      return {
+        channel: "telegram",
+        delivered: false,
+        error: `بخش ${index + 1} از ${messages.length}: ${delivery.error ?? "Telegram delivery failed."}`,
+      };
+    }
+  }
+  return { channel: "telegram", delivered: true };
 }
 
 async function email(
@@ -150,9 +195,13 @@ export async function sendMarketPriceAlerts(
   alerts: MarketPricingProposalAlert[],
 ): Promise<MarketPriceAlertDelivery[]> {
   if (!alerts.length) return [];
-  const message = messageFor(alerts);
+  const fullMessage = messageFor(alerts);
+  const telegramMessages = telegramMessagesFor(alerts);
   const config = await resolvedConfig();
-  return Promise.all([telegram(message, config), email(message, config)]);
+  return Promise.all([
+    telegramBatch(telegramMessages, config),
+    email(fullMessage, config),
+  ]);
 }
 
 export async function sendMarketPriceAlertTest(): Promise<MarketPriceAlertDelivery[]> {
@@ -170,5 +219,6 @@ export async function sendMarketPriceChangeAlert(
   alert: MarketPriceChangeAlert,
 ): Promise<MarketPriceAlertDelivery[]> {
   const config = await resolvedConfig();
-  return Promise.all([telegram(priceChangeMessage(alert), config), email(priceChangeMessage(alert), config)]);
+  const message = priceChangeMessage(alert);
+  return Promise.all([telegram(message, config), email(message, config)]);
 }
