@@ -16,55 +16,129 @@ permissions:
 
 concurrency:
   group: market-price-scan
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
-      - name: Request GitHub OIDC token
-        id: oidc
+      - name: Scan every Sepiid Beauty product in batches
         shell: bash
         run: |
           set -euo pipefail
-          RESPONSE="$(curl --fail --silent --show-error \
-            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sepiid-price-cron")"
-          TOKEN="$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 
-      - name: Run Sepiid Beauty market scan
-        shell: bash
-        env:
-          OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
-        run: |
-          set -euo pipefail
-          TARGET="https://sepiidbeauty.ir/api/cron/market-prices/github"
-          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
-            TARGET="${TARGET}?health=1"
-          fi
+          BASE="https://sepiidbeauty.ir/api/cron/market-prices/github"
+          LIMIT=10
+          RUN_STARTED_AT="$(python3 - <<'PY'
+          from datetime import datetime, timezone
+          print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
+          PY
+          )"
 
-          for attempt in $(seq 1 18); do
-            STATUS="$(curl --silent --show-error \
+          issue_token() {
+            local response
+            response="$(curl --fail --silent --show-error \
+              -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sepiid-price-cron")"
+            printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])'
+          }
+
+          request_endpoint() {
+            local target="$1"
+            local token status
+            token="$(issue_token)"
+            status="$(curl --silent --show-error \
+              --max-time 240 \
               --output /tmp/sepiid-price-response.txt \
               --write-out '%{http_code}' \
               --request POST \
-              --header "Authorization: Bearer ${OIDC_TOKEN}" \
+              --header "Authorization: Bearer ${token}" \
               --header "Content-Type: application/json" \
-              "$TARGET" || true)"
+              "$target" || true)"
+            printf '%s' "$status"
+          }
 
-            if [[ "$STATUS" =~ ^2 ]]; then
-              cat /tmp/sepiid-price-response.txt
-              echo
-              exit 0
+          echo "Waiting for batched scanner deployment..."
+          READY=0
+          for attempt in $(seq 1 24); do
+            STATUS="$(request_endpoint "${BASE}?health=1")"
+            if [[ "$STATUS" =~ ^2 ]] && grep -q '"scanMode":"batched-torob-v2"' /tmp/sepiid-price-response.txt; then
+              READY=1
+              break
             fi
-
-            echo "Attempt ${attempt}: HTTP ${STATUS}"
+            echo "Health attempt ${attempt}: HTTP ${STATUS}"
             cat /tmp/sepiid-price-response.txt || true
             echo
             sleep 10
           done
 
-          echo "GitHub OIDC call did not become ready in time."
-          exit 1
+          if [ "$READY" -ne 1 ]; then
+            echo "Batched market scanner did not become ready."
+            exit 1
+          fi
+
+          CURSOR=0
+          COMPLETED=0
+          for batch in $(seq 1 30); do
+            TARGET="${BASE}?cursor=${CURSOR}&limit=${LIMIT}"
+            BATCH_OK=0
+
+            for attempt in 1 2 3; do
+              STATUS="$(request_endpoint "$TARGET")"
+              if [[ "$STATUS" =~ ^2 ]]; then
+                BATCH_OK=1
+                break
+              fi
+              echo "Batch ${batch}, attempt ${attempt}: HTTP ${STATUS}"
+              cat /tmp/sepiid-price-response.txt || true
+              echo
+              sleep 8
+            done
+
+            if [ "$BATCH_OK" -ne 1 ]; then
+              echo "Batch ${batch} failed after retries."
+              exit 1
+            fi
+
+            echo "Batch ${batch} response:"
+            cat /tmp/sepiid-price-response.txt
+            echo
+
+            NEXT_CURSOR="$(python3 - <<'PY'
+          import json
+          with open('/tmp/sepiid-price-response.txt', encoding='utf-8') as f:
+              body = json.load(f)
+          value = body['summary']['nextCursor']
+          print('' if value is None else value)
+          PY
+            )"
+
+            if [ -z "$NEXT_CURSOR" ]; then
+              COMPLETED=1
+              break
+            fi
+            CURSOR="$NEXT_CURSOR"
+          done
+
+          if [ "$COMPLETED" -ne 1 ]; then
+            echo "Product scan did not reach the final batch."
+            exit 1
+          fi
+
+          ENCODED_STARTED_AT="$(python3 - "$RUN_STARTED_AT" <<'PY'
+          import sys
+          from urllib.parse import quote
+          print(quote(sys.argv[1], safe=''))
+          PY
+          )"
+          STATUS="$(request_endpoint "${BASE}?finalize=1&startedAt=${ENCODED_STARTED_AT}")"
+          if [[ ! "$STATUS" =~ ^2 ]]; then
+            echo "Finalize failed: HTTP ${STATUS}"
+            cat /tmp/sepiid-price-response.txt || true
+            exit 1
+          fi
+
+          echo "Finalize response:"
+          cat /tmp/sepiid-price-response.txt
+          echo

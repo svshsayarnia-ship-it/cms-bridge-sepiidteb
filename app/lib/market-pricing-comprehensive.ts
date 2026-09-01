@@ -1,11 +1,8 @@
 import { catalogProducts } from "../catalog";
 import type { CmsProduct } from "./cms-types";
 import {
-  runMarketPricingScan,
-  type MarketPricingScanSummary,
-} from "./market-pricing";
-import {
   MARKET_PROVIDER_LABELS,
+  type MarketPriceHistoryEntry,
   type MarketPriceProposal,
   type MarketPriceSample,
   type MarketSourceConfig,
@@ -22,6 +19,9 @@ const MIN_VALID_PRICE_TOMAN = 100_000;
 const MAX_VALID_PRICE_TOMAN = 1_000_000_000;
 const MAX_TOROB_SELLERS = 5;
 const MAX_DISCOVERY_QUERIES = 3;
+const MAX_HISTORY_ITEMS = 30;
+const DEFAULT_BATCH_SIZE = 10;
+const MAX_BATCH_SIZE = 12;
 
 const GENERIC_TOKENS = new Set([
   "خرید",
@@ -84,21 +84,32 @@ type RankedTorobCandidate = {
   score: number;
 };
 
-type SupplementalResult =
-  | "proposal"
-  | "matched-no-change"
-  | "not-found"
-  | "failed";
+type ProductScanResult = {
+  slug: string;
+  status:
+    | "proposal"
+    | "same-proposal"
+    | "market-equal"
+    | "unresolved"
+    | "failed";
+};
 
-export type ComprehensiveMarketPricingScanSummary = MarketPricingScanSummary & {
-  torobSupplement: {
-    attemptedProducts: number;
-    matchedProducts: number;
-    proposalsCreated: number;
-    matchedWithoutChange: number;
-    unresolvedProducts: number;
-    failedProducts: number;
-  };
+export type TorobMarketPricingBatchSummary = {
+  startedAt: string;
+  finishedAt: string;
+  cursor: number;
+  limit: number;
+  totalProducts: number;
+  processedProducts: number;
+  nextCursor: number | null;
+  matchedProducts: number;
+  proposalsCreated: number;
+  sameProposalProducts: number;
+  marketEqualProducts: number;
+  unresolvedProducts: number;
+  failedProducts: number;
+  matchedSlugs: string[];
+  unresolvedSlugs: string[];
 };
 
 function toLatinDigits(value: string): string {
@@ -321,7 +332,10 @@ async function fetchJson<T>(url: string): Promise<T> {
     const response = await fetch(url, {
       headers: {
         accept: "application/json,text/plain;q=0.9,*/*;q=0.8",
-        "user-agent": "Mozilla/5.0 (compatible; SepiidBeautyPriceMonitor/2.0)",
+        "accept-language": "fa-IR,fa;q=0.9,en-US;q=0.7,en;q=0.6",
+        referer: "https://torob.com/",
+        "user-agent":
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       },
       cache: "no-store",
       redirect: "follow",
@@ -347,14 +361,13 @@ function candidateWebUrl(candidate: TorobSearchCandidate): string | null {
         return url.toString();
       }
     } catch {
-      // Fall through and build the canonical product URL from random_key.
+      // Build a canonical Torob URL from random_key below.
     }
   }
 
   const key = candidate.random_key?.trim();
   if (!key || !/^[a-z0-9-]{12,}$/iu.test(key)) return null;
-  const slug = encodeURIComponent((candidate.name2 || candidate.name1 || "product").trim().replace(/\s+/gu, "-"));
-  return `https://torob.com/p/${key}/${slug}/`;
+  return `https://torob.com/p/${key}/`;
 }
 
 function candidateAvailable(candidate: TorobSearchCandidate): boolean {
@@ -445,7 +458,7 @@ async function torobSamples(
         if (samples.length >= MAX_TOROB_SELLERS) break;
       }
     } catch {
-      // Search-card price is still a useful fallback when seller listing is unavailable.
+      // Search-card price is the fallback when the seller listing is unavailable.
     }
   }
 
@@ -499,6 +512,23 @@ function updateTorobSource(
   return next;
 }
 
+function supersededHistory(product: CmsProduct, decidedAt: string): MarketPriceHistoryEntry[] {
+  const history = [...product.pricing.history];
+  const previous = product.pricing.proposal;
+  if (previous) {
+    history.unshift({
+      id: previous.id,
+      createdAt: previous.createdAt,
+      proposedPriceToman: previous.proposedPriceToman,
+      currentPriceToman: previous.currentPriceToman,
+      sampleCount: previous.samples.length,
+      decision: "superseded",
+      decidedAt,
+    });
+  }
+  return history.slice(0, MAX_HISTORY_ITEMS);
+}
+
 function marketProposal(
   product: CmsProduct,
   samples: MarketPriceSample[],
@@ -525,49 +555,78 @@ function marketProposal(
     note:
       excluded.length > 0
         ? `${excluded.length} قیمت پرت ترب از محاسبه کنار گذاشته شد.`
-        : `میانگین از ${included.length} قیمت معتبر ترب محاسبه شد.`,
+        : `میانگین از ${included.length} قیمت معتبر فروشنده‌های ترب محاسبه شد.`,
   };
 }
 
-async function supplementProductWithTorob(product: CmsProduct): Promise<SupplementalResult> {
+async function markUnresolved(product: CmsProduct, checkedAt: string): Promise<void> {
+  await updateProductPricingState(product.id, {
+    ...product.pricing,
+    lastCheckedAt: checkedAt,
+    lastStatus: product.pricing.proposal ? "pending" : "insufficient",
+    lastMessage: product.pricing.proposal
+      ? "در این نوبت تطبیق مطمئن جدید در ترب پیدا نشد؛ پیشنهاد قبلی حفظ شد."
+      : "در این نوبت تطبیق مطمئن محصول در ترب پیدا نشد؛ در اسکن بعدی دوباره تلاش می‌شود.",
+  });
+}
+
+async function scanProductWithTorob(product: CmsProduct): Promise<ProductScanResult> {
+  const checkedAt = new Date().toISOString();
   try {
     const ranked = await discoverTorobCandidate(product);
-    if (!ranked) return "not-found";
+    if (!ranked) {
+      await markUnresolved(product, checkedAt);
+      return { slug: product.slug, status: "unresolved" };
+    }
+
     const { sourceUrl, samples } = await torobSamples(product, ranked);
-    if (!samples.length) return "not-found";
-
-    const checkedAt = new Date().toISOString();
     const proposal = marketProposal(product, samples, checkedAt);
-    if (!proposal) return "not-found";
-    const sources = updateTorobSource(product.pricing.sources, sourceUrl);
+    if (!proposal) {
+      await markUnresolved(product, checkedAt);
+      return { slug: product.slug, status: "unresolved" };
+    }
 
+    const sources = updateTorobSource(product.pricing.sources, sourceUrl);
     if (proposal.currentPriceToman === proposal.proposedPriceToman) {
       await updateProductPricingState(product.id, {
         ...product.pricing,
         sources,
         proposal: null,
+        history: supersededHistory(product, checkedAt),
         lastCheckedAt: checkedAt,
         lastStatus: "insufficient",
-        lastMessage: `قیمت فعلی با میانگین ${proposal.samples.length} قیمت معتبر ترب برابر است؛ تغییر لازم نیست.`,
+        lastMessage: `قیمت فعلی با میانگین ${proposal.samples.length} قیمت معتبر فروشنده‌های ترب برابر است؛ تغییر لازم نیست.`,
       });
-      return "matched-no-change";
+      return { slug: product.slug, status: "market-equal" };
+    }
+
+    if (product.pricing.proposal?.proposedPriceToman === proposal.proposedPriceToman) {
+      await updateProductPricingState(product.id, {
+        ...product.pricing,
+        sources,
+        lastCheckedAt: checkedAt,
+        lastStatus: "pending",
+        lastMessage: `پیشنهاد قبلی با ${proposal.samples.length} قیمت معتبر ترب دوباره تأیید شد.`,
+      });
+      return { slug: product.slug, status: "same-proposal" };
     }
 
     await updateProductPricingState(product.id, {
       ...product.pricing,
       sources,
       proposal,
+      history: supersededHistory(product, checkedAt),
       lastCheckedAt: checkedAt,
       lastStatus: "pending",
       lastMessage: `پیشنهاد قیمت با کشف خودکار ${proposal.samples.length} فروشنده معتبر در ترب آماده تأیید است.`,
     });
-    return "proposal";
+    return { slug: product.slug, status: "proposal" };
   } catch (error) {
-    console.error("[market-pricing] Torob supplemental discovery failed", {
+    console.error("[market-pricing] Torob product scan failed", {
       slug: product.slug,
       error: error instanceof Error ? error.message : String(error),
     });
-    return "failed";
+    return { slug: product.slug, status: "failed" };
   }
 }
 
@@ -591,40 +650,46 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-function needsSupplement(product: CmsProduct, startedAt: string): boolean {
-  if (product.pricing.proposal) return false;
-  const checkedThisRun = product.pricing.lastCheckedAt >= startedAt;
-  if (
-    checkedThisRun &&
-    product.pricing.lastStatus === "insufficient" &&
-    /برابر است|تغییری لازم نیست/u.test(product.pricing.lastMessage)
-  ) {
-    return false;
-  }
-  return true;
+function safeCursor(value: number): number {
+  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
 }
 
-export async function runComprehensiveMarketPricingScan(): Promise<ComprehensiveMarketPricingScanSummary> {
-  const base = await runMarketPricingScan();
-  const products = await listAllProductsForPricing();
-  const targets = products.filter((product) => needsSupplement(product, base.startedAt));
-  const results = await mapWithConcurrency(targets, 4, supplementProductWithTorob);
+function safeLimit(value: number): number {
+  if (!Number.isSafeInteger(value) || value <= 0) return DEFAULT_BATCH_SIZE;
+  return Math.min(MAX_BATCH_SIZE, value);
+}
 
-  const proposalsCreated = results.filter((result) => result === "proposal").length;
-  const matchedWithoutChange = results.filter((result) => result === "matched-no-change").length;
-  const unresolvedProducts = results.filter((result) => result === "not-found").length;
-  const failedProducts = results.filter((result) => result === "failed").length;
+export async function runTorobMarketPricingBatch(
+  cursorInput = 0,
+  limitInput = DEFAULT_BATCH_SIZE,
+): Promise<TorobMarketPricingBatchSummary> {
+  const startedAt = new Date().toISOString();
+  const cursor = safeCursor(cursorInput);
+  const limit = safeLimit(limitInput);
+  const products = (await listAllProductsForPricing()).sort((a, b) => a.id - b.id);
+  const batch = products.slice(cursor, cursor + limit);
+  const results = await mapWithConcurrency(batch, 4, scanProductWithTorob);
+  const nextCursor = cursor + batch.length < products.length ? cursor + batch.length : null;
+  const matched = results.filter((result) =>
+    ["proposal", "same-proposal", "market-equal"].includes(result.status),
+  );
+  const unresolved = results.filter((result) => result.status === "unresolved");
 
   return {
-    ...base,
+    startedAt,
     finishedAt: new Date().toISOString(),
-    torobSupplement: {
-      attemptedProducts: targets.length,
-      matchedProducts: proposalsCreated + matchedWithoutChange,
-      proposalsCreated,
-      matchedWithoutChange,
-      unresolvedProducts,
-      failedProducts,
-    },
+    cursor,
+    limit,
+    totalProducts: products.length,
+    processedProducts: batch.length,
+    nextCursor,
+    matchedProducts: matched.length,
+    proposalsCreated: results.filter((result) => result.status === "proposal").length,
+    sameProposalProducts: results.filter((result) => result.status === "same-proposal").length,
+    marketEqualProducts: results.filter((result) => result.status === "market-equal").length,
+    unresolvedProducts: unresolved.length,
+    failedProducts: results.filter((result) => result.status === "failed").length,
+    matchedSlugs: matched.map((result) => result.slug),
+    unresolvedSlugs: unresolved.map((result) => result.slug),
   };
 }
