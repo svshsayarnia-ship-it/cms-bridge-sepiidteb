@@ -146,11 +146,12 @@ export async function ensureMarketPriceTelegramWebhook(): Promise<MarketPriceTel
 export async function sendMarketPriceTelegramMessage(
   chatId: string,
   text: string,
-  options: { replyMarkup?: TelegramReplyMarkup } = {},
+  options: { replyMarkup?: TelegramReplyMarkup; botToken?: string } = {},
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const config = await getMarketPriceAlertConfig();
-    if (!config.telegramBotToken) {
+    const providedToken = options.botToken?.trim() ?? "";
+    const token = providedToken || (await getMarketPriceAlertConfig()).telegramBotToken;
+    if (!token) {
       return { ok: false, error: "Telegram bot token is not configured." };
     }
     const payload: Record<string, unknown> = {
@@ -160,7 +161,7 @@ export async function sendMarketPriceTelegramMessage(
     };
     if (options.replyMarkup) payload.reply_markup = options.replyMarkup;
 
-    await telegramRequest<unknown>(config.telegramBotToken, "sendMessage", payload);
+    await telegramRequest<unknown>(token, "sendMessage", payload);
     return { ok: true };
   } catch (error) {
     return {
