@@ -1,5 +1,7 @@
 "use client";
 
+import { trackEcommerceEvent } from "./analytics";
+
 export type CartProduct = {
   slug: string;
   nameFa: string;
@@ -51,24 +53,39 @@ function notify(items: CartItem[]) {
 }
 
 export function addToCart(product: CartProduct, quantity = 1) {
+  const safeQuantity = Math.max(1, quantity);
   const items = readCart();
   const existing = items.find((item) => cartItemKey(item) === cartItemKey(product));
-  if (existing) existing.quantity = Math.min(99, existing.quantity + Math.max(1, quantity));
-  else items.push({ ...product, quantity: Math.max(1, quantity) });
+  if (existing) existing.quantity = Math.min(99, existing.quantity + safeQuantity);
+  else items.push({ ...product, quantity: safeQuantity });
   notify(items);
+  trackEcommerceEvent("add_to_cart", [{ ...product, quantity: safeQuantity }]);
 }
 
 export function updateCartQuantity(target: CartTarget, quantity: number) {
+  const before = readCart();
+  const existing = before.find((item) => sameCartItem(item, target));
   const safeQuantity = Math.min(99, Math.max(0, Math.trunc(Number(quantity))));
-  notify(
-    readCart()
-      .map((item) => sameCartItem(item, target) ? { ...item, quantity: safeQuantity } : item)
-      .filter((item) => item.quantity > 0),
-  );
+  const next = before
+    .map((item) => sameCartItem(item, target) ? { ...item, quantity: safeQuantity } : item)
+    .filter((item) => item.quantity > 0);
+
+  notify(next);
+
+  if (!existing) return;
+  const delta = safeQuantity - existing.quantity;
+  if (delta > 0) {
+    trackEcommerceEvent("add_to_cart", [{ ...existing, quantity: delta }]);
+  } else if (delta < 0) {
+    trackEcommerceEvent("remove_from_cart", [{ ...existing, quantity: Math.abs(delta) }]);
+  }
 }
 
 export function removeFromCart(target: CartTarget) {
-  notify(readCart().filter((item) => !sameCartItem(item, target)));
+  const items = readCart();
+  const removed = items.filter((item) => sameCartItem(item, target));
+  notify(items.filter((item) => !sameCartItem(item, target)));
+  if (removed.length) trackEcommerceEvent("remove_from_cart", removed);
 }
 
 export function cartCount(items = readCart()) {

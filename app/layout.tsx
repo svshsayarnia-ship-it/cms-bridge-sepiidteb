@@ -9,6 +9,7 @@ import "./product-visual.css";
 import "./account-responsive.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
+import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeaderServer } from "./components/SiteHeaderServer";
@@ -105,6 +106,7 @@ export default async function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
+        <GoogleAnalytics />
         <AiReferralTracker />
         <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
         <SiteHeaderServer
