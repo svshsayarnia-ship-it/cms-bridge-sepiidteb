@@ -1,0 +1,32 @@
+name: Run direct fallback patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/run-direct-fallback-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python3 scripts/patch_direct_market_fallbacks.py
+      - run: git diff --check
+      - name: Commit patched scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/run-direct-fallback-patch.yml
+          rm .github/workflows/patch-direct-market-fallbacks.yml
+          rm scripts/patch_direct_market_fallbacks.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/market-pricing-comprehensive.ts .github/workflows/run-direct-fallback-patch.yml .github/workflows/patch-direct-market-fallbacks.yml scripts/patch_direct_market_fallbacks.py
+          git commit -m "Pricing: add verified direct market fallbacks"
+          git push
