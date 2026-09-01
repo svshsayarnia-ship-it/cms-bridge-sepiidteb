@@ -164,14 +164,6 @@ export function CustomerAccount({
       setMessage("شماره موبایل باید دقیقاً ۱۱ رقم و با 09 شروع شود.");
       return;
     }
-    if (purpose === "register") {
-      const validationError = registrationValidationError();
-      if (validationError) {
-        setMessage(validationError);
-        return;
-      }
-    }
-
     setPending(true);
     setMessage("");
     try {
@@ -190,6 +182,15 @@ export function CustomerAccount({
       }
       setMessage(result.message || "کد یک‌بارمصرف پیامک شد.");
     } catch (error) {
+      if (purpose === "login" && error instanceof AccountRequestError && error.code === "sepiid_registration_required") {
+        setProfile((current) => ({ ...current, phone: identifier }));
+        setRegisterChallenge("");
+        setRegisterCode("");
+        setPhoneProof("");
+        setMode("register");
+        setMessage("این شماره هنوز حساب ندارد. شماره به فرم ثبت‌نام منتقل شد؛ کد تأیید را دریافت کن.");
+        return;
+      }
       setMessage(errorMessage(error));
     } finally {
       setPending(false);
@@ -283,6 +284,11 @@ export function CustomerAccount({
       if (!result.phoneProof) throw new Error("تأیید شماره تکمیل نشد. دوباره کد بگیر.");
       setPhoneProof(result.phoneProof);
       setRegisterCode("");
+      const validationError = registrationValidationError();
+      if (validationError) {
+        setMessage("شماره تأیید شد. حالا اطلاعات حساب و رمز را کامل کن.");
+        return;
+      }
       await completeRegistration(result.phoneProof);
     } catch (error) {
       setMessage(errorMessage(error));
@@ -587,7 +593,7 @@ export function CustomerAccount({
                   <button
                     type="button"
                     className="sb-btn sb-btn--ghost"
-                    disabled={pending || Boolean(registrationValidationError())}
+                    disabled={pending || !registerPhoneValid}
                     onClick={() => void requestOtp("register")}
                   >
                     {pending ? "در حال ارسال..." : "ارسال کد تأیید موبایل"}
@@ -721,9 +727,15 @@ async function accountRequest<T>(action: string, body: Record<string, unknown>, 
     body: JSON.stringify(body),
   });
 
-  const result = (await response.json().catch(() => ({}))) as { error?: string } & T;
-  if (!response.ok) throw new Error(result.error || "عملیات حساب کاربری انجام نشد.");
+  const result = (await response.json().catch(() => ({}))) as { error?: string; code?: string } & T;
+  if (!response.ok) throw new AccountRequestError(result.error || "عملیات حساب کاربری انجام نشد.", result.code);
   return result;
+}
+
+class AccountRequestError extends Error {
+  constructor(message: string, public readonly code?: string) {
+    super(message);
+  }
 }
 
 function errorMessage(error: unknown) {

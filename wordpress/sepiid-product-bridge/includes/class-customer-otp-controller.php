@@ -203,6 +203,13 @@ final class Customer_Otp_Controller {
 		if ( 'login' === $purpose && count( $matches ) > 1 ) {
 			return $this->error( 'sepiid_phone_conflict', 'این شماره روی بیش از یک حساب قدیمی ثبت شده است. برای ادغام حساب‌ها با پشتیبانی تماس بگیر.', 409 );
 		}
+		if ( 'login' === $purpose && empty( $matches ) ) {
+			return $this->error(
+				'sepiid_registration_required',
+				'این شماره هنوز حساب ندارد. برای دریافت کد، ابتدا ثبت‌نام کن.',
+				404
+			);
+		}
 
 		$challenge = $this->base64url( random_bytes( 24 ) );
 		$code = (string) random_int( 100000, 999999 );
@@ -217,12 +224,10 @@ final class Customer_Otp_Controller {
 		);
 		set_transient( $this->otp_key( $challenge ), $data, self::OTP_TTL );
 
-		if ( 'register' === $purpose || $user_id > 0 ) {
-			$sent = $this->send_otp_sms( $phone, $code, $purpose );
-			if ( is_wp_error( $sent ) ) {
-				delete_transient( $this->otp_key( $challenge ) );
-				return $sent;
-			}
+		$sent = $this->send_otp_sms( $phone, $code, $purpose );
+		if ( is_wp_error( $sent ) ) {
+			delete_transient( $this->otp_key( $challenge ) );
+			return $sent;
 		}
 
 		set_transient( $cooldown_key, 1, self::SMS_COOLDOWN );
