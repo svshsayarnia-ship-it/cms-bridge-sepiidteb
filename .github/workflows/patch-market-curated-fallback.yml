@@ -1,0 +1,99 @@
+name: Patch market scanner curated fallback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/patch-market-curated-fallback.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add curated Torob fallback to comprehensive scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          legacy = Path('app/lib/market-pricing.ts')
+          text = legacy.read_text()
+          marker = 'const CURATED_TOROB_URLS: Record<string, string> = {'
+          replacement = 'export const CURATED_TOROB_URLS: Record<string, string> = {'
+          if marker not in text and replacement not in text:
+              raise SystemExit('curated map marker not found')
+          if marker in text:
+              text = text.replace(marker, replacement, 1)
+              legacy.write_text(text)
+
+          path = Path('app/lib/market-pricing-comprehensive.ts')
+          source = path.read_text()
+
+          import_marker = 'import type { CmsProduct } from "./cms-types";\n'
+          import_line = 'import { CURATED_TOROB_URLS } from "./market-pricing";\n'
+          if import_line not in source:
+              if import_marker not in source:
+                  raise SystemExit('import marker not found')
+              source = source.replace(import_marker, import_marker + import_line, 1)
+
+          anchor = '''function candidateAvailable(candidate: TorobSearchCandidate): boolean {
+            if (candidate.is_adv === true || candidate.availability === false) return false;
+            const stock = normalizeBasic(candidate.stock_status ?? "");
+            return !/(out|ناموجود|unavailable)/u.test(stock);
+          }
+          '''
+          helper = '''function candidateAvailable(candidate: TorobSearchCandidate): boolean {
+            if (candidate.is_adv === true || candidate.availability === false) return false;
+            const stock = normalizeBasic(candidate.stock_status ?? "");
+            return !/(out|ناموجود|unavailable)/u.test(stock);
+          }
+
+          function curatedTorobCandidate(product: CmsProduct): RankedTorobCandidate | null {
+            const url = CURATED_TOROB_URLS[canonicalProductSlug(product)];
+            if (!url) return null;
+            try {
+              const parsed = new URL(url);
+              const key = parsed.pathname.match(/^\\/p\\/([^/]+)/u)?.[1]?.trim();
+              if (!key) return null;
+              return {
+                candidate: {
+                  random_key: key,
+                  web_client_absolute_url: url,
+                  availability: true,
+                },
+                name: product.name,
+                score: 1,
+              };
+            } catch {
+              return null;
+            }
+          }
+          '''
+          if 'function curatedTorobCandidate(' not in source:
+              if anchor not in source:
+                  raise SystemExit('candidateAvailable anchor not found')
+              source = source.replace(anchor, helper, 1)
+
+          scan_old = '    const ranked = await discoverTorobCandidate(product);\n'
+          scan_new = '    const ranked = (await discoverTorobCandidate(product)) ?? curatedTorobCandidate(product);\n'
+          if scan_new not in source:
+              if scan_old not in source:
+                  raise SystemExit('scan ranked marker not found')
+              source = source.replace(scan_old, scan_new, 1)
+
+          path.write_text(source)
+          PY
+
+          rm .github/workflows/patch-market-curated-fallback.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/market-pricing.ts app/lib/market-pricing-comprehensive.ts .github/workflows/patch-market-curated-fallback.yml
+          git commit -m "Pricing: use curated Torob exact matches as scanner fallback"
+          git push
