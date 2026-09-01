@@ -1,3 +1,4 @@
+# Scanner trigger: canonical-slug-v3
 name: Market price scan
 
 on:
