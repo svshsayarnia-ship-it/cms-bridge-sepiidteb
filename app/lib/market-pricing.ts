@@ -43,6 +43,7 @@ const PROVIDER_HOSTS: Record<MarketProvider, string[]> = {
   torob: ["torob.com", "www.torob.com"],
   emalls: ["emalls.ir", "www.emalls.ir"],
   noavaransalamat: ["noavaransalamat.ir", "www.noavaransalamat.ir"],
+  direct: ["tebsoo.co", "www.tebsoo.co", "mesotop.com", "www.mesotop.com", "capsoll.ir", "www.capsoll.ir"],
 };
 
 const AUTO_DISCOVERY_BASE: Partial<Record<MarketProvider, string>> = {
