@@ -23,8 +23,18 @@ export default async function CmsLoginPage({
         </div>
         <h1 id="cms-login-title">ورود امن به CMS سپید</h1>
         <p>برای مدیریت محصولات، قیمت‌ها، دسته‌بندی‌ها و تصاویر وارد شو.</p>
-        {hasError && <div className="spb-cms-alert is-error">رمز واردشده درست نیست.</div>}
+        {hasError && <div className="spb-cms-alert is-error">نام کاربری یا رمز عبور درست نیست.</div>}
         <form action="/api/cms/login" method="post" className="spb-cms-login__form">
+          <label htmlFor="cms-username">نام کاربری</label>
+          <input
+            id="cms-username"
+            name="username"
+            type="text"
+            autoComplete="username"
+            required
+            autoFocus
+            placeholder="نام کاربری را وارد کن"
+          />
           <label htmlFor="cms-password">رمز CMS</label>
           <input
             id="cms-password"
@@ -32,7 +42,6 @@ export default async function CmsLoginPage({
             type="password"
             autoComplete="current-password"
             required
-            autoFocus
             placeholder="رمز پنل را وارد کن"
           />
           <button type="submit" className="spb-button is-primary">

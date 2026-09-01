@@ -6,6 +6,15 @@ const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 type CmsUser = ChatGPTUser;
 
+type CmsPasswordUser = {
+  username: string;
+  displayName: string;
+  passwordHash: string;
+  salt: string;
+  iterations: number;
+  disabled?: boolean;
+};
+
 type CmsAuthorization =
   | { ok: true; user: CmsUser }
   | { ok: false; status: 401 | 403 | 503; message: string };
@@ -44,14 +53,11 @@ export async function authorizeCmsRequest(
 
   if (hasPasswordAuth()) {
     const session = await readSessionToken(request);
-    if (session && (await verifySessionToken(session))) {
+    const sessionUser = session ? await verifySessionToken(session) : null;
+    if (sessionUser) {
       return {
         ok: true,
-        user: {
-          email: process.env.CMS_ADMIN_USER ?? "admin@sepiid.local",
-          displayName: process.env.CMS_ADMIN_NAME ?? "مدیر سپید",
-          fullName: process.env.CMS_ADMIN_NAME ?? null,
-        },
+        user: sessionUser,
       };
     }
 
@@ -97,12 +103,45 @@ export async function cmsApiGuard(request: Request): Promise<Response | null> {
   );
 }
 
-export async function createCmsSession(password: string): Promise<string | null> {
+export async function createCmsSession(
+  username: string,
+  password: string,
+): Promise<string | null> {
   if (!hasPasswordAuth()) return null;
-  if (!constantTimeEqual(password, process.env.CMS_ADMIN_PASSWORD ?? "")) return null;
+
+  const normalizedUsername = normalizeUsername(username);
+  const configuredUser = passwordUsers().find(
+    (user) => normalizeUsername(user.username) === normalizedUsername && !user.disabled,
+  );
+  let authenticatedUser: CmsUser | null = null;
+
+  if (configuredUser && (await verifyPassword(password, configuredUser))) {
+    authenticatedUser = {
+      email: `${configuredUser.username}@cms.sepiid.local`,
+      displayName: configuredUser.displayName,
+      fullName: configuredUser.displayName,
+    };
+  } else if (
+    isLegacyAdminUsername(normalizedUsername) &&
+    constantTimeEqual(password, process.env.CMS_ADMIN_PASSWORD ?? "")
+  ) {
+    const displayName = process.env.CMS_ADMIN_NAME ?? "مدیر سپید";
+    authenticatedUser = {
+      email: process.env.CMS_ADMIN_USER ?? "admin@sepiid.local",
+      displayName,
+      fullName: displayName,
+    };
+  }
+
+  if (!authenticatedUser) return null;
 
   const issuedAt = Math.floor(Date.now() / 1000);
-  const payload = String(issuedAt);
+  const payload = base64UrlText(JSON.stringify({
+    issuedAt,
+    username: normalizedUsername,
+    email: authenticatedUser.email,
+    displayName: authenticatedUser.displayName,
+  }));
   const signature = await sign(payload);
   return `${payload}.${signature}`;
 }
@@ -122,7 +161,9 @@ export function clearCmsSessionCookie(cookiesStore: CookieWriter) {
 }
 
 function hasPasswordAuth(): boolean {
-  return Boolean((process.env.CMS_ADMIN_PASSWORD ?? "").trim());
+  return Boolean(
+    (process.env.CMS_ADMIN_PASSWORD ?? "").trim() || passwordUsers().length,
+  );
 }
 
 function isPasswordAuthReady(): boolean {
@@ -148,17 +189,116 @@ function cookieFromHeader(cookieHeader: string): string | null {
   );
 }
 
-async function verifySessionToken(token: string): Promise<boolean> {
+async function verifySessionToken(token: string): Promise<CmsUser | null> {
   const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+  if (!payload || !signature) return null;
 
-  const issuedAt = Number(payload);
-  const now = Math.floor(Date.now() / 1000);
-  if (!Number.isFinite(issuedAt) || issuedAt > now || now - issuedAt > SESSION_TTL_SECONDS) {
-    return false;
+  if (!constantTimeEqual(signature, await sign(payload))) return null;
+
+  // Backward compatibility for sessions issued before multi-user login.
+  if (/^\d+$/u.test(payload)) {
+    const issuedAt = Number(payload);
+    if (!isFreshSession(issuedAt)) return null;
+    const displayName = process.env.CMS_ADMIN_NAME ?? "مدیر سپید";
+    return {
+      email: process.env.CMS_ADMIN_USER ?? "admin@sepiid.local",
+      displayName,
+      fullName: displayName,
+    };
   }
 
-  return constantTimeEqual(signature, await sign(payload));
+  try {
+    const parsed = JSON.parse(fromBase64Url(payload)) as {
+      issuedAt?: unknown;
+      username?: unknown;
+      email?: unknown;
+      displayName?: unknown;
+    };
+    if (
+      !isFreshSession(Number(parsed.issuedAt)) ||
+      typeof parsed.email !== "string" ||
+      typeof parsed.displayName !== "string"
+    ) return null;
+    if (typeof parsed.username === "string") {
+      const account = passwordUsers().find(
+        (user) => normalizeUsername(user.username) === normalizeUsername(parsed.username as string),
+      );
+      if (account?.disabled) return null;
+      if (!account && !isLegacyAdminUsername(normalizeUsername(parsed.username))) return null;
+    }
+    return {
+      email: parsed.email,
+      displayName: parsed.displayName,
+      fullName: parsed.displayName,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isFreshSession(issuedAt: number): boolean {
+  const now = Math.floor(Date.now() / 1000);
+  return Number.isFinite(issuedAt) && issuedAt <= now && now - issuedAt <= SESSION_TTL_SECONDS;
+}
+
+function normalizeUsername(value: string): string {
+  return value.trim().toLocaleLowerCase("en");
+}
+
+function isLegacyAdminUsername(username: string): boolean {
+  const configured = normalizeUsername(process.env.CMS_ADMIN_USER ?? "admin");
+  return username === configured || username === "admin";
+}
+
+function passwordUsers(): CmsPasswordUser[] {
+  const raw = (process.env.CMS_USERS_JSON ?? "").trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const user = item as Partial<CmsPasswordUser>;
+      if (
+        typeof user.username !== "string" || !user.username.trim() ||
+        typeof user.displayName !== "string" || !user.displayName.trim() ||
+        typeof user.passwordHash !== "string" || !user.passwordHash ||
+        typeof user.salt !== "string" || !user.salt ||
+        !Number.isSafeInteger(user.iterations) || Number(user.iterations) < 100_000
+      ) return [];
+      return [{
+        username: user.username.trim(),
+        displayName: user.displayName.trim(),
+        passwordHash: user.passwordHash,
+        salt: user.salt,
+        iterations: Number(user.iterations),
+        disabled: user.disabled === true,
+      }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function verifyPassword(password: string, user: CmsPasswordUser): Promise<boolean> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const result = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt: fromBase64UrlBytes(user.salt),
+      iterations: user.iterations,
+    },
+    key,
+    256,
+  );
+  return constantTimeEqual(base64Url(result), user.passwordHash);
 }
 
 async function sign(payload: string): Promise<string> {
@@ -192,6 +332,21 @@ function base64Url(buffer: ArrayBuffer): string {
     binary += String.fromCharCode(byte);
   });
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlText(value: string): string {
+  return base64Url(new TextEncoder().encode(value).buffer);
+}
+
+function fromBase64Url(value: string): string {
+  return new TextDecoder().decode(fromBase64UrlBytes(value));
+}
+
+function fromBase64UrlBytes(value: string): Uint8Array<ArrayBuffer> {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
 function constantTimeEqual(left: string, right: string): boolean {

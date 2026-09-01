@@ -37,7 +37,7 @@ export default async function CmsPage() {
     return (
       <main id="main-content" className="spb-cms-setup">
         <h1>تنظیم اولیه CMS لازم است</h1>
-        <p>متغیرهای CMS_ADMIN_PASSWORD و CMS_SESSION_SECRET را برای پنل مدیریت تنظیم کن.</p>
+        <p>متغیرهای CMS_ADMIN_PASSWORD یا CMS_USERS_JSON و همچنین CMS_SESSION_SECRET را برای پنل مدیریت تنظیم کن.</p>
       </main>
     );
   }
