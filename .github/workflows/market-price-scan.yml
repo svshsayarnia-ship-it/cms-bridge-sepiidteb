@@ -1,4 +1,4 @@
-# Scanner trigger: curated-priority-v4
+# Scanner trigger: multi-source-v5
 name: Market price scan
 
 on:
@@ -60,11 +60,11 @@ jobs:
             printf '%s' "$status"
           }
 
-          echo "Waiting for curated-priority v4 scanner deployment..."
+          echo "Waiting for multi-source v5 scanner deployment..."
           READY=0
           for attempt in $(seq 1 36); do
             STATUS="$(request_endpoint "${BASE}?health=1")"
-            if [[ "$STATUS" =~ ^2 ]] && grep -q '"scanMode":"batched-torob-v4-curated-priority"' /tmp/sepiid-price-response.txt; then
+            if [[ "$STATUS" =~ ^2 ]] && grep -q '"scanMode":"batched-market-v5-direct-fallback"' /tmp/sepiid-price-response.txt; then
               READY=1
               break
             fi
@@ -75,7 +75,7 @@ jobs:
           done
 
           if [ "$READY" -ne 1 ]; then
-            echo "Curated-priority v4 market scanner did not become ready."
+            echo "Multi-source v5 market scanner did not become ready."
             exit 1
           fi
 
