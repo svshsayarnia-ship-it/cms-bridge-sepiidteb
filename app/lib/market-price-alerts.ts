@@ -25,6 +25,7 @@ type ResolvedAlertConfig = {
   emailFrom: string;
 };
 
+// Telegram text messages cap at 4096 characters; keep headroom for Unicode and future copy changes.
 const TELEGRAM_SAFE_MESSAGE_LENGTH = 3_600;
 
 function toman(value: number | null): string {
