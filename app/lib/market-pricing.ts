@@ -383,8 +383,25 @@ function compatibleVolume(expected: string, actual: string): boolean {
   return expectedVolumes.some((volume) => actualVolumes.includes(volume));
 }
 
+function catalogProductForPricing(product: CmsProduct) {
+  const exact = catalogProducts.find((item) => item.slug === product.slug);
+  if (exact) return exact;
+
+  // WooCommerce can reserve an older slug and append -2, -3, ... to the live product.
+  // Treat that suffix as a storage alias only when the base slug exists in our catalog.
+  const duplicate = product.slug.match(/^(.*)-(\d+)$/u);
+  if (!duplicate) return undefined;
+  const suffix = Number(duplicate[2]);
+  if (!Number.isInteger(suffix) || suffix < 2 || suffix > 20) return undefined;
+  return catalogProducts.find((item) => item.slug === duplicate[1]);
+}
+
+function canonicalMarketProductSlug(product: CmsProduct): string {
+  return catalogProductForPricing(product)?.slug ?? product.slug;
+}
+
 function expectedMarketIdentity(product: CmsProduct): string {
-  const catalogProduct = catalogProducts.find((item) => item.slug === product.slug);
+  const catalogProduct = catalogProductForPricing(product);
   return [
     product.name,
     catalogProduct?.nameEn,
@@ -722,8 +739,9 @@ async function scanProduct(
     if (!source?.enabled) return;
 
     try {
-      if (!source.url && provider === "torob" && CURATED_TOROB_URLS[product.slug]) {
-        source.url = CURATED_TOROB_URLS[product.slug];
+      const canonicalSlug = canonicalMarketProductSlug(product);
+      if (!source.url && provider === "torob" && CURATED_TOROB_URLS[canonicalSlug]) {
+        source.url = CURATED_TOROB_URLS[canonicalSlug];
         source.discovered = true;
       }
       if (!source.url && AUTO_DISCOVERY_BASE[provider]) {
