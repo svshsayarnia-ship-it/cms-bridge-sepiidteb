@@ -16,6 +16,15 @@ type TelegramApiResponse<T> = {
   description?: string;
 };
 
+export type TelegramReplyMarkup = {
+  keyboard?: Array<Array<{ text: string }>>;
+  resize_keyboard?: boolean;
+  one_time_keyboard?: boolean;
+  is_persistent?: boolean;
+  input_field_placeholder?: string;
+  remove_keyboard?: boolean;
+};
+
 export type MarketPriceTelegramWebhookStatus = {
   ok: boolean;
   configured: boolean;
@@ -137,17 +146,21 @@ export async function ensureMarketPriceTelegramWebhook(): Promise<MarketPriceTel
 export async function sendMarketPriceTelegramMessage(
   chatId: string,
   text: string,
+  options: { replyMarkup?: TelegramReplyMarkup } = {},
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     const config = await getMarketPriceAlertConfig();
     if (!config.telegramBotToken) {
       return { ok: false, error: "Telegram bot token is not configured." };
     }
-    await telegramRequest<unknown>(config.telegramBotToken, "sendMessage", {
+    const payload: Record<string, unknown> = {
       chat_id: chatId,
       text,
       disable_web_page_preview: true,
-    });
+    };
+    if (options.replyMarkup) payload.reply_markup = options.replyMarkup;
+
+    await telegramRequest<unknown>(config.telegramBotToken, "sendMessage", payload);
     return { ok: true };
   } catch (error) {
     return {
