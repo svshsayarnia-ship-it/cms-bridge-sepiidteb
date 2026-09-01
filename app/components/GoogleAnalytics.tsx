@@ -22,7 +22,7 @@ function productSlugFromHref(href: string) {
   }
 }
 
-function visibleText(element: Element | null) {
+function visibleText(element: Element | null | undefined) {
   return (element?.textContent ?? "").replace(/\s+/gu, " ").trim().slice(0, 160);
 }
 
