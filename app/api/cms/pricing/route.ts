@@ -2,6 +2,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { cmsApiGuard } from "@/app/lib/cms-auth";
 import {
   sendMarketPriceAlerts,
+  sendMarketPriceChangeAlert,
   sendMarketPriceAlertTest,
 } from "@/app/lib/market-price-alerts";
 import { getMarketPricingDashboardDirect } from "@/app/lib/market-pricing-dashboard-direct";
@@ -170,7 +171,17 @@ export async function POST(request: Request) {
       // Invalidate both the tagged catalog and route-level caches so the new price is visible immediately.
       invalidatePricePages(product.slug || current.slug);
 
-      return Response.json({ product });
+      const deliveries = await sendMarketPriceChangeAlert({
+        productName: product.name || current.name,
+        productSlug: product.slug || current.slug,
+        previousRegularPriceToman: Number(current.regularPrice) || null,
+        previousSalePriceToman: Number(current.salePrice) || null,
+        regularPriceToman: Number(product.regularPrice) || null,
+        salePriceToman: Number(product.salePrice) || null,
+        reason: "manual",
+      });
+
+      return Response.json({ product, deliveries });
     }
 
     if (body.action === "save-sources") {
@@ -186,8 +197,19 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "approve") {
+      const current = await getProduct(id);
+      const product = await approveMarketProposal(id, body.proposalId);
       return Response.json({
-        product: await approveMarketProposal(id, body.proposalId),
+        product,
+        deliveries: await sendMarketPriceChangeAlert({
+          productName: product.name || current.name,
+          productSlug: product.slug || current.slug,
+          previousRegularPriceToman: Number(current.regularPrice) || null,
+          previousSalePriceToman: Number(current.salePrice) || null,
+          regularPriceToman: Number(product.regularPrice) || null,
+          salePriceToman: Number(product.salePrice) || null,
+          reason: "approved-proposal",
+        }),
       });
     }
     if (body.action === "reject") {

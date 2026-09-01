@@ -7,6 +7,16 @@ export type MarketPriceAlertDelivery = {
   error?: string;
 };
 
+export type MarketPriceChangeAlert = {
+  productName: string;
+  productSlug: string;
+  previousRegularPriceToman: number | null;
+  previousSalePriceToman: number | null;
+  regularPriceToman: number | null;
+  salePriceToman: number | null;
+  reason: "manual" | "approved-proposal";
+};
+
 type ResolvedAlertConfig = {
   telegramBotToken: string;
   telegramChatId: string;
@@ -35,6 +45,22 @@ function messageFor(alerts: MarketPricingProposalAlert[]): string {
     `بررسی و تأیید: ${cmsUrl()}`,
   ].join("\n"));
   return `پیشنهاد قیمت جدید سپید بیوتی\n\n${lines.join("\n\n")}`;
+}
+
+function priceChangeMessage(alert: MarketPriceChangeAlert): string {
+  const previous = alert.previousSalePriceToman ?? alert.previousRegularPriceToman;
+  const current = alert.salePriceToman ?? alert.regularPriceToman;
+  const reason = alert.reason === "manual" ? "تغییر دستی در پنل" : "تأیید پیشنهاد قیمت";
+
+  return [
+    "قیمت محصول سپید بیوتی به‌روزرسانی شد",
+    "",
+    `محصول: ${alert.productName}`,
+    `روش تغییر: ${reason}`,
+    `قیمت قبلی: ${toman(previous)}`,
+    `قیمت جدید: ${toman(current)}`,
+    `مشاهده محصول: ${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sepiidbeauty.ir").replace(/\/+$/u, "")}/product/${alert.productSlug}`,
+  ].join("\n");
 }
 
 async function resolvedConfig(): Promise<ResolvedAlertConfig> {
@@ -138,4 +164,11 @@ export async function sendMarketPriceAlertTest(): Promise<MarketPriceAlertDelive
   ].join("\n");
   const config = await resolvedConfig();
   return Promise.all([telegram(message, config), email(message, config)]);
+}
+
+export async function sendMarketPriceChangeAlert(
+  alert: MarketPriceChangeAlert,
+): Promise<MarketPriceAlertDelivery[]> {
+  const config = await resolvedConfig();
+  return Promise.all([telegram(priceChangeMessage(alert), config), email(priceChangeMessage(alert), config)]);
 }
