@@ -1,0 +1,72 @@
+name: Validate curated market coverage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-curated-market-coverage.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check curated Torob seller availability for remaining products
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, re, urllib.parse, urllib.request
+          from pathlib import Path
+
+          targets = [
+            'ejal-40','mesoheal-plus','xitritall-hydro','reyoungel-revital-bioha',
+            'roytrin-skin-booster','siax-100','neuronox-100','fusion-f-mesomatrix',
+            'cg-dimono-ptx','perleux','audrey-m','inovosense-family','dr-cyj-hair-filler'
+          ]
+          text = Path('app/lib/market-pricing.ts').read_text(encoding='utf-8')
+          headers={"Accept":"application/json", "Referer":"https://torob.com/", "User-Agent":"Mozilla/5.0"}
+          valid=0
+          missing=[]
+          inactive=[]
+          for slug in targets:
+              m = re.search(r'["\']?'+re.escape(slug)+r'["\']?\s*:\s*[\n\s]*["\'](https://torob\.com/p/([^/]+)/[^"\']*)["\']', text)
+              if not m:
+                  print('MISSING_MAP', slug)
+                  missing.append(slug)
+                  continue
+              url, key = m.group(1), m.group(2)
+              params=urllib.parse.urlencode({"prk":key,"page":0,"size":10})
+              req=urllib.request.Request('https://api.torob.com/v4/base-product/sellers/?'+params,headers=headers)
+              prices=[]
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r: body=json.load(r)
+                  for item in body.get('results',[]):
+                      p=item.get('price')
+                      unavailable = item.get('availability') is False or item.get('is_available') is False
+                      stock=str(item.get('stock_status') or '').lower()
+                      try: pnum=float(p or 0)
+                      except: pnum=0
+                      if not unavailable and 'out' not in stock and 'ناموجود' not in stock and pnum >= 100000:
+                          prices.append(round(pnum))
+              except Exception as e:
+                  print('ERROR', slug, repr(e))
+              if prices:
+                  valid += 1
+                  print('VALID', slug, 'sellers=',len(prices),'min=',min(prices),'max=',max(prices),'url=',url)
+              else:
+                  inactive.append(slug)
+                  print('NO_ACTIVE_PRICE', slug, 'url=',url)
+          print('SUMMARY', json.dumps({'targets':len(targets),'valid':valid,'missing_map':missing,'no_active_price':inactive}, ensure_ascii=False))
+          PY
+          rm .github/workflows/validate-curated-market-coverage.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/validate-curated-market-coverage.yml
+          git commit -m "chore: remove curated coverage validation"
+          git push
