@@ -1,0 +1,53 @@
+name: Finalize market scanner v4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/finalize-market-scanner-v4.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Atomically bump production gate and scan workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          route = Path('app/api/cron/market-prices/github/route.ts')
+          r = route.read_text()
+          old_mode = 'const SCAN_MODE = "batched-torob-v3-curated";'
+          new_mode = 'const SCAN_MODE = "batched-torob-v4-curated-priority";'
+          if new_mode not in r:
+              if old_mode not in r:
+                  raise SystemExit('v3 scan mode marker not found')
+              r = r.replace(old_mode, new_mode, 1)
+              route.write_text(r)
+
+          workflow = Path('.github/workflows/market-price-scan.yml')
+          w = workflow.read_text()
+          w = w.replace('# Scanner trigger: canonical-slug-v3', '# Scanner trigger: curated-priority-v4')
+          old_gate = 'grep -q '\''"scanMode":"batched-torob-v2"'\'' /tmp/sepiid-price-response.txt'
+          new_gate = 'grep -q '\''"scanMode":"batched-torob-v4-curated-priority"'\'' /tmp/sepiid-price-response.txt'
+          if new_gate not in w:
+              if old_gate not in w:
+                  raise SystemExit('workflow health gate marker not found')
+              w = w.replace(old_gate, new_gate, 1)
+          workflow.write_text(w)
+          PY
+
+          rm .github/workflows/finalize-market-scanner-v4.yml
+          git config user.name "svshsayarnia-ship-it"
+          git config user.email "svshsayarnia@gmail.com"
+          git add app/api/cron/market-prices/github/route.ts .github/workflows/market-price-scan.yml .github/workflows/finalize-market-scanner-v4.yml
+          git commit -m "Pricing: enforce curated-priority v4 full scan"
+          git push
