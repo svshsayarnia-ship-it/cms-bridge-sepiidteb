@@ -1,0 +1,87 @@
+name: Finalize stable direct pricing fallbacks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/install-product-image-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace unstable sources and support prefix Toman prices
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('app/lib/market-pricing-comprehensive.ts')
+          s = p.read_text(encoding='utf-8')
+
+          start = s.index('const CURATED_DIRECT_SOURCES: Record<string, CuratedDirectSource> = {')
+          end = s.index('\n};', start) + 3
+          new_map = '''const CURATED_DIRECT_SOURCES: Record<string, CuratedDirectSource> = {
+  perleux: {
+    url: "https://mrdmed.com/product/%D9%85%D8%B2%D9%88%DA%98%D9%84-%D9%BE%D8%B1%D9%84%D9%88%DA%A9%D8%B3/",
+    label: "MRD Med",
+    expectedName: "مزوژل پرلوکس Perleux 2ml",
+  },
+  "audrey-m": {
+    url: "https://capsoll.ir/product/%D9%81%DB%8C%D9%84%D8%B1-%D8%A7%D9%88%D8%AF%D8%B1%DB%8C-m/",
+    label: "کپسول",
+    expectedName: "فیلر اودری ام Audrey M 10ml",
+  },
+  "siax-100": {
+    url: "https://capsoll.ir/product/%D8%A8%D9%88%D8%AA%D8%A7%DA%A9%D8%B3-%D8%B3%DB%8C%D8%A7%DA%A9%D8%B3/",
+    label: "کپسول",
+    expectedName: "بوتاکس سیاکس Siax 100U",
+  },
+};'''
+          s = s[:start] + new_map + s[end:]
+
+          old = '''  for (const match of stripHtml(scope).matchAll(/([۰-۹٠-٩0-9][۰-۹٠-٩0-9.,٬،\\/\\s]{3,20})\\s*(?:تومان|تومن)/giu)) {
+    const value = directPriceNumber(match[1] ?? "");
+    if (value) visible.push(value);
+  }
+  if (visible.length) return Math.min(...visible);
+'''
+          new = '''  const visibleText = stripHtml(scope);
+  for (const match of visibleText.matchAll(/([۰-۹٠-٩0-9][۰-۹٠-٩0-9.,٬،\\/\\s]{3,20})\\s*(?:تومان|تومن)/giu)) {
+    const value = directPriceNumber(match[1] ?? "");
+    if (value) visible.push(value);
+  }
+  for (const match of visibleText.matchAll(/(?:تومان|تومن)\\s*([۰-۹٠-٩0-9][۰-۹٠-٩0-9.,٬،\\/\\s]{3,20})/giu)) {
+    const value = directPriceNumber(match[1] ?? "");
+    if (value) visible.push(value);
+  }
+  if (visible.length) return Math.min(...visible);
+'''
+          if old not in s:
+              raise SystemExit('visible price parser anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('app/lib/market-pricing.ts')
+          s = p.read_text(encoding='utf-8')
+          old = '  direct: ["tebsoo.co", "www.tebsoo.co", "mesotop.com", "www.mesotop.com", "capsoll.ir", "www.capsoll.ir"],'
+          new = '  direct: ["mrdmed.com", "www.mrdmed.com", "capsoll.ir", "www.capsoll.ir"],'
+          if old not in s:
+              raise SystemExit('direct provider hosts anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          git diff --check
+          rm .github/workflows/install-product-image-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/market-pricing-comprehensive.ts app/lib/market-pricing.ts .github/workflows/install-product-image-fix.yml
+          git commit -m "Pricing: use stable direct sources and parse Toman prefix"
+          git push
