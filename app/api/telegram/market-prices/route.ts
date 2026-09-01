@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+import { waitUntil } from "@vercel/functions";
 import {
   getMarketPriceAlertConfig,
   type MarketPriceAlertConfig,
@@ -12,13 +14,20 @@ import {
   sendMarketPriceTelegramMessage,
   type TelegramReplyMarkup,
 } from "@/app/lib/market-price-telegram";
+import { listNewMarketPricingProposalAlerts } from "@/app/lib/market-pricing";
+import { sendMarketPriceAlerts } from "@/app/lib/market-price-alerts";
+import { runTorobMarketPricingBatch } from "@/app/lib/market-pricing-comprehensive";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 300;
+
+const FULL_SCAN_BUTTON = "🔄 پایش خودکار قیمت بازار";
+const FULL_SCAN_BATCH_SIZE = 4;
 
 const MAIN_KEYBOARD: TelegramReplyMarkup = {
   keyboard: [
     [{ text: "🔎 جستجوی محصول" }, { text: "💰 قیمت محصولات" }],
+    [{ text: FULL_SCAN_BUTTON }],
     [{ text: "🗂 دسته‌بندی‌ها" }],
   ],
   resize_keyboard: true,
@@ -66,6 +75,23 @@ type TelegramUpdate = {
   message?: TelegramMessage;
   edited_message?: TelegramMessage;
   channel_post?: TelegramMessage;
+  sepiid_market_scan?: {
+    cursor?: number;
+    startedAt?: string;
+    processed?: number;
+    matched?: number;
+    unresolved?: number;
+    failed?: number;
+  };
+};
+
+type MarketScanState = {
+  cursor: number;
+  startedAt: string;
+  processed: number;
+  matched: number;
+  unresolved: number;
+  failed: number;
 };
 
 type ScoredProduct = {
@@ -305,6 +331,7 @@ function welcomeText(): string {
     "اینجا می‌تونی خیلی سریع قیمت محصولات تخصصی زیبایی رو پیدا کنی:",
     "🔎 اسم محصول رو حتی با فاصله متفاوت یا غلط املایی جزئی بنویس",
     "💰 لیست قیمت همه محصولات رو ببین",
+    `🔄 با «${FULL_SCAN_BUTTON}» قیمت بازار همه محصولات رو دوباره بررسی کن`,
     "🗂 از دسته‌بندی‌ها مستقیم به قیمت‌های همون گروه برو",
     "",
     "مثال: «فیوژن F هرمن»، «نورمیس دیپ» یا «Revofil»",
@@ -426,6 +453,114 @@ async function getFastAlertConfig(): Promise<MarketPriceAlertConfig> {
   return pendingAlertConfig;
 }
 
+function safeScanState(value: TelegramUpdate["sepiid_market_scan"]): MarketScanState | null {
+  if (!value || !value.startedAt || !Number.isFinite(Date.parse(value.startedAt))) return null;
+  const number = (input: unknown) =>
+    Number.isSafeInteger(input) && Number(input) >= 0 ? Number(input) : 0;
+  return {
+    cursor: number(value.cursor),
+    startedAt: new Date(value.startedAt).toISOString(),
+    processed: number(value.processed),
+    matched: number(value.matched),
+    unresolved: number(value.unresolved),
+    failed: number(value.failed),
+  };
+}
+
+function internalScanToken(botToken: string): string {
+  return createHash("sha256")
+    .update(`sepiid-market-scan-v1:${botToken}`)
+    .digest("hex");
+}
+
+function validInternalScanRequest(request: Request, botToken: string): boolean {
+  const received = request.headers.get("x-sepiid-market-scan-token") ?? "";
+  const expected = internalScanToken(botToken);
+  if (received.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(received), Buffer.from(expected));
+}
+
+function telegramEndpoint(): string {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.sepiidbeauty.ir")
+    .replace(/\/+$/u, "");
+  return `${base}/api/telegram/market-prices`;
+}
+
+async function sendBotText(config: MarketPriceAlertConfig, text: string): Promise<void> {
+  const delivery = await sendMarketPriceTelegramMessage(config.telegramChatId, text, {
+    botToken: config.telegramBotToken,
+    replyMarkup: MAIN_KEYBOARD,
+  });
+  if (!delivery.ok) {
+    console.error("[telegram-market-scan] progress delivery failed", delivery.error);
+  }
+}
+
+async function continueMarketScan(
+  state: MarketScanState,
+  config: MarketPriceAlertConfig,
+): Promise<void> {
+  try {
+    const summary = await runTorobMarketPricingBatch(state.cursor, FULL_SCAN_BATCH_SIZE);
+    const next: MarketScanState = {
+      cursor: summary.nextCursor ?? state.cursor + summary.processedProducts,
+      startedAt: state.startedAt,
+      processed: state.processed + summary.processedProducts,
+      matched: state.matched + summary.matchedProducts,
+      unresolved: state.unresolved + summary.unresolvedProducts,
+      failed: state.failed + summary.failedProducts,
+    };
+
+    if (summary.nextCursor !== null) {
+      const response = await fetch(telegramEndpoint(), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-sepiid-market-scan-token": internalScanToken(config.telegramBotToken),
+          ...(process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_SECRET
+            ? {
+                "x-telegram-bot-api-secret-token":
+                  process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_SECRET,
+              }
+            : {}),
+        },
+        body: JSON.stringify({ sepiid_market_scan: next }),
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Market scan continuation returned ${response.status}`);
+      return;
+    }
+
+    const alerts = await listNewMarketPricingProposalAlerts(state.startedAt);
+    await sendMarketPriceAlerts(alerts);
+    await sendBotText(
+      config,
+      [
+        "✅ پایش خودکار قیمت بازار کامل شد",
+        "",
+        `محصولات بررسی‌شده: ${priceFormatter.format(next.processed)}`,
+        `قیمت معتبر پیدا شد: ${priceFormatter.format(next.matched)}`,
+        `نیازمند بررسی دوباره: ${priceFormatter.format(next.unresolved)}`,
+        `خطای موقت: ${priceFormatter.format(next.failed)}`,
+        `پیشنهاد قیمت جدید: ${priceFormatter.format(alerts.length)}`,
+        "",
+        alerts.length
+          ? "پیشنهادهای قیمت بازار در پیام‌های بعدی/قبلی همین گفتگو ارسال شدند."
+          : "قیمت پیشنهادی جدیدی نسبت به آخرین پایش پیدا نشد.",
+      ].join("\n"),
+    );
+
+    const currentPrices = await priceReplies();
+    for (const message of currentPrices) await sendBotText(config, message);
+  } catch (error) {
+    console.error("[telegram-market-scan] batch failed", error);
+    await sendBotText(
+      config,
+      "پایش قیمت بازار در این مرحله با خطای موقت روبه‌رو شد. دوباره دکمه پایش را بزن تا از ابتدا تلاش شود.",
+    );
+  }
+}
+
 export async function GET() {
   const webhook = await ensureMarketPriceTelegramWebhook();
   return Response.json(
@@ -438,6 +573,7 @@ export async function GET() {
         "fuzzy-product-search",
         "categories",
         "clean-user-menu",
+        "on-demand-full-market-scan",
       ],
       automaticScan: {
         enabled: true,
@@ -463,6 +599,16 @@ export async function POST(request: Request) {
     update = (await request.json()) as TelegramUpdate;
   } catch {
     return Response.json({ ok: true, ignored: true, reason: "invalid-json" });
+  }
+
+  if (update.sepiid_market_scan) {
+    const config = await getFastAlertConfig();
+    const state = safeScanState(update.sepiid_market_scan);
+    if (!state || !config.telegramBotToken || !validInternalScanRequest(request, config.telegramBotToken)) {
+      return Response.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    waitUntil(continueMarketScan(state, config));
+    return Response.json({ ok: true, accepted: true, cursor: state.cursor });
   }
 
   const message = telegramMessage(update);
@@ -502,6 +648,10 @@ export async function POST(request: Request) {
       normalized === "لیست قیمت"
     ) {
       repliesPromise = priceReplies();
+    } else if (normalized === normalizeBasic(FULL_SCAN_BUTTON)) {
+      repliesPromise = Promise.resolve([
+        "🔄 پایش قیمت بازار همه محصولات شروع شد.\n\nربات محصولات را مرحله‌به‌مرحله از منابع بازار بررسی می‌کند و نتیجه کامل را بعد از پایان همین‌جا می‌فرستد. لازم نیست صفحه را باز نگه داری.",
+      ]);
     } else if (normalized === normalizeBasic("🔎 جستجوی محصول")) {
       repliesPromise = Promise.resolve([
         "🔎 اسم محصول رو بفرست. می‌تونی فارسی یا انگلیسی بنویسی و لازم نیست فاصله‌ها یا املای اسم کاملاً دقیق باشه.",
@@ -547,6 +697,22 @@ export async function POST(request: Request) {
         delivered = false;
         console.error("[telegram-market-prices] reply failed", delivery.error);
       }
+    }
+
+    if (normalized === normalizeBasic(FULL_SCAN_BUTTON)) {
+      waitUntil(
+        continueMarketScan(
+          {
+            cursor: 0,
+            startedAt: new Date().toISOString(),
+            processed: 0,
+            matched: 0,
+            unresolved: 0,
+            failed: 0,
+          },
+          config,
+        ),
+      );
     }
 
     return Response.json({ ok: true, handled: true, delivered, messageCount: replies.length });
