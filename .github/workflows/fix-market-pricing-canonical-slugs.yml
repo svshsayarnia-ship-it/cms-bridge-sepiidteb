@@ -1,0 +1,81 @@
+name: Fix market pricing canonical slugs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/fix-market-pricing-canonical-slugs.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Normalize Woo duplicate slugs in pricing matcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/lib/market-pricing-comprehensive.ts')
+          source = path.read_text()
+
+          old = '''function catalogProductFor(product: CmsProduct) {
+            return catalogProducts.find((item) => item.slug === product.slug);
+          }
+          '''
+          new = '''function catalogProductFor(product: CmsProduct) {
+            const exact = catalogProducts.find((item) => item.slug === product.slug);
+            if (exact) return exact;
+
+            // WooCommerce appends -2, -3, ... when an older slug is still reserved.
+            // Treat that suffix as a storage alias, never as part of a model number.
+            const duplicate = product.slug.match(/^(.*)-(\\d+)$/u);
+            if (!duplicate) return undefined;
+            const suffix = Number(duplicate[2]);
+            if (!Number.isInteger(suffix) || suffix < 2 || suffix > 20) return undefined;
+            return catalogProducts.find((item) => item.slug === duplicate[1]);
+          }
+
+          function canonicalProductSlug(product: CmsProduct): string {
+            return catalogProductFor(product)?.slug ?? product.slug;
+          }
+          '''
+          if old not in source:
+              raise SystemExit('catalogProductFor marker not found')
+          source = source.replace(old, new, 1)
+
+          replacements = [
+              ('    product.slug.replace(/-/gu, " "),', '    canonicalProductSlug(product).replace(/-/gu, " "),'),
+              ('      [product.name, catalogProduct?.nameEn ?? "", product.slug]', '      [product.name, catalogProduct?.nameEn ?? "", canonicalProductSlug(product)]'),
+              ('  const match = product.slug.match(/^fusion-f-(.+)$/u);', '  const match = canonicalProductSlug(product).match(/^fusion-f-(.+)$/u);'),
+              ('    product.slug.replace(/-/gu, " "),', '    canonicalProductSlug(product).replace(/-/gu, " "),'),
+          ]
+
+          # The slug.replace marker occurs twice: identity fields and discovery queries.
+          first_old, first_new = replacements[0]
+          if source.count(first_old) != 2:
+              raise SystemExit(f'expected two slug query markers, found {source.count(first_old)}')
+          source = source.replace(first_old, first_new, 2)
+
+          for old_text, new_text in replacements[1:3]:
+              if old_text not in source:
+                  raise SystemExit(f'marker not found: {old_text}')
+              source = source.replace(old_text, new_text, 1)
+
+          path.write_text(source)
+          PY
+
+          rm .github/workflows/fix-market-pricing-canonical-slugs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/market-pricing-comprehensive.ts .github/workflows/fix-market-pricing-canonical-slugs.yml
+          git commit -m "Pricing: normalize Woo duplicate slugs before market matching"
+          git push
