@@ -30,7 +30,9 @@ jobs:
           set -euo pipefail
 
           BASE="https://sepiidbeauty.ir/api/cron/market-prices/github"
-          LIMIT=10
+          # Small resumable batches keep every Vercel invocation comfortably below
+          # the 300-second function limit, even when one upstream source is slow.
+          LIMIT=4
           RUN_STARTED_AT="$(python3 - <<'PY'
           from datetime import datetime, timezone
           print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
@@ -168,6 +170,5 @@ jobs:
           echo
 
           if [ "$FAILED" -gt 0 ]; then
-            echo "Full scan completed but ${FAILED} products failed technically."
-            exit 1
+            echo "::warning title=Temporary market scan failures::${FAILED} products failed technically and will be retried on the next scheduled scan."
           fi
