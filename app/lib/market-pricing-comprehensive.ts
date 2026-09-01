@@ -1,5 +1,6 @@
 import { catalogProducts } from "../catalog";
 import type { CmsProduct } from "./cms-types";
+import { CURATED_TOROB_URLS } from "./market-pricing";
 import {
   MARKET_PROVIDER_LABELS,
   type MarketPriceHistoryEntry,
@@ -389,6 +390,27 @@ function candidateAvailable(candidate: TorobSearchCandidate): boolean {
   return !/(out|ناموجود|unavailable)/u.test(stock);
 }
 
+function curatedTorobCandidate(product: CmsProduct): RankedTorobCandidate | null {
+  const url = CURATED_TOROB_URLS[canonicalProductSlug(product)];
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const key = parsed.pathname.match(/^\/p\/([^/]+)/u)?.[1]?.trim();
+    if (!key) return null;
+    return {
+      candidate: {
+        random_key: key,
+        web_client_absolute_url: url,
+        availability: true,
+      },
+      name: product.name,
+      score: 1,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function discoverTorobCandidate(product: CmsProduct): Promise<RankedTorobCandidate | null> {
   const candidates = new Map<string, RankedTorobCandidate>();
 
@@ -586,7 +608,7 @@ async function markUnresolved(product: CmsProduct, checkedAt: string): Promise<v
 async function scanProductWithTorob(product: CmsProduct): Promise<ProductScanResult> {
   const checkedAt = new Date().toISOString();
   try {
-    const ranked = await discoverTorobCandidate(product);
+    const ranked = (await discoverTorobCandidate(product)) ?? curatedTorobCandidate(product);
     if (!ranked) {
       await markUnresolved(product, checkedAt);
       return { slug: product.slug, status: "unresolved" };

@@ -53,7 +53,7 @@ const AUTO_DISCOVERY_BASE: Partial<Record<MarketProvider, string>> = {
 
 // Direct product pages are curated because Torob search pages are not crawled.
 // A missing entry is intentional: no automatic match is safer than a wrong pack/model.
-const CURATED_TOROB_URLS: Record<string, string> = {
+export const CURATED_TOROB_URLS: Record<string, string> = {
   "arasti-white":
     "https://torob.com/p/de8f3365-d391-499e-9b33-211b08d602a2/فیلر-آراستی-وایت-لیدوکائین/",
   "zishel-rose-glam":
