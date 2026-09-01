@@ -19,6 +19,7 @@ import {
   isLegacyArticleSlug,
 } from "../../lib/article-url";
 import { siteOrigin } from "../../lib/site-url";
+import { merchantOrganizationId } from "../../lib/merchant-policy";
 import { buildSeoMetadata } from "../../lib/seo";
 import { getArticleHeadings } from "../../lib/article-html";
 import {
@@ -493,18 +494,21 @@ export default async function ArticlePage({
         data={{
           "@context": "https://schema.org",
           "@type": "Article",
+          "@id": `${siteOrigin}${articlePath(article.slug)}#article`,
           headline: article.title,
           description: isNeuramisGuide(article.slug)
             ? normalizeNeuramisModelCopy(article.excerpt)
             : article.excerpt,
           image: absoluteArticleImage(image),
           inLanguage: "fa-IR",
+          isPartOf: { "@id": `${siteOrigin}/#website` },
           author: {
             "@type": "Organization",
             name: article.authorName || "تحریریه سپید بیوتی",
           },
           publisher: {
-            "@type": "Organization",
+            "@type": "OnlineStore",
+            "@id": merchantOrganizationId,
             name: "Sepiid Beauty",
             url: siteOrigin,
             logo: {
@@ -515,6 +519,18 @@ export default async function ArticlePage({
           datePublished: article.datePublished || "2026-07-25",
           dateModified: article.dateModified || article.datePublished || "2026-07-25",
           mainEntityOfPage: `${siteOrigin}${articlePath(article.slug)}`,
+          ...(article.sources.length > 0
+            ? { citation: article.sources.map((source) => source.href) }
+            : {}),
+          ...(article.reviewerName
+            ? {
+                reviewedBy: {
+                  "@type": "Person",
+                  name: article.reviewerName,
+                  ...(article.reviewerRole ? { jobTitle: article.reviewerRole } : {}),
+                },
+              }
+            : {}),
         }}
       />
     </main>
