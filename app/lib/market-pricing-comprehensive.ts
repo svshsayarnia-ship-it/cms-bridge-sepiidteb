@@ -864,8 +864,8 @@ export async function runTorobMarketPricingBatch(
   const products = (await listAllProductsForPricing()).sort((a, b) => a.id - b.id);
   const batch = products.slice(cursor, cursor + limit);
   // Each product fans out to several remote market sources plus WooCommerce.
-  // Keep concurrency conservative so a slow upstream does not consume the whole
-  // serverless request budget or overwhelm WordPress.
+  // Production stability: keep concurrency conservative so a slow upstream does not
+  // consume the whole serverless request budget or overwhelm WordPress.
   const results = await mapWithConcurrency(batch, 2, scanProductMarket);
   const nextCursor = cursor + batch.length < products.length ? cursor + batch.length : null;
   const matched = results.filter((result) =>
