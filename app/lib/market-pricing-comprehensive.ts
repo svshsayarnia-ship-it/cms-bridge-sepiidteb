@@ -608,7 +608,7 @@ async function markUnresolved(product: CmsProduct, checkedAt: string): Promise<v
 async function scanProductWithTorob(product: CmsProduct): Promise<ProductScanResult> {
   const checkedAt = new Date().toISOString();
   try {
-    const ranked = (await discoverTorobCandidate(product)) ?? curatedTorobCandidate(product);
+    const ranked = curatedTorobCandidate(product) ?? (await discoverTorobCandidate(product));
     if (!ranked) {
       await markUnresolved(product, checkedAt);
       return { slug: product.slug, status: "unresolved" };
