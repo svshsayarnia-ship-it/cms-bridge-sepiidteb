@@ -225,7 +225,20 @@ function textMatchScore(expected: string, actual: string): number {
 }
 
 function catalogProductFor(product: CmsProduct) {
-  return catalogProducts.find((item) => item.slug === product.slug);
+  const exact = catalogProducts.find((item) => item.slug === product.slug);
+  if (exact) return exact;
+
+  // WooCommerce appends -2, -3, ... when an older slug is still reserved.
+  // Treat that suffix as a storage alias, never as part of a model number.
+  const duplicate = product.slug.match(/^(.*)-(\d+)$/u);
+  if (!duplicate) return undefined;
+  const suffix = Number(duplicate[2]);
+  if (!Number.isInteger(suffix) || suffix < 2 || suffix > 20) return undefined;
+  return catalogProducts.find((item) => item.slug === duplicate[1]);
+}
+
+function canonicalProductSlug(product: CmsProduct): string {
+  return catalogProductFor(product)?.slug ?? product.slug;
 }
 
 function identityFields(product: CmsProduct): string[] {
@@ -234,7 +247,7 @@ function identityFields(product: CmsProduct): string[] {
     product.name,
     catalogProduct?.nameEn ?? "",
     [catalogProduct?.brand, catalogProduct?.nameEn].filter(Boolean).join(" "),
-    product.slug.replace(/-/gu, " "),
+    canonicalProductSlug(product).replace(/-/gu, " "),
   ].filter((value) => value.trim().length > 0);
 }
 
@@ -242,7 +255,7 @@ function modelNumbers(product: CmsProduct): string[] {
   const catalogProduct = catalogProductFor(product);
   return Array.from(
     new Set(
-      [product.name, catalogProduct?.nameEn ?? "", product.slug]
+      [product.name, catalogProduct?.nameEn ?? "", canonicalProductSlug(product)]
         .flatMap((value) => normalizeBasic(value).match(/\d+(?:\.\d+)?/gu) ?? []),
     ),
   );
@@ -276,7 +289,7 @@ function volumeCompatible(product: CmsProduct, actual: string): boolean {
 }
 
 function fusionModelCompatible(product: CmsProduct, actual: string): boolean {
-  const match = product.slug.match(/^fusion-f-(.+)$/u);
+  const match = canonicalProductSlug(product).match(/^fusion-f-(.+)$/u);
   if (!match) return true;
   const expectedModel = match[1].split("-").filter(Boolean);
   const actualTokens = new Set(tokens(actual));
@@ -297,7 +310,7 @@ function discoveryQueries(product: CmsProduct): string[] {
   const queries = [
     catalogProduct?.nameEn ?? "",
     product.name,
-    product.slug.replace(/-/gu, " "),
+    canonicalProductSlug(product).replace(/-/gu, " "),
     [catalogProduct?.brand, catalogProduct?.nameEn].filter(Boolean).join(" "),
   ];
   const seen = new Set<string>();
