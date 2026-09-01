@@ -7,6 +7,8 @@ import { ensureMarketPriceTelegramWebhook } from "@/app/lib/market-price-telegra
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
+const SCAN_MODE = "batched-torob-v3-curated";
+
 function intParam(url: URL, name: string, fallback: number): number {
   const value = Number(url.searchParams.get(name));
   return Number.isSafeInteger(value) && value >= 0 ? value : fallback;
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
     return Response.json({
       ok: true,
       authorized: true,
-      scanMode: "batched-torob-v2",
+      scanMode: SCAN_MODE,
       telegramWebhook,
     });
   }
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
     return Response.json({
       ok: true,
       finalized: true,
-      scanMode: "batched-torob-v2",
+      scanMode: SCAN_MODE,
       alertCount: alerts.length,
       deliveries,
       telegramWebhook,
@@ -59,14 +61,14 @@ export async function POST(request: Request) {
     const cursor = intParam(url, "cursor", 0);
     const limit = intParam(url, "limit", 10);
     const summary = await runTorobMarketPricingBatch(cursor, limit);
-    return Response.json({ ok: true, scanMode: "batched-torob-v2", summary });
+    return Response.json({ ok: true, scanMode: SCAN_MODE, summary });
   } catch (error) {
     console.error("[market-pricing] GitHub batched scan failed", error);
     return Response.json(
       {
         ok: false,
         error: error instanceof Error ? error.message : "Market pricing batch failed",
-        scanMode: "batched-torob-v2",
+        scanMode: SCAN_MODE,
       },
       { status: 500 },
     );
