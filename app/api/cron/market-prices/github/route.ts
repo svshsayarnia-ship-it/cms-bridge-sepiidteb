@@ -7,7 +7,7 @@ import { ensureMarketPriceTelegramWebhook } from "@/app/lib/market-price-telegra
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-const SCAN_MODE = "batched-torob-v4-curated-priority";
+const SCAN_MODE = "batched-market-v5-direct-fallback";
 
 function intParam(url: URL, name: string, fallback: number): number {
   const value = Number(url.searchParams.get(name));
