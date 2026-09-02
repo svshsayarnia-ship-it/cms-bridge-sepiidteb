@@ -1,4 +1,4 @@
-# Scanner trigger: verified-market-v1
+# Scanner trigger: verified-market-v2-independent-sources
 name: Market price scan
 
 on:
