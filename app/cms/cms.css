@@ -1659,3 +1659,11 @@ body:has(.spb-cms-login) {
     min-block-size: 44px;
   }
 }
+
+/* Verified market pricing evidence */
+.spb-price-proposal__verification { display:flex; flex-wrap:wrap; gap:8px 14px; padding:10px 12px; margin:10px 0; border-radius:12px; background:rgba(15,118,110,.06); font-size:.84rem; }
+.spb-price-proposal__verification span { display:inline-flex; gap:4px; align-items:center; }
+.spb-price-excluded { margin-top:10px; border:1px dashed rgba(180,83,9,.28); border-radius:12px; padding:8px 10px; }
+.spb-price-excluded > summary { cursor:pointer; color:#92400e; font-weight:700; }
+.spb-market-snapshot { padding:14px; }
+.spb-market-snapshot > p { margin:0 0 10px; line-height:1.9; }

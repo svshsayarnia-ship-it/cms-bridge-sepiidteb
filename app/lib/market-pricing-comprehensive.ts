@@ -1,6 +1,7 @@
 import { catalogProducts } from "../catalog";
 import type { CmsProduct } from "./cms-types";
 import { CURATED_TOROB_URLS } from "./market-pricing";
+import { verifyMarketSamples } from "./market-price-verification";
 import {
   MARKET_PROVIDER_LABELS,
   type MarketPriceHistoryEntry,
@@ -716,44 +717,66 @@ function supersededHistory(product: CmsProduct, decidedAt: string): MarketPriceH
   return history.slice(0, MAX_HISTORY_ITEMS);
 }
 
-function marketProposal(
+function verifiedMarketProposal(
   product: CmsProduct,
   samples: MarketPriceSample[],
   checkedAt: string,
-): MarketPriceProposal | null {
-  if (!samples.length) return null;
-  const center = median(samples.map((sample) => sample.priceToman));
-  const included = samples.filter(
-    (sample) => sample.priceToman >= center * 0.65 && sample.priceToman <= center * 1.55,
-  );
-  if (!included.length) return null;
-  const excluded = samples.filter((sample) => !included.includes(sample));
-  const rawAverage = included.reduce((sum, sample) => sum + sample.priceToman, 0) / included.length;
-  const proposed = Math.round(rawAverage / 10_000) * 10_000;
-  return {
-    id: crypto.randomUUID(),
-    status: "pending",
-    createdAt: checkedAt,
+): { proposal: MarketPriceProposal | null; snapshot: ReturnType<typeof verifyMarketSamples>["snapshot"] } {
+  const verification = verifyMarketSamples({
+    slug: canonicalProductSlug(product),
+    samples,
+    checkedAt,
     currentPriceToman: currentPrice(product),
-    proposedPriceToman: proposed,
-    rawAverageToman: Math.round(rawAverage),
-    samples: included,
-    excludedSamples: excluded,
-    note:
-      excluded.length > 0
-        ? `${excluded.length} قیمت پرت بازار از محاسبه کنار گذاشته شد.`
-        : `میانگین از ${included.length} قیمت معتبر بازار محاسبه شد.`,
+  });
+  const proposed = verification.verifiedMarketPriceToman;
+  if (!proposed || !verification.verifiedSamples.length) {
+    return { proposal: null, snapshot: verification.snapshot };
+  }
+  const snapshot = verification.snapshot;
+  return {
+    snapshot,
+    proposal: {
+      id: crypto.randomUUID(),
+      status: "pending",
+      createdAt: checkedAt,
+      currentPriceToman: currentPrice(product),
+      proposedPriceToman: proposed,
+      rawAverageToman: Math.round(
+        verification.rawWeightedMarketPriceToman ?? proposed,
+      ),
+      samples: verification.verifiedSamples,
+      excludedSamples: verification.excludedSamples,
+      note: snapshot.summary,
+      observedMinPriceToman: snapshot.observedMinPriceToman,
+      observedMaxPriceToman: snapshot.observedMaxPriceToman,
+      verifiedMinPriceToman: snapshot.verifiedMinPriceToman,
+      verifiedMaxPriceToman: snapshot.verifiedMaxPriceToman,
+      verifiedMedianToman: snapshot.verifiedMarketPriceToman,
+      marketConfidenceScore: snapshot.confidenceScore,
+      observedSampleCount: snapshot.observedSampleCount,
+      verifiedSampleCount: snapshot.verifiedSampleCount,
+      suspiciousSampleCount: snapshot.suspiciousSampleCount,
+      trustedSellerCount: snapshot.trustedSellerCount,
+      authenticityRisk: snapshot.authenticityRisk,
+    },
   };
 }
 
-async function markUnresolved(product: CmsProduct, checkedAt: string): Promise<void> {
+async function markUnresolved(
+  product: CmsProduct,
+  checkedAt: string,
+  snapshot?: ReturnType<typeof verifyMarketSamples>["snapshot"],
+): Promise<void> {
   await updateProductPricingState(product.id, {
     ...product.pricing,
+    lastMarketSnapshot: snapshot ?? product.pricing.lastMarketSnapshot,
     lastCheckedAt: checkedAt,
     lastStatus: product.pricing.proposal ? "pending" : "insufficient",
-    lastMessage: product.pricing.proposal
-      ? "در این نوبت قیمت معتبر جدید در منابع بازار پیدا نشد؛ پیشنهاد قبلی حفظ شد."
-      : "در این نوبت قیمت معتبر محصول در منابع بازار پیدا نشد؛ در اسکن بعدی دوباره تلاش می‌شود.",
+    lastMessage: snapshot?.observedSampleCount
+      ? snapshot.summary
+      : product.pricing.proposal
+        ? "در این نوبت قیمت معتبر جدید در منابع بازار پیدا نشد؛ پیشنهاد قبلی حفظ شد."
+        : "در این نوبت قیمت معتبر محصول در منابع بازار پیدا نشد؛ در اسکن بعدی دوباره تلاش می‌شود.",
   });
 }
 
@@ -776,9 +799,10 @@ async function scanProductMarket(product: CmsProduct): Promise<ProductScanResult
       sources = updateDirectSource(sources, direct.sourceUrl);
     }
 
-    const proposal = marketProposal(product, samples, checkedAt);
+    const verification = verifiedMarketProposal(product, samples, checkedAt);
+    const proposal = verification.proposal;
     if (!proposal) {
-      await markUnresolved(product, checkedAt);
+      await markUnresolved(product, checkedAt, verification.snapshot);
       return { slug: product.slug, status: "unresolved" };
     }
 
@@ -787,10 +811,11 @@ async function scanProductMarket(product: CmsProduct): Promise<ProductScanResult
         ...product.pricing,
         sources,
         proposal: null,
+        lastMarketSnapshot: verification.snapshot,
         history: supersededHistory(product, checkedAt),
         lastCheckedAt: checkedAt,
         lastStatus: "insufficient",
-        lastMessage: `قیمت فعلی با میانگین ${proposal.samples.length} قیمت معتبر بازار برابر است؛ تغییر لازم نیست.`,
+        lastMessage: `قیمت فعلی با قیمت معتبر وزن‌دار بازار (${proposal.samples.length} نمونه) برابر است؛ تغییر لازم نیست.`,
       });
       return { slug: product.slug, status: "market-equal" };
     }
@@ -799,6 +824,7 @@ async function scanProductMarket(product: CmsProduct): Promise<ProductScanResult
       await updateProductPricingState(product.id, {
         ...product.pricing,
         sources,
+        lastMarketSnapshot: verification.snapshot,
         lastCheckedAt: checkedAt,
         lastStatus: "pending",
         lastMessage: `پیشنهاد قبلی با ${proposal.samples.length} قیمت معتبر بازار دوباره تأیید شد.`,
@@ -810,10 +836,11 @@ async function scanProductMarket(product: CmsProduct): Promise<ProductScanResult
       ...product.pricing,
       sources,
       proposal,
+      lastMarketSnapshot: verification.snapshot,
       history: supersededHistory(product, checkedAt),
       lastCheckedAt: checkedAt,
       lastStatus: "pending",
-      lastMessage: `پیشنهاد قیمت با ${proposal.samples.length} نمونه معتبر بازار آماده تأیید است.`,
+      lastMessage: `قیمت معتبر بازار با اطمینان ${proposal.marketConfidenceScore}٪ و ${proposal.samples.length} نمونه آماده تأیید است.`,
     });
     return { slug: product.slug, status: "proposal" };
   } catch (error) {

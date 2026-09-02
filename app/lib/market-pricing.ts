@@ -12,6 +12,7 @@ import {
   type MarketSourceConfig,
 } from "./pricing-types";
 import { STOREFRONT_CATALOG_TAG } from "./storefront-catalog";
+import { verifyMarketSamples } from "./market-price-verification";
 import {
   approveProductPricingProposal,
   createProductsBatch,
@@ -778,38 +779,42 @@ async function scanProduct(
       ]),
     ).values(),
   );
-  const center = unique.length ? median(unique.map((sample) => sample.priceToman)) : 0;
-  const included = unique.filter(
-    (sample) => sample.priceToman >= center * 0.65 && sample.priceToman <= center * 1.55,
-  );
-  const excluded = unique.filter((sample) => !included.includes(sample));
+  const activePrice = currentPrice(product);
+  const verification = verifyMarketSamples({
+    slug: canonicalMarketProductSlug(product),
+    samples: unique,
+    checkedAt,
+    currentPriceToman: activePrice,
+  });
+  const snapshot = verification.snapshot;
+  const included = verification.verifiedSamples;
+  const excluded = verification.excludedSamples;
+  const proposed = verification.verifiedMarketPriceToman;
+  const rawAverage = verification.rawWeightedMarketPriceToman;
   const oldHistory = supersededHistory(product.pricing, checkedAt);
 
-  if (included.length < MIN_VALID_SAMPLES) {
+  if (!proposed || included.length < MIN_VALID_SAMPLES) {
     await updateProductPricingState(product.id, {
       ...product.pricing,
       sources,
       proposal: null,
+      lastMarketSnapshot: snapshot,
       history: oldHistory,
       lastCheckedAt: checkedAt,
-      lastStatus: errors.length && !included.length ? "error" : "insufficient",
-      lastMessage:
-        included.length > 0
-          ? "قیمت معتبر از منبع انتخاب‌شده پیدا شد، اما برای ساخت پیشنهاد کافی نبود."
-          : errors.slice(0, 3).join(" | ") || "قیمت معتبر کافی پیدا نشد.",
+      lastStatus: errors.length && !snapshot.observedSampleCount ? "error" : "insufficient",
+      lastMessage: snapshot.observedSampleCount
+        ? snapshot.summary
+        : errors.slice(0, 3).join(" | ") || "قیمت معتبر کافی پیدا نشد.",
     });
-    return errors.length && !included.length ? "failed" : "insufficient";
+    return errors.length && !snapshot.observedSampleCount ? "failed" : "insufficient";
   }
-
-  const rawAverage = included.reduce((sum, sample) => sum + sample.priceToman, 0) / included.length;
-  const proposed = roundMarketPrice(rawAverage);
-  const activePrice = currentPrice(product);
 
   if (activePrice === proposed) {
     await updateProductPricingState(product.id, {
       ...product.pricing,
       sources,
       proposal: null,
+      lastMarketSnapshot: snapshot,
       history: oldHistory,
       lastCheckedAt: checkedAt,
       initialAppliedAt:
@@ -817,20 +822,19 @@ async function scanProduct(
           ? checkedAt
           : product.pricing.initialAppliedAt,
       lastStatus: "insufficient",
-      lastMessage: "قیمت فعلی با میانگین معتبر بازار برابر است؛ تغییری لازم نیست.",
+      lastMessage: `قیمت فعلی با قیمت معتبر وزن‌دار بازار برابر است؛ ${snapshot.summary}`,
     });
     return "insufficient";
   }
 
-  // Keep a pending proposal when a later scan reaches the same proposed price.
-  // Otherwise both external channels would receive the same alert on every run.
   if (product.pricing.proposal?.proposedPriceToman === proposed) {
     await updateProductPricingState(product.id, {
       ...product.pricing,
       sources,
+      lastMarketSnapshot: snapshot,
       lastCheckedAt: checkedAt,
       lastStatus: "pending",
-      lastMessage: "پیشنهاد قبلی هنوز معتبر است؛ قیمت پیشنهادی تغییری نکرده است.",
+      lastMessage: `پیشنهاد قبلی هنوز معتبر است؛ ${snapshot.summary}`,
     });
     return "skipped";
   }
@@ -841,20 +845,28 @@ async function scanProduct(
     createdAt: checkedAt,
     currentPriceToman: activePrice,
     proposedPriceToman: proposed,
-    rawAverageToman: Math.round(rawAverage),
+    rawAverageToman: Math.round(rawAverage ?? proposed),
     samples: included,
     excludedSamples: excluded,
-    note:
-      excluded.length > 0
-        ? `${excluded.length} قیمت پرت از میانگین حذف شد.`
-        : "میانگین از قیمت‌های معتبر فروشنده‌ها محاسبه شد.",
+    note: snapshot.summary,
+    observedMinPriceToman: snapshot.observedMinPriceToman,
+    observedMaxPriceToman: snapshot.observedMaxPriceToman,
+    verifiedMinPriceToman: snapshot.verifiedMinPriceToman,
+    verifiedMaxPriceToman: snapshot.verifiedMaxPriceToman,
+    verifiedMedianToman: snapshot.verifiedMarketPriceToman,
+    marketConfidenceScore: snapshot.confidenceScore,
+    observedSampleCount: snapshot.observedSampleCount,
+    verifiedSampleCount: snapshot.verifiedSampleCount,
+    suspiciousSampleCount: snapshot.suspiciousSampleCount,
+    trustedSellerCount: snapshot.trustedSellerCount,
+    authenticityRisk: snapshot.authenticityRisk,
   };
-
   if (mode === "initial-apply" && !product.pricing.initialAppliedAt) {
     const pricing: CmsPricingState = {
       ...product.pricing,
       sources,
       proposal: null,
+      lastMarketSnapshot: snapshot,
       history: [
         {
           id: proposal.id,
@@ -870,7 +882,7 @@ async function scanProduct(
       lastCheckedAt: checkedAt,
       initialAppliedAt: checkedAt,
       lastStatus: "approved",
-      lastMessage: `قیمت اولیه با مجوز مدیر از میانگین ${included.length} قیمت فروشنده معتبر اعمال شد.`,
+      lastMessage: `قیمت اولیه با مجوز مدیر از قیمت معتبر بازار و اطمینان ${snapshot.confidenceScore}٪ اعمال شد.`,
     };
     await approveProductPricingProposal(product.id, proposed, pricing);
     revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
@@ -881,10 +893,11 @@ async function scanProduct(
     ...product.pricing,
     sources,
     proposal,
+    lastMarketSnapshot: snapshot,
     history: oldHistory,
     lastCheckedAt: checkedAt,
     lastStatus: "pending",
-    lastMessage: `پیشنهاد جدید بر اساس ${included.length} قیمت معتبر آماده تأیید است.`,
+    lastMessage: `قیمت معتبر بازار با اطمینان ${snapshot.confidenceScore}٪ و ${included.length} نمونه آماده تأیید است.`,
   });
   return "proposal";
 }

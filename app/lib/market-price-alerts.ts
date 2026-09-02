@@ -44,7 +44,11 @@ function alertBlock({ productName, proposal }: MarketPricingProposalAlert): stri
   return [
     `• ${productName}`,
     `قیمت فعلی: ${toman(proposal.currentPriceToman)}`,
-    `قیمت پیشنهادی: ${toman(proposal.proposedPriceToman)}`,
+    `قیمت معتبر بازار: ${toman(proposal.proposedPriceToman)}`,
+    `بازه معتبر: ${toman(proposal.verifiedMinPriceToman)} تا ${toman(proposal.verifiedMaxPriceToman)}`,
+    `اطمینان بازار: ${proposal.marketConfidenceScore}٪`,
+    `نمونه معتبر: ${proposal.verifiedSampleCount} از ${proposal.observedSampleCount}`,
+    `قیمت مشکوک حذف‌شده: ${proposal.suspiciousSampleCount}`,
     `بررسی و تأیید: ${cmsUrl()}`,
   ].join("\n");
 }

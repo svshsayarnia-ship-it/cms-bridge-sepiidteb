@@ -545,7 +545,7 @@ export function PricingManager() {
                   <div><span>قیمت فعلی</span><strong>{money(proposal.currentPriceToman)}</strong></div>
                   <i>←</i>
                   <div className="is-proposed">
-                    <span>میانگین پیشنهادی</span>
+                    <span>قیمت معتبر بازار</span>
                     <strong>{money(proposal.proposedPriceToman)}</strong>
                     {difference !== null && (
                       <small className={difference > 0 ? "is-up" : "is-down"}>
@@ -555,15 +555,51 @@ export function PricingManager() {
                     )}
                   </div>
                 </div>
+                <div className="spb-price-proposal__verification">
+                  <span>اطمینان بازار: <strong>{proposal.marketConfidenceScore}٪</strong></span>
+                  <span>معتبر: <strong>{proposal.verifiedSampleCount}</strong> از {proposal.observedSampleCount}</span>
+                  <span>مشکوک: <strong>{proposal.suspiciousSampleCount}</strong></span>
+                  <span>
+                    بازه معتبر: <strong>{money(proposal.verifiedMinPriceToman)} تا {money(proposal.verifiedMaxPriceToman)}</strong>
+                  </span>
+                  <span>
+                    کل بازار دیده‌شده: {money(proposal.observedMinPriceToman)} تا {money(proposal.observedMaxPriceToman)}
+                  </span>
+                </div>
                 <div className="spb-price-samples">
                   {proposal.samples.map((sample) => (
-                    <a href={sample.url} target="_blank" rel="noreferrer" key={sample.provider}>
+                    <a
+                      href={sample.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      key={`${sample.provider}-${sample.sourceLabel}-${sample.priceToman}`}
+                    >
                       <span>{sample.sourceLabel}</span>
                       <strong>{money(sample.priceToman)}</strong>
                       <small>{sample.productName}</small>
+                      <small>اعتماد {sample.trustScore ?? 0}٪ · اطمینان {sample.confidenceScore ?? 0}٪</small>
                     </a>
                   ))}
                 </div>
+                {proposal.excludedSamples.length > 0 && (
+                  <details className="spb-price-excluded">
+                    <summary>قیمت‌های خارج‌شده از محاسبه ({proposal.excludedSamples.length})</summary>
+                    <div className="spb-price-samples">
+                      {proposal.excludedSamples.map((sample) => (
+                        <a
+                          href={sample.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          key={`excluded-${sample.provider}-${sample.sourceLabel}-${sample.priceToman}`}
+                        >
+                          <span>{sample.sourceLabel}</span>
+                          <strong>{money(sample.priceToman)}</strong>
+                          <small>{sample.exclusionReason || "نیازمند بررسی دستی"}</small>
+                        </a>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 <div className="spb-price-proposal__actions">
                   <button
                     type="button"
@@ -599,6 +635,25 @@ export function PricingManager() {
           })}
         </div>
       </details>
+
+      {selected?.pricing.lastMarketSnapshot && (
+        <details className="spb-pricing-panel" open>
+          <summary>
+            <span>آخرین تصویر واقعی بازار</span>
+            <b>{selected.pricing.lastMarketSnapshot.confidenceScore}٪</b>
+          </summary>
+          <div className="spb-market-snapshot">
+            <p>{selected.pricing.lastMarketSnapshot.summary}</p>
+            <div className="spb-price-proposal__verification">
+              <span>قیمت معتبر بازار: <strong>{money(selected.pricing.lastMarketSnapshot.verifiedMarketPriceToman)}</strong></span>
+              <span>بازه معتبر: <strong>{money(selected.pricing.lastMarketSnapshot.verifiedMinPriceToman)} تا {money(selected.pricing.lastMarketSnapshot.verifiedMaxPriceToman)}</strong></span>
+              <span>بازه مشاهده‌شده: {money(selected.pricing.lastMarketSnapshot.observedMinPriceToman)} تا {money(selected.pricing.lastMarketSnapshot.observedMaxPriceToman)}</span>
+              <span>نمونه معتبر: {selected.pricing.lastMarketSnapshot.verifiedSampleCount} از {selected.pricing.lastMarketSnapshot.observedSampleCount}</span>
+              <span>قیمت مشکوک: {selected.pricing.lastMarketSnapshot.suspiciousSampleCount}</span>
+            </div>
+          </div>
+        </details>
+      )}
 
       <details className="spb-pricing-panel">
         <summary>
