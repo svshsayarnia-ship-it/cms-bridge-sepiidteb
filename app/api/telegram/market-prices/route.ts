@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const FULL_SCAN_BUTTON = "🔄 پایش خودکار قیمت بازار";
-const FULL_SCAN_BATCH_SIZE = 4;
+const FULL_SCAN_BATCH_SIZE = 10;
 
 const MAIN_KEYBOARD: TelegramReplyMarkup = {
   keyboard: [
@@ -512,22 +512,9 @@ async function continueMarketScan(
     };
 
     if (summary.nextCursor !== null) {
-      const response = await fetch(telegramEndpoint(), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-sepiid-market-scan-token": internalScanToken(config.telegramBotToken),
-          ...(process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_SECRET
-            ? {
-                "x-telegram-bot-api-secret-token":
-                  process.env.MARKET_PRICE_TELEGRAM_WEBHOOK_SECRET,
-              }
-            : {}),
-        },
-        body: JSON.stringify({ sepiid_market_scan: next }),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error(`Market scan continuation returned ${response.status}`);
+      // Continue locally in the same background invocation. Recursive HTTP
+      // calls to this Vercel deployment are loop-protected and return 508.
+      await continueMarketScan(next, config);
       return;
     }
 
