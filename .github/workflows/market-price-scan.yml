@@ -1,10 +1,6 @@
-# Scanner trigger: multi-source-v5
-name: Market price scan
+name: Repair Telegram market scan continuation
 
 on:
-  schedule:
-    - cron: "30 5,11 * * *"
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,163 +8,48 @@ on:
       - ".github/workflows/market-price-scan.yml"
 
 permissions:
-  contents: read
-  id-token: write
-
-concurrency:
-  group: market-price-scan
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  scan:
+  repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Scan every Sepiid Beauty product in batches
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Patch Telegram scan and restore workflow
         shell: bash
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/api/telegram/market-prices/route.ts')
+          text = p.read_text(encoding='utf-8')
+          if 'const FULL_SCAN_BATCH_SIZE = 4;' not in text:
+              raise SystemExit('batch-size marker not found')
+          text = text.replace('const FULL_SCAN_BATCH_SIZE = 4;', 'const FULL_SCAN_BATCH_SIZE = 10;', 1)
+          start = text.index('    if (summary.nextCursor !== null) {\n      const response = await fetch(telegramEndpoint(), {')
+          end_marker = '      return;\n    }\n\n    const alerts = await listNewMarketPricingProposalAlerts(state.startedAt);'
+          end = text.index(end_marker, start)
+          replacement = '''    if (summary.nextCursor !== null) {
+      // Continue in the same background invocation. Recursive HTTP calls to
+      // this Vercel deployment are loop-protected and return HTTP 508.
+      await continueMarketScan(next, config);
+      return;
+    }
 
-          BASE="https://sepiidbeauty.ir/api/cron/market-prices/github"
-          # Small resumable batches keep every Vercel invocation comfortably below
-          # the 300-second function limit, even when one upstream source is slow.
-          LIMIT=4
-          RUN_STARTED_AT="$(python3 - <<'PY'
-          from datetime import datetime, timezone
-          print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
+    const alerts = await listNewMarketPricingProposalAlerts(state.startedAt);'''
+          text = text[:start] + replacement + text[end + len(end_marker):]
+          p.write_text(text, encoding='utf-8')
           PY
-          )"
 
-          issue_token() {
-            local response
-            response="$(curl --fail --silent --show-error \
-              -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
-              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sepiid-price-cron")"
-            printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])'
-          }
-
-          request_endpoint() {
-            local target="$1"
-            local token status
-            token="$(issue_token)"
-            status="$(curl --silent --show-error \
-              --max-time 240 \
-              --output /tmp/sepiid-price-response.txt \
-              --write-out '%{http_code}' \
-              --request POST \
-              --header "Authorization: Bearer ${token}" \
-              --header "Content-Type: application/json" \
-              "$target" || true)"
-            printf '%s' "$status"
-          }
-
-          echo "Waiting for multi-source v5 scanner deployment..."
-          READY=0
-          for attempt in $(seq 1 36); do
-            STATUS="$(request_endpoint "${BASE}?health=1")"
-            if [[ "$STATUS" =~ ^2 ]] && grep -q '"scanMode":"batched-market-v5-direct-fallback"' /tmp/sepiid-price-response.txt; then
-              READY=1
-              break
-            fi
-            echo "Health attempt ${attempt}: HTTP ${STATUS}"
-            cat /tmp/sepiid-price-response.txt || true
-            echo
-            sleep 10
-          done
-
-          if [ "$READY" -ne 1 ]; then
-            echo "Multi-source v5 market scanner did not become ready."
-            exit 1
+          git show HEAD^:.github/workflows/market-price-scan.yml > .github/workflows/market-price-scan.yml
+          if [ -f .github/workflows/fix-telegram-market-scan-508.yml ]; then
+            git rm .github/workflows/fix-telegram-market-scan-508.yml
           fi
 
-          CURSOR=0
-          COMPLETED=0
-          TOTAL=0
-          PROCESSED=0
-          MATCHED=0
-          UNRESOLVED=0
-          FAILED=0
-
-          for batch in $(seq 1 30); do
-            TARGET="${BASE}?cursor=${CURSOR}&limit=${LIMIT}"
-            BATCH_OK=0
-
-            for attempt in 1 2 3; do
-              STATUS="$(request_endpoint "$TARGET")"
-              if [[ "$STATUS" =~ ^2 ]]; then
-                BATCH_OK=1
-                break
-              fi
-              echo "Batch ${batch}, attempt ${attempt}: HTTP ${STATUS}"
-              cat /tmp/sepiid-price-response.txt || true
-              echo
-              sleep 8
-            done
-
-            if [ "$BATCH_OK" -ne 1 ]; then
-              echo "Batch ${batch} failed after retries."
-              exit 1
-            fi
-
-            echo "Batch ${batch} response:"
-            cat /tmp/sepiid-price-response.txt
-            echo
-
-            read -r BATCH_TOTAL BATCH_PROCESSED BATCH_MATCHED BATCH_UNRESOLVED BATCH_FAILED NEXT_CURSOR <<EOF
-          $(python3 - <<'PY'
-          import json
-          with open('/tmp/sepiid-price-response.txt', encoding='utf-8') as f:
-              s = json.load(f)['summary']
-          nxt = s['nextCursor']
-          print(s['totalProducts'], s['processedProducts'], s['matchedProducts'], s['unresolvedProducts'], s['failedProducts'], '' if nxt is None else nxt)
-          PY
-          )
-          EOF
-
-            TOTAL="$BATCH_TOTAL"
-            PROCESSED=$((PROCESSED + BATCH_PROCESSED))
-            MATCHED=$((MATCHED + BATCH_MATCHED))
-            UNRESOLVED=$((UNRESOLVED + BATCH_UNRESOLVED))
-            FAILED=$((FAILED + BATCH_FAILED))
-
-            if [ -z "$NEXT_CURSOR" ]; then
-              COMPLETED=1
-              break
-            fi
-            CURSOR="$NEXT_CURSOR"
-          done
-
-          if [ "$COMPLETED" -ne 1 ]; then
-            echo "Product scan did not reach the final batch."
-            exit 1
-          fi
-
-          COVERAGE_PERCENT="$(python3 - "$MATCHED" "$TOTAL" <<'PY'
-          import sys
-          matched, total = map(int, sys.argv[1:3])
-          print(f'{(matched / total * 100) if total else 0:.1f}')
-          PY
-          )"
-          echo "Market coverage: ${MATCHED}/${TOTAL} = ${COVERAGE_PERCENT}% | processed=${PROCESSED} unresolved=${UNRESOLVED} failed=${FAILED}"
-          echo "::notice title=Market price coverage::${MATCHED}/${TOTAL} products (${COVERAGE_PERCENT}%) matched; unresolved=${UNRESOLVED}; failed=${FAILED}"
-
-          ENCODED_STARTED_AT="$(python3 - "$RUN_STARTED_AT" <<'PY'
-          import sys
-          from urllib.parse import quote
-          print(quote(sys.argv[1], safe=''))
-          PY
-          )"
-          STATUS="$(request_endpoint "${BASE}?finalize=1&startedAt=${ENCODED_STARTED_AT}")"
-          if [[ ! "$STATUS" =~ ^2 ]]; then
-            echo "Finalize failed: HTTP ${STATUS}"
-            cat /tmp/sepiid-price-response.txt || true
-            exit 1
-          fi
-
-          echo "Finalize response:"
-          cat /tmp/sepiid-price-response.txt
-          echo
-
-          if [ "$FAILED" -gt 0 ]; then
-            echo "::warning title=Temporary market scan failures::${FAILED} products failed technically and will be retried on the next scheduled scan."
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/api/telegram/market-prices/route.ts .github/workflows/market-price-scan.yml
+          git commit -m "Telegram: remove 508 market scan self-call"
+          git push
