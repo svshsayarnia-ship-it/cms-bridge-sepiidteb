@@ -7,6 +7,7 @@ import {
   type MarketPriceHistoryEntry,
   type MarketPriceProposal,
   type MarketPriceSample,
+  type MarketProvider,
   type MarketSourceConfig,
 } from "./pricing-types";
 import {
@@ -52,6 +53,30 @@ const CURATED_DIRECT_SOURCES: Record<string, CuratedDirectSource> = {
     label: "کپسول",
     expectedName: "بوتاکس سیاکس Siax 100U",
   },
+};
+
+
+type WooMarketStore = {
+  provider: Extract<MarketProvider, "sayancenter" | "rokateb" | "noavaransalamat">;
+  baseUrl: string;
+};
+
+const WOO_MARKET_STORES: WooMarketStore[] = [
+  { provider: "sayancenter", baseUrl: "https://sayancenter.com" },
+  { provider: "rokateb", baseUrl: "https://rokateb.ir" },
+  { provider: "noavaransalamat", baseUrl: "https://noavaransalamat.ir" },
+];
+
+type WooStoreProduct = {
+  name?: string;
+  permalink?: string;
+  is_in_stock?: boolean;
+  is_purchasable?: boolean;
+  prices?: {
+    price?: string;
+    currency_code?: string;
+    currency_minor_unit?: number;
+  };
 };
 
 const GENERIC_TOKENS = new Set([
@@ -369,6 +394,24 @@ function parseToman(value: unknown): number | null {
     : null;
 }
 
+function wooStorePrice(
+  value: unknown,
+  currency = "IRT",
+  minorUnit = 0,
+): number | null {
+  const normalized = toLatinDigits(String(value ?? ""))
+    .replace(/[٬،,\s]/gu, "")
+    .replace(/٫/gu, ".");
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return null;
+  let amount = parsed / 10 ** Math.max(0, minorUnit);
+  if (currency.toUpperCase() === "IRR") amount /= 10;
+  const rounded = Math.round(amount);
+  return rounded >= MIN_VALID_PRICE_TOMAN && rounded <= MAX_VALID_PRICE_TOMAN
+    ? rounded
+    : null;
+}
+
 async function fetchText(url: string): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -412,6 +455,67 @@ async function fetchJson<T>(url: string): Promise<T> {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function discoverWooMarketSample(
+  product: CmsProduct,
+  store: WooMarketStore,
+): Promise<{ provider: MarketProvider; sourceUrl: string; sample: MarketPriceSample } | null> {
+  // Search Persian storefront name first, then canonical English/model identity if needed.
+  const queries = [product.name, ...discoveryQueries(product)].filter(Boolean).slice(0, 2);
+  const candidates = new Map<string, { item: WooStoreProduct; score: number }>();
+
+  for (const query of queries) {
+    try {
+      const url = new URL("/wp-json/wc/store/v1/products", store.baseUrl);
+      url.searchParams.set("search", query);
+      url.searchParams.set("per_page", "12");
+      const response = await fetchJson<WooStoreProduct[]>(url.toString());
+      if (!Array.isArray(response)) continue;
+      for (const item of response) {
+        const name = item.name?.trim() ?? "";
+        const permalink = item.permalink?.trim() ?? "";
+        if (!name || !permalink || item.is_in_stock === false || item.is_purchasable === false) continue;
+        const score = candidateScore(product, name);
+        if (score < 0.62) continue;
+        const previous = candidates.get(permalink);
+        if (!previous || score > previous.score) candidates.set(permalink, { item, score });
+      }
+      const bestNow = [...candidates.values()].sort((a, b) => b.score - a.score)[0];
+      if (bestNow?.score && bestNow.score >= 0.9) break;
+    } catch {
+      // One store/query failing must not block the other independent market sources.
+    }
+  }
+
+  const ranked = [...candidates.values()].sort((a, b) => b.score - a.score);
+  const best = ranked[0];
+  if (!best?.item.permalink || !best.item.prices?.price) return null;
+  const second = ranked[1];
+  if (second && best.score < 0.86 && second.score >= best.score - 0.045) return null;
+
+  const priceToman = wooStorePrice(
+    best.item.prices.price,
+    best.item.prices.currency_code,
+    best.item.prices.currency_minor_unit,
+  );
+  if (!priceToman) return null;
+
+  return {
+    provider: store.provider,
+    sourceUrl: best.item.permalink,
+    sample: {
+      provider: store.provider,
+      sourceLabel: MARKET_PROVIDER_LABELS[store.provider],
+      url: best.item.permalink,
+      productName: best.item.name ?? product.name,
+      priceToman,
+      checkedAt: new Date().toISOString(),
+      inStock: true,
+      matchScore: best.score,
+      sellerName: MARKET_PROVIDER_LABELS[store.provider],
+    },
+  };
 }
 
 function candidateName(candidate: TorobSearchCandidate): string {
@@ -666,6 +770,23 @@ function currentPrice(product: CmsProduct): number | null {
   return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
 
+function updateProviderSource(
+  sources: MarketSourceConfig[],
+  provider: MarketProvider,
+  sourceUrl: string,
+): MarketSourceConfig[] {
+  const next = sources.map((source) => ({ ...source }));
+  const existing = next.find((source) => source.provider === provider);
+  if (existing) {
+    existing.url = sourceUrl;
+    existing.enabled = true;
+    existing.discovered = true;
+  } else {
+    next.push({ provider, url: sourceUrl, enabled: true, discovered: true });
+  }
+  return next;
+}
+
 function updateTorobSource(
   sources: MarketSourceConfig[],
   sourceUrl: string,
@@ -791,6 +912,15 @@ async function scanProductMarket(product: CmsProduct): Promise<ProductScanResult
       const torob = await torobSamples(product, ranked);
       samples.push(...torob.samples);
       if (torob.samples.length) sources = updateTorobSource(sources, torob.sourceUrl);
+    }
+
+    const independent = await Promise.all(
+      WOO_MARKET_STORES.map((store) => discoverWooMarketSample(product, store)),
+    );
+    for (const result of independent) {
+      if (!result) continue;
+      samples.push(result.sample);
+      sources = updateProviderSource(sources, result.provider, result.sourceUrl);
     }
 
     const direct = await directMarketSample(product);
