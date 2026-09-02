@@ -1,3 +1,4 @@
+# Trigger verified-market integration after type-model upgrade
 name: Apply verified market upgrade
 
 on:
