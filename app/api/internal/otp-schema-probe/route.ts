@@ -11,50 +11,26 @@ function safeBase() {
   }
 }
 
-function summarizeRoute(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const route = value as Record<string, unknown>;
-  const endpoints = Array.isArray(route.endpoints) ? route.endpoints : [];
-  return {
-    namespace: typeof route.namespace === "string" ? route.namespace : null,
-    methods: Array.from(new Set(endpoints.flatMap((endpoint) => {
-      if (!endpoint || typeof endpoint !== "object") return [] as string[];
-      const methods = (endpoint as Record<string, unknown>).methods;
-      if (Array.isArray(methods)) return methods.filter((item): item is string => typeof item === "string");
-      if (methods && typeof methods === "object") return Object.keys(methods as Record<string, unknown>);
-      return [] as string[];
-    }))),
-    args: Array.from(new Set(endpoints.flatMap((endpoint) => {
-      if (!endpoint || typeof endpoint !== "object") return [] as string[];
-      const args = (endpoint as Record<string, unknown>).args;
-      return args && typeof args === "object" ? Object.keys(args as Record<string, unknown>) : [] as string[];
-    }))),
-  };
-}
-
 export async function GET() {
   const base = safeBase();
   if (!base) return Response.json({ ok: false, stage: "config" }, { status: 503 });
   try {
-    const root = await fetch(`${base}/wp-json`, {
-      headers: { accept: "application/json", "cache-control": "no-store" },
+    const response = await fetch(`${base}/wp-json/wpsms/v1/send`, {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json", "cache-control": "no-store" },
+      body: JSON.stringify({ recipients: "numbers", numbers: [], message: "" }),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
-    const payload = await root.json().catch(() => null) as { routes?: Record<string, unknown> } | null;
-    if (!root.ok || !payload?.routes) return Response.json({ ok: false, stage: "index", status: root.status }, { status: 502 });
-
-    const terms = /(sms|otp|ippanel|razban|pattern|message)/i;
-    const matching = Object.entries(payload.routes)
-      .filter(([path]) => terms.test(path))
-      .map(([path, route]) => ({ path, ...summarizeRoute(route) }))
-      .slice(0, 50);
-
-    const exact = payload.routes["/sepiid/v1/auth/otp/request"] ?? null;
+    const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+    const code = payload && typeof payload.code === "string" ? payload.code : null;
+    const message = payload && typeof payload.message === "string" ? payload.message.slice(0, 160) : null;
     return Response.json({
       ok: true,
-      exact: summarizeRoute(exact),
-      matching,
+      status: response.status,
+      authRequired: response.status === 401 || response.status === 403,
+      code,
+      message,
     }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     return Response.json({ ok: false, stage: error instanceof Error ? error.name : "unknown" }, { status: 502, headers: { "cache-control": "no-store" } });
