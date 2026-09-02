@@ -1,4 +1,4 @@
-# Scanner trigger: multi-source-v5
+# Scanner trigger: verified-market-v1
 name: Market price scan
 
 on:
