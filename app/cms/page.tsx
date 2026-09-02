@@ -52,10 +52,10 @@ export default async function CmsPage() {
   }
 
   return (
-    <>
-      <CmsProductImageManager families={imageFamilies} />
-      <PricingAlertSettings />
-      <CmsDashboard userName={authorization.user.displayName} />
-    </>
+    <CmsDashboard
+      userName={authorization.user.displayName}
+      imageManager={<CmsProductImageManager families={imageFamilies} />}
+      pricingAlertSettings={<PricingAlertSettings />}
+    />
   );
 }

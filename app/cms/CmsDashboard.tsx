@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type {
   CmsCategory,
   CmsConnectionStatus,
@@ -14,6 +14,19 @@ import { SiteContentManager } from "./SiteContentManager";
 import { RichTextEditor } from "./RichTextEditor";
 import { emptyPricingState } from "../lib/pricing-types";
 import { PricingManager } from "./PricingManager";
+import { CmsOverview } from "./CmsOverview";
+
+type CmsSection = "overview" | "products" | "pricing" | "content" | "categories" | "media" | "settings";
+
+const CMS_NAV: Array<{ id: CmsSection; label: string; hint: string }> = [
+  { id: "overview", label: "نمای کلی", hint: "وضعیت امروز و کارهای فوری" },
+  { id: "products", label: "محصولات", hint: "کالا، موجودی، قیمت و سئو" },
+  { id: "pricing", label: "پایش قیمت", hint: "قیمت بازار و پیشنهادها" },
+  { id: "content", label: "مقالات و سایت", hint: "مجله و محتوای صفحات" },
+  { id: "categories", label: "دسته‌بندی‌ها", hint: "ساختار فروشگاه" },
+  { id: "media", label: "تصاویر محصولات", hint: "کارت، مستر و مدل‌ها" },
+  { id: "settings", label: "تنظیمات اعلان", hint: "تلگرام و ایمیل" },
+];
 
 type ApiError = { error?: string; code?: string };
 
@@ -121,7 +134,17 @@ function productInput(product: CmsProduct): CmsProductInput {
   };
 }
 
-export function CmsDashboard({ userName }: { userName: string }) {
+export function CmsDashboard({
+  userName,
+  imageManager,
+  pricingAlertSettings,
+}: {
+  userName: string;
+  imageManager: ReactNode;
+  pricingAlertSettings: ReactNode;
+}) {
+  const [activeSection, setActiveSection] = useState<CmsSection>("overview");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [products, setProducts] = useState<CmsProduct[]>([]);
   const [categories, setCategories] = useState<CmsCategory[]>([]);
   const [selected, setSelected] = useState<CmsProduct | null>(null);
@@ -530,7 +553,14 @@ export function CmsDashboard({ userName }: { userName: string }) {
     <main id="main-content" className={`spb-cms-root${selected ? " has-selection" : ""}`}>
       <header className="spb-cms-header">
         <div>
-          <strong>Sepiid CMS</strong>
+          <button
+            type="button"
+            className="spb-cms-menu-toggle"
+            aria-label="باز کردن منوی مدیریت"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >☰</button>
+          <strong>مدیریت سپید بیوتی</strong>
           <span>
             {connection
               ? connection.connected
@@ -565,21 +595,49 @@ export function CmsDashboard({ userName }: { userName: string }) {
       {error && <div className="spb-cms-alert is-error">{error}</div>}
       {notice && <div className="spb-cms-alert is-success">{notice}</div>}
 
-      <SiteContentManager />
-      <PricingManager />
+      <div className="spb-cms-shell">
+        <aside className={`spb-cms-nav${mobileMenuOpen ? " is-open" : ""}`}>
+          <div className="spb-cms-nav__intro">
+            <strong>منوی مدیریت</strong>
+            <span>هر کاری را از بخش مربوط به خودش انجام بده.</span>
+          </div>
+          <nav aria-label="بخش‌های مدیریت">
+            {CMS_NAV.map((item, index) => (
+              <button
+                type="button"
+                key={item.id}
+                className={activeSection === item.id ? "is-active" : ""}
+                onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }}
+              >
+                <i>{(index + 1).toLocaleString("fa-IR")}</i>
+                <span><strong>{item.label}</strong><small>{item.hint}</small></span>
+              </button>
+            ))}
+          </nav>
+          <a href="/" target="_blank" rel="noreferrer" className="spb-cms-nav__site-link">مشاهده سایت ←</a>
+        </aside>
 
-      {categories.length > 0 && (
-        <CategoryManager
-          categories={categories}
-          onCategoryUpdated={(category) => {
-            setCategories((current) =>
-              current.map((item) => (item.id === category.id ? category : item)),
-            );
-          }}
-        />
-      )}
+        <div className="spb-cms-workspace">
+          {activeSection === "overview" && (
+            <CmsOverview
+              connection={connection}
+              onNavigate={(section) => setActiveSection(section)}
+            />
+          )}
+          {activeSection === "content" && <SiteContentManager />}
+          {activeSection === "pricing" && <PricingManager />}
+          {activeSection === "categories" && categories.length > 0 && (
+            <CategoryManager
+              categories={categories}
+              onCategoryUpdated={(category) => {
+                setCategories((current) => current.map((item) => item.id === category.id ? category : item));
+              }}
+            />
+          )}
+          {activeSection === "media" && imageManager}
+          {activeSection === "settings" && pricingAlertSettings}
 
-      <div className="spb-cms-layout">
+      {activeSection === "products" && <div className="spb-cms-layout">
         <aside className="spb-cms-list">
           <div className="spb-cms-list__head">
             <div>
@@ -1066,6 +1124,8 @@ export function CmsDashboard({ userName }: { userName: string }) {
             </form>
           )}
         </section>
+      </div>}
+        </div>
       </div>
     </main>
   );

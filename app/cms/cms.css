@@ -21,6 +21,130 @@ body:has(.spb-cms-login) {
   color: #17211f;
 }
 
+/* CMS application shell and management overview */
+.spb-cms-shell {
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  min-height: calc(100vh - 64px);
+}
+
+.spb-cms-nav {
+  position: sticky;
+  top: 64px;
+  align-self: start;
+  height: calc(100vh - 64px);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-left: 1px solid #dde6e3;
+  overflow-y: auto;
+}
+
+.spb-cms-nav__intro { padding: 0 8px 18px; border-bottom: 1px solid #edf1ef; }
+.spb-cms-nav__intro strong, .spb-cms-nav__intro span { display: block; }
+.spb-cms-nav__intro strong { font-size: 14px; }
+.spb-cms-nav__intro span { margin-top: 5px; color: #71807c; font-size: 11px; line-height: 1.7; }
+.spb-cms-nav nav { display: grid; gap: 5px; padding-top: 14px; }
+.spb-cms-nav nav button {
+  width: 100%; padding: 10px 9px; display: flex; align-items: center; gap: 10px;
+  color: #40504c; background: transparent; border: 0; border-radius: 9px;
+  text-align: right; cursor: pointer; font: inherit;
+}
+.spb-cms-nav nav button:hover { background: #f3f7f5; }
+.spb-cms-nav nav button.is-active { color: #155b49; background: #e8f4ef; box-shadow: inset -3px 0 #176b55; }
+.spb-cms-nav nav button > i {
+  width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center;
+  border-radius: 8px; color: #667671; background: #eef2f0; font-size: 11px; font-style: normal;
+}
+.spb-cms-nav nav button.is-active > i { color: #fff; background: #176b55; }
+.spb-cms-nav nav button span, .spb-cms-nav nav button strong, .spb-cms-nav nav button small { display: block; }
+.spb-cms-nav nav button strong { font-size: 12px; }
+.spb-cms-nav nav button small { margin-top: 2px; color: #7a8985; font-size: 9px; }
+.spb-cms-nav__site-link { margin-top: auto; padding: 12px; color: #176b55; text-decoration: none; font-size: 12px; border-top: 1px solid #edf1ef; }
+.spb-cms-workspace { min-width: 0; }
+.spb-cms-workspace > .spb-site-content,
+.spb-cms-workspace > .spb-pricing-manager,
+.spb-cms-workspace > .spb-role-manager,
+.spb-cms-workspace > .spb-pricing-alert-settings,
+.spb-cms-workspace > .spb-cms-section { max-width: 1280px; margin: 20px auto; }
+.spb-cms-menu-toggle { display: none; color: #fff; background: transparent; border: 0; font-size: 22px; cursor: pointer; }
+
+.spb-bi { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.spb-bi button { font-family: inherit; }
+.spb-bi__welcome { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+.spb-bi__welcome span { color: #8a6b35; font-size: 11px; font-weight: 700; }
+.spb-bi__welcome h1 { margin: 5px 0 6px; color: #173f37; font-size: clamp(21px, 3vw, 30px); }
+.spb-bi__welcome p { max-width: 680px; margin: 0; color: #64746f; font-size: 13px; line-height: 1.8; }
+.spb-bi__welcome > div:last-child { padding: 8px 11px; display: flex; align-items: center; gap: 7px; border-radius: 999px; white-space: nowrap; font-size: 11px; }
+.spb-bi__welcome > .is-online { color: #176044; background: #e2f4ea; }
+.spb-bi__welcome > .is-offline { color: #8d2929; background: #fff0f0; }
+.spb-bi__welcome i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.spb-bi__kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.spb-bi__kpis button { padding: 17px; display: grid; gap: 5px; text-align: right; color: #17211f; background: #fff; border: 1px solid #dce4e1; border-radius: 12px; cursor: pointer; box-shadow: 0 7px 24px rgba(23,63,55,.04); }
+.spb-bi__kpis button:hover { border-color: #7daf9f; transform: translateY(-1px); }
+.spb-bi__kpis button.needs-attention { border-top: 3px solid #d59a35; }
+.spb-bi__kpis span { color: #697873; font-size: 11px; }
+.spb-bi__kpis strong { color: #173f37; font-size: 28px; }
+.spb-bi__kpis small { color: #7a8985; font-size: 10px; }
+.spb-bi__grid { margin-top: 14px; display: grid; grid-template-columns: 1.3fr .7fr; gap: 14px; }
+.spb-bi__grid article, .spb-bi__guide { padding: 20px; background: #fff; border: 1px solid #dce4e1; border-radius: 12px; }
+.spb-bi__section-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.spb-bi__section-head span, .spb-bi__guide > div span { color: #96773e; font-size: 10px; }
+.spb-bi__section-head h2, .spb-bi__guide h2 { margin: 3px 0 0; font-size: 16px; }
+.spb-bi__section-head > b { min-width: 37px; height: 37px; display: grid; place-items: center; color: #176044; background: #e7f5ef; border-radius: 10px; font-size: 13px; }
+.spb-bi__tasks ul { margin: 15px 0 0; padding: 0; display: grid; gap: 7px; list-style: none; }
+.spb-bi__tasks li button { width: 100%; padding: 10px; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; text-align: right; color: #263632; background: #f7f9f8; border: 0; border-radius: 8px; cursor: pointer; }
+.spb-bi__tasks li button:hover { background: #edf5f2; }
+.spb-bi__tasks li button > strong { width: 30px; height: 30px; display: grid; place-items: center; color: #8b5c16; background: #fff1d9; border-radius: 8px; }
+.spb-bi__tasks li button > span { font-size: 12px; }
+.spb-bi__tasks li button > i { color: #176b55; font-size: 10px; font-style: normal; }
+.spb-bi__all-good { min-height: 145px; display: grid; place-content: center; gap: 5px; text-align: center; color: #176044; }
+.spb-bi__all-good span { color: #71807c; font-size: 11px; }
+.spb-bi__bar { height: 8px; margin: 18px 0; overflow: hidden; background: #edf1ef; border-radius: 999px; }
+.spb-bi__bar i { height: 100%; display: block; background: linear-gradient(90deg,#36a477,#176b55); border-radius: inherit; }
+.spb-bi__health dl { margin: 0 0 16px; display: grid; gap: 8px; }
+.spb-bi__health dl div { display: flex; justify-content: space-between; gap: 12px; color: #65756f; font-size: 11px; }
+.spb-bi__health dt, .spb-bi__health dd { margin: 0; }
+.spb-bi__health dd { color: #263632; font-weight: 700; }
+.spb-bi__guide { margin-top: 14px; display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: center; }
+.spb-bi__guide ol { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; list-style: none; }
+.spb-bi__guide li { display: flex; gap: 9px; }
+.spb-bi__guide li > b { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; color: #176b55; background: #e8f4ef; border-radius: 50%; font-size: 11px; }
+.spb-bi__guide li span, .spb-bi__guide li strong { display: block; }
+.spb-bi__guide li span { color: #788783; font-size: 10px; line-height: 1.6; }
+.spb-bi__guide li strong { margin-bottom: 3px; color: #263632; font-size: 11px; }
+.spb-bi__updated { margin: 10px 2px 0; color: #899590; font-size: 9px; }
+
+@media (max-width: 1040px) {
+  .spb-cms-shell { grid-template-columns: 205px minmax(0,1fr); }
+  .spb-bi__kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .spb-bi__guide { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .spb-cms-header { padding-inline: 12px; }
+  .spb-cms-header > div:first-child > span { display: none; }
+  .spb-cms-header__status > small { display: none; }
+  .spb-cms-menu-toggle { display: block; }
+  .spb-cms-shell { display: block; }
+  .spb-cms-nav { position: fixed; inset: 64px 0 0 auto; z-index: 40; width: min(84vw,290px); height: calc(100vh - 64px); transform: translateX(105%); transition: transform .22s ease; box-shadow: -20px 0 50px rgba(19,48,41,.18); }
+  .spb-cms-nav.is-open { transform: translateX(0); }
+  .spb-bi { padding: 18px 12px; }
+  .spb-bi__welcome { display: grid; }
+  .spb-bi__welcome > div:last-child { width: max-content; }
+  .spb-bi__kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .spb-bi__kpis button { padding: 13px; }
+  .spb-bi__kpis strong { font-size: 23px; }
+  .spb-bi__grid { grid-template-columns: 1fr; }
+  .spb-bi__guide ol { grid-template-columns: 1fr; }
+  .spb-cms-workspace > .spb-site-content,
+  .spb-cms-workspace > .spb-pricing-manager,
+  .spb-cms-workspace > .spb-role-manager,
+  .spb-cms-workspace > .spb-pricing-alert-settings,
+  .spb-cms-workspace > .spb-cms-section { margin: 12px; }
+}
+
 .spb-cms-root,
 .spb-cms-login,
 .spb-cms-root * {
