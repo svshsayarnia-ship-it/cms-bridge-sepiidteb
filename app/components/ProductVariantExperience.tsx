@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
-import { ArrowIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
 import { AddToCartButton } from "./AddToCartButton";
 
@@ -82,11 +81,6 @@ function formatStaticPrice(value?: number) {
   return value && value > 0
     ? `${priceFormatter.format(value)} تومان`
     : "قیمت را بپرسید";
-}
-
-function buildInquiryLink(name: string, volume?: string) {
-  const message = `سلام، برای «${name}»${volume ? ` با بسته ${volume}` : ""} موجودی و قیمت امروز رو می‌خواستم.`;
-  return `https://wa.me/989037251266?text=${encodeURIComponent(message)}`;
 }
 
 const internalProductTerms = /تطبیق|تأیید|تایید|فهرست|گزارش|مرجع|بچ‌کد|پلمب|نمایه|مسیر استعلام|داده‌های بازار|این صفحه برای/u;
@@ -341,7 +335,16 @@ export function ProductVariantExperience({
         label: formatStaticPrice(product.priceToman),
         note: product.priceNote ?? "قیمت امروز",
       });
-  const inquiryLink = buildInquiryLink(displayName, displayVolume);
+
+  const inquiryProduct = {
+    slug: product.slug,
+    nameFa: displayName,
+    nameEn: displayNameEn,
+    brand: product.brand,
+    image: displayImage,
+    volume: displayVolume,
+    priceToman: selectedVariant?.priceToman ?? product.priceToman,
+  };
 
   function selectVariant(id: string) {
     setSelectedId(id);
@@ -441,22 +444,10 @@ export function ProductVariantExperience({
                 <strong>{pricing.label}</strong>
                 <small>{toPublicCopy(pricing.note)}</small>
               </div>
-              <Link className="sb-btn sb-btn--dark" href={inquiryLink}>
-                موجودی و قیمت امروز
-                <ArrowIcon />
-              </Link>
+              <AddToCartButton product={inquiryProduct} />
             </div>
-            <AddToCartButton product={{
-              slug: product.slug,
-              nameFa: displayName,
-              nameEn: displayNameEn,
-              brand: product.brand,
-              image: displayImage,
-              volume: displayVolume,
-              priceToman: selectedVariant?.priceToman ?? product.priceToman,
-            }} />
             <p className="sb-product-summary__notice">
-              ویژه استفاده حرفه‌ای
+              افزودن به لیست استعلام به معنی خرید یا پرداخت قطعی نیست؛ قیمت و موجودی روز قبل از تأیید سفارش بررسی می‌شود.
             </p>
           </div>
         </div>
@@ -496,7 +487,11 @@ export function ProductVariantExperience({
 
       <div className="sb-product-mobile-cta">
         <div><span>{displayName}</span><strong>{pricing.label}</strong></div>
-        <Link href={inquiryLink}>موجودی و قیمت</Link>
+        <AddToCartButton
+          product={inquiryProduct}
+          className="sb-btn sb-btn--dark"
+          label="استعلام قیمت و موجودی"
+        />
       </div>
     </>
   );
