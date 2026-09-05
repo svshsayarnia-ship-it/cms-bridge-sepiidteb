@@ -254,9 +254,9 @@ export function SiteHeader({
           </button>
 
           <div className="sb-header__actions">
-            <Link className="sb-header__cart" href="/cart" aria-label={`سبد خرید، ${cartCount(cartItems)} قلم`}>
+            <Link className="sb-header__cart" href="/cart" aria-label={`لیست استعلام، ${cartCount(cartItems)} قلم`}>
               <span className="sb-header__cart-icon"><SepiidCartIcon /></span>
-              <span>سبد خرید</span>
+              <span>لیست استعلام</span>
               {cartCount(cartItems) > 0 && <b>{cartCount(cartItems)}</b>}
             </Link>
             <Link className="sb-header__account" href="/account" title={initialUser ? initialUser.fullName || initialUser.email : "ورود و عضویت"}>

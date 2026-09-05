@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowIcon, CloseIcon, PackageIcon } from "../components/Icons";
 import {
   cartCount,
-  cartHasUnknownPrice,
   cartItemKey,
   cartSubtotal,
   onCartUpdated,
@@ -18,7 +17,6 @@ import {
 import styles from "./cart.module.css";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
-const whatsapp = (text: string) => `https://wa.me/989037251266?text=${encodeURIComponent(text)}`;
 
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -30,37 +28,32 @@ export default function CartPage() {
   }, []);
 
   const subtotal = useMemo(() => cartSubtotal(items), [items]);
-  const hasUnknownPrice = useMemo(() => cartHasUnknownPrice(items), [items]);
-  const unknownPriceItems = useMemo(
-    () => items.filter((item) => !item.priceToman).map((item) => `${item.nameFa}${item.volume ? ` (${item.volume})` : ""}`).join("، "),
-    [items],
-  );
 
   return (
     <main id="main-content" className={styles.page}>
       <div className="sb-shell">
-        <nav className={styles.steps} aria-label="مراحل خرید">
-          <span className={styles.activeStep}><b>۱</b> سبد خرید</span>
-          <span><b>۲</b> اطلاعات ارسال</span>
-          <span><b>۳</b> پرداخت</span>
+        <nav className={styles.steps} aria-label="مراحل استعلام و سفارش">
+          <span className={styles.activeStep}><b>۱</b> لیست استعلام</span>
+          <span><b>۲</b> ارسال درخواست</span>
+          <span><b>۳</b> تأیید قیمت و سفارش</span>
         </nav>
 
         <header className={styles.intro}>
-          <span className="sb-eyebrow">CART / سبد خرید</span>
-          <h1>سبد خرید شما</h1>
-          <p>تعداد و مدل محصولات را بررسی کنید؛ در مرحله بعد اطلاعات گیرنده، نشانی و روش پرداخت را تکمیل می‌کنید.</p>
+          <span className="sb-eyebrow">INQUIRY LIST / لیست استعلام</span>
+          <h1>لیست استعلام شما</h1>
+          <p>مدل و تعداد محصولات را بررسی کنید. با ارسال این لیست، قیمت و موجودی روز برای شما تأیید می‌شود و هیچ پرداختی در این مرحله انجام نمی‌شود.</p>
         </header>
 
         {!items.length ? (
           <section className={styles.empty}>
             <PackageIcon />
-            <h2>سبد خرید هنوز خالی است.</h2>
-            <p>از فروشگاه محصول موردنظرتان را انتخاب کنید تا اینجا نمایش داده شود.</p>
-            <Link className="sb-btn sb-btn--dark" href="/shop">رفتن به فروشگاه <ArrowIcon /></Link>
+            <h2>لیست استعلام هنوز خالی است.</h2>
+            <p>محصولات موردنظرتان را از فروشگاه به این لیست اضافه کنید.</p>
+            <Link className="sb-btn sb-btn--dark" href="/shop">انتخاب محصول <ArrowIcon /></Link>
           </section>
         ) : (
           <div className={styles.layout}>
-            <section className={styles.list} aria-label="محصولات سبد خرید">
+            <section className={styles.list} aria-label="محصولات لیست استعلام">
               {items.map((item) => (
                 <article className={styles.item} key={cartItemKey(item)}>
                   <div className={styles.imageWrap}>
@@ -71,9 +64,9 @@ export default function CartPage() {
                     <h2>{item.nameFa}</h2>
                     <small>{item.volume || item.nameEn || ""}</small>
                     {item.priceToman ? (
-                      <strong>{priceFormatter.format(item.priceToman)} تومان</strong>
+                      <strong>{priceFormatter.format(item.priceToman)} تومان <small>قیمت ثبت‌شده</small></strong>
                     ) : (
-                      <strong className={styles.needsInquiry}>نیاز به استعلام قیمت</strong>
+                      <strong className={styles.needsInquiry}>قیمت روز نیاز به استعلام دارد</strong>
                     )}
                   </div>
                   <div className={styles.controls}>
@@ -87,7 +80,7 @@ export default function CartPage() {
                         {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
                       </select>
                     </label>
-                    <button type="button" onClick={() => removeFromCart(item)} aria-label={`حذف ${item.nameFa}`}>
+                    <button type="button" onClick={() => removeFromCart(item)} aria-label={`حذف ${item.nameFa} از لیست استعلام`}>
                       <CloseIcon /> حذف
                     </button>
                   </div>
@@ -95,42 +88,27 @@ export default function CartPage() {
               ))}
             </section>
 
-            <aside className={styles.summary} aria-label="خلاصه سفارش">
+            <aside className={styles.summary} aria-label="خلاصه لیست استعلام">
               <div className={styles.summaryHead}>
-                <span>خلاصه سفارش</span>
+                <span>خلاصه درخواست</span>
                 <strong>{priceFormatter.format(cartCount(items))} قلم</strong>
               </div>
-              <div className={styles.summaryRow}>
-                <span>جمع محصولات قیمت‌دار</span>
-                <strong>{priceFormatter.format(subtotal)} تومان</strong>
-              </div>
-              <div className={styles.summaryRow}>
-                <span>هزینه ارسال</span>
-                <strong className={styles.pending}>پس از بررسی مقصد</strong>
-              </div>
-
-              {hasUnknownPrice ? (
-                <div className={styles.notice} role="status">
-                  <strong>برای ادامه پرداخت، قیمت همه اقلام باید مشخص باشد.</strong>
-                  <p>یک یا چند محصول هنوز قیمت قطعی ندارند. ابتدا همان اقلام را استعلام کنید تا مبلغ اشتباه وارد مرحله پرداخت نشود.</p>
+              {subtotal > 0 && (
+                <div className={styles.summaryRow}>
+                  <span>جمع قیمت‌های ثبت‌شده</span>
+                  <strong>{priceFormatter.format(subtotal)} تومان</strong>
                 </div>
-              ) : (
-                <p className={styles.helper}>هزینه و روش ارسال بر اساس مقصد و شرایط نگهداری محصول در مرحله بعد مشخص می‌شود.</p>
               )}
 
-              {hasUnknownPrice ? (
-                <Link
-                  className="sb-btn sb-btn--gold"
-                  href={whatsapp(`سلام، برای ادامه خرید لطفاً قیمت و موجودی این اقلام را بررسی کنید: ${unknownPriceItems}`)}
-                >
-                  استعلام اقلام بدون قیمت <ArrowIcon />
-                </Link>
-              ) : (
-                <Link className="sb-btn sb-btn--dark" href="/checkout">
-                  ادامه و ثبت اطلاعات ارسال <ArrowIcon />
-                </Link>
-              )}
-              <Link className={styles.continueShopping} href="/shop">ادامه خرید</Link>
+              <div className={styles.notice} role="status">
+                <strong>قیمت و موجودی نهایی بعد از ارسال درخواست تأیید می‌شود.</strong>
+                <p>مبلغ‌های نمایش‌داده‌شده در این صفحه به معنی رزرو موجودی یا پرداخت نهایی نیستند. پس از بررسی، نتیجه برای تأیید سفارش با شما هماهنگ می‌شود.</p>
+              </div>
+
+              <Link className="sb-btn sb-btn--dark" href="/checkout">
+                ارسال درخواست استعلام <ArrowIcon />
+              </Link>
+              <Link className={styles.continueShopping} href="/shop">افزودن محصول دیگر</Link>
             </aside>
           </div>
         )}

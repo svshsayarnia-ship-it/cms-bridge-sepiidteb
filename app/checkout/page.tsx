@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { CheckoutClient } from "./CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "تکمیل سفارش | سپید بیوتی",
-  description: "ثبت اطلاعات گیرنده، نشانی ارسال و انتخاب روش پرداخت سفارش سپید بیوتی.",
+  title: "ارسال درخواست قیمت و موجودی | سپید بیوتی",
+  description: "ارسال لیست محصولات برای استعلام قیمت و موجودی روز سپید بیوتی؛ بدون پرداخت در این مرحله.",
   robots: { index: false, follow: false },
 };
 

@@ -169,7 +169,7 @@ export function ProductCard({
                   : null}
               </div>
             ) : (
-              <strong>قیمت را داخل محصول ببینید</strong>
+              <strong>برای قیمت امروز استعلام بگیرید</strong>
             )}
           </div>
           <Link
@@ -181,8 +181,13 @@ export function ProductCard({
             <ArrowIcon />
           </Link>
         </div>
-        <button className="sb-product-card__cart" type="button" onClick={() => addToCart(cartProduct)}>
-          افزودن به سبد خرید
+        <button
+          className="sb-product-card__cart"
+          type="button"
+          onClick={() => addToCart(cartProduct)}
+          aria-label={`افزودن ${product.nameFa} به لیست استعلام`}
+        >
+          افزودن به لیست استعلام
         </button>
       </div>
     </article>
