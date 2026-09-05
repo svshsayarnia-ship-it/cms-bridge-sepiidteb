@@ -2,6 +2,7 @@ import "server-only";
 
 import { revalidateTag, unstable_cache } from "next/cache";
 import type { CmsProduct } from "./cms-types";
+import { canonicalizeStorefrontProduct } from "./storefront-canonical-product";
 import {
   forgetRuntimeStorefrontProduct,
   getRuntimeStorefrontProducts,
@@ -58,16 +59,32 @@ function preferNewestProduct(
   return candidate;
 }
 
+function canonicalizeSnapshots(snapshots: ProductSnapshots): ProductSnapshots {
+  const normalized: ProductSnapshots = {};
+
+  for (const product of Object.values(snapshots)) {
+    const canonicalProduct = canonicalizeStorefrontProduct(product);
+    const slug = canonicalProduct.slug.trim();
+    if (!slug) continue;
+
+    normalized[slug] = preferNewestProduct(normalized[slug], canonicalProduct);
+  }
+
+  return normalized;
+}
+
 export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots> {
   const [persistedSnapshots, runtimeProducts] = await Promise.all([
     snapshotCache()(),
     getRuntimeStorefrontProducts(),
   ]);
 
-  if (runtimeProducts.length === 0) return persistedSnapshots;
+  const canonicalPersistedSnapshots = canonicalizeSnapshots(persistedSnapshots);
+  if (runtimeProducts.length === 0) return canonicalPersistedSnapshots;
 
-  const merged: ProductSnapshots = { ...persistedSnapshots };
-  for (const product of runtimeProducts) {
+  const merged: ProductSnapshots = { ...canonicalPersistedSnapshots };
+  for (const rawProduct of runtimeProducts) {
+    const product = canonicalizeStorefrontProduct(rawProduct);
     const slug = product.slug.trim();
     if (!slug) continue;
     merged[slug] = preferNewestProduct(merged[slug], product);
