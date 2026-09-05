@@ -9,6 +9,7 @@ import "./product-visual.css";
 import "./account-responsive.css";
 import "./compare.css";
 import "./sprint2-catalog.css";
+import "./sprint2-pdp.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
 import { CompareDock } from "./components/CompareDock";
