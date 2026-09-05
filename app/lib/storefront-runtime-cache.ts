@@ -2,6 +2,7 @@ import "server-only";
 
 import { getCache } from "@vercel/functions";
 import type { CmsProduct } from "./cms-types";
+import { canonicalizeStorefrontProduct } from "./storefront-canonical-product";
 
 const CACHE_NAMESPACE = "sepiid-storefront";
 const PRODUCT_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -152,7 +153,7 @@ export async function getRuntimeStorefrontProduct(
 
   try {
     const value = await readPublicCache(productKey(cleanSlug));
-    return isCmsProduct(value) ? value : null;
+    return isCmsProduct(value) ? canonicalizeStorefrontProduct(value) : null;
   } catch (error) {
     console.warn("[storefront-runtime-cache] read failed", {
       slug: cleanSlug,
