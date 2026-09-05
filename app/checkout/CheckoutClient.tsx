@@ -1,60 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ArrowIcon, PackageIcon } from "../components/Icons";
 import {
   cartCount,
-  cartHasUnknownPrice,
-  cartSubtotal,
   onCartUpdated,
   readCart,
   type CartItem,
 } from "../lib/cart";
+import { trackGaEvent } from "../lib/analytics";
 import styles from "./checkout.module.css";
 
-const provinces = [
-  "آذربایجان شرقی", "آذربایجان غربی", "اردبیل", "اصفهان", "البرز", "ایلام", "بوشهر", "تهران",
-  "چهارمحال و بختیاری", "خراسان جنوبی", "خراسان رضوی", "خراسان شمالی", "خوزستان", "زنجان", "سمنان",
-  "سیستان و بلوچستان", "فارس", "قزوین", "قم", "کردستان", "کرمان", "کرمانشاه", "کهگیلویه و بویراحمد",
-  "گلستان", "گیلان", "لرستان", "مازندران", "مرکزی", "هرمزگان", "همدان", "یزد",
-];
-
-const DRAFT_KEY = "sepiid-beauty-checkout-session-v1";
+const DRAFT_KEY = "sepiid-beauty-inquiry-session-v1";
 const priceFormatter = new Intl.NumberFormat("fa-IR");
+const WHATSAPP_NUMBER = "989037251266";
 
-type CheckoutForm = {
-  firstName: string;
-  lastName: string;
+type InquiryForm = {
+  fullName: string;
   phone: string;
-  email: string;
-  province: string;
-  city: string;
-  address: string;
-  postalCode: string;
-  plate: string;
-  unit: string;
+  customerType: "consumer" | "clinic";
   note: string;
-  paymentMethod: "online";
   termsAccepted: boolean;
 };
 
-type FieldName = keyof CheckoutForm;
-type Errors = Partial<Record<FieldName, string>>;
+type Errors = Partial<Record<keyof InquiryForm, string>>;
 
-const initialForm: CheckoutForm = {
-  firstName: "",
-  lastName: "",
+const initialForm: InquiryForm = {
+  fullName: "",
   phone: "",
-  email: "",
-  province: "",
-  city: "",
-  address: "",
-  postalCode: "",
-  plate: "",
-  unit: "",
+  customerType: "consumer",
   note: "",
-  paymentMethod: "online",
   termsAccepted: false,
 };
 
@@ -74,22 +50,11 @@ function normalizePhone(value: string) {
   return phone;
 }
 
-function validate(form: CheckoutForm): Errors {
+function validate(form: InquiryForm): Errors {
   const errors: Errors = {};
-  const phone = normalizePhone(form.phone);
-  const postal = normalizeDigits(form.postalCode).replace(/\D/g, "");
-
-  if (form.firstName.trim().length < 2) errors.firstName = "نام را کامل وارد کنید.";
-  if (form.lastName.trim().length < 2) errors.lastName = "نام خانوادگی را کامل وارد کنید.";
-  if (!/^09\d{9}$/.test(phone)) errors.phone = "شماره موبایل معتبر ۱۱ رقمی وارد کنید؛ مثال: ۰۹۱۲۱۲۳۴۵۶۷.";
-  if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = "ایمیل واردشده معتبر نیست.";
-  if (!form.province) errors.province = "استان را انتخاب کنید.";
-  if (form.city.trim().length < 2) errors.city = "نام شهر را وارد کنید.";
-  if (form.address.trim().length < 10) errors.address = "آدرس کامل‌تر وارد کنید تا بسته بدون ابهام تحویل شود.";
-  if (!/^\d{10}$/.test(postal)) errors.postalCode = "کد پستی باید ۱۰ رقم باشد.";
-  if (!form.plate.trim()) errors.plate = "پلاک را وارد کنید.";
-  if (!form.termsAccepted) errors.termsAccepted = "برای ادامه، شرایط خرید و ارسال را تأیید کنید.";
-
+  if (form.fullName.trim().length < 3) errors.fullName = "نام و نام خانوادگی را وارد کنید.";
+  if (!/^09\d{9}$/.test(normalizePhone(form.phone))) errors.phone = "شماره موبایل معتبر ۱۱ رقمی وارد کنید؛ مثال: ۰۹۱۲۱۲۳۴۵۶۷.";
+  if (!form.termsAccepted) errors.termsAccepted = "برای ارسال درخواست، شرایط استفاده و حریم خصوصی را تأیید کنید.";
   return errors;
 }
 
@@ -97,11 +62,32 @@ function RequiredMark() {
   return <span className={styles.required} aria-hidden="true">*</span>;
 }
 
+function buildInquiryMessage(items: CartItem[], form: InquiryForm) {
+  const customerType = form.customerType === "clinic" ? "پزشک / کلینیک" : "مصرف‌کننده";
+  const itemLines = items.map((item, index) => {
+    const volume = item.volume ? ` — ${item.volume}` : "";
+    return `${index + 1}. ${item.nameFa}${volume} — تعداد: ${item.quantity}`;
+  });
+
+  return [
+    "سلام، درخواست استعلام قیمت و موجودی سپید بیوتی دارم.",
+    "",
+    `نام: ${form.fullName.trim()}`,
+    `شماره تماس: ${normalizePhone(form.phone)}`,
+    `نوع مشتری: ${customerType}`,
+    "",
+    "اقلام:",
+    ...itemLines,
+    ...(form.note.trim() ? ["", `توضیحات: ${form.note.trim()}`] : []),
+    "",
+    "لطفاً قیمت و موجودی امروز را تأیید کنید.",
+  ].join("\n");
+}
+
 export function CheckoutClient() {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [form, setForm] = useState<CheckoutForm>(initialForm);
+  const [form, setForm] = useState<InquiryForm>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
-  const [readyForGateway, setReadyForGateway] = useState(false);
 
   useEffect(() => {
     const syncCart = () => setItems(readCart());
@@ -110,27 +96,28 @@ export function CheckoutClient() {
 
     try {
       const saved = window.sessionStorage.getItem(DRAFT_KEY);
-      if (saved) setForm({ ...initialForm, ...JSON.parse(saved), paymentMethod: "online", termsAccepted: false });
+      if (saved) {
+        setForm({
+          ...initialForm,
+          ...JSON.parse(saved),
+          termsAccepted: false,
+        });
+      }
     } catch {
-      // Ignore an invalid local draft and keep the clean form.
+      // Keep a clean form when an old or invalid draft cannot be parsed.
     }
 
     return unsubscribe;
   }, []);
 
-  const subtotal = useMemo(() => cartSubtotal(items), [items]);
-  const hasUnknownPrice = useMemo(() => cartHasUnknownPrice(items), [items]);
-
-  function updateField(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-    setErrors((current) => ({ ...current, [name]: undefined }));
-    setReadyForGateway(false);
-  }
+  const pricedSubtotal = useMemo(
+    () => items.reduce((total, item) => total + (item.priceToman ?? 0) * item.quantity, 0),
+    [items],
+  );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!items.length || hasUnknownPrice) return;
+    if (!items.length) return;
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
@@ -141,24 +128,26 @@ export function CheckoutClient() {
       return;
     }
 
-    const cleanForm = {
+    const cleanForm: InquiryForm = {
       ...form,
+      fullName: form.fullName.trim(),
       phone: normalizePhone(form.phone),
-      postalCode: normalizeDigits(form.postalCode).replace(/\D/g, ""),
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      city: form.city.trim(),
-      address: form.address.trim(),
-      plate: form.plate.trim(),
-      unit: form.unit.trim(),
-      email: form.email.trim(),
       note: form.note.trim(),
     };
 
-    setForm(cleanForm);
-    window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...cleanForm, termsAccepted: false }));
-    setReadyForGateway(true);
-    window.setTimeout(() => document.getElementById("payment-ready")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+    window.sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ ...cleanForm, termsAccepted: false }),
+    );
+
+    trackGaEvent("inquiry_submit", {
+      item_count: cartCount(items),
+      customer_type: cleanForm.customerType,
+      inquiry_channel: "whatsapp",
+    });
+
+    const message = buildInquiryMessage(items, cleanForm);
+    window.location.assign(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`);
   }
 
   if (!items.length) {
@@ -167,9 +156,9 @@ export function CheckoutClient() {
         <div className="sb-shell">
           <section className={styles.empty}>
             <PackageIcon />
-            <h1>برای تکمیل سفارش، ابتدا محصولی به سبد اضافه کنید.</h1>
-            <p>اطلاعات ارسال و پرداخت زمانی فعال می‌شود که سبد خرید شما محصول داشته باشد.</p>
-            <Link className="sb-btn sb-btn--dark" href="/shop">رفتن به فروشگاه <ArrowIcon /></Link>
+            <h1>برای ارسال درخواست، ابتدا محصولی به لیست استعلام اضافه کنید.</h1>
+            <p>مدل و تعداد محصول را انتخاب کنید؛ سپس قیمت و موجودی روز برای شما بررسی می‌شود.</p>
+            <Link className="sb-btn sb-btn--dark" href="/shop">انتخاب محصول <ArrowIcon /></Link>
           </section>
         </div>
       </main>
@@ -179,57 +168,61 @@ export function CheckoutClient() {
   return (
     <main id="main-content" className={styles.page}>
       <div className="sb-shell">
-        <nav className={styles.steps} aria-label="مراحل خرید">
-          <Link href="/cart"><b>✓</b> سبد خرید</Link>
-          <span className={styles.activeStep}><b>۲</b> اطلاعات ارسال</span>
-          <span><b>۳</b> پرداخت</span>
+        <nav className={styles.steps} aria-label="مراحل استعلام و سفارش">
+          <Link href="/cart"><b>✓</b> لیست استعلام</Link>
+          <span className={styles.activeStep}><b>۲</b> ارسال درخواست</span>
+          <span><b>۳</b> تأیید قیمت و سفارش</span>
         </nav>
 
         <header className={styles.intro}>
-          <span className="sb-eyebrow">CHECKOUT / تکمیل سفارش</span>
-          <h1>اطلاعات ارسال و پرداخت</h1>
-          <p>فیلدهای ستاره‌دار برای تحویل درست سفارش ضروری‌اند. اطلاعات کارت بانکی در سایت سپید بیوتی دریافت نمی‌شود.</p>
+          <span className="sb-eyebrow">INQUIRY / ارسال درخواست</span>
+          <h1>ارسال درخواست قیمت و موجودی</h1>
+          <p>فقط اطلاعات لازم برای پیگیری استعلام را وارد کنید. در این مرحله پرداختی انجام نمی‌شود؛ قیمت و موجودی روز پس از بررسی برای تأیید نهایی سفارش اعلام خواهد شد.</p>
         </header>
 
-        {hasUnknownPrice && (
-          <div className={styles.blockingNotice} role="alert">
-            <strong>پرداخت این سبد هنوز قابل نهایی‌کردن نیست.</strong>
-            <p>حداقل یک محصول قیمت قطعی ندارد. برای جلوگیری از ثبت مبلغ اشتباه، ابتدا از سبد خرید قیمت آن را استعلام کنید.</p>
-            <Link href="/cart">بازگشت به سبد خرید</Link>
-          </div>
-        )}
-
         <form className={styles.layout} onSubmit={handleSubmit} noValidate>
-          <div className={styles.formColumn} aria-disabled={hasUnknownPrice}>
+          <div className={styles.formColumn}>
             <section className={styles.card}>
               <div className={styles.sectionHeading}>
                 <span>01</span>
                 <div>
-                  <h2>اطلاعات گیرنده</h2>
-                  <p>برای هماهنگی ارسال و اطلاع‌رسانی سفارش.</p>
+                  <h2>اطلاعات تماس</h2>
+                  <p>برای اعلام نتیجه استعلام و هماهنگی سفارش.</p>
                 </div>
               </div>
 
               <div className={styles.gridTwo}>
                 <label className={styles.field}>
-                  <span>نام <RequiredMark /></span>
-                  <input name="firstName" value={form.firstName} onChange={updateField} autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} disabled={hasUnknownPrice} />
-                  {errors.firstName && <small role="alert">{errors.firstName}</small>}
+                  <span>نام و نام خانوادگی <RequiredMark /></span>
+                  <input
+                    name="fullName"
+                    value={form.fullName}
+                    onChange={(event) => {
+                      setForm((current) => ({ ...current, fullName: event.target.value }));
+                      setErrors((current) => ({ ...current, fullName: undefined }));
+                    }}
+                    autoComplete="name"
+                    aria-invalid={Boolean(errors.fullName)}
+                  />
+                  {errors.fullName && <small role="alert">{errors.fullName}</small>}
                 </label>
-                <label className={styles.field}>
-                  <span>نام خانوادگی <RequiredMark /></span>
-                  <input name="lastName" value={form.lastName} onChange={updateField} autoComplete="family-name" aria-invalid={Boolean(errors.lastName)} disabled={hasUnknownPrice} />
-                  {errors.lastName && <small role="alert">{errors.lastName}</small>}
-                </label>
+
                 <label className={styles.field}>
                   <span>شماره موبایل <RequiredMark /></span>
-                  <input name="phone" value={form.phone} onChange={updateField} autoComplete="tel" inputMode="tel" dir="ltr" placeholder="09121234567" aria-invalid={Boolean(errors.phone)} disabled={hasUnknownPrice} />
+                  <input
+                    name="phone"
+                    value={form.phone}
+                    onChange={(event) => {
+                      setForm((current) => ({ ...current, phone: event.target.value }));
+                      setErrors((current) => ({ ...current, phone: undefined }));
+                    }}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="09121234567"
+                    aria-invalid={Boolean(errors.phone)}
+                  />
                   {errors.phone && <small role="alert">{errors.phone}</small>}
-                </label>
-                <label className={styles.field}>
-                  <span>ایمیل <em>اختیاری</em></span>
-                  <input name="email" value={form.email} onChange={updateField} autoComplete="email" inputMode="email" dir="ltr" placeholder="name@example.com" aria-invalid={Boolean(errors.email)} disabled={hasUnknownPrice} />
-                  {errors.email && <small role="alert">{errors.email}</small>}
                 </label>
               </div>
             </section>
@@ -238,47 +231,40 @@ export function CheckoutClient() {
               <div className={styles.sectionHeading}>
                 <span>02</span>
                 <div>
-                  <h2>نشانی تحویل</h2>
-                  <p>آدرس دقیق باعث کاهش تماس اضافی و خطای ارسال می‌شود.</p>
+                  <h2>نوع درخواست</h2>
+                  <p>برای اینکه پاسخ و پیگیری متناسب با نوع خرید انجام شود.</p>
                 </div>
               </div>
 
               <div className={styles.gridTwo}>
-                <label className={styles.field}>
-                  <span>استان <RequiredMark /></span>
-                  <select name="province" value={form.province} onChange={updateField} autoComplete="address-level1" aria-invalid={Boolean(errors.province)} disabled={hasUnknownPrice}>
-                    <option value="">انتخاب استان</option>
-                    {provinces.map((province) => <option key={province} value={province}>{province}</option>)}
-                  </select>
-                  {errors.province && <small role="alert">{errors.province}</small>}
+                <label className={`${styles.paymentMethod} ${form.customerType === "consumer" ? styles.paymentMethodSelected : ""}`}>
+                  <input
+                    type="radio"
+                    name="customerType"
+                    value="consumer"
+                    checked={form.customerType === "consumer"}
+                    onChange={() => setForm((current) => ({ ...current, customerType: "consumer" }))}
+                  />
+                  <span className={styles.radioDot} aria-hidden="true" />
+                  <div>
+                    <strong>مصرف‌کننده</strong>
+                    <p>برای بررسی یک یا چند محصول و هماهنگی سفارش شخصی.</p>
+                  </div>
                 </label>
-                <label className={styles.field}>
-                  <span>شهر <RequiredMark /></span>
-                  <input name="city" value={form.city} onChange={updateField} autoComplete="address-level2" aria-invalid={Boolean(errors.city)} disabled={hasUnknownPrice} />
-                  {errors.city && <small role="alert">{errors.city}</small>}
-                </label>
-              </div>
 
-              <label className={styles.field}>
-                <span>آدرس کامل <RequiredMark /></span>
-                <textarea name="address" value={form.address} onChange={updateField} autoComplete="street-address" rows={3} placeholder="خیابان، کوچه، ساختمان و اطلاعات لازم برای پیدا کردن نشانی" aria-invalid={Boolean(errors.address)} disabled={hasUnknownPrice} />
-                {errors.address && <small role="alert">{errors.address}</small>}
-              </label>
-
-              <div className={styles.gridThree}>
-                <label className={styles.field}>
-                  <span>کد پستی <RequiredMark /></span>
-                  <input name="postalCode" value={form.postalCode} onChange={updateField} autoComplete="postal-code" inputMode="numeric" maxLength={10} dir="ltr" placeholder="1234567890" aria-invalid={Boolean(errors.postalCode)} disabled={hasUnknownPrice} />
-                  {errors.postalCode && <small role="alert">{errors.postalCode}</small>}
-                </label>
-                <label className={styles.field}>
-                  <span>پلاک <RequiredMark /></span>
-                  <input name="plate" value={form.plate} onChange={updateField} inputMode="numeric" aria-invalid={Boolean(errors.plate)} disabled={hasUnknownPrice} />
-                  {errors.plate && <small role="alert">{errors.plate}</small>}
-                </label>
-                <label className={styles.field}>
-                  <span>واحد <em>اختیاری</em></span>
-                  <input name="unit" value={form.unit} onChange={updateField} inputMode="numeric" disabled={hasUnknownPrice} />
+                <label className={`${styles.paymentMethod} ${form.customerType === "clinic" ? styles.paymentMethodSelected : ""}`}>
+                  <input
+                    type="radio"
+                    name="customerType"
+                    value="clinic"
+                    checked={form.customerType === "clinic"}
+                    onChange={() => setForm((current) => ({ ...current, customerType: "clinic" }))}
+                  />
+                  <span className={styles.radioDot} aria-hidden="true" />
+                  <div>
+                    <strong>پزشک / کلینیک</strong>
+                    <p>برای استعلام چندقلمی، خرید حرفه‌ای و سفارش تکرارشونده.</p>
+                  </div>
                 </label>
               </div>
             </section>
@@ -287,57 +273,35 @@ export function CheckoutClient() {
               <div className={styles.sectionHeading}>
                 <span>03</span>
                 <div>
-                  <h2>ارسال و توضیحات</h2>
-                  <p>روش نهایی ارسال بر اساس مقصد و شرایط نگهداری محصول مشخص می‌شود.</p>
-                </div>
-              </div>
-
-              <div className={styles.shippingMethod}>
-                <span className={styles.radioDot} aria-hidden="true" />
-                <div>
-                  <strong>ارسال متناسب با مقصد و شرایط محصول</strong>
-                  <p>هزینه و روش حمل قبل از کسر وجه نهایی می‌شود؛ برای محصول حساس، شرایط حمل مناسب در اولویت است.</p>
+                  <h2>توضیحات تکمیلی</h2>
+                  <p>اختیاری؛ مثلاً زمان موردنظر، تعداد بیشتر یا سؤال درباره مدل.</p>
                 </div>
               </div>
 
               <label className={styles.field}>
-                <span>توضیحات سفارش <em>اختیاری</em></span>
-                <textarea name="note" value={form.note} onChange={updateField} rows={3} placeholder="مثلاً توضیح تکمیلی برای تحویل بسته" disabled={hasUnknownPrice} />
-              </label>
-            </section>
-
-            <section className={styles.card}>
-              <div className={styles.sectionHeading}>
-                <span>04</span>
-                <div>
-                  <h2>روش پرداخت</h2>
-                  <p>اطلاعات کارت باید فقط در صفحه درگاه بانکی وارد شود.</p>
-                </div>
-              </div>
-
-              <label className={`${styles.paymentMethod} ${styles.paymentMethodSelected}`}>
-                <input type="radio" name="paymentMethod" value="online" checked={form.paymentMethod === "online"} onChange={updateField} disabled={hasUnknownPrice} />
-                <span className={styles.radioDot} aria-hidden="true" />
-                <div>
-                  <strong>پرداخت اینترنتی</strong>
-                  <p>انتخاب پرداخت آماده است؛ پس از اتصال فنی درگاه، ادامه این مرحله به صفحه پرداخت بانکی منتقل می‌شود.</p>
-                </div>
-                <b>پیشنهادی</b>
+                <span>توضیحات <em>اختیاری</em></span>
+                <textarea
+                  name="note"
+                  value={form.note}
+                  onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+                  rows={4}
+                  placeholder="اگر نکته‌ای برای استعلام دارید اینجا بنویسید"
+                />
               </label>
             </section>
           </div>
 
-          <aside className={styles.summary} aria-label="خلاصه سفارش">
+          <aside className={styles.summary} aria-label="خلاصه درخواست استعلام">
             <div className={styles.summaryHead}>
-              <span>سفارش شما</span>
-              <Link href="/cart">ویرایش سبد</Link>
+              <span>لیست شما</span>
+              <Link href="/cart">ویرایش لیست</Link>
             </div>
 
             <div className={styles.compactItems}>
               {items.map((item) => (
                 <div key={`${item.slug}-${item.volume ?? "default"}`}>
                   <span>{item.nameFa}{item.volume ? ` — ${item.volume}` : ""} × {priceFormatter.format(item.quantity)}</span>
-                  <strong>{item.priceToman ? `${priceFormatter.format(item.priceToman * item.quantity)} تومان` : "استعلام"}</strong>
+                  <strong>{item.priceToman ? `${priceFormatter.format(item.priceToman)} تومان` : "استعلام روز"}</strong>
                 </div>
               ))}
             </div>
@@ -346,13 +310,16 @@ export function CheckoutClient() {
               <span>تعداد</span>
               <strong>{priceFormatter.format(cartCount(items))} قلم</strong>
             </div>
-            <div className={styles.summaryRow}>
-              <span>جمع محصولات</span>
-              <strong>{priceFormatter.format(subtotal)} تومان</strong>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>ارسال</span>
-              <strong className={styles.pending}>پس از بررسی مقصد</strong>
+            {pricedSubtotal > 0 && (
+              <div className={styles.summaryRow}>
+                <span>جمع قیمت‌های ثبت‌شده</span>
+                <strong>{priceFormatter.format(pricedSubtotal)} تومان</strong>
+              </div>
+            )}
+
+            <div className={styles.blockingNotice} role="status">
+              <strong>این فرم پرداخت نیست.</strong>
+              <p>پس از ارسال درخواست، قیمت و موجودی روز بررسی می‌شود. سفارش فقط بعد از تأیید شما نهایی خواهد شد.</p>
             </div>
 
             <label className={styles.terms}>
@@ -362,29 +329,20 @@ export function CheckoutClient() {
                 onChange={(event) => {
                   setForm((current) => ({ ...current, termsAccepted: event.target.checked }));
                   setErrors((current) => ({ ...current, termsAccepted: undefined }));
-                  setReadyForGateway(false);
                 }}
                 aria-invalid={Boolean(errors.termsAccepted)}
-                disabled={hasUnknownPrice}
               />
               <span>
-                <Link href="/policies/terms" target="_blank">شرایط استفاده</Link>، <Link href="/policies/shipping" target="_blank">شرایط ارسال</Link> و <Link href="/policies/privacy" target="_blank">حریم خصوصی</Link> را خوانده‌ام و می‌پذیرم. <RequiredMark />
+                <Link href="/policies/terms" target="_blank">شرایط استفاده</Link> و <Link href="/policies/privacy" target="_blank">حریم خصوصی</Link> را خوانده‌ام و می‌پذیرم. <RequiredMark />
               </span>
             </label>
             {errors.termsAccepted && <small className={styles.termsError} role="alert">{errors.termsAccepted}</small>}
 
-            <button className="sb-btn sb-btn--dark" type="submit" disabled={hasUnknownPrice}>
-              ثبت اطلاعات و ادامه به پرداخت <ArrowIcon />
+            <button className="sb-btn sb-btn--dark" type="submit">
+              ارسال درخواست استعلام <ArrowIcon />
             </button>
 
-            <p className={styles.secureNote}>سپید بیوتی شماره کارت، رمز پویا یا CVV2 را در این فرم درخواست نمی‌کند.</p>
-
-            {readyForGateway && (
-              <div id="payment-ready" className={styles.paymentReady} role="status" tabIndex={-1}>
-                <strong>اطلاعات سفارش کامل و روش پرداخت انتخاب شد.</strong>
-                <p>اتصال نهایی درگاه بانکی هنوز فعال نشده است؛ بنابراین در این مرحله هیچ مبلغی از حساب شما کسر نشده. ساختار Checkout برای اتصال مستقیم درگاه آماده است.</p>
-              </div>
-            )}
+            <p className={styles.secureNote}>درخواست آماده‌شده در واتساپ باز می‌شود تا ارسال آن را خودتان تأیید کنید. هیچ مبلغی در این مرحله از حساب شما کسر نمی‌شود.</p>
           </aside>
         </form>
       </div>
