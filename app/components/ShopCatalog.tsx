@@ -13,6 +13,8 @@ import type {
 import type { PublicProduct } from "../lib/public-product";
 import { getCompactBrandLabel } from "../lib/public-copy";
 import { isHighVolumeFiller } from "../lib/product-volume";
+import { searchPublicProducts } from "../lib/product-search";
+import { trackGaEvent } from "../lib/analytics";
 import { CloseIcon, FilterIcon, SearchIcon } from "./Icons";
 import { ProductCard } from "./ProductCard";
 
@@ -23,6 +25,20 @@ const subscribeToLocation = (onChange: () => void) => {
 const getServerHighVolumePreference = () => false;
 const getHighVolumePreferenceFromUrl = () =>
   new URLSearchParams(window.location.search).get("volume") === "high";
+
+function numericPrice(item: PublicProduct) {
+  for (const value of [item.salePrice, item.regularPrice, item.price, item.priceToman]) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed);
+  }
+  return null;
+}
+
+function normalizedVolumeOptions(item: PublicProduct) {
+  return [item.volume, ...(item.variantVolumes ?? [])]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => value.trim());
+}
 
 export function ShopCatalog({
   items,
@@ -36,6 +52,10 @@ export function ShopCatalog({
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("all");
   const [category, setCategory] = useState(initialCategory ?? "all");
+  const [volume, setVolume] = useState("all");
+  const [availability, setAvailability] = useState("all");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [highVolumeOverride, setHighVolumeOverride] = useState<boolean | null>(
     null,
   );
@@ -113,32 +133,45 @@ export function ShopCatalog({
     );
   }, [items]);
 
+  const volumeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      for (const option of new Set(normalizedVolumeOptions(item))) {
+        counts.set(option, (counts.get(option) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts, ([label, count]) => ({ label, count }))
+      .sort((a, b) => a.label.localeCompare(b.label, "fa", { numeric: true }));
+  }, [items]);
+
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("fa");
-    const result = items.filter((item) => {
-      const matchesQuery =
-        !normalized ||
-        [
-          item.nameFa,
-          item.nameEn,
-          getCompactBrandLabel(item.brand),
-          item.shortBenefit,
-          item.volume ?? "",
-          item.categoryTitle,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("fa")
-          .includes(normalized);
+    const min = Number(priceMin.replace(/[^0-9]/g, "")) || 0;
+    const max = Number(priceMax.replace(/[^0-9]/g, "")) || Number.POSITIVE_INFINITY;
+    const result = searchPublicProducts(items, query).filter((item) => {
       const matchesBrand =
         brand === "all" ||
         getCompactBrandLabel(item.brand) === brand;
       const matchesCategory = category === "all" || item.category === category;
-      const matchesVolume = !highVolumeOnly || isHighVolumeFiller(item);
+      const matchesHighVolume = !highVolumeOnly || isHighVolumeFiller(item);
+      const matchesVolume =
+        volume === "all" || normalizedVolumeOptions(item).includes(volume);
+      const price = numericPrice(item);
+      const matchesPrice =
+        (!priceMin && !priceMax) ||
+        (price !== null && price >= min && price <= max);
+      const matchesAvailability =
+        availability === "all" ||
+        (availability === "instock" && item.stockStatus === "instock") ||
+        (availability === "outofstock" && item.stockStatus === "outofstock") ||
+        (availability === "unknown" && (!item.stockStatus || item.stockStatus === "unknown"));
+
       return (
-        matchesQuery &&
         matchesBrand &&
         matchesCategory &&
-        matchesVolume
+        matchesHighVolume &&
+        matchesVolume &&
+        matchesPrice &&
+        matchesAvailability
       );
     });
 
@@ -153,13 +186,39 @@ export function ShopCatalog({
         ),
       );
     }
+    if (sort === "price-asc") {
+      return [...result].sort((a, b) =>
+        (numericPrice(a) ?? Number.POSITIVE_INFINITY) -
+        (numericPrice(b) ?? Number.POSITIVE_INFINITY),
+      );
+    }
+    if (sort === "price-desc") {
+      return [...result].sort((a, b) => (numericPrice(b) ?? 0) - (numericPrice(a) ?? 0));
+    }
     return result;
-  }, [brand, category, highVolumeOnly, items, query, sort]);
+  }, [availability, brand, category, highVolumeOnly, items, priceMax, priceMin, query, sort, volume]);
+
+  useEffect(() => {
+    const searchTerm = query.trim();
+    if (searchTerm.length < 2) return;
+    const timeout = window.setTimeout(() => {
+      trackGaEvent("product_search", {
+        search_term: searchTerm,
+        result_count: filtered.length,
+        zero_result: filtered.length === 0,
+      });
+    }, 700);
+    return () => window.clearTimeout(timeout);
+  }, [filtered.length, query]);
 
   const reset = () => {
     setQuery("");
     setBrand("all");
     setCategory(initialCategory ?? "all");
+    setVolume("all");
+    setAvailability("all");
+    setPriceMin("");
+    setPriceMax("");
     setHighVolumeOverride(false);
     setSort("featured");
   };
@@ -196,12 +255,12 @@ export function ShopCatalog({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="اسم محصول یا برند"
+          placeholder="نام، برند، مدل، حجم یا SKU"
         />
       </label>
       {!initialCategory && (
         <fieldset className="sb-catalog__fieldset">
-          <legend>دسته محصول</legend>
+          <legend>دسته / نوع محصول</legend>
           <label>
             <input
               type="radio"
@@ -234,9 +293,34 @@ export function ShopCatalog({
           ))}
         </fieldset>
       )}
+      <fieldset className="sb-catalog__fieldset">
+        <legend>حجم</legend>
+        <label>
+          <input
+            type="radio"
+            name={`volume-${scope}`}
+            checked={volume === "all"}
+            onChange={() => setVolume("all")}
+          />
+          همه حجم‌ها
+          <small>{items.length}</small>
+        </label>
+        {volumeOptions.slice(0, 14).map((item) => (
+          <label key={item.label}>
+            <input
+              type="radio"
+              name={`volume-${scope}`}
+              checked={volume === item.label}
+              onChange={() => setVolume(item.label)}
+            />
+            {item.label}
+            <small>{item.count}</small>
+          </label>
+        ))}
+      </fieldset>
       {showVolumeFilter && (
         <fieldset className="sb-catalog__fieldset sb-catalog__fieldset--volume">
-          <legend>حجم محصول یا بسته</legend>
+          <legend>فیلرهای حجم بالا</legend>
           <label>
             <input
               type="radio"
@@ -244,7 +328,7 @@ export function ShopCatalog({
               checked={!highVolumeOnly}
               onChange={() => setHighVolumeOverride(false)}
             />
-            همه حجم‌ها
+            همه فیلرها
             <small>{fillerCounts.total}</small>
           </label>
           <label>
@@ -257,9 +341,6 @@ export function ShopCatalog({
             محصولات و بسته‌های بالاتر از ۲ میلی‌لیتر
             <small>{fillerCounts.highVolume}</small>
           </label>
-          <p>
-            این گزینه فیلرهایی را نشان می‌دهد که حجم خود محصول یا حداقل یکی از مدل‌ها و بسته‌های قابل انتخابشان بیشتر از ۲ میلی‌لیتر است.
-          </p>
         </fieldset>
       )}
       <fieldset className="sb-catalog__fieldset">
@@ -286,6 +367,49 @@ export function ShopCatalog({
             <small>{item.count}</small>
           </label>
         ))}
+      </fieldset>
+      <fieldset className="sb-catalog__fieldset">
+        <legend>وضعیت موجودی ثبت‌شده</legend>
+        {[
+          ["all", "همه وضعیت‌ها"],
+          ["instock", "ثبت‌شده موجود؛ نیازمند تأیید روز"],
+          ["outofstock", "ثبت‌شده ناموجود"],
+          ["unknown", "وضعیت نامشخص / استعلامی"],
+        ].map(([value, label]) => (
+          <label key={value}>
+            <input
+              type="radio"
+              name={`availability-${scope}`}
+              checked={availability === value}
+              onChange={() => setAvailability(value)}
+            />
+            {label}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className="sb-catalog__fieldset sb-catalog__fieldset--price">
+        <legend>بازه قیمت ثبت‌شده (تومان)</legend>
+        <div className="sb-catalog__price-range">
+          <label>
+            <span>از</span>
+            <input
+              value={priceMin}
+              onChange={(event) => setPriceMin(event.target.value.replace(/[^0-9]/g, ""))}
+              inputMode="numeric"
+              placeholder="مثلاً 3000000"
+            />
+          </label>
+          <label>
+            <span>تا</span>
+            <input
+              value={priceMax}
+              onChange={(event) => setPriceMax(event.target.value.replace(/[^0-9]/g, ""))}
+              inputMode="numeric"
+              placeholder="مثلاً 10000000"
+            />
+          </label>
+        </div>
+        <p>محصولات بدون قیمت ثبت‌شده هنگام فعال بودن بازه قیمت نمایش داده نمی‌شوند.</p>
       </fieldset>
     </>
   );
@@ -317,6 +441,8 @@ export function ShopCatalog({
               <option value="featured">پیشنهادهای سپید</option>
               <option value="name">نام محصول</option>
               <option value="brand">نام برند</option>
+              <option value="price-asc">قیمت: کم به زیاد</option>
+              <option value="price-desc">قیمت: زیاد به کم</option>
             </select>
           </label>
         </div>
@@ -331,7 +457,7 @@ export function ShopCatalog({
           <div className="sb-catalog__empty">
             <span>۰ نتیجه</span>
             <h2>با این انتخاب‌ها محصولی پیدا نشد.</h2>
-            <p>یکی از فیلترها را بردارید. اگر محصول مشخصی مدنظرتان است، می‌توانید اسمش را مستقیم برای تیم سپید بفرستید.</p>
+            <p>یکی از فیلترها را بردارید یا املای نام، برند، مدل، حجم و SKU را دوباره بررسی کنید. جستجو خطاهای تایپی کوچک را هم تحمل می‌کند.</p>
             <button className="sb-btn sb-btn--dark" type="button" onClick={reset}>
               از نو جستجو کن
             </button>
