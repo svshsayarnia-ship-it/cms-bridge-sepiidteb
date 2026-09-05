@@ -48,7 +48,7 @@ export type SitePresentation = {
 export const DEFAULT_SITE_PRESENTATION: SitePresentation = {
   header: {
     brandTagline: "",
-    consultationLabel: "موجودی و قیمت",
+    consultationLabel: "پشتیبانی خرید",
     navigation: [
       { href: "/shop", label: "فروشگاه" },
       { href: "/brands", label: "برندها" },
