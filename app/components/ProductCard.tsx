@@ -13,6 +13,7 @@ import {
 import { ArrowIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
 import { addToCart } from "../lib/cart";
+import { CompareButton } from "./CompareButton";
 
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 const productImageSizes = "(max-width: 1100px) 50vw, 33vw";
@@ -138,6 +139,7 @@ export function ProductCard({
       <div className="sb-product-card__content">
         <div className="sb-product-card__meta">
           {brand && <span>{brand}</span>}
+          <CompareButton product={displayProduct} />
         </div>
 
         <Link href={href}>

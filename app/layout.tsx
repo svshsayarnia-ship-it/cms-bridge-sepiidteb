@@ -7,8 +7,12 @@ import "./category-hovers.css";
 import "./category-commerce-hero.css";
 import "./product-visual.css";
 import "./account-responsive.css";
+import "./compare.css";
+import "./sprint2-catalog.css";
+import "./sprint2-pdp.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
+import { CompareDock } from "./components/CompareDock";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
@@ -115,6 +119,7 @@ export default async function RootLayout({
           presentation={presentation.header}
         />
         {children}
+        <CompareDock />
         <SiteFooter
           presentation={{
             ...presentation.footer,
