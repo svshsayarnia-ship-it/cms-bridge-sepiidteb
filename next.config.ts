@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/product/revofil-ultra-2",
+        destination: "/product/revofil-ultra",
+        permanent: true,
+      },
+      {
         source: "/product/audrey-h",
         destination: "/product/audrey-m",
         permanent: true,
