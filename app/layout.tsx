@@ -118,7 +118,7 @@ export default async function RootLayout({
           presentation={presentation.header}
         />
         {children}
-        <CompareDock products={headerProducts} />
+        <CompareDock />
         <SiteFooter
           presentation={{
             ...presentation.footer,
