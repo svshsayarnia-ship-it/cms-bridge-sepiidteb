@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PublicProduct } from "../lib/public-product";
+import type { CompareProduct } from "../lib/compare";
 import {
   addToCompare,
   isCompared,
@@ -11,7 +11,7 @@ import {
 } from "../lib/compare";
 
 type CompareButtonProps = {
-  product: PublicProduct;
+  product: CompareProduct;
   className?: string;
 };
 
