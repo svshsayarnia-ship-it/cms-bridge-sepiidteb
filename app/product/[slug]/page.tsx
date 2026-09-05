@@ -279,7 +279,10 @@ function buildCmsOnlyProduct(
   const summary = getPreferredProductSummary(cmsProduct, fallback);
 
   return {
-    slug: cmsProduct.slug,
+    // The checked-in catalogue owns the public/canonical product URL. Woo may
+    // append -2, -3, ... to a live record, but that duplicate CMS slug must
+    // never replace the stable storefront slug or create a redirect loop.
+    slug: fallback?.slug || cmsProduct.slug,
     nameFa:
       cmsProduct.name ||
       fallback?.nameFa ||
@@ -858,7 +861,9 @@ export default async function ProductPage({
             description: schemaDescription,
             image: absoluteImage(image),
             url: `${siteOrigin}/product/${product.slug}`,
-            sku: liveProduct?.sku || product.slug,
+            ...(liveProduct?.sku
+              ? { sku: liveProduct.sku }
+              : {}),
             ...(schemaPrice
               ? {
                   offers: {
@@ -872,8 +877,43 @@ export default async function ProductPage({
                   },
                 }
               : {}),
-        }}
+          }}
       />
+
+      {(product.sourceName || product.sourceUrl || product.reviewedAt) && (
+        <section
+          className="sb-section sb-product-info-section"
+          id="product-provenance"
+          aria-labelledby="product-provenance-title"
+        >
+          <div className="sb-shell sb-product-info-section__grid">
+            <div>
+              <h2 id="product-provenance-title">منبع و بازبینی اطلاعات محصول</h2>
+              <p>
+                این بخش فقط منبع رسمی یا اطلاعات بازبینی ثبت‌شده برای همین محصول را نمایش می‌دهد و جایگزین نظر پزشک یا دستور مصرف حرفه‌ای نیست.
+              </p>
+            </div>
+            <dl className="sb-spec-table">
+              {product.sourceName && product.sourceUrl && (
+                <div>
+                  <dt>منبع رسمی اطلاعات</dt>
+                  <dd>
+                    <a href={product.sourceUrl} rel="noreferrer" target="_blank">
+                      {product.sourceName}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {product.reviewedAt && (
+                <div>
+                  <dt>آخرین بازبینی محتوا</dt>
+                  <dd>{product.reviewedAt}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
