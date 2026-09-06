@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   AqayePardakhtError,
   verifyAqayePardakhtCallback,
-} from "../../../../lib/aqayepardakht-v3";
+} from "../../../../lib/aqayepardakht-v2";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
