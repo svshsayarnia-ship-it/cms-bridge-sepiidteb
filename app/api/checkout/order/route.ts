@@ -7,7 +7,7 @@ import {
   AqayePardakhtError,
   createAqayePardakhtPayment,
   isAqayePardakhtConfigured,
-} from "../../../lib/aqayepardakht";
+} from "../../../lib/aqayepardakht-v3";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
