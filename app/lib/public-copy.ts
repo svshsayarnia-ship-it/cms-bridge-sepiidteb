@@ -97,7 +97,7 @@ export function getPublicVolumeLabel(value?: string): string {
 
   const cleanValue = value
     .replace(
-      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
+      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
       "",
     )
     .replace(/^(?:نسخه‌های|چند نسخه)\s+متفاوت\s+در\s+بازار$/u, "")
