@@ -43,9 +43,43 @@ function resolveSnapshotProduct(
   return null;
 }
 
+function isVisibleProduct(product: CmsProduct | null): product is CmsProduct {
+  return Boolean(
+    product &&
+      product.status === "publish" &&
+      product.catalogVisibility !== "hidden",
+  );
+}
+
+function resolveCardImage(
+  snapshots: Record<string, CmsProduct>,
+  requestedSlug: string,
+) {
+  const product = resolveSnapshotProduct(snapshots, requestedSlug);
+  if (!isVisibleProduct(product)) return null;
+
+  const roleSlugs = [product.slug, requestedSlug];
+  const cardImage = findCardRoleImage(product.images, roleSlugs);
+
+  return publicImage(
+    cardImage
+      ? { src: cardImage.src, alt: cardImage.alt || product.name }
+      : null,
+  );
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const slug = (url.searchParams.get("slug") ?? "").trim();
+  const slugs = Array.from(
+    new Set(
+      (url.searchParams.get("slugs") ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 100),
+    ),
+  );
   const variantIds = Array.from(
     new Set(
       (url.searchParams.get("variants") ?? "")
@@ -56,21 +90,32 @@ export async function GET(request: Request) {
     ),
   );
 
-  if (!slug) {
+  if (!slug && !slugs.length) {
     return Response.json(
-      { cardImage: null, variantImages: {} },
+      { cardImage: null, variantImages: {}, cardImages: {} },
       { status: 400 },
     );
   }
 
   const snapshots = await getStorefrontProductSnapshots();
+
+  if (slugs.length) {
+    const cardImages = Object.fromEntries(
+      slugs.map((requestedSlug) => [
+        requestedSlug,
+        resolveCardImage(snapshots, requestedSlug),
+      ]),
+    );
+
+    return Response.json(
+      { cardImages },
+      { headers: { "cache-control": "no-store" } },
+    );
+  }
+
   const product = resolveSnapshotProduct(snapshots, slug);
 
-  if (
-    !product ||
-    product.status !== "publish" ||
-    product.catalogVisibility === "hidden"
-  ) {
+  if (!isVisibleProduct(product)) {
     return Response.json(
       { cardImage: null, variantImages: {} },
       { headers: { "cache-control": "no-store" } },
