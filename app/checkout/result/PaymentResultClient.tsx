@@ -46,7 +46,7 @@ export function PaymentResultClient({
             <span>{success ? "✓" : "!"}</span>
             <div style={{ textAlign: "right" }}>
               <h1 style={{ margin: 0, fontSize: "1.35rem" }}>
-                {success ? "پرداخت با موفقیت تأیید شد" : "پرداخت کامل نشد"}
+                {success ? "پرداخت با موفقیت انجام شد" : "پرداخت انجام نشد"}
               </h1>
               {order && <p>شماره سفارش: <strong>#{order}</strong></p>}
             </div>
@@ -55,7 +55,7 @@ export function PaymentResultClient({
           {success ? (
             <>
               <p style={{ lineHeight: 1.9 }}>
-                پرداخت از سمت درگاه و سرور سپید بیوتی تأیید شد و وضعیت سفارش در WooCommerce به‌روزرسانی شده است.
+                سفارش شما با موفقیت ثبت شد.
               </p>
               {transaction && (
                 <p style={{ color: "var(--sb-muted)", fontSize: ".82rem" }}>
@@ -65,7 +65,7 @@ export function PaymentResultClient({
             </>
           ) : (
             <p style={{ lineHeight: 1.9 }}>
-              مبلغی به عنوان پرداخت موفق ثبت نشده است. سفارش شما در سیستم باقی می‌ماند و می‌توانید دوباره از صفحه تسویه‌حساب اقدام کنید.
+              می‌توانید دوباره برای پرداخت تلاش کنید.
             </p>
           )}
 
