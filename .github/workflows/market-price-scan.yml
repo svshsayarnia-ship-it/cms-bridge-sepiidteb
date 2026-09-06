@@ -30,9 +30,10 @@ jobs:
           set -euo pipefail
 
           BASE="https://sepiidbeauty.ir/api/cron/market-prices/github"
-          # Small resumable batches keep every Vercel invocation comfortably below
-          # the 300-second function limit, even when one upstream source is slow.
-          LIMIT=4
+          # Eight-product batches halve repeated WooCommerce catalog reads while
+          # keeping concurrency at two and each Vercel invocation well below the
+          # 300-second function limit when market sources are slow.
+          LIMIT=8
           RUN_STARTED_AT="$(python3 - <<'PY'
           from datetime import datetime, timezone
           print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
