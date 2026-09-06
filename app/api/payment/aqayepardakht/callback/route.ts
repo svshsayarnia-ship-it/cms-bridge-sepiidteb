@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         resultUrl({
           status: "failed",
-          order: String(result.orderNumber || result.orderId),
+          order: String(result.orderId),
           reason: result.reason,
         }),
         303,
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(
       resultUrl({
         status: "success",
-        order: String(result.orderNumber || result.orderId),
+        order: String(result.orderId),
         transaction: result.transid,
       }),
       303,
