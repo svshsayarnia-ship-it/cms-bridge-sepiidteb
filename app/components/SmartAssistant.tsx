@@ -27,11 +27,16 @@ export function SmartAssistant() {
   }, []);
 
   const answer = topic ? answers[topic] : null;
+  const isProductPage = pathname.startsWith("/product/");
 
   if (pathname.startsWith("/cms")) return null;
 
   return (
-    <aside id="sepiid-smart-assistant" className={`sb-smart-assistant${open ? " is-open" : ""}`} aria-label="دستیار هوشمند سپید">
+    <aside
+      id="sepiid-smart-assistant"
+      className={`sb-smart-assistant${open ? " is-open" : ""}${isProductPage ? " sb-smart-assistant--product-page" : ""}`}
+      aria-label="دستیار هوشمند سپید"
+    >
       {open && (
         <section id="sepiid-smart-assistant-panel" className="sb-smart-assistant__panel" aria-live="polite">
           <div className="sb-smart-assistant__head">
