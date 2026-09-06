@@ -247,12 +247,10 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
 async function loadRemoteSitePresentation() {
   return normalizeSitePresentation(
     await getRemotePresentation({
-      // This runs in the public layout.  The application already ships a
-      // complete, safe presentation fallback, so a slow WordPress response
-      // must never turn into multi-second TTFB for visitors or crawlers.
-      // CMS mutations explicitly invalidate this cache; a successful quick
-      // response is still picked up without making every first visit wait for
-      // a remote system.
+      // This runs in the public layout. The application already ships a
+      // complete fallback, and CMS writes explicitly invalidate this cache.
+      // Keep the origin timeout short so WordPress can never hold the public
+      // storefront open when it is slow or temporarily unavailable.
       requestTimeoutMs: 1_500,
       requestMaxAttempts: 1,
     }),
@@ -261,16 +259,36 @@ async function loadRemoteSitePresentation() {
 
 const getCachedSitePresentation = unstable_cache(
   loadRemoteSitePresentation,
-  ["site-presentation-v5-newest-article-wins"],
-  { revalidate: 3600, tags: ["site-presentation"] },
+  ["site-presentation-v6-low-origin-pressure"],
+  {
+    // CMS writes explicitly invalidate this tag, so hourly polling was doing
+    // unnecessary WordPress work. Keep one daily safety refresh for changes
+    // made outside the CMS without tying ordinary traffic to WordPress health.
+    revalidate: 86_400,
+    tags: ["site-presentation"],
+  },
 );
 
+let remoteFailureBackoffUntil = 0;
+const REMOTE_FAILURE_BACKOFF_MS = 2 * 60 * 1000;
+
 export const getSitePresentation = cache(async () => {
+  if (Date.now() < remoteFailureBackoffUntil) {
+    return DEFAULT_SITE_PRESENTATION;
+  }
+
   try {
-    return await getCachedSitePresentation();
+    const presentation = await getCachedSitePresentation();
+    remoteFailureBackoffUntil = 0;
+    return presentation;
   } catch (error) {
-    console.error("[site-presentation] Remote presentation unavailable", {
+    // A failed refresh is an expected degraded mode because the storefront has
+    // a complete local fallback. Back off briefly so one slow WordPress period
+    // cannot turn every page/RSC render into another origin request.
+    remoteFailureBackoffUntil = Date.now() + REMOTE_FAILURE_BACKOFF_MS;
+    console.warn("[site-presentation] Remote presentation unavailable; using fallback", {
       error: error instanceof Error ? error.message : String(error),
+      retryAfterMs: REMOTE_FAILURE_BACKOFF_MS,
     });
     return DEFAULT_SITE_PRESENTATION;
   }
