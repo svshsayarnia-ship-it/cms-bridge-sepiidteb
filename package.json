@@ -20,6 +20,7 @@
     "audit:product-cache": "node scripts/audit-product-cache-unification.mjs",
     "audit:variant-media": "node scripts/audit-product-variant-media.mjs",
     "audit:account-auth": "node scripts/audit-account-auth-contract.mjs",
+    "audit:commerce-live": "node scripts/commerce-live-smoke.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh"
   },
   "dependencies": {
