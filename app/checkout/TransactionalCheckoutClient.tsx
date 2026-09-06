@@ -32,6 +32,10 @@ type CreatedOrder = {
   existing: boolean;
 };
 
+type PaymentStart = {
+  url: string;
+};
+
 const initialForm: CheckoutForm = {
   fullName: "",
   phone: "",
@@ -106,6 +110,14 @@ function getIdempotencyKey(items: CartItem[]) {
   return key;
 }
 
+function goToGateway(payment: PaymentStart) {
+  const url = new URL(payment.url);
+  if (url.protocol !== "https:" || url.hostname !== "panel.aqayepardakht.ir") {
+    throw new Error("آدرس درگاه پرداخت معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
+  }
+  window.location.assign(url.toString());
+}
+
 export function TransactionalCheckoutClient() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState<CheckoutForm>(initialForm);
@@ -160,12 +172,13 @@ export function TransactionalCheckoutClient() {
 
     setSubmitting(true);
     try {
+      const idempotencyKey = getIdempotencyKey(items);
       const response = await fetch("/api/checkout/order", {
         method: "POST",
         headers: { "content-type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
-          idempotencyKey: getIdempotencyKey(items),
+          idempotencyKey,
           fullName: form.fullName,
           phone: form.phone,
           customerType: form.customerType,
@@ -181,11 +194,18 @@ export function TransactionalCheckoutClient() {
       const payload = (await response.json()) as {
         ok?: boolean;
         order?: CreatedOrder;
+        payment?: PaymentStart | null;
+        paymentConfigured?: boolean;
         error?: { message?: string };
       };
 
       if (!response.ok || !payload.ok || !payload.order) {
-        throw new Error(payload.error?.message || "ثبت سفارش کامل نشد.");
+        throw new Error(payload.error?.message || "ثبت سفارش یا شروع پرداخت کامل نشد.");
+      }
+
+      if (payload.payment?.url) {
+        goToGateway(payload.payment);
+        return;
       }
 
       setOrder(payload.order);
@@ -193,7 +213,7 @@ export function TransactionalCheckoutClient() {
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "ثبت سفارش کامل نشد. هیچ پرداختی انجام نشده است.",
+          : "ثبت سفارش یا شروع پرداخت کامل نشد. هیچ پرداخت موفقی ثبت نشده است.",
       );
     } finally {
       setSubmitting(false);
@@ -218,8 +238,8 @@ export function TransactionalCheckoutClient() {
               </div>
             </div>
             <p>
-              این سفارش اکنون در WooCommerce ذخیره شده و حتی اگر صفحه را ببندید از بین نمی‌رود.
-              پرداخت آنلاین تا زمان اتصال و تست نهایی درگاه غیرفعال می‌ماند؛ بنابراین در این مرحله هیچ مبلغی از شما دریافت نشده است.
+              سفارش در WooCommerce ذخیره شده است، اما درگاه پرداخت هنوز روی این محیط سرور فعال نیست.
+              در این وضعیت هیچ مبلغی از شما دریافت نشده است.
             </p>
             {Number(order.total) > 0 && (
               <p><strong>مبلغ تأییدشده سرور: {priceFormatter.format(Number(order.total))} {order.currency === "IRT" ? "تومان" : order.currency}</strong></p>
@@ -259,9 +279,9 @@ export function TransactionalCheckoutClient() {
 
         <div className={styles.intro}>
           <span className="sb-eyebrow">تکمیل سفارش</span>
-          <h1>اطلاعات تماس و ثبت سفارش</h1>
+          <h1>اطلاعات تماس و پرداخت امن</h1>
           <p>
-            قیمت و موجودی هنگام ثبت، دوباره از WooCommerce بررسی می‌شود. سفارش قبل از ورود به درگاه در سیستم ذخیره خواهد شد.
+            قیمت و موجودی هنگام ثبت دوباره از WooCommerce بررسی می‌شود. سفارش ابتدا در سیستم ذخیره می‌شود و سپس به درگاه آقای پرداخت منتقل خواهید شد.
           </p>
         </div>
 
@@ -334,15 +354,16 @@ export function TransactionalCheckoutClient() {
                 <span>۲</span>
                 <div>
                   <h2>پرداخت</h2>
-                  <p>درگاه هنوز عمداً فعال نشده تا Merchant و Callback واقعی تست شوند.</p>
+                  <p>پس از ذخیره سفارش، مبلغ نهایی همان سفارش به درگاه امن آقای پرداخت ارسال می‌شود.</p>
                 </div>
               </div>
               <div className={`${styles.paymentMethod} ${styles.paymentMethodSelected}`}>
                 <span className={styles.radioDot} aria-hidden="true" />
                 <div>
-                  <strong>ثبت سفارش بدون برداشت وجه</strong>
-                  <p>سفارش با وضعیت در انتظار پرداخت ذخیره می‌شود. پس از اتصال درگاه همین سفارش به پرداخت متصل خواهد شد.</p>
+                  <strong>پرداخت آنلاین با آقای پرداخت</strong>
+                  <p>مبلغ از سمت سرور WooCommerce خوانده می‌شود و فقط پس از Verify موفق، سفارش پرداخت‌شده محسوب خواهد شد.</p>
                 </div>
+                <b>پرداخت امن</b>
               </div>
             </section>
 
@@ -355,7 +376,7 @@ export function TransactionalCheckoutClient() {
                   disabled={submitting}
                 />
                 <span>
-                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت اطلاعات سفارش موافقم.
+                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت اطلاعات سفارش و انتقال به درگاه پرداخت موافقم.
                 </span>
               </label>
               {errors.termsAccepted && <p className={styles.termsError}>{errors.termsAccepted}</p>}
@@ -370,7 +391,7 @@ export function TransactionalCheckoutClient() {
                 disabled={submitting}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال ثبت امن سفارش…" : "ثبت سفارش قابل پیگیری"}
+                {submitting ? "در حال ثبت سفارش و اتصال به درگاه…" : "ثبت سفارش و رفتن به درگاه پرداخت"}
               </button>
             </section>
           </div>
@@ -397,7 +418,7 @@ export function TransactionalCheckoutClient() {
               <strong>{browserSubtotal > 0 ? `${priceFormatter.format(browserSubtotal)} تومان` : "در حال تأیید"}</strong>
             </div>
             <p style={{ margin: 0, fontSize: ".78rem", lineHeight: 1.8, color: "var(--sb-muted)" }}>
-              مبلغ مرورگر ملاک سفارش نیست؛ WooCommerce هنگام ثبت قیمت و موجودی را مجدداً محاسبه می‌کند.
+              مبلغ مرورگر ملاک پرداخت نیست؛ WooCommerce هنگام ثبت، قیمت و موجودی را مجدداً محاسبه می‌کند و همان مبلغ سرور به درگاه ارسال می‌شود.
             </p>
           </aside>
         </form>
