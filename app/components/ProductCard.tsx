@@ -68,7 +68,7 @@ async function flushCardImageBatch() {
 
     for (const slug of slugs) {
       const image = Object.prototype.hasOwnProperty.call(data.cardImages, slug)
-        ? data.cardImages[slug]
+        ? data.cardImages[slug] ?? null
         : null;
       cardImageCache.set(slug, image);
       inFlightCardImageSlugs.delete(slug);
