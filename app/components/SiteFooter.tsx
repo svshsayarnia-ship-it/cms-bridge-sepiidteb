@@ -6,6 +6,8 @@ import { BrandMark } from "./SiteHeader";
 
 const enamadMarkup = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt' aria-label='مشاهده اعتبار اینماد سپید بیوتی' style='display:flex;width:100%;height:100%;align-items:center;justify-content:center;position:relative;z-index:2;pointer-events:auto;cursor:pointer'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt' alt='نماد اعتماد الکترونیکی سپید بیوتی' width='80' height='80' style='cursor:pointer;display:block;width:80px;height:80px;max-width:80px;object-fit:contain;pointer-events:auto' code='eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt'></a>";
 
+const aqayePardakhtMarkup = "<a href='https://panel.aqayepardakht.ir/trustGateway/102523' target='_blank' referrerpolicy='strict-origin-when-cross-origin' title='پرداخت امن آقای پرداخت' aria-label='مشاهده اعتبار پرداخت امن آقای پرداخت سپید بیوتی' onclick=\"window.open('https://panel.aqayepardakht.ir/trustGateway/102523',null,'width=400,height=600,scrollbars=no,resizable=no');return false;\" style='display:flex;width:100%;height:100%;align-items:center;justify-content:center;position:relative;z-index:2;pointer-events:auto;cursor:pointer'><img src='https://cdn.aqayepardakht.ir/trustlogo/1.svg' alt='پرداخت امن آقای پرداخت' width='80' height='80' style='border-radius:0;display:block;width:80px;height:80px;max-width:80px;object-fit:contain;pointer-events:auto'></a>";
+
 export function SiteFooter({ presentation }: { presentation: SitePresentation["footer"] & { brandTagline: string } }) {
   return <footer className="sb-footer"><div className="sb-shell">
     <div className="sb-footer__cta"><div><span>{presentation.supportEyebrow}</span><h2>{presentation.supportTitle}</h2><p>{presentation.supportText}</p></div>
@@ -13,24 +15,52 @@ export function SiteFooter({ presentation }: { presentation: SitePresentation["f
     <div className="sb-footer__grid">
       <div className="sb-footer__brand"><BrandMark light tagline={presentation.brandTagline} /><p>{presentation.brandDescription}</p><div className="sb-footer__socials"><Link href="https://wa.me/989037251266">واتساپ</Link><Link href="tg://resolve?phone=989037251266">تلگرام</Link></div>
         <div
-          className="sb-footer__enamad"
-          aria-label="نماد اعتماد الکترونیکی سپید بیوتی"
+          aria-label="مجوزها و نشان‌های اعتماد سپید بیوتی"
           style={{
             marginTop: 18,
-            width: 96,
-            height: 96,
-            minHeight: 96,
-            display: "grid",
-            placeItems: "center",
-            padding: 0,
-            borderRadius: 14,
-            background: "#fff",
-            position: "relative",
-            zIndex: 1,
-            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
           }}
-          dangerouslySetInnerHTML={{ __html: enamadMarkup }}
-        />
+        >
+          <div
+            className="sb-footer__enamad"
+            aria-label="نماد اعتماد الکترونیکی سپید بیوتی"
+            style={{
+              width: 96,
+              height: 96,
+              minHeight: 96,
+              display: "grid",
+              placeItems: "center",
+              padding: 0,
+              borderRadius: 14,
+              background: "#fff",
+              position: "relative",
+              zIndex: 1,
+              overflow: "hidden",
+            }}
+            dangerouslySetInnerHTML={{ __html: enamadMarkup }}
+          />
+          <div
+            className="sb-footer__aqayepardakht"
+            aria-label="پرداخت امن آقای پرداخت سپید بیوتی"
+            style={{
+              width: 96,
+              height: 96,
+              minHeight: 96,
+              display: "grid",
+              placeItems: "center",
+              padding: 0,
+              borderRadius: 14,
+              background: "#fff",
+              position: "relative",
+              zIndex: 1,
+              overflow: "hidden",
+            }}
+            dangerouslySetInnerHTML={{ __html: aqayePardakhtMarkup }}
+          />
+        </div>
       </div>
       <div className="sb-footer__column"><strong>فروشگاه</strong><Link href="/shop/fillers">فیلرهای پوستی</Link><Link href="/shop/skin-boosters">اسکین‌بوستر و مزوژل</Link><Link href="/shop/botulinum-toxins">بوتاکس و بوتولینوم</Link><Link href="/shop/hair-cocktails">کوکتل‌های تخصصی مو</Link></div>
       <div className="sb-footer__column"><strong>راهنمای سپید</strong><Link href="/guides">راهنمای انتخاب</Link><Link href="/magazine">مجله و مقالات</Link><Link href="/faq">پرسش‌های متداول</Link><Link href="/about">درباره سپید بیوتی</Link><Link href="/professional">خرید حرفه‌ای کلینیک</Link></div>
