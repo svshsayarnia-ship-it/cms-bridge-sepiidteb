@@ -1,0 +1,20 @@
+/* Critical UI/UX fixes kept separate from the legacy global stylesheet.
+   This layer is intentionally small and loaded last. */
+
+/* Category cards are direct navigation targets on touch devices. The former
+   first-tap preview behavior was removed in the component; manipulation keeps
+   the remaining tap interaction immediate without changing desktop hover. */
+@media (hover: none), (pointer: coarse) {
+  .sb-category-card {
+    touch-action: manipulation;
+  }
+}
+
+/* On product pages the fixed mobile inquiry bar is the primary conversion
+   action. Hiding the secondary floating assistant prevents overlap and two
+   competing fixed CTAs in the same thumb zone. Desktop keeps the assistant. */
+@media (max-width: 640px) {
+  .sb-smart-assistant--product-page {
+    display: none;
+  }
+}
