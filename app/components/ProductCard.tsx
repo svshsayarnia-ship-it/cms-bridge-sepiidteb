@@ -22,10 +22,92 @@ type PublicRoleImage = {
   alt: string;
 };
 
-type ProductImageRolesResponse = {
-  cardImage: PublicRoleImage | null;
-  variantImages: Record<string, PublicRoleImage>;
+type ProductImageRolesBatchResponse = {
+  cardImages: Record<string, PublicRoleImage | null>;
 };
+
+type CardImageListener = (image: PublicRoleImage | null) => void;
+
+const cardImageCache = new Map<string, PublicRoleImage | null>();
+const cardImageListeners = new Map<string, Set<CardImageListener>>();
+const queuedCardImageSlugs = new Set<string>();
+const inFlightCardImageSlugs = new Set<string>();
+let cardImageBatchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleCardImageBatch() {
+  if (cardImageBatchTimer !== null) return;
+
+  cardImageBatchTimer = setTimeout(() => {
+    cardImageBatchTimer = null;
+    void flushCardImageBatch();
+  }, 0);
+}
+
+async function flushCardImageBatch() {
+  const slugs = Array.from(queuedCardImageSlugs).slice(0, 100);
+  if (!slugs.length) return;
+
+  for (const slug of slugs) {
+    queuedCardImageSlugs.delete(slug);
+    inFlightCardImageSlugs.add(slug);
+  }
+
+  if (queuedCardImageSlugs.size) scheduleCardImageBatch();
+
+  try {
+    const query = new URLSearchParams({ slugs: slugs.join(",") });
+    const response = await fetch(`/api/product-image-roles?${query.toString()}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Role image batch failed with ${response.status}`);
+    }
+
+    const data = (await response.json()) as ProductImageRolesBatchResponse;
+
+    for (const slug of slugs) {
+      const image = Object.prototype.hasOwnProperty.call(data.cardImages, slug)
+        ? data.cardImages[slug] ?? null
+        : null;
+      cardImageCache.set(slug, image);
+      inFlightCardImageSlugs.delete(slug);
+
+      const listeners = cardImageListeners.get(slug);
+      listeners?.forEach((listener) => listener(image));
+      cardImageListeners.delete(slug);
+    }
+  } catch (error) {
+    console.warn("[product-card] role image batch load failed", error);
+
+    for (const slug of slugs) {
+      inFlightCardImageSlugs.delete(slug);
+      cardImageListeners.delete(slug);
+    }
+  }
+}
+
+function subscribeToCardRoleImage(slug: string, listener: CardImageListener) {
+  if (cardImageCache.has(slug)) {
+    listener(cardImageCache.get(slug) ?? null);
+    return () => undefined;
+  }
+
+  const listeners = cardImageListeners.get(slug) ?? new Set<CardImageListener>();
+  listeners.add(listener);
+  cardImageListeners.set(slug, listeners);
+
+  if (!inFlightCardImageSlugs.has(slug)) {
+    queuedCardImageSlugs.add(slug);
+    scheduleCardImageBatch();
+  }
+
+  return () => {
+    const current = cardImageListeners.get(slug);
+    current?.delete(listener);
+    if (current?.size === 0) cardImageListeners.delete(slug);
+  };
+}
 
 function numericPrice(value?: string | number): number | null {
   const parsed = Number(value);
@@ -47,27 +129,7 @@ export function ProductCard({
 
   useEffect(() => {
     if (!product.slug) return;
-
-    const controller = new AbortController();
-    const query = new URLSearchParams({ slug: product.slug });
-
-    void fetch(`/api/product-image-roles?${query.toString()}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as ProductImageRolesResponse;
-      })
-      .then((data) => {
-        setCardImage(data?.cardImage?.src ? data.cardImage : null);
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        console.warn("[product-card] role image load failed", error);
-      });
-
-    return () => controller.abort();
+    return subscribeToCardRoleImage(product.slug, setCardImage);
   }, [product.slug]);
 
   const displayProduct = useMemo<PublicProduct>(() => {

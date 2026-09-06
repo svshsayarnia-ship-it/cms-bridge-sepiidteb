@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import type { MouseEvent } from "react";
-import { useState } from "react";
 import { ArrowIcon } from "./Icons";
 import { CategoryHoverVisual } from "./CategoryHoverVisual";
 
@@ -68,29 +66,17 @@ export function CategoryStoryCard({
   slug,
   title,
 }: CategoryStoryCardProps) {
-  const [previewed, setPreviewed] = useState(false);
   const detail = categoryDetails[slug] ?? {
     displayTitle: title,
     note: "انتخاب تخصصی",
     summary: "مشاهده محصولات و مشخصات این دسته",
   };
 
-  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-
-    if (isTouch && !previewed) {
-      event.preventDefault();
-      setPreviewed(true);
-    }
-  }
-
   return (
     <Link
       aria-label={`${title}؛ ${detail.note}`}
-      className={`sb-category-card${previewed ? " sb-category-card--previewed" : ""}`}
+      className="sb-category-card"
       href={`/shop/${slug}`}
-      onBlur={() => setPreviewed(false)}
-      onClick={handleClick}
     >
       <CategoryHoverVisual
         displayTitle={detail.displayTitle}

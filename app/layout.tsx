@@ -7,6 +7,7 @@ import "./category-hovers.css";
 import "./category-commerce-hero.css";
 import "./product-visual.css";
 import "./account-responsive.css";
+import "./uiux-critical-fixes.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
