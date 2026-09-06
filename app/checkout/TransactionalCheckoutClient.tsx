@@ -200,7 +200,7 @@ export function TransactionalCheckoutClient() {
       };
 
       if (!response.ok || !payload.ok || !payload.order) {
-        throw new Error(payload.error?.message || "ثبت سفارش یا شروع پرداخت کامل نشد.");
+        throw new Error("ثبت سفارش یا شروع پرداخت کامل نشد. لطفاً دوباره تلاش کنید.");
       }
 
       if (payload.payment?.url) {
@@ -213,7 +213,7 @@ export function TransactionalCheckoutClient() {
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "ثبت سفارش یا شروع پرداخت کامل نشد. هیچ پرداخت موفقی ثبت نشده است.",
+          : "ثبت سفارش یا شروع پرداخت کامل نشد. لطفاً دوباره تلاش کنید.",
       );
     } finally {
       setSubmitting(false);
@@ -233,19 +233,16 @@ export function TransactionalCheckoutClient() {
             <div className={styles.sectionHeading}>
               <span>✓</span>
               <div>
-                <h2>سفارش شما ثبت و قابل پیگیری شد</h2>
+                <h2>سفارش شما ثبت شد</h2>
                 <p>شماره سفارش: <strong>#{order.number}</strong></p>
               </div>
             </div>
-            <p>
-              سفارش در WooCommerce ذخیره شده است، اما درگاه پرداخت هنوز روی این محیط سرور فعال نیست.
-              در این وضعیت هیچ مبلغی از شما دریافت نشده است.
-            </p>
+            <p>پرداخت هنوز انجام نشده است. لطفاً دوباره برای پرداخت تلاش کنید.</p>
             {Number(order.total) > 0 && (
-              <p><strong>مبلغ تأییدشده سرور: {priceFormatter.format(Number(order.total))} {order.currency === "IRT" ? "تومان" : order.currency}</strong></p>
+              <p><strong>مبلغ سفارش: {priceFormatter.format(Number(order.total))} {order.currency === "IRT" ? "تومان" : order.currency}</strong></p>
             )}
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 20 }}>
-              <Link className="sb-btn sb-btn--dark" href="/shop">ادامه خرید</Link>
+              <Link className="sb-btn sb-btn--dark" href="/checkout">تلاش دوباره برای پرداخت</Link>
               <Link className="sb-btn" href="/contact">تماس با سپید بیوتی</Link>
             </div>
           </section>
@@ -280,9 +277,6 @@ export function TransactionalCheckoutClient() {
         <div className={styles.intro}>
           <span className="sb-eyebrow">تکمیل سفارش</span>
           <h1>اطلاعات تماس و پرداخت امن</h1>
-          <p>
-            قیمت و موجودی هنگام ثبت دوباره از WooCommerce بررسی می‌شود. سفارش ابتدا در سیستم ذخیره می‌شود و سپس به درگاه آقای پرداخت منتقل خواهید شد.
-          </p>
         </div>
 
         <form className={styles.layout} onSubmit={handleSubmit} noValidate>
@@ -292,7 +286,6 @@ export function TransactionalCheckoutClient() {
                 <span>۱</span>
                 <div>
                   <h2>اطلاعات خریدار</h2>
-                  <p>این اطلاعات روی سفارش ذخیره می‌شود تا پیگیری خرید ممکن باشد.</p>
                 </div>
               </div>
 
@@ -354,14 +347,12 @@ export function TransactionalCheckoutClient() {
                 <span>۲</span>
                 <div>
                   <h2>پرداخت</h2>
-                  <p>پس از ذخیره سفارش، مبلغ نهایی همان سفارش به درگاه امن آقای پرداخت ارسال می‌شود.</p>
                 </div>
               </div>
               <div className={`${styles.paymentMethod} ${styles.paymentMethodSelected}`}>
                 <span className={styles.radioDot} aria-hidden="true" />
                 <div>
                   <strong>پرداخت آنلاین با آقای پرداخت</strong>
-                  <p>مبلغ از سمت سرور WooCommerce خوانده می‌شود و فقط پس از Verify موفق، سفارش پرداخت‌شده محسوب خواهد شد.</p>
                 </div>
                 <b>پرداخت امن</b>
               </div>
@@ -391,7 +382,7 @@ export function TransactionalCheckoutClient() {
                 disabled={submitting}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال ثبت سفارش و اتصال به درگاه…" : "ثبت سفارش و رفتن به درگاه پرداخت"}
+                {submitting ? "در حال انتقال به پرداخت…" : "ادامه و پرداخت"}
               </button>
             </section>
           </div>
@@ -408,18 +399,15 @@ export function TransactionalCheckoutClient() {
                   <strong>
                     {item.priceToman
                       ? `${priceFormatter.format(item.priceToman * item.quantity)} تومان`
-                      : "تأیید در سرور"}
+                      : "قیمت هنگام پرداخت"}
                   </strong>
                 </div>
               ))}
             </div>
             <div className={styles.summaryRow}>
-              <span>جمع نمایشی سبد</span>
-              <strong>{browserSubtotal > 0 ? `${priceFormatter.format(browserSubtotal)} تومان` : "در حال تأیید"}</strong>
+              <span>جمع سبد</span>
+              <strong>{browserSubtotal > 0 ? `${priceFormatter.format(browserSubtotal)} تومان` : "محاسبه هنگام پرداخت"}</strong>
             </div>
-            <p style={{ margin: 0, fontSize: ".78rem", lineHeight: 1.8, color: "var(--sb-muted)" }}>
-              مبلغ مرورگر ملاک پرداخت نیست؛ WooCommerce هنگام ثبت، قیمت و موجودی را مجدداً محاسبه می‌کند و همان مبلغ سرور به درگاه ارسال می‌شود.
-            </p>
           </aside>
         </form>
       </div>
