@@ -7,6 +7,7 @@ import type { Product, ProductVariant } from "../data";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ProductVisual } from "./product/ProductVisual";
 import { AddToCartButton } from "./AddToCartButton";
+import { CompareButton } from "./CompareButton";
 
 type Pricing = {
   label: string;
@@ -181,6 +182,14 @@ function getVisibleSpecs(specs: Array<[string, string]>) {
   });
 }
 
+function firstDecisionSpec(
+  specs: Array<[string, string]>,
+  labels: RegExp[],
+) {
+  const match = specs.find(([label]) => labels.some((pattern) => pattern.test(label)));
+  return match?.[1] || "";
+}
+
 export function ProductVariantExperience({
   product,
   liveImage,
@@ -282,6 +291,17 @@ export function ProductVariantExperience({
   const visibleSpecs = getVisibleSpecs(displaySpecs);
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
+  const modelFact = selectedVariant?.label.replace(/^مدل\s+/u, "").trim() ||
+    firstDecisionSpec(displaySpecs, [/^مدل$/u]);
+  const packFact = firstDecisionSpec(displaySpecs, [
+    /تعداد و حجم/u,
+    /محتویات/u,
+    /^تعداد$/u,
+    /تعداد (?:ست|جعبه)/u,
+    /بسته/u,
+    /سرنگ/u,
+    /ویال/u,
+  ]) || packagingLabel;
 
   // Discovery cards and the initial PDP still use the same canonical master.
   // Once the visitor explicitly chooses a model, however, sibling imagery must
@@ -344,6 +364,20 @@ export function ProductVariantExperience({
     image: displayImage,
     volume: displayVolume,
     priceToman: selectedVariant?.priceToman ?? product.priceToman,
+  };
+  const compareProduct = {
+    slug: product.slug,
+    nameFa: displayName,
+    nameEn: displayNameEn,
+    brand: product.brand,
+    category: product.category,
+    categoryTitle: product.categoryTitle,
+    image: displayImage,
+    imageAlt: displayImageAlt,
+    volume: displayVolume,
+    priceToman: selectedVariant?.priceToman ?? product.priceToman,
+    priceNote: selectedVariant?.priceNote ?? product.priceNote,
+    specs: displaySpecs,
   };
 
   function selectVariant(id: string) {
@@ -432,6 +466,14 @@ export function ProductVariantExperience({
               </div>
             )}
 
+            <dl className="sb-product-summary__decision-grid" aria-label="اطلاعات اصلی تصمیم خرید">
+              {modelFact && <div><dt>مدل</dt><dd>{modelFact}</dd></div>}
+              {displayVolume && <div><dt>حجم</dt><dd>{displayVolume}</dd></div>}
+              {packFact && <div><dt>بسته</dt><dd>{packFact}</dd></div>}
+              <div><dt>موجودی</dt><dd>استعلام موجودی امروز</dd></div>
+              <div><dt>نگهداری</dt><dd>طبق شرایط درج‌شده روی بسته</dd></div>
+            </dl>
+
             {visibleSummary && (
               <p className="sb-product-summary__lead" aria-live="polite">
                 {visibleSummary}
@@ -445,6 +487,10 @@ export function ProductVariantExperience({
                 <small>{toPublicCopy(pricing.note)}</small>
               </div>
               <AddToCartButton product={inquiryProduct} />
+            </div>
+            <div className="sb-product-summary__secondary-actions">
+              <CompareButton product={compareProduct} className="sb-compare-button sb-compare-button--pdp" />
+              <Link href="/compare">دیدن جدول مقایسه</Link>
             </div>
             <p className="sb-product-summary__notice">
               افزودن به لیست استعلام به معنی خرید یا پرداخت قطعی نیست؛ قیمت و موجودی روز قبل از تأیید سفارش بررسی می‌شود.

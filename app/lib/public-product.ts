@@ -33,6 +33,14 @@ export type PublicProduct = Pick<
   price?: string;
   regularPrice?: string;
   salePrice?: string;
+  priceNote?: string;
+  sku?: string;
+  stockStatus?: string;
+  stockQuantity?: number | null;
+  manageStock?: boolean;
+  specs?: Array<[string, string]>;
+  features?: string[];
+  audience?: string;
   /** Volumes of selectable variants, used by catalog package-volume filters. */
   variantVolumes?: Array<string | null | undefined>;
 };
@@ -61,6 +69,10 @@ export function toPublicProduct(
     | "volume"
     | "shortBenefit"
     | "priceToman"
+    | "priceNote"
+    | "specs"
+    | "features"
+    | "audience"
   > & {
     visualProfile?: ProductVisualProfile;
     visualScale?: number | null;
@@ -69,6 +81,10 @@ export function toPublicProduct(
     price?: string;
     regularPrice?: string;
     salePrice?: string;
+    sku?: string;
+    stockStatus?: string;
+    stockQuantity?: number | null;
+    manageStock?: boolean;
     variants?: Array<{ volume?: string | null }>;
   },
 ): PublicProduct {
@@ -90,6 +106,7 @@ export function toPublicProduct(
       product.shortBenefit || `مشخصات، مدل و قیمت ${product.nameFa} را ببینید.`,
     ),
     priceToman: product.priceToman,
+    priceNote: product.priceNote ? toPublicCopy(product.priceNote) : product.priceNote,
     visualProfile: product.visualProfile,
     visualScale: product.visualScale,
     visualOffsetX: product.visualOffsetX,
@@ -97,6 +114,16 @@ export function toPublicProduct(
     price: product.price,
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
+    sku: product.sku,
+    stockStatus: product.stockStatus,
+    stockQuantity: product.stockQuantity,
+    manageStock: product.manageStock,
+    specs: product.specs?.map(([label, value]) => [
+      toPublicCopy(label),
+      toPublicCopy(value),
+    ] as [string, string]),
+    features: product.features?.map((item) => toPublicCopy(item)),
+    audience: product.audience ? toPublicCopy(product.audience) : product.audience,
     variantVolumes: product.variants?.map((variant) => variant.volume),
   };
 }

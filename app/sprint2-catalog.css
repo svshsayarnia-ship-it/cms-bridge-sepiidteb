@@ -1,0 +1,64 @@
+.sb-product-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sb-catalog__fieldset--price {
+  display: grid;
+  gap: 10px;
+}
+
+.sb-catalog__price-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.sb-catalog__price-range label {
+  display: grid;
+  gap: 5px;
+  align-items: start;
+}
+
+.sb-catalog__price-range label > span {
+  font-size: 11px;
+  color: #756e68;
+}
+
+.sb-catalog__price-range input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(25, 23, 21, 0.12);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  color: #24211f;
+  font: inherit;
+  font-size: 12px;
+  direction: ltr;
+  text-align: left;
+}
+
+.sb-catalog__price-range input:focus {
+  outline: 2px solid rgba(36, 33, 31, 0.16);
+  outline-offset: 1px;
+}
+
+.sb-catalog__fieldset--price > p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.75;
+  color: #817870;
+}
+
+@media (max-width: 520px) {
+  .sb-catalog__price-range {
+    grid-template-columns: 1fr;
+  }
+
+  .sb-compare-button {
+    padding-inline: 10px;
+  }
+}

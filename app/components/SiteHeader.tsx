@@ -10,6 +10,8 @@ import {
   type Category,
 } from "../data";
 import type { PublicProduct } from "../lib/public-product";
+import { searchPublicProducts } from "../lib/product-search";
+import { trackGaEvent } from "../lib/analytics";
 import type { SitePresentation } from "../lib/site-presentation";
 import {
   ArrowIcon,
@@ -96,23 +98,23 @@ export function SiteHeader({
   }, []);
 
   const searchResults = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("fa");
-    if (!normalized) return products.slice(0, 5);
-
-    return products
-      .filter((product) =>
-        [
-          product.nameFa,
-          product.nameEn,
-          product.brand,
-          product.categoryTitle,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("fa")
-          .includes(normalized),
-      )
-      .slice(0, 7);
+    if (!query.trim()) return products.slice(0, 5);
+    return searchPublicProducts(products, query).slice(0, 7);
   }, [products, query]);
+
+  useEffect(() => {
+    const searchTerm = query.trim();
+    if (searchTerm.length < 2 || !searchOpen) return;
+    const timeout = window.setTimeout(() => {
+      trackGaEvent("product_search", {
+        search_term: searchTerm,
+        result_count: searchResults.length,
+        zero_result: searchResults.length === 0,
+        search_surface: "header",
+      });
+    }, 700);
+    return () => window.clearTimeout(timeout);
+  }, [query, searchOpen, searchResults.length]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -249,7 +251,7 @@ export function SiteHeader({
             aria-label="باز کردن جستجوی محصولات"
           >
             <SearchIcon />
-            <span>اسم محصول یا برند را جستجو کنید</span>
+            <span>نام، برند، مدل، حجم یا SKU را جستجو کنید</span>
             <kbd>/</kbd>
           </button>
 
@@ -447,7 +449,7 @@ export function SiteHeader({
                 aria-label="عبارت جستجو"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="مثلاً جالپرو، فیلر یا Neuramis"
+                placeholder="مثلاً نورامیس، Neuramis، 1ml یا SKU"
               />
               {query && (
                 <button type="button" onClick={() => setQuery("")}>
@@ -460,7 +462,7 @@ export function SiteHeader({
               <span aria-live="polite">
                 {query ? `${searchResults.length} نتیجه` : "چند پیشنهاد برای شروع"}
               </span>
-              <small>نام فارسی، انگلیسی، برند یا دسته را بنویسید</small>
+              <small>فارسی یا انگلیسی بنویسید؛ خطاهای تایپی کوچک هم تحمل می‌شوند.</small>
             </div>
 
             <div className="sb-search-results">
@@ -485,7 +487,7 @@ export function SiteHeader({
               ) : (
                 <div className="sb-search-results__empty">
                   <strong>چیزی با این اسم پیدا نکردیم.</strong>
-                  <p>نام برند یا دسته را امتحان کنید. اگر محصول مشخصی مدنظرتان است، اسمش را برای تیم سپید بفرستید.</p>
+                  <p>نام برند، مدل، حجم یا SKU را امتحان کنید. اگر محصول مشخصی مدنظرتان است، اسمش را برای تیم سپید بفرستید.</p>
                   <Link href={whatsappHref(`سلام، دنبال محصول «${query}» هستم. موجودی و قیمتش رو می‌خواستم.`)}>
                     پرسیدن از سپید
                   </Link>
