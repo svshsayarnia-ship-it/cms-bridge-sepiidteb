@@ -13,8 +13,8 @@ type AddToCartButtonProps = {
 export function AddToCartButton({
   product,
   className = "sb-btn sb-btn--dark sb-add-to-cart",
-  label = "استعلام قیمت و موجودی امروز",
-  addedLabel = "به لیست استعلام اضافه شد",
+  label = "افزودن به سبد خرید",
+  addedLabel = "به سبد خرید اضافه شد",
 }: AddToCartButtonProps) {
   const [added, setAdded] = useState(false);
 
