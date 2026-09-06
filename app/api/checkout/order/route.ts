@@ -7,7 +7,7 @@ import {
   AqayePardakhtError,
   createAqayePardakhtPayment,
   isAqayePardakhtConfigured,
-} from "../../../lib/aqayepardakht-v3";
+} from "../../../lib/aqayepardakht-v2";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
           order,
           error: {
             code: paymentError.code,
-            message: `سفارش #${order.number} ثبت شد، اما اتصال به درگاه کامل نشد. با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.`,
+            message: `سفارش #${order.number} ثبت شد، اما ${paymentError.message} با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.`,
           },
         },
         {
