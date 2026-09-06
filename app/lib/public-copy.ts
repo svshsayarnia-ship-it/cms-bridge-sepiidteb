@@ -33,6 +33,10 @@ export function getCompactBrandLabel(
 
 export function toPublicCopy(value: string): string {
   return value
+    .replace(
+      /[^.!؟؛]*(?:\bWooCommerce\b|\bCMS\b|\bAPI\b|\bVerify\b|ووکامرس|سرور|بک[‌ -]?اند|همگام[‌ -]?سازی|سینک)[^.!؟؛]*[.!؟؛]?/giu,
+      " ",
+    )
     .replace(/\bMasoon\s+Darou\b/giu, "تولیدکننده")
     .replace(/(?:شرکت\s+داروسازی\s+)?(?:مصون|مسون)[\s‌-]*دارو/gu, "تولیدکننده")
     .replace(/\bWooCommerce\b/giu, "فروشگاه")
@@ -93,7 +97,7 @@ export function getPublicVolumeLabel(value?: string): string {
 
   const cleanValue = value
     .replace(
-      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|\s+بازار)?|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
+      /(?:؛|،)?\s*(?:گزارش(?:\s+برخی\s+آگهی‌ها|طبق\s+فهرست(?:\s+موجودی)?).*$/u,
       "",
     )
     .replace(/^(?:نسخه‌های|چند نسخه)\s+متفاوت\s+در\s+بازار$/u, "")
