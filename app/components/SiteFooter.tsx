@@ -4,7 +4,7 @@ import type { SitePresentation } from "../lib/site-presentation";
 import { ArrowIcon } from "./Icons";
 import { BrandMark } from "./SiteHeader";
 
-const enamadMarkup = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt' alt='' style='cursor:pointer' code='eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt'></a>";
+const enamadMarkup = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt' aria-label='مشاهده اعتبار اینماد سپید بیوتی' style='display:flex;width:100%;height:100%;align-items:center;justify-content:center;position:relative;z-index:2;pointer-events:auto;cursor:pointer'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7414582&Code=eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt' alt='نماد اعتماد الکترونیکی سپید بیوتی' width='80' height='80' style='cursor:pointer;display:block;width:80px;height:80px;max-width:80px;object-fit:contain;pointer-events:auto' code='eD1Kxp1lMZfUYqpIAuzx7yAnSgqpAtGt'></a>";
 
 export function SiteFooter({ presentation }: { presentation: SitePresentation["footer"] & { brandTagline: string } }) {
   return <footer className="sb-footer"><div className="sb-shell">
@@ -18,12 +18,16 @@ export function SiteFooter({ presentation }: { presentation: SitePresentation["f
           style={{
             marginTop: 18,
             width: 96,
+            height: 96,
             minHeight: 96,
             display: "grid",
             placeItems: "center",
-            padding: 8,
+            padding: 0,
             borderRadius: 14,
             background: "#fff",
+            position: "relative",
+            zIndex: 1,
+            overflow: "hidden",
           }}
           dangerouslySetInnerHTML={{ __html: enamadMarkup }}
         />
