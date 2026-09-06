@@ -32,28 +32,28 @@ export default function CartPage() {
   return (
     <main id="main-content" className={styles.page}>
       <div className="sb-shell">
-        <nav className={styles.steps} aria-label="مراحل استعلام و سفارش">
-          <span className={styles.activeStep}><b>۱</b> لیست استعلام</span>
-          <span><b>۲</b> ارسال درخواست</span>
-          <span><b>۳</b> تأیید قیمت و سفارش</span>
+        <nav className={styles.steps} aria-label="مراحل خرید">
+          <span className={styles.activeStep}><b>۱</b> سبد خرید</span>
+          <span><b>۲</b> ثبت سفارش</span>
+          <span><b>۳</b> پرداخت</span>
         </nav>
 
         <header className={styles.intro}>
-          <span className="sb-eyebrow">INQUIRY LIST / لیست استعلام</span>
-          <h1>لیست استعلام شما</h1>
-          <p>مدل و تعداد محصولات را بررسی کنید. با ارسال این لیست، قیمت و موجودی روز برای شما تأیید می‌شود و هیچ پرداختی در این مرحله انجام نمی‌شود.</p>
+          <span className="sb-eyebrow">SHOPPING CART / سبد خرید</span>
+          <h1>سبد خرید شما</h1>
+          <p>مدل و تعداد محصولات را بررسی کنید. قیمت و موجودی هنگام ثبت سفارش دوباره از WooCommerce کنترل می‌شود و سفارش پیش از ورود به درگاه ذخیره خواهد شد.</p>
         </header>
 
         {!items.length ? (
           <section className={styles.empty}>
             <PackageIcon />
-            <h2>لیست استعلام هنوز خالی است.</h2>
-            <p>محصولات موردنظرتان را از فروشگاه به این لیست اضافه کنید.</p>
+            <h2>سبد خرید هنوز خالی است.</h2>
+            <p>محصولات موردنظرتان را از فروشگاه به سبد اضافه کنید.</p>
             <Link className="sb-btn sb-btn--dark" href="/shop">انتخاب محصول <ArrowIcon /></Link>
           </section>
         ) : (
           <div className={styles.layout}>
-            <section className={styles.list} aria-label="محصولات لیست استعلام">
+            <section className={styles.list} aria-label="محصولات سبد خرید">
               {items.map((item) => (
                 <article className={styles.item} key={cartItemKey(item)}>
                   <div className={styles.imageWrap}>
@@ -64,9 +64,9 @@ export default function CartPage() {
                     <h2>{item.nameFa}</h2>
                     <small>{item.volume || item.nameEn || ""}</small>
                     {item.priceToman ? (
-                      <strong>{priceFormatter.format(item.priceToman)} تومان <small>قیمت ثبت‌شده</small></strong>
+                      <strong>{priceFormatter.format(item.priceToman)} تومان <small>قیمت نمایشی</small></strong>
                     ) : (
-                      <strong className={styles.needsInquiry}>قیمت روز نیاز به استعلام دارد</strong>
+                      <strong className={styles.needsInquiry}>قیمت هنگام ثبت سفارش تأیید می‌شود</strong>
                     )}
                   </div>
                   <div className={styles.controls}>
@@ -80,7 +80,7 @@ export default function CartPage() {
                         {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
                       </select>
                     </label>
-                    <button type="button" onClick={() => removeFromCart(item)} aria-label={`حذف ${item.nameFa} از لیست استعلام`}>
+                    <button type="button" onClick={() => removeFromCart(item)} aria-label={`حذف ${item.nameFa} از سبد خرید`}>
                       <CloseIcon /> حذف
                     </button>
                   </div>
@@ -88,25 +88,25 @@ export default function CartPage() {
               ))}
             </section>
 
-            <aside className={styles.summary} aria-label="خلاصه لیست استعلام">
+            <aside className={styles.summary} aria-label="خلاصه سبد خرید">
               <div className={styles.summaryHead}>
-                <span>خلاصه درخواست</span>
+                <span>خلاصه سبد</span>
                 <strong>{priceFormatter.format(cartCount(items))} قلم</strong>
               </div>
               {subtotal > 0 && (
                 <div className={styles.summaryRow}>
-                  <span>جمع قیمت‌های ثبت‌شده</span>
+                  <span>جمع قیمت‌های نمایشی</span>
                   <strong>{priceFormatter.format(subtotal)} تومان</strong>
                 </div>
               )}
 
               <div className={styles.notice} role="status">
-                <strong>قیمت و موجودی نهایی بعد از ارسال درخواست تأیید می‌شود.</strong>
-                <p>مبلغ‌های نمایش‌داده‌شده در این صفحه به معنی رزرو موجودی یا پرداخت نهایی نیستند. پس از بررسی، نتیجه برای تأیید سفارش با شما هماهنگ می‌شود.</p>
+                <strong>مبلغ نهایی سمت سرور محاسبه می‌شود.</strong>
+                <p>قیمت داخل مرورگر ملاک برداشت وجه نیست. WooCommerce در مرحله بعد قیمت، موجودی و تعداد را دوباره بررسی می‌کند و سپس یک سفارش قابل پیگیری می‌سازد.</p>
               </div>
 
               <Link className="sb-btn sb-btn--dark" href="/checkout">
-                ارسال درخواست استعلام <ArrowIcon />
+                ادامه و ثبت سفارش <ArrowIcon />
               </Link>
               <Link className={styles.continueShopping} href="/shop">افزودن محصول دیگر</Link>
             </aside>
