@@ -175,7 +175,7 @@ export function ProductCard({
   const [added, setAdded] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addedTimerRef = useRef<number | null>(null);
   const selectorId = useId();
 
   useEffect(() => {
