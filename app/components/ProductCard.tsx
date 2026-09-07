@@ -379,31 +379,36 @@ export function ProductCard({
             </button>
           </div>
 
-          <div className={selectorStyles.list} role="list">
+          <div className={selectorStyles.list}>
             {variants.map((variant) => {
               const unavailable = parentOutOfStock || variant.stockStatus === "outofstock";
               const selected = variant.id === selectedVariantId;
               const secondaryLabel = getVariantSecondaryLabel(variant);
               const variantPrice = numericPrice(variant.priceToman);
+              const variantImage = getVariantImage(variant, displayProduct.image);
 
               return (
                 <button
                   key={variant.id}
                   className={selectorStyles.variant}
                   type="button"
-                  role="listitem"
                   data-variant
                   aria-pressed={selected}
                   disabled={unavailable}
                   onClick={() => setSelectedVariantId(variant.id)}
                 >
-                  <img
+                  <ProductVisual
                     className={selectorStyles.image}
-                    src={getVariantImage(variant, displayProduct.image)}
-                    alt={variant.imageAlt || `تصویر ${variant.nameFa}`}
-                    width={50}
-                    height={50}
-                    loading="lazy"
+                    product={{
+                      slug: `${product.slug}-${variant.id}`,
+                      nameFa: variant.nameFa || variant.label,
+                      category: product.category,
+                      masterImage: variantImage,
+                      imageAlt: variant.imageAlt || `تصویر ${variant.nameFa}`,
+                    }}
+                    variant="thumbnail"
+                    sizes="50px"
+                    showBackground={false}
                   />
                   <span className={selectorStyles.copy}>
                     <strong>{variant.nameFa || variant.label}</strong>
