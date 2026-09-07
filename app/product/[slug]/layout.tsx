@@ -127,7 +127,10 @@ export default async function ProductDetailLayout({
   const { slug } = await params;
   const product = await getProductProvenance(slug);
   const verifiedFallback = getVerifiedSourceFallback(slug);
-  const isNeuramisProduct = slug.trim().toLowerCase().startsWith("neuramis");
+  const normalizedSlug = slug.trim().toLowerCase();
+  const isNeuramisProduct = normalizedSlug.startsWith("neuramis");
+  const isRevofilProduct = normalizedSlug.startsWith("revofil");
+  const isJaluproProduct = normalizedSlug.startsWith("jalupro");
 
   const cmsSourceUrl = safeExternalUrl(product?.sourceUrl);
   const fallbackSourceUrl = safeExternalUrl(verifiedFallback?.sourceUrl);
@@ -172,6 +175,54 @@ export default async function ProductDetailLayout({
               <span>راهنمای بسته‌بندی و مقایسه قیمت</span>
               <Link href="/magazine/neuramis-10ml-pack-guide">
                 تفاوت بسته ۱۰ × ۱ میلی‌لیتر با نورامیس تکی
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isRevofilProduct ? (
+        <section
+          className="sb-section sb-product-info-section"
+          id="revofil-volume-guide"
+          aria-labelledby="revofil-volume-guide-title"
+        >
+          <div className="sb-shell sb-product-info-section__grid">
+            <div>
+              <h2 id="revofil-volume-guide-title">رووفیل ۱۰ سی‌سی یا ۱ سی‌سی؟</h2>
+              <p>
+                برای مقایسه قیمت Revofil فقط نام برند را نبینید؛ مدل، حجم و واحد
+                فروش باید یکسان باشند تا عدد قیمت گمراه‌کننده نشود.
+              </p>
+            </div>
+            <div className="sb-article-parent-guide">
+              <span>راهنمای حجم، مدل و قیمت</span>
+              <Link href="/magazine/revofil-10ml-vs-1ml-guide">
+                تفاوت رووفیل ۱۰ میلی‌لیتری با نسخه ۱ میلی‌لیتری
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isJaluproProduct ? (
+        <section
+          className="sb-section sb-product-info-section"
+          id="jalupro-model-guide"
+          aria-labelledby="jalupro-model-guide-title"
+        >
+          <div className="sb-shell sb-product-info-section__grid">
+            <div>
+              <h2 id="jalupro-model-guide-title">Classic، HMW یا Super Hydro؟</h2>
+              <p>
+                مدل‌های Jalupro از نظر ترکیب و ساختار بسته یکسان نیستند؛ قبل از
+                مقایسه قیمت، نام کامل مدل و اجزای همان بسته را روشن کنید.
+              </p>
+            </div>
+            <div className="sb-article-parent-guide">
+              <span>راهنمای مقایسه مدل‌های جالپرو</span>
+              <Link href="/magazine/jalupro-classic-hmw-super-hydro-guide">
+                تفاوت Jalupro Classic، HMW و Super Hydro
               </Link>
             </div>
           </div>

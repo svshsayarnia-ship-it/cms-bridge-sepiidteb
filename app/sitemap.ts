@@ -51,6 +51,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/guides",
     "/magazine",
     "/magazine/neuramis-10ml-pack-guide",
+    "/magazine/revofil-10ml-vs-1ml-guide",
+    "/magazine/jalupro-classic-hmw-super-hydro-guide",
     "/professional",
     "/about",
     "/contact",
