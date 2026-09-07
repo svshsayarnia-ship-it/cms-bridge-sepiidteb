@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- local editorial imagery */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Breadcrumbs } from "../../../components/Breadcrumbs";
-import { FaqList } from "../../../components/FaqList";
-import { ArrowIcon, ClockIcon } from "../../../components/Icons";
-import { JsonLd } from "../../../components/JsonLd";
-import { buildSeoMetadata } from "../../../lib/seo";
-import { siteOrigin } from "../../../lib/site-url";
+import { Breadcrumbs } from "../../components/Breadcrumbs";
+import { FaqList } from "../../components/FaqList";
+import { ArrowIcon, ClockIcon } from "../../components/Icons";
+import { JsonLd } from "../../components/JsonLd";
+import { buildSeoMetadata } from "../../lib/seo";
+import { siteOrigin } from "../../lib/site-url";
 
 const articlePath = "/magazine/neuramis-10ml-pack-guide";
 const articleTitle = "نورامیس ۱۰ سی‌سی یعنی چه؟ تفاوت بسته ۱۰ عددی با سرنگ ۱ سی‌سی";
