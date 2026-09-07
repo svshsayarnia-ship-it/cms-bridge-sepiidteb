@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- local editorial assets are compressed */
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
@@ -24,6 +25,12 @@ import {
   brandPages,
   getBrandPageForLabel,
 } from "./content-architecture";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 const faqs = [
   {

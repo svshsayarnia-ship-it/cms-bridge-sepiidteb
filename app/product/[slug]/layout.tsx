@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { CmsProduct } from "../../lib/cms-types";
@@ -126,6 +127,7 @@ export default async function ProductDetailLayout({
   const { slug } = await params;
   const product = await getProductProvenance(slug);
   const verifiedFallback = getVerifiedSourceFallback(slug);
+  const isNeuramisProduct = slug.trim().toLowerCase().startsWith("neuramis");
 
   const cmsSourceUrl = safeExternalUrl(product?.sourceUrl);
   const fallbackSourceUrl = safeExternalUrl(verifiedFallback?.sourceUrl);
@@ -150,6 +152,31 @@ export default async function ProductDetailLayout({
   return (
     <>
       {children}
+
+      {isNeuramisProduct ? (
+        <section
+          className="sb-section sb-product-info-section"
+          id="neuramis-pack-guide"
+          aria-labelledby="neuramis-pack-guide-title"
+        >
+          <div className="sb-shell sb-product-info-section__grid">
+            <div>
+              <h2 id="neuramis-pack-guide-title">نورامیس ۱۰ سی‌سی یعنی چه؟</h2>
+              <p>
+                اگر بین قیمت یک سرنگ و بسته ۱۰ عددی مردد هستید، اول تعداد سرنگ و
+                حجم هر واحد را مشخص کنید؛ «۱۰ سی‌سی» همیشه به معنی یک سرنگ بزرگ
+                نیست.
+              </p>
+            </div>
+            <div className="sb-article-parent-guide">
+              <span>راهنمای بسته‌بندی و مقایسه قیمت</span>
+              <Link href="/magazine/neuramis-10ml-pack-guide">
+                تفاوت بسته ۱۰ × ۱ میلی‌لیتر با نورامیس تکی
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {hasProvenance ? (
         <section
