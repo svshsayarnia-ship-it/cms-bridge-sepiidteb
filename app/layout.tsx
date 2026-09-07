@@ -10,6 +10,7 @@ import "./account-responsive.css";
 import "./uiux-critical-fixes.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
+import { ProductCardVariantIntentBridge } from "./components/ProductCardVariantIntentBridge";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
@@ -105,6 +106,7 @@ export default async function RootLayout({
       <body>
         <GoogleAnalytics />
         <AiReferralTracker />
+        <ProductCardVariantIntentBridge />
         <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
         <SiteHeaderServer
           categories={categories}
