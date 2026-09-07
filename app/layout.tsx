@@ -40,9 +40,6 @@ export const metadata: Metadata = {
   },
   description:
     "مرجع انتخاب و استعلام فیلر، اسکین‌بوستر، بوتولینوم و کوکتل‌های تخصصی همراه با راهنمای خرید، بررسی اصالت و پشتیبانی انسانی.",
-  alternates: {
-    canonical: "/",
-  },
   formatDetection: {
     address: false,
     email: false,
@@ -54,7 +51,6 @@ export const metadata: Metadata = {
       "فروشگاه و مجله تخصصی محصولات زیبایی؛ همراه با مسیر بررسی اصالت و خرید حرفه‌ای.",
     locale: "fa_IR",
     type: "website",
-    url: "/",
     siteName: "Sepiid Beauty",
     images: [
       {
