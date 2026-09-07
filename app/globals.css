@@ -9466,6 +9466,37 @@ footer {
     #f4eee6;
 }
 
+/* Keep the image area calm while a connection is warming up. The stage has
+   deterministic geometry, so this is a soft loading cue rather than a layout
+   placeholder that expands after the fact. */
+.sb-featured-carousel__product-image {
+  width: min(88%, 570px);
+  height: min(82%, 540px);
+  border-radius: 24px;
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12));
+  background-size: 220% 100%;
+  animation: sb-featured-product-loading 1.15s ease-in-out infinite;
+}
+
+.sb-featured-carousel__product-image .product-visual__image {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.sb-featured-carousel__product-image.is-loaded {
+  background: transparent;
+  animation: none;
+}
+
+.sb-featured-carousel__product-image.is-loaded .product-visual__image {
+  opacity: 1;
+}
+
+@keyframes sb-featured-product-loading {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
 .sb-featured-carousel__visual::after {
   position: absolute;
   z-index: -1;
@@ -9501,6 +9532,13 @@ footer {
   filter: drop-shadow(0 34px 32px rgba(72, 47, 37, 0.2));
   transform: translateY(0) scale(1);
   transition: filter 520ms ease, transform 700ms var(--sb-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-featured-carousel__product-image {
+    animation: none;
+    background: rgba(255, 255, 255, 0.22);
+  }
 }
 
 .sb-featured-carousel__visual:hover img,
