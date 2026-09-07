@@ -3,13 +3,69 @@ import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
+import type { Article } from "../data";
 import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
 import { articlePath } from "../lib/article-url";
 import { sortArticlesNewestFirst } from "../lib/article-order";
 import { buildSeoMetadata } from "../lib/seo";
 
-// The magazine list is CMS-managed. Rendering it dynamically guarantees a
-// newly published article is visible immediately after cache invalidation.
+// Static revenue guides use dedicated App Router pages so their SEO metadata,
+// FAQ schema and internal commerce links remain deterministic. Keep them in the
+// magazine index too so they are never orphaned from the editorial hub.
+const staticEditorialGuides: Article[] = [
+  {
+    slug: "revofil-10ml-vs-1ml-guide",
+    title: "رووفیل ۱۰ سی‌سی یا ۱ سی‌سی؟ تفاوت حجم، مدل و روش درست مقایسه قیمت",
+    excerpt:
+      "راهنمای تفکیک Revofil ۱۰ میلی‌لیتری از نسخه ۱ میلی‌لیتری؛ با تمرکز بر مدل، حجم، واحد فروش و مقایسه درست قیمت.",
+    category: "راهنمای انتخاب فیلر",
+    date: "شهریور ۱۴۰۵",
+    readTime: "۷ دقیقه",
+    image: "/images/drive/product-revofil.webp",
+    lead: "",
+    notice: "",
+    sections: [],
+    sources: [],
+    relatedProducts: ["revofil-ultra"],
+    datePublished: "2026-09-07",
+    dateModified: "2026-09-07",
+  },
+  {
+    slug: "jalupro-classic-hmw-super-hydro-guide",
+    title: "جالپرو Classic، HMW یا Super Hydro؟ تفاوت مدل‌ها، ترکیب و بسته‌بندی",
+    excerpt:
+      "مقایسه سه مدل Jalupro بر اساس اطلاعات رسمی سازنده، تفاوت ترکیب و ساختار بسته؛ بدون تبدیل نام برند به توصیه درمانی.",
+    category: "راهنمای اسکین‌بوستر",
+    date: "شهریور ۱۴۰۵",
+    readTime: "۸ دقیقه",
+    image: "/images/drive/product-jalupro.webp",
+    lead: "",
+    notice: "",
+    sections: [],
+    sources: [],
+    relatedProducts: ["jalupro-hmw"],
+    datePublished: "2026-09-07",
+    dateModified: "2026-09-07",
+  },
+  {
+    slug: "neuramis-10ml-pack-guide",
+    title: "نورامیس ۱۰ سی‌سی یعنی چه؟ تفاوت بسته ۱۰ عددی با سرنگ ۱ سی‌سی",
+    excerpt:
+      "تفاوت بسته ۱۰ × ۱ میلی‌لیتر با نورامیس تکی و روش درست مقایسه قیمت؛ برای جلوگیری از اشتباه بین حجم کل و واحد فروش.",
+    category: "راهنمای انتخاب فیلر",
+    date: "شهریور ۱۴۰۵",
+    readTime: "۶ دقیقه",
+    image: "/images/products/neuramis-deep-10-pack.webp",
+    lead: "",
+    notice: "",
+    sections: [],
+    sources: [],
+    relatedProducts: ["neuramis-deep-lidocaine"],
+    datePublished: "2026-09-07",
+    dateModified: "2026-09-07",
+  },
+];
+
 export const dynamic = "force-dynamic";
 
 export const metadata = buildSeoMetadata({
@@ -22,10 +78,12 @@ export const metadata = buildSeoMetadata({
 });
 
 export default async function MagazinePage() {
+  const staticSlugs = new Set(staticEditorialGuides.map((article) => article.slug));
   const editableArticles = sortArticlesNewestFirst(
     getManagedArticles(await getSitePresentation()),
-  );
-  const featured = editableArticles[0];
+  ).filter((article) => !staticSlugs.has(article.slug));
+  const allArticles = [...staticEditorialGuides, ...editableArticles];
+  const featured = allArticles[0];
 
   return (
     <main id="main-content">
@@ -94,14 +152,14 @@ export default async function MagazinePage() {
               <span className="sb-eyebrow">تازه‌ترین مطالب</span>
               <h2>تازه‌ترین راهنماها</h2>
             </div>
-            <p>{editableArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
-          <div className="sb-preferred-source" aria-label="منبع ترجیحی گوگل">
-            <div google-add-preferred-source-btn></div>
-            <small>اگر مطالب سپید برایتان مفید است، آن را به منابع ترجیحی گوگل اضافه کنید.</small>
-          </div>
+            <p>{allArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
+            <div className="sb-preferred-source" aria-label="منبع ترجیحی گوگل">
+              <div google-add-preferred-source-btn></div>
+              <small>اگر مطالب سپید برایتان مفید است، آن را به منابع ترجیحی گوگل اضافه کنید.</small>
+            </div>
           </div>
           <div className="sb-article-grid">
-            {editableArticles.map((article) => (
+            {allArticles.map((article) => (
               <ArticleCard article={article} key={article.slug} />
             ))}
           </div>
