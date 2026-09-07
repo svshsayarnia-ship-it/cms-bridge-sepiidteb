@@ -3,7 +3,12 @@
 /* eslint-disable @next/next/no-img-element -- remote/SVG fallback stays centralized here */
 
 import Image from "next/image";
-import { useMemo, useState, type CSSProperties } from "react";
+import {
+  useMemo,
+  useState,
+  type CSSProperties,
+  type SyntheticEvent,
+} from "react";
 
 import { getProductVisualCategoryConfig } from "../../config/productVisualConfig";
 import {
@@ -47,6 +52,13 @@ type ProductVisualProps = {
   decorative?: boolean;
   draggable?: boolean;
   showBackground?: boolean;
+  /**
+   * Product cutouts are already compact WebP assets in /public. Serving the
+   * carousel directly avoids a cold `/_next/image` optimisation request just
+   * when a visitor is trying to browse the page.
+   */
+  unoptimized?: boolean;
+  onLoad?: (event: SyntheticEvent<HTMLImageElement>) => void;
 };
 
 type ProductVisualStyle = CSSProperties & {
@@ -112,6 +124,8 @@ export function ProductVisual({
   decorative = false,
   draggable = false,
   showBackground = true,
+  unoptimized = false,
+  onLoad,
 }: ProductVisualProps) {
   const requestedSrc = getProductCutoutSrc(
     product.masterImage?.trim() ||
@@ -170,9 +184,11 @@ export function ProductVisual({
       draggable={draggable}
       fill
       onError={handleImageError}
+      onLoad={onLoad}
       priority={priority}
       sizes={imageSizes}
       src={src}
+      unoptimized={unoptimized}
     />
   ) : (
     <img
@@ -183,6 +199,7 @@ export function ProductVisual({
       fetchPriority={priority ? "high" : "auto"}
       loading={priority ? "eager" : "lazy"}
       onError={handleImageError}
+      onLoad={onLoad}
       src={src}
     />
   );
