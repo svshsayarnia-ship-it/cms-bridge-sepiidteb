@@ -11,6 +11,7 @@ import {
 
 import { ArrowIcon, ChevronIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
+import { getProductCutoutSrc } from "../lib/product-image";
 
 export type FeaturedCarouselProduct = {
   slug: string;
@@ -135,6 +136,7 @@ export function FeaturedProductCarousel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(() => new Set());
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pointerStart = useRef<number | null>(null);
   const dragged = useRef(false);
@@ -198,6 +200,19 @@ export function FeaturedProductCarousel({
     },
     [],
   );
+
+  // The next slide is a deliberate, small prefetch: it removes the visual
+  // pause on manual/autoplay navigation without downloading the whole catalog.
+  useEffect(() => {
+    if (typeof window === "undefined" || products.length < 2) return;
+
+    const nextProduct = products[(currentIndex + 1) % products.length];
+    const nextImageSrc = getProductCutoutSrc(nextProduct?.image);
+    if (!nextImageSrc.startsWith("/")) return;
+
+    const image = new window.Image();
+    image.src = nextImageSrc;
+  }, [currentIndex, products]);
 
   if (!products.length) return null;
 
@@ -355,10 +370,22 @@ export function FeaturedProductCarousel({
               }}
             >
               <ProductVisual
+                className={
+                  loadedImages.has(product.image)
+                    ? "sb-featured-carousel__product-image is-loaded"
+                    : "sb-featured-carousel__product-image"
+                }
+                onLoad={() => {
+                  setLoadedImages((current) => {
+                    if (current.has(product.image)) return current;
+                    return new Set(current).add(product.image);
+                  });
+                }}
                 product={product}
                 variant="carousel"
-                priority={currentIndex === 0}
+                priority
                 sizes="(max-width: 820px) 92vw, 52vw"
+                unoptimized
               />
 
               <span className="sb-featured-carousel__offer">
@@ -421,6 +448,7 @@ export function FeaturedProductCarousel({
                 decorative
                 showBackground={false}
                 sizes="58px"
+                unoptimized
               />
               <span>
                 <small>{item.brand || item.categoryTitle}</small>
