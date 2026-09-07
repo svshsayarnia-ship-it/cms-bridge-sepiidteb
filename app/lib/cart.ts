@@ -10,18 +10,23 @@ export type CartProduct = {
   image: string;
   volume?: string;
   priceToman?: number;
+  /** Stable variant identity for products that expose selectable models. */
+  variantId?: string;
+  /** Human-readable variant label used in analytics and cart UI. */
+  variantLabel?: string;
 };
 
 export type CartItem = CartProduct & { quantity: number };
-export type CartTarget = string | Pick<CartItem, "slug" | "volume">;
+export type CartTarget = string | Pick<CartItem, "slug" | "volume" | "variantId">;
 
 // Keep the existing storage key so current visitors do not lose saved items
 // while the public experience moves from cart/checkout to assisted commerce.
 const CART_KEY = "sepiid-beauty-cart-v2";
 const CART_EVENT = "sepiid-cart-updated";
 
-export function cartItemKey(item: Pick<CartItem, "slug" | "volume">) {
-  return `${item.slug}::${item.volume ?? "default"}`;
+export function cartItemKey(item: Pick<CartItem, "slug" | "volume" | "variantId">) {
+  const variantKey = item.variantId?.trim() || item.volume || "default";
+  return `${item.slug}::${variantKey}`;
 }
 
 function sameCartItem(item: CartItem, target: CartTarget) {
@@ -67,10 +72,10 @@ export function addToCart(product: CartProduct, quantity = 1) {
   // becomes the primary funnel signal for Assisted Commerce.
   trackEcommerceEvent("add_to_cart", [{ ...product, quantity: safeQuantity }]);
   trackGaEvent("inquiry_add", {
-    item_id: product.slug,
+    item_id: product.variantId || product.slug,
     item_name: product.nameFa,
     item_brand: product.brand,
-    item_variant: product.volume,
+    item_variant: product.variantLabel || product.volume || product.variantId,
     quantity: safeQuantity,
   });
 }
@@ -94,9 +99,9 @@ export function updateCartQuantity(target: CartTarget, quantity: number) {
   }
 
   trackGaEvent("inquiry_quantity_change", {
-    item_id: existing.slug,
+    item_id: existing.variantId || existing.slug,
     item_name: existing.nameFa,
-    item_variant: existing.volume,
+    item_variant: existing.variantLabel || existing.volume || existing.variantId,
     previous_quantity: existing.quantity,
     quantity: safeQuantity,
   });
@@ -110,9 +115,9 @@ export function removeFromCart(target: CartTarget) {
     trackEcommerceEvent("remove_from_cart", removed);
     removed.forEach((item) => {
       trackGaEvent("inquiry_remove", {
-        item_id: item.slug,
+        item_id: item.variantId || item.slug,
         item_name: item.nameFa,
-        item_variant: item.volume,
+        item_variant: item.variantLabel || item.volume || item.variantId,
         quantity: item.quantity,
       });
     });
