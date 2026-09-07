@@ -14,7 +14,7 @@ import { siteOrigin } from "./lib/site-url";
 
 // Keep static sitemap URLs fresh when a release changes their indexable content.
 // Product and editorial URLs retain their own source dates below.
-const staticContentLastModified = new Date("2026-09-01T00:00:00.000Z");
+const staticContentLastModified = new Date("2026-09-07T00:00:00.000Z");
 
 function getProductLastModified(
   dateModifiedGmt: string,
@@ -50,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/brands",
     "/guides",
     "/magazine",
+    "/magazine/neuramis-10ml-pack-guide",
     "/professional",
     "/about",
     "/contact",
