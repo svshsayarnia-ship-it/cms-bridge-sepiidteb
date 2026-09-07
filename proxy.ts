@@ -50,10 +50,12 @@ const publicArticleSlugs = new Set(
   [
     ...articles.map((article) => canonicalArticleSlug(article.slug)),
     ...Object.values(articleSlugRedirects),
-    // This revenue-sprint guide is an exact static App Router page rather than
-    // a CMS-managed article, so publish it explicitly while arbitrary magazine
+    // Revenue-sprint guides are exact static App Router pages rather than
+    // CMS-managed articles. Publish them explicitly while arbitrary magazine
     // slugs remain protected by the hard-404 gate below.
     "neuramis-10ml-pack-guide",
+    "revofil-10ml-vs-1ml-guide",
+    "jalupro-classic-hmw-super-hydro-guide",
   ],
 );
 
