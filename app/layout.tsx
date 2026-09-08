@@ -8,10 +8,12 @@ import "./category-commerce-hero.css";
 import "./product-visual.css";
 import "./account-responsive.css";
 import "./uiux-critical-fixes.css";
+import "./global-contact-bar.css";
 import { catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
 import { ProductCardVariantIntentBridge } from "./components/ProductCardVariantIntentBridge";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
+import { GlobalContactBar } from "./components/GlobalContactBar";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeaderServer } from "./components/SiteHeaderServer";
@@ -113,6 +115,7 @@ export default async function RootLayout({
           products={headerProducts}
           presentation={presentation.header}
         />
+        <GlobalContactBar />
         {children}
         <SiteFooter
           presentation={{
@@ -131,17 +134,25 @@ export default async function RootLayout({
             url: siteOrigin,
             logo: `${siteOrigin}/images/sepiid-logo.webp`,
             image: `${siteOrigin}/images/drive/hero-rejuvenation.webp`,
-            telephone: "+989037251266",
+            telephone: "+982128422578",
             areaServed: "IR",
             description:
               "مرجع انتخاب و استعلام محصولات حرفه‌ای زیبایی با اطلاعات شفاف و مسیر بررسی اصالت.",
             hasMerchantReturnPolicy: merchantReturnPolicy,
-            contactPoint: {
-              "@type": "ContactPoint",
-              telephone: "+989037251266",
-              contactType: "customer support",
-              availableLanguage: ["fa"],
-            },
+            contactPoint: [
+              {
+                "@type": "ContactPoint",
+                telephone: "+982128422578",
+                contactType: "office customer support",
+                availableLanguage: ["fa"],
+              },
+              {
+                "@type": "ContactPoint",
+                telephone: "+989037251266",
+                contactType: "mobile customer support",
+                availableLanguage: ["fa"],
+              },
+            ],
           }}
         />
         <JsonLd
