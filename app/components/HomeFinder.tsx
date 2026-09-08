@@ -175,12 +175,12 @@ export function HomeFinder({
   };
 
   return (
-    <section className="sb-finder" aria-labelledby="finder-title">
+    <section className="sb-finder" id="find-product" aria-labelledby="finder-title">
       <div className="sb-shell sb-finder__grid">
         <div className="sb-finder__intro">
-          <span className="sb-eyebrow sb-eyebrow--gold">اگر بین گزینه‌ها مردد هستید</span>
-          <h2 id="finder-title">با چند سؤال کوتاه، سریع‌تر به محصول برسید.</h2>
-          <p>جواب‌ها فقط کمک می‌کنند دسته یا صفحه مناسب‌تر را پیدا کنید؛ چیزی ذخیره نمی‌شود.</p>
+          <span className="sb-eyebrow sb-eyebrow--gold">شروع خرید از اینجاست</span>
+          <h2 id="finder-title">اول نیازتان را مشخص کنید؛ بعد محصول‌ها را ببینید.</h2>
+          <p>این راهنما فقط مسیر مناسب‌تر را نشان می‌دهد و جای ارزیابی یا تصمیم فرد واجد صلاحیت را نمی‌گیرد. پاسخ‌ها هم ذخیره نمی‌شوند.</p>
           <ol className="sb-finder__steps" aria-label="مراحل راهنمای انتخاب">
             {questions.map((item, index) => (
               <li className={index === step ? "sb-finder__step--active" : index < step ? "sb-finder__step--done" : ""} key={item.title}>

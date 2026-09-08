@@ -3,12 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "./components/ArticleCard";
 import { FaqList } from "./components/FaqList";
-import { DeferredHomeFinder } from "./components/DeferredHomeFinder";
+import { HomeFinder } from "./components/HomeFinder";
 import { CustomerJourney } from "./components/CustomerJourney";
 import {
   ArrowIcon,
   HeadsetIcon,
   PackageIcon,
+  PhoneIcon,
   ShieldIcon,
 } from "./components/Icons";
 import { CategoryStoryCard } from "./components/CategoryStoryCard";
@@ -158,13 +159,23 @@ export default async function Home() {
           <article>
             <HeadsetIcon />
             <div>
-                <strong>استعلام را مستقیم انجام دهید</strong>
-                <p>برای موجودی، بچ‌کد، بسته‌بندی و زمان تحویل، اسم دقیق محصول را بفرستید تا همان مورد بررسی شود.</p>
+                <strong>قیمت و موجودی را قبل از ثبت نهایی چک کنید</strong>
+                <p>نام دقیق محصول را بفرستید تا مدل، بسته‌بندی، موجودی و زمان تحویل همان مورد بررسی شود.</p>
             </div>
             <Link href={whatsappHref()}>پیام به سپید</Link>
           </article>
+          <article>
+            <PhoneIcon />
+            <div>
+              <strong>پاسخ‌گویی از دفتر سپید بیوتی</strong>
+              <p>برای پیگیری خرید یا سؤال پیش از سفارش، از تلفن ثابت دفتر و پشتیبانی مستقیم استفاده کنید.</p>
+            </div>
+            <Link href="tel:+982128422578">تماس با ۰۲۱-۲۸۴۲۲۵۷۸</Link>
+          </article>
         </div>
       </section>
+
+      <HomeFinder products={products.map(toPublicProduct)} />
 
       <Reveal>
         <section className="sb-section sb-categories">
@@ -214,8 +225,6 @@ export default async function Home() {
           }))}
         />
       </Reveal>
-
-      <DeferredHomeFinder products={products.map(toPublicProduct)} />
 
       <Reveal>
         <section className="sb-section sb-professional-home">
