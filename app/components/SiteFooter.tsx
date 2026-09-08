@@ -64,7 +64,7 @@ export function SiteFooter({ presentation }: { presentation: SitePresentation["f
       </div>
       <div className="sb-footer__column"><strong>فروشگاه</strong><Link href="/shop/fillers">فیلرهای پوستی</Link><Link href="/shop/skin-boosters">اسکین‌بوستر و مزوژل</Link><Link href="/shop/botulinum-toxins">بوتاکس و بوتولینوم</Link><Link href="/shop/hair-cocktails">کوکتل‌های تخصصی مو</Link></div>
       <div className="sb-footer__column"><strong>راهنمای سپید</strong><Link href="/guides">راهنمای انتخاب</Link><Link href="/magazine">مجله و مقالات</Link><Link href="/faq">پرسش‌های متداول</Link><Link href="/about">درباره سپید بیوتی</Link><Link href="/professional">خرید حرفه‌ای کلینیک</Link></div>
-      <div className="sb-footer__contact"><span>مشاوره و استعلام</span><Link href={`tel:${presentation.phone}`}>{presentation.phone}</Link><p>{presentation.hours}</p><Link href="/contact">همه راه‌های ارتباط<ArrowIcon /></Link></div>
+      <div className="sb-footer__contact"><span>تلفن ثابت دفتر</span><Link href="tel:+982128422578">۰۲۱-۲۸۴۲۲۵۷۸</Link><span>همراه و واتساپ</span><Link href={`tel:${presentation.phone}`}>{presentation.phone}</Link><p>{presentation.hours}</p><Link href="/contact">همه راه‌های ارتباط<ArrowIcon /></Link></div>
     </div>
     <div className="sb-footer__bottom"><span>© 2026 Sepiid Beauty</span><p>{presentation.legalNotice}</p><div><Link href="/policies/privacy">حریم خصوصی</Link><Link href="/policies/terms">شرایط استفاده</Link><Link href="/policies/shipping">ارسال</Link><Link href="/policies/returns">مغایرت و بازگشت</Link></div></div>
     <div className="sb-footer__credit" aria-label="طراحی و اجرای سایت"><span>طراحی و اجرا توسط</span><strong>سیاوش سیارنیا</strong></div>
