@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { JsonLd } from "../components/JsonLd";
+import { ProductVisual } from "../components/product/ProductVisual";
 import { ShopCatalog } from "../components/ShopCatalog";
 import {
   catalogGroups,
@@ -123,10 +124,18 @@ export default async function ShopPage() {
       <section className="sb-shop-categories">
         <div className="sb-shell sb-shop-categories__row">
           {categories.map((category) => {
-            const count = products.filter(
+            const categoryProducts = products.filter(
               (product) =>
-                product.category === category.slug,
-            ).length;
+                  product.category === category.slug,
+            );
+            const count = categoryProducts.length;
+            const representativeProduct = categoryProducts[0] ?? {
+              slug: `category-${category.slug}`,
+              nameFa: category.title,
+              category: category.slug,
+              image: "/images/sepiid-logo.webp",
+              visualScale: 0.7,
+            };
 
             return (
               <Link
@@ -134,11 +143,16 @@ export default async function ShopPage() {
                 key={category.slug}
               >
                 <div
-                  style={{
-                    backgroundImage: `url(${category.image})`,
-                    backgroundPosition: `${category.position} center`,
-                  }}
-                />
+                  className="sb-shop-categories__visual"
+                  data-category={category.slug}
+                >
+                  <ProductVisual
+                    decorative
+                    product={representativeProduct}
+                    sizes="64px"
+                    variant="thumbnail"
+                  />
+                </div>
 
                 <span>{category.title}</span>
 

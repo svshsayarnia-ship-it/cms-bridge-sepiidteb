@@ -2659,13 +2659,59 @@ contain: paint;
   background: var(--sb-bg);
 }
 
-.sb-shop-categories__row > a > div {
+.sb-shop-categories__row > a > .sb-shop-categories__visual {
+  position: relative;
+  isolation: isolate;
   width: 58px;
   height: 58px;
   grid-row: 1 / 3;
+  overflow: hidden;
   border-radius: 9px;
-  background-repeat: no-repeat;
-  background-size: 400% 100%;
+  background: linear-gradient(145deg, #f7ede4, #fffaf5);
+}
+
+.sb-shop-categories__visual[data-category="fillers"] {
+  background: linear-gradient(145deg, #faecee, #f5dadd);
+}
+
+.sb-shop-categories__visual[data-category="skin-boosters"] {
+  background: linear-gradient(145deg, #e8f3ef, #d9ece6);
+}
+
+.sb-shop-categories__visual[data-category="botulinum-toxins"] {
+  background: linear-gradient(145deg, #f0ecf9, #e4ddf2);
+}
+
+.sb-shop-categories__visual[data-category="rejuvenation-cocktails"] {
+  background: linear-gradient(145deg, #faeae4, #f4d9d0);
+}
+
+.sb-shop-categories__visual[data-category="brightening-cocktails"] {
+  background: linear-gradient(145deg, #fff8df, #f6e8b9);
+}
+
+.sb-shop-categories__visual[data-category="eye-cocktails"] {
+  background: linear-gradient(145deg, #edf1f9, #dce4f0);
+}
+
+.sb-shop-categories__visual[data-category="hair-cocktails"] {
+  background: linear-gradient(145deg, #edf1e8, #dce7d2);
+}
+
+.sb-shop-categories__visual[data-category="hyaluronidase-products"] {
+  background: linear-gradient(145deg, #edf6f8, #d8eaf0);
+}
+
+.sb-shop-categories__visual .product-visual {
+  border-radius: inherit;
+}
+
+.sb-shop-categories__visual .product-visual__stage {
+  inset: 6% 7% 7%;
+}
+
+.sb-shop-categories__visual .product-visual__image {
+  filter: drop-shadow(0 5px 6px rgba(39, 32, 28, 0.16)) !important;
 }
 
 .sb-shop-categories__row span {
