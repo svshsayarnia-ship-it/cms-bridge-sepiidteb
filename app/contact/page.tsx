@@ -34,8 +34,10 @@ export default function ContactPage() {
           </div>
           <div className="sb-contact-hero__card">
             <PhoneIcon />
-            <span>تیم سپید بیوتی</span>
+            <span>شماره همراه</span>
             <a href="tel:+989037251266">۰۹۰۳۷۲۵۱۲۶۶</a>
+            <span>تلفن ثابت دفتر</span>
+            <a href="tel:02128422578">۰۲۱-۲۸۴۲۲۵۷۸</a>
             <p>
               <ClockIcon />
               شنبه تا پنجشنبه · ۹ تا ۲۰
