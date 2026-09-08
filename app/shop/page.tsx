@@ -25,6 +25,20 @@ const groupDescriptions: Record<string, string> = {
     "محصولات پشتیبان حرفه‌ای را با نام دقیق، قدرت درج‌شده و نوع بسته کنار هم ببینید.",
 };
 
+// These are the same 1400px transparent product cutouts used by product
+// cards. Keeping category shortcuts on local assets prevents a WordPress media
+// request from leaving an empty thumbnail on slower mobile connections.
+const categoryPreviewImages: Record<string, string> = {
+  fillers: "/images/products/cutouts/alcarisa-16.webp",
+  "skin-boosters": "/images/products/cutouts/jalupro-hmw.webp",
+  "botulinum-toxins": "/images/products/cutouts/masport-500.webp",
+  "rejuvenation-cocktails": "/images/products/cutouts/ejal-40.webp",
+  "brightening-cocktails": "/images/products/cutouts/sourced/fusion-melaclear.webp",
+  "eye-cocktails": "/images/products/cutouts/sourced/f-eye-contour.webp",
+  "hair-cocktails": "/images/products/cutouts/sourced/f-hair.webp",
+  "hyaluronidase-products": "/images/products/cutouts/liporase-1500.webp",
+};
+
 export const metadata = buildSeoMetadata({
   title: "فروشگاه سپید بیوتی | قیمت و مقایسه محصولات زیبایی",
   description:
@@ -133,17 +147,17 @@ export default async function ShopPage() {
       <section className="sb-shop-categories">
         <div className="sb-shell sb-shop-categories__row">
           {categories.map((category) => {
-            const categoryProducts = products.filter(
+            const count = products.filter(
               (product) =>
                   product.category === category.slug,
-            );
-            const count = categoryProducts.length;
-            const representativeProduct = categoryProducts[0] ?? {
-              slug: `category-${category.slug}`,
+            ).length;
+            const previewProduct = {
+              slug: `category-preview-${category.slug}`,
               nameFa: category.title,
               category: category.slug,
-              image: "/images/sepiid-logo.webp",
-              visualScale: 0.7,
+              image:
+                categoryPreviewImages[category.slug] ??
+                "/images/sepiid-logo.webp",
             };
 
             return (
@@ -157,7 +171,7 @@ export default async function ShopPage() {
                 >
                   <ProductVisual
                     decorative
-                    product={representativeProduct}
+                    product={previewProduct}
                     sizes="64px"
                     variant="thumbnail"
                   />
