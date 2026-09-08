@@ -11,7 +11,6 @@ import {
 
 import { ArrowIcon, ChevronIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
-import { getProductCutoutSrc } from "../lib/product-image";
 
 export type FeaturedCarouselProduct = {
   slug: string;
@@ -200,19 +199,6 @@ export function FeaturedProductCarousel({
     },
     [],
   );
-
-  // The next slide is a deliberate, small prefetch: it removes the visual
-  // pause on manual/autoplay navigation without downloading the whole catalog.
-  useEffect(() => {
-    if (typeof window === "undefined" || products.length < 2) return;
-
-    const nextProduct = products[(currentIndex + 1) % products.length];
-    const nextImageSrc = getProductCutoutSrc(nextProduct?.image);
-    if (!nextImageSrc.startsWith("/")) return;
-
-    const image = new window.Image();
-    image.src = nextImageSrc;
-  }, [currentIndex, products]);
 
   if (!products.length) return null;
 
