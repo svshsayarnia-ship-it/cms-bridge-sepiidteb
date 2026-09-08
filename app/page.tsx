@@ -138,7 +138,7 @@ export default async function Home() {
       <CustomerJourney />
       <EditableHomeHero hero={presentation.home.hero} />
 
-      <section className="sb-proof-strip">
+      <section className="sb-proof-strip" id="trust">
         <div className="sb-shell sb-proof-strip__grid">
             <article>
               <ShieldIcon />
