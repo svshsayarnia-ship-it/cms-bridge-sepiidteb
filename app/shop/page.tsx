@@ -82,6 +82,15 @@ export default async function ShopPage() {
         </div>
       </section>
 
+      <section className="sb-section sb-catalog-section" id="products">
+        <div className="sb-shell">
+          <ShopCatalog
+            items={products.map(toPublicProduct)}
+            categoryOptions={categories}
+          />
+        </div>
+      </section>
+
       <section
         className="sb-shop-groups"
         aria-label="گروه‌های اصلی فروشگاه"
@@ -160,15 +169,6 @@ export default async function ShopPage() {
               </Link>
             );
           })}
-        </div>
-      </section>
-
-      <section className="sb-section sb-catalog-section">
-        <div className="sb-shell">
-          <ShopCatalog
-            items={products.map(toPublicProduct)}
-            categoryOptions={categories}
-          />
         </div>
       </section>
 

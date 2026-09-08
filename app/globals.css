@@ -2727,6 +2727,7 @@ contain: paint;
 }
 
 .sb-catalog-section {
+  scroll-margin-top: 112px;
   background: var(--sb-bg);
 }
 

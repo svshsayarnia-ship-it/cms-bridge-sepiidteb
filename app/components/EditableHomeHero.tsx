@@ -14,7 +14,7 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
       <div className="sb-hero__microproof">{hero.microproofItems.map(item => <span key={item}>{item}</span>)}</div>
     </div>
     <figure className="sb-hero__media"><BrandStamp /><span className="sb-hero__orb sb-hero__orb--one" /><span className="sb-hero__orb sb-hero__orb--two" /><div className="sb-hero__photo">{isLocalImage ? <Image src={hero.image} alt={hero.imageAlt} width={1400} height={933} sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) 58vw, 640px" quality={75} preload fetchPriority="high" /> : <img src={hero.image} alt={hero.imageAlt} width="1400" height="933" fetchPriority="high" decoding="async" />}</div>
-      <nav className="sb-hero__image-actions" aria-label="میانبرهای سریع سپید بیوتی"><Link className="sb-hero__image-action sb-hero__image-action--primary" href="/shop">مشاهده محصولات<ArrowIcon /></Link><Link className="sb-hero__image-action" href="/#trust">چرا به سپید اعتماد کنم؟</Link></nav>
+      <nav className="sb-hero__image-actions" aria-label="میانبرهای سریع سپید بیوتی"><Link className="sb-hero__image-action sb-hero__image-action--primary" href="/shop#products">مشاهده محصولات<ArrowIcon /></Link><Link className="sb-hero__image-action" href="/#trust">چرا به سپید اعتماد کنم؟</Link></nav>
       <figcaption><span>{hero.editorialLabel}</span><p>{hero.editorialCaption}</p></figcaption><div className="sb-hero__quality"><ShieldIcon /><div><strong>{hero.qualityTitle}</strong><small>{hero.qualitySubtitle}</small></div></div>
     </figure>
   </div></section>;
