@@ -1,333 +1,257 @@
-/* eslint-disable @next/next/no-img-element -- local editorial assets are compressed */
+/* eslint-disable @next/next/no-img-element -- storefront media can be local or remote */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArticleCard } from "./components/ArticleCard";
-import { FaqList } from "./components/FaqList";
-import { HomeFinder } from "./components/HomeFinder";
-import { CustomerJourney } from "./components/CustomerJourney";
-import {
-  ArrowIcon,
-  HeadsetIcon,
-  PackageIcon,
-  PhoneIcon,
-  ShieldIcon,
-} from "./components/Icons";
-import { CategoryStoryCard } from "./components/CategoryStoryCard";
-import { FeaturedProductCarousel } from "./components/FeaturedProductCarousel";
-import { Reveal } from "./components/Reveal";
-import { articles, whatsappHref } from "./data";
+import { whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
 import { getSitePresentation } from "./lib/site-presentation";
-import { EditableHomeHero } from "./components/EditableHomeHero";
 import { getCompactBrandLabel } from "./lib/public-copy";
-import { toPublicProduct } from "./lib/public-product";
-import {
-  brandPages,
-  getBrandPageForLabel,
-} from "./content-architecture";
 
-export const metadata: Metadata = {
-  alternates: {
-    canonical: "/",
-  },
-};
-
-const faqs = [
-  {
-    question: "قبل از سفارش، روی بسته محصول چه چیزهایی را چک کنم؟",
-    answer:
-      "نام کامل مدل، حجم، تعداد داخل بسته و سلامت ظاهری آن را با چیزی که می‌خواهید بخرید تطبیق دهید. اگر درباره یک محصول خاص مطمئن نیستید، اسم و مدلش را برای تیم سپید بفرستید.",
-  },
-  {
-    question: "سپید بیوتی می‌گوید کدام محصول برای من مناسب است؟",
-    answer:
-      "نه. ما کمک می‌کنیم محصول‌ها را بهتر بشناسید و مقایسه کنید. انتخاب محصول تزریقی، ناحیه و روش استفاده باید بعد از ارزیابی توسط فرد واجد صلاحیت انجام شود.",
-  },
-  {
-    question: "قیمتی که می‌بینم برای یک سرنگ است یا جعبه کامل؟",
-    answer:
-      "بستگی به محصول دارد. در صفحه هر محصول سعی کرده‌ایم واحد قیمت، حجم و تعداد داخل بسته را کنار هم نشان دهیم تا قیمت یک سرنگ با قیمت یک جعبه اشتباه نشود.",
-  },
-  {
-    question: "اگر برای کلینیک چند محصول بخواهم چه کار کنم؟",
-    answer:
-      "اسم محصول‌ها، مدل و تعداد را یک‌جا بفرستید. موجودی و قیمت هر قلم جدا بررسی می‌شود و زمان تحویل را همان‌جا با شما هماهنگ می‌کنیم.",
-  },
-];
-
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 export const revalidate = 300;
 
-const featuredRotationIntervalMs = 3 * 60 * 60 * 1_000;
-const iranUtcOffsetMs = 3.5 * 60 * 60 * 1_000;
+const concerns = [
+  ["کاهش حجم و کانتورینگ", "/concerns/volume-loss", "/images/drive/category-fillers.webp"],
+  ["خطوط حرکتی و چروک", "/concerns/dynamic-wrinkles", "/images/drive/category-botox.webp"],
+  ["آبرسانی و کیفیت پوست", "/guides/dermal-fillers", "/images/drive/category-skinbooster.webp"],
+  ["جوان‌سازی و شادابی پوست", "/shop/rejuvenation-cocktails", "/images/drive/category-skin.webp"],
+  ["ریزش مو و تقویت", "/concerns/hair-loss", "/images/drive/category-mesotherapy.webp"],
+] as const;
+
+const faqs = [
+  [
+    "قبل از سفارش، روی بسته محصول چه چیزهایی را چک کنم؟",
+    "نام کامل مدل، حجم، تعداد داخل بسته، سلامت ظاهری بسته و اطلاعات بچ‌کد را با همان کالایی که استعلام کرده‌اید تطبیق دهید.",
+  ],
+  [
+    "اگر بین دو مدل مردد باشم چه کار کنم؟",
+    "مدل‌ها را از نظر حجم، بسته‌بندی، برند و مشخصات قابل‌مقایسه کنار هم ببینید و برای انتخاب پزشکی یا تزریقی از فرد واجد صلاحیت کمک بگیرید.",
+  ],
+  [
+    "قیمت و موجودی محصولات قطعی است؟",
+    "قیمت و موجودی ممکن است تغییر کند؛ پیش از نهایی‌کردن سفارش، همان مدل و همان بسته با شما دوباره بررسی می‌شود.",
+  ],
+] as const;
+
+function formatToman(value: number) {
+  return `${Math.round(value).toLocaleString("fa-IR")} تومان`;
+}
 
 export default async function Home() {
-  const [{ products }, categories, presentation] =
-    await Promise.all([
-      getStorefrontCatalog(),
-      getStorefrontCategories(),
-      getSitePresentation(),
-    ]);
+  const [{ products }, categories, presentation] = await Promise.all([
+    getStorefrontCatalog(),
+    getStorefrontCategories(),
+    getSitePresentation(),
+  ]);
 
   const pricedProducts = products.filter((product) => {
-    const visiblePrice = Number(
-      product.salePrice ||
-        product.regularPrice ||
-        product.price ||
-        product.priceToman,
+    const value = Number(
+      product.salePrice || product.regularPrice || product.price || product.priceToman,
     );
-
-    return Number.isFinite(visiblePrice) && visiblePrice > 0;
+    return Number.isFinite(value) && value > 0;
   });
-  const featuredProducts =
-    pricedProducts.length >= 4 ? pricedProducts : products;
-  // A cached page intentionally snapshots the shared three-hour rotation window.
-  // eslint-disable-next-line react-hooks/purity
-  const rotationNow = Date.now();
-  const shiftedRotationNow = rotationNow + iranUtcOffsetMs;
-  const initialRotationSeed = Math.floor(
-    shiftedRotationNow / featuredRotationIntervalMs,
-  );
 
-  const availableBrands = Array.from(
-    new Set(
-      products
-        .map((product) => getCompactBrandLabel(product.brand))
-        .filter(Boolean),
-    ),
-  ).sort((first, second) =>
-    first.localeCompare(second, "fa"),
-  );
-  const brandCounts = new Map<string, number>();
-  for (const product of products) {
-    const label = getCompactBrandLabel(product.brand);
-    if (label) {
-      brandCounts.set(label, (brandCounts.get(label) ?? 0) + 1);
-    }
-  }
-  const linkedBrandLabels = brandPages.flatMap((page) =>
-    page.indexable
-      ? availableBrands.filter(
-          (label) =>
-            page.matchers.includes(label) &&
-            (brandCounts.get(label) ?? 0) >= page.minProductCount,
-        )
-      : [],
-  );
-  const homeBrandLabels = Array.from(
-    new Set([...linkedBrandLabels, ...availableBrands]),
-  ).slice(0, 6);
-  const homeBrands = homeBrandLabels.map((label) => {
-    const page = getBrandPageForLabel(label);
-    const normalized = label
-      .toLocaleLowerCase("en")
-      .replace(/[^\p{L}\p{N}]+/gu, "-")
-      .replace(/^-+|-+$/g, "");
-    const brandIndex = availableBrands.indexOf(label);
-    const href =
-      page &&
-      page.indexable &&
-      (brandCounts.get(label) ?? 0) >= page.minProductCount
-        ? `/brands/${page.slug}`
-        : `/brands#brand-${brandIndex + 1}-${normalized || "item"}`;
+  const featuredProducts = (pricedProducts.length >= 4 ? pricedProducts : products).slice(0, 4);
+  const heroProduct =
+    pricedProducts.find((product) =>
+      /juvederm|juvéd|ژوویدرم|ژوودرم/i.test(
+        `${product.nameFa ?? ""} ${product.nameEn ?? ""} ${product.brand ?? ""}`,
+      ),
+    ) ?? featuredProducts[0] ?? products[0];
 
-    return { label, href };
-  });
+  const heroImage = heroProduct?.image || presentation.home.hero.image;
+  const heroName = heroProduct?.nameFa || heroProduct?.nameEn || "محصولات منتخب سپید بیوتی";
+  const heroBrand = heroProduct
+    ? getCompactBrandLabel(heroProduct.brand) || "Sepiid Beauty"
+    : "Sepiid Beauty";
+
+  const brandLabels = Array.from(
+    new Set(products.map((product) => getCompactBrandLabel(product.brand)).filter(Boolean)),
+  ).slice(0, 8);
+
   return (
-    <main id="main-content">
-      <CustomerJourney />
-      <EditableHomeHero hero={presentation.home.hero} />
+    <main id="main-content" className="halo-home">
+      <section className="halo-hero" aria-labelledby="halo-home-title">
+        <div className="halo-shell halo-hero__grid">
+          <div className="halo-hero__copy">
+            <span className="halo-eyebrow">NATURAL BEAUTY · REAL CONFIDENCE</span>
+            <h1 id="halo-home-title">زیبایی طبیعی با انتخاب حرفه‌ای</h1>
+            <p>
+              فیلر، مزوژل و محصولات تخصصی زیبایی از برندهای معتبر؛ با اطلاعات شفاف،
+              بررسی دقیق مدل و مسیر روشن برای استعلام قیمت و موجودی.
+            </p>
+            <div className="halo-hero__actions">
+              <Link className="halo-btn halo-btn--dark" href="/shop">مشاهده محصولات ←</Link>
+              <Link className="halo-btn halo-btn--ghost" href={whatsappHref()}>استعلام قیمت</Link>
+            </div>
+          </div>
 
-      <section className="sb-proof-strip" id="trust">
-        <div className="sb-shell sb-proof-strip__grid">
-            <article>
-              <ShieldIcon />
-              <div>
-                <strong>مدل و بسته را دقیق ببینید</strong>
-                <p>نام مدل، حجم و تعداد داخل بسته را جدا می‌کنیم تا گزینه‌های شبیه به هم قاطی نشوند.</p>
+          <div className="halo-hero__visual" aria-label={heroName}>
+            <div className="halo-hero__product-stage">
+              {heroImage ? (
+                <img
+                  src={heroImage}
+                  alt={heroProduct?.imageAlt || heroName}
+                  width="900"
+                  height="680"
+                  fetchPriority="high"
+                  decoding="async"
+                />
+              ) : null}
+              <div className="halo-hero__product-meta">
+                <strong>{heroName}</strong>
+                <small>{heroBrand} · انتخاب ویژه سپید</small>
+              </div>
             </div>
-            <Link href="/magazine/verify-dermal-filler-authenticity">چطور بررسی کنم؟</Link>
-          </article>
-          <article>
-            <PackageIcon />
-            <div>
-                <strong>قیمت را برای همان واحد بخوانید</strong>
-                <p>قیمت یک سرنگ، ویال یا جعبه کامل یکی نیست؛ واحد و تعداد را پیش از سفارش روشن می‌کنیم.</p>
-            </div>
-            <Link href="/shop">دیدن قیمت و بسته‌ها</Link>
-          </article>
-          <article>
-            <HeadsetIcon />
-            <div>
-                <strong>قیمت و موجودی را قبل از ثبت نهایی چک کنید</strong>
-                <p>نام دقیق محصول را بفرستید تا مدل، بسته‌بندی، موجودی و زمان تحویل همان مورد بررسی شود.</p>
-            </div>
-            <Link href={whatsappHref()}>پیام به سپید</Link>
-          </article>
-          <article>
-            <PhoneIcon />
-            <div>
-              <strong>پاسخ‌گویی از دفتر سپید بیوتی</strong>
-              <p>برای پیگیری خرید یا سؤال پیش از سفارش، از تلفن ثابت دفتر و پشتیبانی مستقیم استفاده کنید.</p>
-            </div>
-            <Link href="tel:+982128422578">تماس با ۰۲۱-۲۸۴۲۲۵۷۸</Link>
-          </article>
+            <span className="halo-hero__sidecopy">SMOOTHER · FIRMER · MORE YOU</span>
+            <div className="halo-hero__pager" aria-hidden="true"><span>01</span><span>02</span><span>03</span></div>
+          </div>
+        </div>
+
+        <div className="halo-proof">
+          <div className="halo-shell halo-proof__grid">
+            {["تضمین اصالت و بررسی بسته", "مشاوره تخصصی قبل از خرید", "ارسال سریع و هماهنگ‌شده", "تأمین از منابع معتبر"].map((item, index) => (
+              <div className="halo-proof__item" key={item}>
+                <span className="halo-proof__icon">{["✓", "◌", "↗", "□"][index]}</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      <HomeFinder products={products.map(toPublicProduct)} />
-
-      <Reveal>
-        <section className="sb-section sb-categories">
-          <div className="sb-shell">
-            <div className="sb-section-head">
-              <div>
-                <span className="sb-eyebrow">دسته‌بندی محصولات</span>
-                <h2>دنبال چه نوع محصولی هستید؟</h2>
-              </div>
-              <p>دسته موردنظر را باز کنید؛ مدل‌ها و قیمت‌ها همان‌جا جلوی چشم شماست.</p>
-            </div>
-            <div className="sb-category-grid">
-              {categories.map((category, index) => (
-                <CategoryStoryCard
-                  index={index}
-                  key={category.slug}
-                  slug={category.slug}
-                  title={category.title}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <FeaturedProductCarousel
-          initialRotationSeed={initialRotationSeed}
-          products={featuredProducts.map((product) => ({
-            slug: product.slug,
-            nameFa: product.nameFa,
-            nameEn: product.nameEn,
-            brand: getCompactBrandLabel(product.brand),
-            category: product.category,
-            categoryTitle: product.categoryTitle,
-            badge: product.badge,
-            image: product.image,
-            imageAlt: product.imageAlt,
-            volume: product.volume,
-            shortBenefit: product.shortBenefit,
-            position: product.position,
-            price: product.price,
-            regularPrice: product.regularPrice,
-            salePrice: product.salePrice,
-            priceToman: product.priceToman,
-            stockStatus: product.stockStatus,
-          }))}
-        />
-      </Reveal>
-
-      <Reveal>
-        <section className="sb-section sb-professional-home">
-          <div className="sb-shell sb-professional-home__grid">
-            <div className="sb-professional-home__media">
-              <img
-                src="/images/professional-clinic-v2.webp"
-                alt="متخصص کلینیک در حال بررسی موجودی محصولات"
-                width="1672"
-                height="941"
-                loading="lazy"
-              />
-              <span>خرید حرفه‌ای برای کلینیک‌ها</span>
-            </div>
-            <div className="sb-professional-home__content">
-              <span className="sb-eyebrow">برای پزشکان و کلینیک‌ها</span>
-              <h2>چند قلم می‌خواهید؟ همه را یک‌جا بفرستید.</h2>
-              <p>
-                اگر برای کلینیک چند محصول می‌خواهید، لازم نیست برای هرکدام جدا پیام بدهید. فهرست را یک‌جا بفرستید تا موجودی، مدل، قیمت و زمان تحویل هر قلم را در همان گفت‌وگو پیگیری کنیم.
-              </p>
-              <ul>
-                <li>چند محصول در یک درخواست</li>
-                <li>مدل و بسته مشخص برای هر قلم</li>
-                <li>پیگیری مستقیم تا زمان تحویل</li>
-              </ul>
-              <Link className="sb-btn sb-btn--dark" href="/professional">
-                سفارش کلینیکی
-                <ArrowIcon />
-              </Link>
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="sb-section sb-journal-home">
-          <div className="sb-shell">
-            <div className="sb-section-head sb-section-head--split">
-              <div>
-                <span className="sb-eyebrow">از مجله سپید</span>
-                <h2>
-                  جواب سؤال‌هایی که
-                  <em>قبل از خرید پیش می‌آید.</em>
-                </h2>
-              </div>
-              <div>
-                <p>
-                  اگر بین دو مدل مردد هستید یا درباره اصالت، نگهداری و تفاوت گروه‌های محصول سؤال دارید، مجله سپید برای همین است. مطالب تاریخ بازبینی و منبع دارند و قرار نیست جای تصمیم پزشکی را بگیرند.
-                </p>
-                <Link className="sb-text-link" href="/magazine">
-                  رفتن به مجله سپید
-                  <ArrowIcon />
-                </Link>
-              </div>
-            </div>
-            <div className="sb-article-grid">
-              {[
-                articles.find(
-                  (article) => article.slug === "botulinum-cold-chain-checklist",
-                )!,
-                ...articles.slice(0, 2),
-              ].map((article) => (
-                <ArticleCard article={article} key={article.slug} />
-              ))}
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <section className="sb-section sb-brands-home">
-        <div className="sb-shell">
-          <span className="sb-eyebrow">برندهای موجود</span>
-          <div className="sb-brands-home__row">
-            {homeBrands.map((brand) => (
-              <Link href={brand.href} key={brand.label}>
-                {brand.label}
-              </Link>
-            ))}
-          </div>
-          <Link className="sb-text-link" href="/brands">
-            دیدن محصولات بر اساس برند
-            <ArrowIcon />
+      <section className="halo-quick" aria-label="مسیرهای سریع انتخاب محصول">
+        <div className="halo-shell halo-quick__grid">
+          <Link className="halo-quick-card" href="/shop">
+            <div><strong>اسم محصولم را می‌دانم</strong><small>جستجوی سریع محصول ←</small></div>
+            <img src={heroImage || "/images/product-fillers-v2.webp"} alt="" width="120" height="120" loading="lazy" />
+          </Link>
+          <Link className="halo-quick-card" href="/guides/dermal-fillers">
+            <div><strong>بین دو مدل مرددم</strong><small>مقایسه و راهنمای انتخاب ←</small></div>
+            <img src="/images/drive/category-fillers.webp" alt="" width="120" height="120" loading="lazy" />
+          </Link>
+          <Link className="halo-quick-card" href="/concerns/volume-loss">
+            <div><strong>براساس کاربرد می‌خواهم</strong><small>شروع از نیاز و دغدغه ←</small></div>
+            <img src="/images/drive/category-skinbooster.webp" alt="" width="120" height="120" loading="lazy" />
+          </Link>
+          <Link className="halo-quick-card" href={whatsappHref()}>
+            <div><strong>نیاز به راهنمایی دارم</strong><small>دریافت مشاوره ←</small></div>
+            <img src="/images/hero-editorial-portrait.webp" alt="" width="120" height="120" loading="lazy" />
           </Link>
         </div>
       </section>
 
-      <Reveal>
-        <section className="sb-section sb-faq-section">
-          <div className="sb-shell sb-faq-section__grid">
-            <div>
-              <span className="sb-eyebrow">پاسخ به سؤال‌های رایج</span>
-              <h2>چند سؤال رایج قبل از خرید</h2>
-              <p>اگر جواب چیزی را اینجا پیدا نکردید، مستقیم از تیم سپید بپرسید.</p>
-              <Link className="sb-text-link" href="/contact">
-                سؤال دیگری دارید؟
-                <ArrowIcon />
-              </Link>
-            </div>
-            <FaqList items={faqs} />
+      <section className="halo-section" id="featured-products">
+        <div className="halo-shell">
+          <div className="halo-section-head">
+            <div><span className="halo-eyebrow">FEATURED PRODUCTS</span><h2>محصولات منتخب سپید بیوتی</h2></div>
+            <Link className="halo-text-link" href="/shop">مشاهده همه محصولات ←</Link>
           </div>
-        </section>
-      </Reveal>
+          <div className="halo-product-rail">
+            {featuredProducts.map((product) => {
+              const price = Number(product.salePrice || product.regularPrice || product.price || product.priceToman);
+              return (
+                <Link className="halo-product-card" href={`/product/${product.slug}`} key={product.slug}>
+                  <div className="halo-product-card__image">
+                    <span className="halo-product-card__badge">{product.stockStatus === "instock" ? "موجود" : "استعلام موجودی"}</span>
+                    <img src={product.image || "/images/product-category-panorama.webp"} alt={product.imageAlt || product.nameFa || product.nameEn} width="520" height="520" loading="lazy" decoding="async" />
+                  </div>
+                  <div className="halo-product-card__body">
+                    <span className="halo-product-card__brand">{getCompactBrandLabel(product.brand) || product.categoryTitle || "Sepiid Beauty"}</span>
+                    <h3>{product.nameFa || product.nameEn}</h3>
+                    <div className="halo-product-card__meta">{[product.volume, product.categoryTitle].filter(Boolean).join(" · ")}</div>
+                    <div className="halo-product-card__foot">
+                      <span className="halo-product-card__price">{Number.isFinite(price) && price > 0 ? formatToman(price) : "استعلام قیمت"}</span>
+                      <span className="halo-product-card__go">←</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
+      <section className="halo-authenticity" id="trust">
+        <img className="halo-authenticity__bg" src="/images/magazine-authenticity-v2.webp" alt="بررسی اصالت و مشخصات بسته محصول" width="1400" height="900" loading="lazy" />
+        <div className="halo-shell halo-authenticity__grid">
+          <div>
+            <span className="halo-eyebrow">SCIENCE · AUTHENTICITY · SAFER BEAUTY</span>
+            <h2>اصالت فقط یک برچسب نیست</h2>
+            <p>ما مدل، بسته‌بندی، اطلاعات بچ‌کد و منبع تأمین را شفاف‌تر می‌کنیم تا قبل از سفارش دقیقاً بدانید چه محصولی را بررسی می‌کنید.</p>
+            <Link className="halo-btn" href="/magazine/verify-dermal-filler-authenticity">اطلاعات بیشتر ←</Link>
+          </div>
+          <div className="halo-authenticity__checks">
+            {["بررسی بچ‌کد و اطلاعات بسته", "بسته‌بندی و شرایط نگهداری", "منبع تأمین و زنجیره توزیع", "اطلاعات کامل مدل و حجم"].map((item) => <span key={item}><i>✓</i>{item}</span>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="halo-concerns">
+        <div className="halo-shell">
+          <div className="halo-section-head">
+            <div><span className="halo-eyebrow">BY CONCERN</span><h2>براساس دغدغه انتخاب کنید</h2></div>
+            <p>به‌جای شروع از اسم برند، می‌توانید از مسئله‌ای که می‌خواهید بهتر بشناسید شروع کنید.</p>
+          </div>
+          <div className="halo-concern-grid">
+            {concerns.map(([title, href, image]) => (
+              <Link className="halo-concern-card" href={href} key={title}>
+                <img src={image} alt="" width="560" height="420" loading="lazy" />
+                <span>{title}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="halo-categories">
+        <div className="halo-shell">
+          <div className="halo-section-head">
+            <div><span className="halo-eyebrow">SHOP BY CATEGORY</span><h2>دسته‌بندی‌های اصلی</h2></div>
+            <Link className="halo-text-link" href="/shop">ورود به فروشگاه ←</Link>
+          </div>
+          <div className="halo-category-grid">
+            {categories.slice(0, 6).map((category) => (
+              <Link className="halo-category-card" href={`/shop/${category.slug}`} key={category.slug}>
+                <strong>{category.title}</strong><small>مشاهده مدل‌ها و قیمت‌ها</small>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="halo-clinic">
+        <div className="halo-shell halo-clinic__card">
+          <div className="halo-clinic__image"><img src="/images/professional-clinic-v2.webp" alt="تأمین محصولات حرفه‌ای برای کلینیک‌ها" width="1200" height="900" loading="lazy" /></div>
+          <div className="halo-clinic__copy">
+            <span className="halo-eyebrow">FOR PROFESSIONALS</span>
+            <h2>خرید حرفه‌ای برای پزشکان و کلینیک‌ها</h2>
+            <p>چند قلم محصول را یک‌جا بفرستید تا مدل، تعداد، موجودی، قیمت و زمان تحویل هر قلم در یک مسیر روشن پیگیری شود.</p>
+            <Link className="halo-btn halo-btn--dark" href="/professional">سفارش کلینیکی ←</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="halo-section halo-section--soft">
+        <div className="halo-shell">
+          <div className="halo-section-head">
+            <div><span className="halo-eyebrow">SELECTED BRANDS</span><h2>برندهای موجود در سپید</h2></div>
+            <Link className="halo-text-link" href="/brands">مشاهده برندها ←</Link>
+          </div>
+          <div className="halo-brand-row">
+            {brandLabels.map((label) => <Link className="halo-brand-pill" href="/brands" key={label}>{label}</Link>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="halo-section">
+        <div className="halo-shell halo-faq">
+          <div><span className="halo-eyebrow">BEFORE YOU BUY</span><div className="halo-section-head"><div><h2>قبل از خرید، واضح‌تر تصمیم بگیرید</h2></div></div></div>
+          <div className="halo-faq__list">
+            {faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

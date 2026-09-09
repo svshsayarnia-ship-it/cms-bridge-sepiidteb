@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
+import "./home-halo.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
 import "./category-commerce-hero.css";
