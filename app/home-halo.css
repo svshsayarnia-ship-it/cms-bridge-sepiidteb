@@ -1,0 +1,928 @@
+/* Sepiid Beauty — Halo/Vivid-inspired homepage skin */
+
+.halo-home {
+  --halo-ink: #161b1a;
+  --halo-muted: #6d716e;
+  --halo-line: rgba(24, 31, 29, 0.10);
+  --halo-ivory: #f7f2eb;
+  --halo-cream: #efe6dc;
+  --halo-card: rgba(255, 255, 255, 0.72);
+  --halo-dark: #071d19;
+  background: #fbf8f4;
+  color: var(--halo-ink);
+  overflow: clip;
+}
+
+body:has(.halo-home) {
+  background: #fbf8f4;
+}
+
+body:has(.halo-home) .sb-trustbar,
+body:has(.halo-home) .sb-global-contact {
+  display: none;
+}
+
+body:has(.halo-home) .sb-header {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  border-bottom: 1px solid rgba(20, 29, 27, 0.08);
+  background: rgba(251, 248, 244, 0.90);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: none;
+}
+
+body:has(.halo-home) .sb-header__primary {
+  min-height: 70px;
+}
+
+body:has(.halo-home) .sb-brand__mark {
+  background: transparent;
+  box-shadow: none;
+}
+
+body:has(.halo-home) .sb-brand strong {
+  letter-spacing: .08em;
+}
+
+body:has(.halo-home) .sb-header-search {
+  border-color: rgba(24, 31, 29, 0.08);
+  background: rgba(237, 232, 226, 0.72);
+  box-shadow: none;
+}
+
+body:has(.halo-home) .sb-header__nav-wrap {
+  border-top: 1px solid rgba(24, 31, 29, 0.05);
+  background: rgba(251, 248, 244, 0.76);
+}
+
+body:has(.halo-home) .sb-nav {
+  min-height: 44px;
+}
+
+.halo-shell {
+  width: min(1440px, calc(100% - 64px));
+  margin-inline: auto;
+}
+
+.halo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #68706c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+.halo-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  opacity: .45;
+}
+
+.halo-hero {
+  position: relative;
+  min-height: 650px;
+  border-bottom: 1px solid var(--halo-line);
+  background:
+    radial-gradient(circle at 75% 30%, rgba(255,255,255,.98) 0 13%, rgba(255,255,255,.25) 35%, transparent 58%),
+    radial-gradient(circle at 47% 18%, rgba(232,218,208,.72), transparent 36%),
+    linear-gradient(115deg, #fbf8f4 0%, #f4ede7 47%, #eee4dc 100%);
+  overflow: hidden;
+}
+
+.halo-hero::before,
+.halo-hero::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.halo-hero::before {
+  width: 560px;
+  height: 560px;
+  right: 8%;
+  top: -120px;
+  border: 1px solid rgba(255,255,255,.65);
+  box-shadow: inset 0 0 90px rgba(255,255,255,.68), 0 40px 100px rgba(130,110,95,.08);
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.88), rgba(255,255,255,.08) 60%);
+}
+
+.halo-hero::after {
+  width: 430px;
+  height: 210px;
+  right: 26%;
+  bottom: -55px;
+  transform: rotate(-9deg);
+  border: 1px solid rgba(255,255,255,.8);
+  background: linear-gradient(150deg, rgba(255,255,255,.72), rgba(230,218,208,.22));
+  box-shadow: inset 0 20px 55px rgba(255,255,255,.7);
+}
+
+.halo-hero__grid {
+  position: relative;
+  z-index: 2;
+  min-height: 650px;
+  display: grid;
+  grid-template-columns: .82fr 1.18fr;
+  align-items: center;
+  gap: 30px;
+  direction: ltr;
+}
+
+.halo-hero__copy {
+  position: relative;
+  z-index: 4;
+  direction: rtl;
+  padding-block: 76px 112px;
+  max-width: 520px;
+}
+
+.halo-hero__copy h1 {
+  margin: 22px 0 18px;
+  font-size: clamp(42px, 4.4vw, 72px);
+  line-height: 1.08;
+  letter-spacing: -.045em;
+  font-weight: 820;
+  text-wrap: balance;
+}
+
+.halo-hero__copy p {
+  max-width: 460px;
+  margin: 0;
+  color: #4f5652;
+  font-size: 17px;
+  line-height: 2;
+}
+
+.halo-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.halo-btn {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #17201e;
+  border-radius: 999px;
+  padding: 0 23px;
+  font-size: 14px;
+  font-weight: 760;
+  transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
+}
+
+.halo-btn:hover {
+  transform: translateY(-2px);
+}
+
+.halo-btn--dark {
+  color: white;
+  background: #15201e;
+  box-shadow: 0 10px 25px rgba(8, 22, 19, .12);
+}
+
+.halo-btn--ghost {
+  background: rgba(255,255,255,.44);
+  color: #17201e;
+}
+
+.halo-hero__visual {
+  position: relative;
+  min-height: 560px;
+  direction: rtl;
+  display: grid;
+  place-items: center;
+}
+
+.halo-hero__product-stage {
+  position: relative;
+  width: min(660px, 94%);
+  aspect-ratio: 1.35 / 1;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.halo-hero__product-stage::before {
+  content: "";
+  position: absolute;
+  inset: 11% 2% 7% 8%;
+  border-radius: 48% 52% 44% 56% / 45% 36% 64% 55%;
+  background: linear-gradient(130deg, rgba(255,255,255,.75), rgba(232,222,215,.28));
+  border: 1px solid rgba(255,255,255,.78);
+  box-shadow: inset 25px 20px 70px rgba(255,255,255,.82), inset -25px -20px 80px rgba(170,150,135,.08), 0 32px 80px rgba(93,72,58,.10);
+  transform: rotate(8deg);
+  z-index: -1;
+}
+
+.halo-hero__product-stage img {
+  width: 84%;
+  height: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 34px 28px rgba(55, 39, 30, .18));
+  animation: haloFloat 7s ease-in-out infinite;
+}
+
+@keyframes haloFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  50% { transform: translate3d(0, -10px, 0) rotate(1deg); }
+}
+
+.halo-hero__product-meta {
+  position: absolute;
+  right: 4%;
+  bottom: 9%;
+  max-width: 230px;
+  padding: 13px 16px;
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 18px;
+  background: rgba(255,255,255,.54);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 15px 35px rgba(52,40,33,.08);
+}
+
+.halo-hero__product-meta strong,
+.halo-hero__product-meta small {
+  display: block;
+}
+
+.halo-hero__product-meta strong {
+  font-size: 13px;
+}
+
+.halo-hero__product-meta small {
+  margin-top: 3px;
+  color: #6f756f;
+  font-size: 11px;
+}
+
+.halo-hero__sidecopy {
+  position: absolute;
+  right: 2%;
+  top: 25%;
+  color: #555d58;
+  font-size: 10px;
+  line-height: 1.8;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  writing-mode: horizontal-tb;
+}
+
+.halo-hero__pager {
+  position: absolute;
+  left: 0;
+  bottom: 54px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  direction: ltr;
+}
+
+.halo-hero__pager span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(22,27,26,.14);
+  border-radius: 50%;
+  font-size: 12px;
+  background: rgba(255,255,255,.35);
+}
+
+.halo-hero__pager span:first-child {
+  background: #16201e;
+  color: white;
+}
+
+.halo-proof {
+  position: relative;
+  z-index: 5;
+  margin-top: -86px;
+}
+
+.halo-proof__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  min-height: 86px;
+  border-top: 1px solid rgba(24,31,29,.08);
+}
+
+.halo-proof__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  color: #363d39;
+  font-size: 12px;
+}
+
+.halo-proof__item + .halo-proof__item {
+  border-right: 1px solid rgba(24,31,29,.08);
+}
+
+.halo-proof__icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(24,31,29,.12);
+  border-radius: 50%;
+  background: rgba(255,255,255,.38);
+  font-size: 16px;
+}
+
+.halo-quick {
+  padding: 34px 0 26px;
+  background: #fcfaf7;
+}
+
+.halo-quick__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.halo-quick-card {
+  position: relative;
+  min-height: 126px;
+  display: grid;
+  grid-template-columns: 1fr 92px;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px 18px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(24,31,29,.07);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(246,241,235,.95), rgba(255,255,255,.8));
+  box-shadow: 0 10px 30px rgba(51,39,31,.035);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.halo-quick-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(24,31,29,.14);
+  box-shadow: 0 18px 38px rgba(51,39,31,.07);
+}
+
+.halo-quick-card strong,
+.halo-quick-card small {
+  display: block;
+}
+
+.halo-quick-card strong {
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.halo-quick-card small {
+  margin-top: 8px;
+  color: #777b77;
+  font-size: 11px;
+}
+
+.halo-quick-card img {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  align-self: end;
+  filter: drop-shadow(0 9px 12px rgba(33,28,25,.08));
+}
+
+.halo-section {
+  padding: 72px 0;
+}
+
+.halo-section--soft {
+  background: #f8f3ed;
+}
+
+.halo-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.halo-section-head h2 {
+  margin: 8px 0 0;
+  font-size: clamp(29px, 3vw, 43px);
+  line-height: 1.2;
+  letter-spacing: -.035em;
+}
+
+.halo-section-head p {
+  max-width: 470px;
+  margin: 0;
+  color: var(--halo-muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.halo-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #242b28;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.halo-product-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.halo-product-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(24,31,29,.07);
+  border-radius: 22px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 12px 30px rgba(58,46,38,.04);
+  transition: transform .28s ease, box-shadow .28s ease;
+}
+
+.halo-product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 44px rgba(58,46,38,.08);
+}
+
+.halo-product-card__image {
+  position: relative;
+  height: 255px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(155deg, #f6f0ea, #fbf8f4);
+}
+
+.halo-product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform .35s ease;
+}
+
+.halo-product-card:hover .halo-product-card__image img {
+  transform: scale(1.035);
+}
+
+.halo-product-card__badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.76);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  color: #4e5652;
+  font-size: 10px;
+}
+
+.halo-product-card__body {
+  padding: 17px 18px 18px;
+}
+
+.halo-product-card__brand {
+  color: #777e79;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.halo-product-card h3 {
+  margin: 5px 0 6px;
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 47px;
+}
+
+.halo-product-card__meta {
+  min-height: 23px;
+  color: #7b817d;
+  font-size: 11px;
+}
+
+.halo-product-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.halo-product-card__price {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.halo-product-card__go {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(24,31,29,.12);
+  border-radius: 50%;
+  background: #fff;
+  transition: background .2s ease, color .2s ease;
+}
+
+.halo-product-card:hover .halo-product-card__go {
+  background: #17201e;
+  color: #fff;
+}
+
+.halo-authenticity {
+  position: relative;
+  min-height: 390px;
+  color: #f5f4ef;
+  background: var(--halo-dark);
+  overflow: hidden;
+}
+
+.halo-authenticity::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 72% 50%, rgba(54,102,88,.24), transparent 30%), linear-gradient(90deg, rgba(4,21,18,.98) 0%, rgba(4,21,18,.78) 48%, rgba(4,21,18,.36) 100%);
+  z-index: 1;
+}
+
+.halo-authenticity__bg {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 58%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .65;
+  filter: saturate(.65) contrast(1.08);
+}
+
+.halo-authenticity__grid {
+  position: relative;
+  z-index: 2;
+  min-height: 390px;
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  align-items: center;
+  gap: 60px;
+}
+
+.halo-authenticity h2 {
+  margin: 14px 0 14px;
+  font-size: clamp(34px, 4vw, 54px);
+  letter-spacing: -.04em;
+}
+
+.halo-authenticity p {
+  max-width: 560px;
+  margin: 0 0 24px;
+  color: rgba(255,255,255,.72);
+  line-height: 2;
+}
+
+.halo-authenticity .halo-btn {
+  border-color: rgba(255,255,255,.72);
+  color: white;
+  background: transparent;
+}
+
+.halo-authenticity__checks {
+  display: grid;
+  gap: 14px;
+  justify-self: end;
+  width: min(100%, 390px);
+}
+
+.halo-authenticity__checks span {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 15px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(4,18,16,.30);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+}
+
+.halo-authenticity__checks i {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 50%;
+  font-style: normal;
+}
+
+.halo-concerns {
+  padding: 64px 0 76px;
+  background: #fbf8f4;
+}
+
+.halo-concern-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.halo-concern-card {
+  position: relative;
+  min-height: 176px;
+  overflow: hidden;
+  border-radius: 18px;
+  isolation: isolate;
+  background: #e7ddd4;
+}
+
+.halo-concern-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent 36%, rgba(15,20,18,.68) 100%);
+}
+
+.halo-concern-card img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .4s ease;
+}
+
+.halo-concern-card:hover img {
+  transform: scale(1.055);
+}
+
+.halo-concern-card span {
+  position: absolute;
+  right: 15px;
+  left: 15px;
+  bottom: 14px;
+  color: white;
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.6;
+}
+
+.halo-categories {
+  padding: 68px 0;
+  background: #f3ece5;
+}
+
+.halo-category-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.halo-category-card {
+  padding: 17px 14px;
+  border: 1px solid rgba(24,31,29,.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,.58);
+  transition: transform .22s ease, background .22s ease;
+}
+
+.halo-category-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255,255,255,.86);
+}
+
+.halo-category-card strong,
+.halo-category-card small {
+  display: block;
+}
+
+.halo-category-card strong {
+  font-size: 13px;
+}
+
+.halo-category-card small {
+  margin-top: 5px;
+  color: #7a7f7b;
+  font-size: 10px;
+}
+
+.halo-clinic {
+  padding: 82px 0;
+  background: #fcfaf7;
+}
+
+.halo-clinic__card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid rgba(24,31,29,.07);
+  border-radius: 28px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(50,39,31,.06);
+}
+
+.halo-clinic__image {
+  min-height: 360px;
+  background: #e9e0d8;
+}
+
+.halo-clinic__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.halo-clinic__copy {
+  align-self: center;
+  padding: 48px;
+}
+
+.halo-clinic__copy h2 {
+  margin: 12px 0 14px;
+  font-size: clamp(30px, 3.4vw, 48px);
+  line-height: 1.25;
+}
+
+.halo-clinic__copy p {
+  color: #676d69;
+  line-height: 2;
+}
+
+.halo-brand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.halo-brand-pill {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid rgba(24,31,29,.09);
+  border-radius: 999px;
+  background: rgba(255,255,255,.58);
+  color: #3c433f;
+  font-size: 12px;
+}
+
+.halo-faq {
+  display: grid;
+  grid-template-columns: .7fr 1.3fr;
+  gap: 60px;
+}
+
+.halo-faq__list {
+  border-top: 1px solid rgba(24,31,29,.10);
+}
+
+.halo-faq details {
+  border-bottom: 1px solid rgba(24,31,29,.10);
+  padding: 17px 0;
+}
+
+.halo-faq summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.halo-faq details p {
+  margin: 12px 0 0;
+  color: #6c726e;
+  line-height: 1.9;
+}
+
+@media (max-width: 1100px) {
+  .halo-shell { width: min(100% - 40px, 1040px); }
+  .halo-hero__grid { grid-template-columns: .9fr 1.1fr; }
+  .halo-hero__copy h1 { font-size: clamp(38px, 5vw, 57px); }
+  .halo-product-rail { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .halo-concern-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .halo-category-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+
+@media (max-width: 820px) {
+  body:has(.halo-home) .sb-header__primary { min-height: 62px; }
+  body:has(.halo-home) .sb-header__nav-wrap { background: #fbf8f4; }
+  .halo-shell { width: min(100% - 28px, 760px); }
+  .halo-hero { min-height: auto; }
+  .halo-hero::before { width: 360px; height: 360px; right: -80px; top: 250px; }
+  .halo-hero::after { width: 290px; height: 130px; right: 24%; }
+  .halo-hero__grid {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    direction: rtl;
+  }
+  .halo-hero__copy {
+    width: 100%;
+    max-width: none;
+    padding: 48px 0 14px;
+    text-align: center;
+  }
+  .halo-hero__copy p { margin-inline: auto; }
+  .halo-hero__actions { justify-content: center; }
+  .halo-hero__visual { width: 100%; min-height: 390px; }
+  .halo-hero__product-stage { width: min(560px, 100%); }
+  .halo-hero__product-meta { right: 7%; bottom: 4%; }
+  .halo-hero__sidecopy { display: none; }
+  .halo-hero__pager { left: 50%; bottom: 10px; transform: translateX(-50%); }
+  .halo-proof { margin-top: 0; border-top: 1px solid var(--halo-line); }
+  .halo-proof__grid { grid-template-columns: repeat(2, 1fr); }
+  .halo-proof__item + .halo-proof__item { border-right: 0; }
+  .halo-proof__item:nth-child(even) { border-right: 1px solid rgba(24,31,29,.08); }
+  .halo-quick__grid { grid-template-columns: repeat(2, 1fr); }
+  .halo-section-head { align-items: start; flex-direction: column; }
+  .halo-authenticity__grid { grid-template-columns: 1fr; gap: 24px; padding-block: 54px; }
+  .halo-authenticity__checks { justify-self: stretch; width: 100%; grid-template-columns: repeat(2, 1fr); }
+  .halo-authenticity__bg { width: 100%; opacity: .30; }
+  .halo-clinic__card { grid-template-columns: 1fr; }
+  .halo-clinic__image { min-height: 280px; }
+  .halo-faq { grid-template-columns: 1fr; gap: 26px; }
+}
+
+@media (max-width: 620px) {
+  .halo-shell { width: calc(100% - 24px); }
+  .halo-hero__copy { padding-top: 36px; }
+  .halo-hero__copy h1 { font-size: 37px; }
+  .halo-hero__copy p { font-size: 14px; line-height: 1.9; }
+  .halo-hero__actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .halo-btn { min-height: 46px; padding-inline: 14px; font-size: 12px; }
+  .halo-hero__visual { min-height: 330px; }
+  .halo-hero__product-stage { aspect-ratio: 1.15 / 1; }
+  .halo-hero__product-stage img { width: 90%; height: 78%; }
+  .halo-hero__product-meta { right: 4%; left: 4%; bottom: 2%; max-width: none; }
+  .halo-proof__grid { grid-template-columns: 1fr 1fr; }
+  .halo-proof__item { padding: 13px 9px; gap: 8px; font-size: 10px; }
+  .halo-proof__icon { width: 32px; height: 32px; }
+  .halo-quick { padding-top: 22px; }
+  .halo-quick__grid { grid-template-columns: 1fr; gap: 10px; }
+  .halo-quick-card { min-height: 102px; grid-template-columns: 1fr 78px; padding-block: 11px; }
+  .halo-quick-card img { width: 76px; height: 76px; }
+  .halo-section { padding: 52px 0; }
+  .halo-section-head h2 { font-size: 30px; }
+  .halo-product-rail {
+    display: flex;
+    gap: 12px;
+    margin-inline: -12px;
+    padding-inline: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .halo-product-rail::-webkit-scrollbar { display: none; }
+  .halo-product-card { min-width: min(79vw, 300px); scroll-snap-align: start; }
+  .halo-product-card__image { height: 230px; }
+  .halo-authenticity h2 { font-size: 34px; }
+  .halo-authenticity__checks { grid-template-columns: 1fr; }
+  .halo-concern-grid {
+    display: flex;
+    gap: 10px;
+    margin-inline: -12px;
+    padding-inline: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .halo-concern-grid::-webkit-scrollbar { display: none; }
+  .halo-concern-card { min-width: 62vw; scroll-snap-align: start; }
+  .halo-category-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .halo-clinic { padding: 50px 0; }
+  .halo-clinic__copy { padding: 28px 22px 32px; }
+  .halo-clinic__copy h2 { font-size: 31px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo-hero__product-stage img { animation: none; }
+  .halo-quick-card,
+  .halo-product-card,
+  .halo-product-card__image img,
+  .halo-concern-card img,
+  .halo-category-card,
+  .halo-btn { transition: none; }
+}
