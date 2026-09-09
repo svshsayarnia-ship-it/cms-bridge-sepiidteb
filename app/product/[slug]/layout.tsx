@@ -129,6 +129,7 @@ export default async function ProductDetailLayout({
   const verifiedFallback = getVerifiedSourceFallback(slug);
   const normalizedSlug = slug.trim().toLowerCase();
   const isNeuramisProduct = normalizedSlug.startsWith("neuramis");
+  const isDystonProduct = normalizedSlug.startsWith("dyston");
   const isRevofilProduct = normalizedSlug.startsWith("revofil");
   const isJaluproProduct = normalizedSlug.startsWith("jalupro");
 
@@ -164,11 +165,13 @@ export default async function ProductDetailLayout({
         >
           <div className="sb-shell sb-product-info-section__grid">
             <div>
-              <h2 id="neuramis-pack-guide-title">نورامیس ۱۰ سی‌سی یعنی چه؟</h2>
+              <h2 id="neuramis-pack-guide-title">
+                قیمت فیلر نورامیس؛ تکی یا بسته ۱۰ سی‌سی؟
+              </h2>
               <p>
-                اگر بین قیمت یک سرنگ و بسته ۱۰ عددی مردد هستید، اول تعداد سرنگ و
-                حجم هر واحد را مشخص کنید؛ «۱۰ سی‌سی» همیشه به معنی یک سرنگ بزرگ
-                نیست.
+                اگر برای «قیمت فیلر نورامیس» جست‌وجو کرده‌اید، قبل از مقایسه عدد
+                قیمت، نام مدل، تعداد سرنگ و حجم هر واحد را مشخص کنید؛ «۱۰ سی‌سی»
+                همیشه به معنی یک سرنگ بزرگ نیست.
               </p>
             </div>
             <div className="sb-article-parent-guide">
@@ -176,6 +179,36 @@ export default async function ProductDetailLayout({
               <Link href="/magazine/neuramis-10ml-pack-guide">
                 تفاوت بسته ۱۰ × ۱ میلی‌لیتر با نورامیس تکی
               </Link>
+              <Link href="/professional">استعلام قیمت برای خرید کلینیکی</Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isDystonProduct ? (
+        <section
+          className="sb-section sb-product-info-section"
+          id="dyston-price-guide"
+          aria-labelledby="dyston-price-guide-title"
+        >
+          <div className="sb-shell sb-product-info-section__grid">
+            <div>
+              <h2 id="dyston-price-guide-title">
+                قیمت بوتاکس دیستون؛ مدل و تعداد واحد را با همان بسته تطبیق دهید
+              </h2>
+              <p>
+                برای استعلام «قیمت بوتاکس دیستون»، قیمت را فقط برای مدل و تعداد
+                واحد یکسان مقایسه کنید. مشخصات بسته، مجوز، شرایط نگهداری و منبع
+                تأمین باید برای همان موجودی بررسی شوند و از نام محصول به‌تنهایی
+                نمی‌توان اصالت یا شرایط نگهداری را نتیجه گرفت.
+              </p>
+            </div>
+            <div className="sb-article-parent-guide">
+              <span>مسیر خرید دیستون</span>
+              <Link href="/shop/botulinum-toxins">
+                مقایسه فرآورده‌های بوتولینوم
+              </Link>
+              <Link href="/professional">استعلام موجودی و قیمت کلینیکی</Link>
             </div>
           </div>
         </section>
