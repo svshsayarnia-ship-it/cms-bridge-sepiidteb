@@ -10,6 +10,7 @@ type HeroTreatment = {
   id: string;
   label: string;
   result: string;
+  href: string;
   image: string;
   alt: string;
 };
@@ -19,6 +20,7 @@ const HERO_TREATMENTS: HeroTreatment[] = [
     id: "filler",
     label: "فیلرها",
     result: "حجم‌دهی متعادل لب و صورت",
+    href: "/shop/fillers",
     image: "/images/hero-treatments/filler-before-after.webp",
     alt: "تغییر ظریف حجم لب و صورت پس از استفاده از فیلر",
   },
@@ -26,6 +28,7 @@ const HERO_TREATMENTS: HeroTreatment[] = [
     id: "botox",
     label: "بوتاکس‌ها",
     result: "ظاهر آرام‌تر و لیفت ملایم ابرو",
+    href: "/shop/botulinum-toxins",
     image: "/images/hero-treatments/botox-before-after.webp",
     alt: "تغییر ظریف پیشانی و ابرو پس از بوتاکس",
   },
@@ -33,6 +36,7 @@ const HERO_TREATMENTS: HeroTreatment[] = [
     id: "mesogel",
     label: "مزوژل‌ها",
     result: "پوست شاداب‌تر و درخشان‌تر",
+    href: "/shop/skin-boosters",
     image: "/images/hero-treatments/mesogel-before-after.webp",
     alt: "تغییر شفافیت و شادابی پوست پس از مزوژل",
   },
@@ -40,13 +44,14 @@ const HERO_TREATMENTS: HeroTreatment[] = [
     id: "cocktail",
     label: "کوکتل‌ها",
     result: "پوست یکدست‌تر و موهای پُرتر",
+    href: "/shop/rejuvenation-cocktails",
     image: "/images/hero-treatments/cocktail-before-after.webp",
     alt: "تغییر ظریف تراکم مو و یکدستی پوست پس از کوکتل تخصصی",
   },
 ];
 
 export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["hero"] }) {
-  const treatmentRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const treatmentRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const activeTreatment = activeIndex === null ? null : HERO_TREATMENTS[activeIndex];
 
@@ -123,20 +128,18 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
                 const style = { "--sb-treatment-portrait": `url(${treatment.image})` } as CSSProperties;
 
                 return (
-                  <button
+                  <Link
                     key={treatment.id}
                     ref={(element) => {
                       treatmentRefs.current[index] = element;
                     }}
-                    type="button"
+                    href={treatment.href}
                     className={`sb-hero__treatment${isActive ? " sb-hero__treatment--active" : ""}`}
-                    aria-label={`${treatment.label}: ${treatment.result}. برای دیدن تغییر، انتخاب کنید.`}
-                    aria-pressed={isActive}
+                    aria-label={`${treatment.label}: ${treatment.result}. ورود به دسته ${treatment.label}`}
                     onPointerEnter={(event) => {
                       if (event.pointerType !== "touch") setActiveIndex(index);
                     }}
                     onFocus={() => setActiveIndex(index)}
-                    onClick={() => setActiveIndex(index)}
                   >
                     <span className="sb-hero__face" style={style} aria-hidden="true">
                       <span className="sb-hero__face-before" />
@@ -144,8 +147,8 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
                       <span className="sb-hero__face-gloss" />
                     </span>
                     <span className="sb-hero__treatment-label">{treatment.label}</span>
-                    <span className="sb-hero__treatment-state">{isActive ? "نتیجه درمان" : "مشاهده تغییر"}</span>
-                  </button>
+                    <span className="sb-hero__treatment-state">{isActive ? "ورود به دسته" : "مشاهده و انتخاب"}</span>
+                  </Link>
                 );
               })}
             </div>
