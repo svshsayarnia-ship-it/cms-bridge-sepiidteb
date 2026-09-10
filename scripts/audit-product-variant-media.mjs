@@ -24,7 +24,8 @@ const skinSupport = await read("app/inventory/skin-support.ts");
 
 const requiredExperienceTokens = [
   "variantFallbackImages",
-  "selectedVariantHasDisplayMedia",
+  "selectedBundledImageIsUsable",
+  "canUseCmsVariantImage",
   "shouldUseNeutralVariantFallback",
   'selectedVariant?.imageKind === "editorial-family"',
   'selectedVariant?.imageKind === "market-reference"',
