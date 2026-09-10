@@ -926,3 +926,126 @@ body:has(.halo-home) .sb-nav {
   .halo-category-card,
   .halo-btn { transition: none; }
 }
+
+/* Approved Halo stage refinement: local pearl wave and fixed visual bays. */
+.halo-hero__product-stage { overflow: visible; }
+.halo-hero__product-stage .halo-hero__product-image {
+  position: relative;
+  z-index: 3;
+  width: 60%;
+  height: 72%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.halo-hero__product-stage .halo-hero__scene {
+  position: absolute;
+  z-index: 1;
+  width: 102%;
+  height: 88%;
+  object-fit: contain;
+  opacity: .34;
+  mix-blend-mode: multiply;
+  filter: saturate(.78) contrast(.96);
+  animation: none;
+  pointer-events: none;
+}
+.halo-hero__wave {
+  position: absolute;
+  z-index: 2;
+  width: 128%;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  filter: none;
+  animation: none;
+  pointer-events: none;
+}
+.halo-hero__wave--back { top: 17%; right: -15%; opacity: .57; transform: rotate(-7deg); }
+.halo-hero__wave--front { bottom: 0; left: -16%; opacity: .76; transform: rotate(-7deg) scaleY(.82); mix-blend-mode: screen; }
+.halo-hero__product-meta { z-index: 5; }
+.halo-hero__trust-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+  border-bottom: 1px solid rgba(22,27,26,.22);
+  color: #646b66;
+  font-size: 12px;
+}
+
+.halo-product-card__image {
+  height: 255px;
+  aspect-ratio: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #f4efea;
+}
+.halo-product-card[data-category="fillers"] .halo-product-card__image { background: #f2e4e5; }
+.halo-product-card[data-category="skin-boosters"] .halo-product-card__image { background: #e5eeee; }
+.halo-product-card[data-category="botulinum-toxins"] .halo-product-card__image { background: #ebe7f1; }
+.halo-product-card[data-category="rejuvenation-cocktails"] .halo-product-card__image { background: #eee3dc; }
+.halo-product-card[data-category="brightening-cocktails"] .halo-product-card__image { background: #eee9d8; }
+.halo-product-card[data-category="eye-cocktails"] .halo-product-card__image { background: #e8e3ee; }
+.halo-product-card[data-category="hair-cocktails"] .halo-product-card__image { background: #e8eadf; }
+.halo-product-card__image img { padding: 18px; box-sizing: border-box; }
+
+.halo-category-card {
+  position: relative;
+  min-height: 244px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #eadfd7;
+}
+.halo-category-card img { width: 100%; height: 100%; min-height: 244px; object-fit: cover; transition: transform .5s ease; }
+.halo-category-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(17,23,21,.68), transparent 62%); }
+.halo-category-card:hover img { transform: scale(1.04); }
+.halo-category-card > span { position: absolute; z-index: 1; right: 17px; bottom: 15px; left: 17px; color: #fff; }
+.halo-category-card strong, .halo-category-card small { display: block; }
+.halo-category-card strong { font-size: 14px; }
+.halo-category-card small { margin-top: 5px; color: rgba(255,255,255,.78); font-size: 10px; }
+.halo-category-card[data-category="fillers"] { background: #f2e4e5; }
+.halo-category-card[data-category="skin-boosters"] { background: #e5eeee; }
+.halo-category-card[data-category="botulinum-toxins"] { background: #ebe7f1; }
+.halo-category-card[data-category="rejuvenation-cocktails"] { background: #eee3dc; }
+.halo-category-card[data-category="brightening-cocktails"] { background: #eee9d8; }
+.halo-category-card[data-category="eye-cocktails"] { background: #e8e3ee; }
+.halo-category-card[data-category="hair-cocktails"] { background: #e8eadf; }
+
+.halo-brand-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-block: 1px solid var(--halo-line); }
+.halo-brand-pill { min-height: 88px; justify-content: center; border: 0; border-left: 1px solid var(--halo-line); border-radius: 0; background: #f3e4e4; font-size: 15px; transition: filter .2s ease, color .2s ease; }
+.halo-brand-pill:nth-child(2) { background: #e9eeee; }
+.halo-brand-pill:nth-child(3) { background: #ebe6f1; }
+.halo-brand-pill:nth-child(4) { background: #f1e9dc; }
+.halo-brand-pill:nth-child(5) { background: #e7eee8; }
+.halo-brand-pill:nth-child(6) { background: #eee6dc; }
+.halo-brand-pill:nth-child(7) { background: #e8e9f0; }
+.halo-brand-pill:nth-child(8) { background: #f1e4e1; }
+.halo-brand-pill:hover { filter: saturate(1.08); color: var(--halo-ink); }
+
+@media (max-width: 620px) {
+  .halo-hero__trust-link { margin-top: 13px; font-size: 11px; }
+  .halo-hero__product-stage .halo-hero__product-image { width: 66%; height: 72%; }
+  .halo-hero__product-stage .halo-hero__scene { width: 116%; height: 90%; opacity: .27; }
+  .halo-hero__wave { width: 158%; }
+  .halo-hero__wave--back { top: 20%; right: -28%; }
+  .halo-hero__wave--front { bottom: -3%; left: -30%; }
+  .halo-product-card__image { height: 230px; }
+  .halo-product-card__image img { padding: 16px; }
+  .halo-category-card, .halo-category-card img { min-height: 184px; }
+  .halo-category-card { border-radius: 15px; }
+  .halo-category-card > span { right: 11px; bottom: 11px; left: 10px; }
+  .halo-category-card strong { font-size: 12px; line-height: 1.55; }
+  .halo-category-card small { font-size: 9px; }
+  .halo-brand-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .halo-brand-pill { min-height: 72px; font-size: 13px; }
+  .halo-brand-pill:nth-child(odd) { border-right: 1px solid var(--halo-line); }
+  .halo-brand-pill:nth-child(n+3) { border-top: 1px solid var(--halo-line); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo-hero__product-stage .halo-hero__product-image,
+  .halo-hero__product-stage .halo-hero__scene,
+  .halo-hero__wave { animation: none; }
+  .halo-hero__trust-link, .halo-brand-pill { transition: none; }
+}

@@ -17,7 +17,7 @@ export function HaloHeroInteractions() {
 
     const visual = hero.querySelector<HTMLElement>(".halo-hero__visual");
     const stage = hero.querySelector<HTMLElement>(".halo-hero__product-stage");
-    const image = stage?.querySelector<HTMLImageElement>("img");
+    const image = stage?.querySelector<HTMLImageElement>(".halo-hero__product-image");
     const name = stage?.querySelector<HTMLElement>(".halo-hero__product-meta strong");
     const brand = stage?.querySelector<HTMLElement>(".halo-hero__product-meta small");
     const pager = Array.from(hero.querySelectorAll<HTMLElement>(".halo-hero__pager span"));

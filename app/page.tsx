@@ -18,6 +18,16 @@ const concerns = [
   ["ریزش مو و تقویت", "/concerns/hair-loss", "/images/drive/category-mesotherapy.webp"],
 ] as const;
 
+const categoryVisuals: Record<string, string> = {
+  fillers: "/images/drive/category-fillers.webp",
+  "skin-boosters": "/images/drive/category-skinbooster.webp",
+  "botulinum-toxins": "/images/drive/category-botox.webp",
+  "rejuvenation-cocktails": "/images/drive/hero-rejuvenation.webp",
+  "brightening-cocktails": "/images/drive/category-skin.webp",
+  "eye-cocktails": "/images/drive/category-mesotherapy.webp",
+  "hair-cocktails": "/images/product-hair-care-v2.webp",
+};
+
 const faqs = [
   [
     "قبل از سفارش، روی بسته محصول چه چیزهایی را چک کنم؟",
@@ -84,12 +94,14 @@ export default async function Home() {
               <Link className="halo-btn halo-btn--dark" href="/shop">مشاهده محصولات ←</Link>
               <Link className="halo-btn halo-btn--ghost" href={whatsappHref()}>استعلام قیمت</Link>
             </div>
+            <Link className="halo-hero__trust-link" href="#trust">چرا به سپید بیوتی اعتماد کنم؟ ←</Link>
           </div>
 
           <div className="halo-hero__visual" aria-label={heroName}>
             <div className="halo-hero__product-stage">
               {heroImage ? (
                 <img
+                  className="halo-hero__product-image"
                   src={heroImage}
                   alt={heroProduct?.imageAlt || heroName}
                   width="900"
@@ -98,6 +110,9 @@ export default async function Home() {
                   decoding="async"
                 />
               ) : null}
+              <img className="halo-hero__scene" src="/images/product-category-panorama.webp" alt="" width="1200" height="760" aria-hidden="true" />
+              <img className="halo-hero__wave halo-hero__wave--back" src="/images/hero-liquid-wave-v2.webp" alt="" width="1962" height="802" aria-hidden="true" />
+              <img className="halo-hero__wave halo-hero__wave--front" src="/images/hero-liquid-wave-v2.webp" alt="" width="1962" height="802" aria-hidden="true" />
               <div className="halo-hero__product-meta">
                 <strong>{heroName}</strong>
                 <small>{heroBrand} · انتخاب ویژه سپید</small>
@@ -151,8 +166,8 @@ export default async function Home() {
             {featuredProducts.map((product) => {
               const price = Number(product.salePrice || product.regularPrice || product.price || product.priceToman);
               return (
-                <Link className="halo-product-card" href={`/product/${product.slug}`} key={product.slug}>
-                  <div className="halo-product-card__image">
+                <Link className="halo-product-card" data-category={product.category} href={`/product/${product.slug}`} key={product.slug}>
+                    <div className="halo-product-card__image">
                     <span className="halo-product-card__badge">{product.stockStatus === "instock" ? "موجود" : "استعلام موجودی"}</span>
                     <img src={product.image || "/images/product-category-panorama.webp"} alt={product.imageAlt || product.nameFa || product.nameEn} width="520" height="520" loading="lazy" decoding="async" />
                   </div>
@@ -212,8 +227,9 @@ export default async function Home() {
           </div>
           <div className="halo-category-grid">
             {categories.slice(0, 6).map((category) => (
-              <Link className="halo-category-card" href={`/shop/${category.slug}`} key={category.slug}>
-                <strong>{category.title}</strong><small>مشاهده مدل‌ها و قیمت‌ها</small>
+                <Link className="halo-category-card" data-category={category.slug} href={`/shop/${category.slug}`} key={category.slug}>
+                <img src={categoryVisuals[category.slug] || category.image} alt="" width="520" height="380" loading="lazy" />
+                <span><strong>{category.title}</strong><small>مشاهده مدل‌ها و قیمت‌ها ←</small></span>
               </Link>
             ))}
           </div>
