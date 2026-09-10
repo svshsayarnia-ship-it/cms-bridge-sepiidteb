@@ -206,6 +206,9 @@ export function ProductVisual({
       style={visualStyle}
     >
       <span className="product-visual__background" aria-hidden="true" />
+      {showBackground && variant !== "hero" ? (
+        <span className="product-visual__glass" aria-hidden="true" />
+      ) : null}
       {image ? <span className="product-visual__stage">{image}</span> : null}
     </span>
   );
