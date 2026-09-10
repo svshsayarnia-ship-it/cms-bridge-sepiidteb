@@ -1,6 +1,7 @@
 /* Permanent Sepiid Beauty product image system.
-   Product assets are rendered only inside ProductVisual. Category art remains
-   sourced from the already-approved --category-* variables on the surrounding UI. */
+   Product assets are rendered only inside ProductVisual. Primary product
+   surfaces share one approved Sepiid stage so supplier/editorial backgrounds
+   never create a mixed visual language across cards, carousel and PDP. */
 
 .product-visual {
   position: relative;
@@ -53,8 +54,22 @@
   pointer-events: none;
 }
 
+/* One neutral, approved product stage for every customer-facing product image.
+   Tiny utility thumbnails stay transparent so search/header UI remains clean. */
+.product-visual--with-background.product-visual--card .product-visual__background,
+.product-visual--with-background.product-visual--detail .product-visual__background,
+.product-visual--with-background.product-visual--carousel .product-visual__background,
+.product-visual--with-background.product-visual--hero .product-visual__background {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 250, 242, 0.08)),
+    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover no-repeat,
+    #f7f5f2;
+}
+
 .product-visual:not(.product-visual--with-background),
-.product-visual:not(.product-visual--with-background) .product-visual__background {
+.product-visual:not(.product-visual--with-background) .product-visual__background,
+.product-visual--search .product-visual__background,
+.product-visual--thumbnail .product-visual__background {
   background: transparent !important;
 }
 
@@ -125,9 +140,8 @@
   transform: scale(1.015);
 }
 
-/* Existing category backgrounds intentionally remain on the surrounding
-   approved UI wrappers during this refactor. ProductVisual owns only product
-   asset geometry, so no category colour, artwork or gradient is duplicated. */
+/* Wrappers may still carry legacy/category decoration, but the opaque product
+   stage above is the single visual source seen behind every primary product. */
 :where(
     .sb-product-card__visual,
     .sb-product-gallery__main,
