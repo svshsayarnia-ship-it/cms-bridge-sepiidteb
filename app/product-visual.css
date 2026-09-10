@@ -1,6 +1,6 @@
-/* Permanent Sepiid Beauty product visual system.
-   Every primary product surface inherits the exact approved artwork of its
-   category. Product foregrounds are local transparent cutouts only. */
+/* Sepiid Beauty product visual system.
+   Parent category cards keep their original artwork. Child product surfaces
+   use the matching empty scene plus one local transparent cutout. */
 
 .product-visual {
   position: relative;
@@ -56,32 +56,14 @@
   transition: transform 260ms ease-out, opacity 220ms ease-out;
 }
 
-.product-visual__glass {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  pointer-events: none;
-  transition: background 240ms ease, border-color 240ms ease;
-}
-
-.product-visual__glass::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 38%);
-  content: "";
-}
-
 .product-visual--with-background:not(.product-visual--hero) .product-visual__stage {
   inset: 8% 8% 9%;
   z-index: 2;
 }
 
 
-/* Cards, PDP, carousel and product hero use the exact same category artwork
-   as the category cards. There is no generic product-stage background. */
+/* Child product surfaces share one category-matched empty scene.
+   There is no glass, safe-zone or secondary scene layer. */
 .product-visual--with-background.product-visual--card .product-visual__background,
 .product-visual--with-background.product-visual--detail .product-visual__background,
 .product-visual--with-background.product-visual--carousel .product-visual__background,
@@ -177,10 +159,6 @@
     transform: scale(1.04);
   }
 
-  .sb-product-card:hover .product-visual--with-background:not(.product-visual--hero) .product-visual__glass {
-    border-color: rgba(255, 255, 255, 0.17);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
-  }
 }
 
 :where(
@@ -197,8 +175,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .product-visual--with-background:not(.product-visual--hero) .product-visual__background,
-  .product-visual__glass {
+  .product-visual--with-background:not(.product-visual--hero) .product-visual__background {
     transition: none;
   }
 
