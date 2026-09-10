@@ -49,7 +49,7 @@
   pointer-events: none;
 }
 
-/* Keep the shared parent artwork clear; only the product-safe zone softens overlap. */
+/* Keep the shared category artwork clear; the foreground cutout has no extra scene layer. */
 .product-visual--with-background:not(.product-visual--hero) .product-visual__background {
   opacity: 0.94;
   transform: scale(1.02);
@@ -79,20 +79,6 @@
   z-index: 2;
 }
 
-.product-visual--with-background:not(.product-visual--hero) .product-visual__stage::before {
-  position: absolute;
-  inset: 10% 10% 0;
-  z-index: 0;
-  border-radius: 48%;
-  background: radial-gradient(
-    ellipse at center 58%,
-    rgba(255, 255, 255, 0.56) 0%,
-    rgba(255, 255, 255, 0.3) 38%,
-    rgba(255, 255, 255, 0) 76%
-  );
-  content: "";
-  pointer-events: none;
-}
 
 /* Cards, PDP, carousel and product hero use the exact same category artwork
    as the category cards. There is no generic product-stage background. */
