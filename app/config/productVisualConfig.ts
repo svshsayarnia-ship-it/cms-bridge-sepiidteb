@@ -3,14 +3,14 @@ import type { ProductVisualProfile } from "./visualProfiles";
 export type ProductVisualAnchor = "center-bottom";
 
 export const CATEGORY_ARTWORK: Record<string, string> = {
-  fillers: "/images/categories/boho-fillers.webp",
-  "skin-boosters": "/images/categories/boho-skin-boosters.webp",
-  "botulinum-toxins": "/images/categories/boho-botox-v2.webp",
-  "rejuvenation-cocktails": "/images/categories/boho-rejuvenation.webp",
-  "brightening-cocktails": "/images/categories/boho-brightening.webp",
-  "eye-cocktails": "/images/categories/boho-eye.webp",
-  "hair-cocktails": "/images/categories/boho-hair.webp",
-  "hyaluronidase-products": "/images/categories/boho-hyaluronidase.webp",
+  fillers: "/images/categories/clean/boho-fillers-clean.webp",
+  "skin-boosters": "/images/categories/clean/boho-skin-boosters-clean.webp",
+  "botulinum-toxins": "/images/categories/clean/boho-botox-v2-clean.webp",
+  "rejuvenation-cocktails": "/images/categories/clean/boho-rejuvenation-clean.webp",
+  "brightening-cocktails": "/images/categories/clean/boho-brightening-clean.webp",
+  "eye-cocktails": "/images/categories/clean/boho-eye-clean.webp",
+  "hair-cocktails": "/images/categories/clean/boho-hair-clean.webp",
+  "hyaluronidase-products": "/images/categories/clean/boho-hyaluronidase-clean.webp",
 };
 
 export type ProductVisualCategoryConfig = {
