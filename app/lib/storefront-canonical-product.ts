@@ -3,6 +3,7 @@ import {
   canonicalInventorySlug,
   isApprovedInventorySlug,
 } from "../current-inventory";
+import { storefrontRoleImages } from "./product-image-roles";
 
 /**
  * WooCommerce can append -2, -3, ... when an older record still owns the
@@ -34,9 +35,22 @@ export function canonicalStorefrontProductSlug(slug: string): string {
   return cleanSlug;
 }
 
+/**
+ * Public product records are deliberately image-sanitized at the cache edge.
+ * Pricing, stock, copy and taxonomy may still originate from the commerce
+ * backend, but product media is controlled exclusively by Sepiid CMS role
+ * uploads. Ordinary WooCommerce gallery/featured images never survive this
+ * boundary and therefore cannot leak into PDPs, cards, carousels or metadata.
+ */
 export function canonicalizeStorefrontProduct(
   product: CmsProduct,
 ): CmsProduct {
   const slug = canonicalStorefrontProductSlug(product.slug);
-  return slug === product.slug ? product : { ...product, slug };
+  const images = storefrontRoleImages(product.images ?? []);
+
+  return {
+    ...product,
+    slug,
+    images,
+  };
 }
