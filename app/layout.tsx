@@ -3,7 +3,6 @@ import Script from "next/script";
 import "@fontsource-variable/vazirmatn";
 import "./globals.css";
 import "./home-halo.css";
-import "./halo-hero-interactions.css";
 import "./ui-audit.css";
 import "./category-hovers.css";
 import "./category-commerce-hero.css";
@@ -16,7 +15,6 @@ import { AiReferralTracker } from "./components/AiReferralTracker";
 import { ProductCardVariantIntentBridge } from "./components/ProductCardVariantIntentBridge";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { GlobalContactBar } from "./components/GlobalContactBar";
-import { HaloHeroInteractions } from "./components/HaloHeroInteractions";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
 import { SiteHeaderServer } from "./components/SiteHeaderServer";
@@ -112,7 +110,6 @@ export default async function RootLayout({
         <GoogleAnalytics />
         <AiReferralTracker />
         <ProductCardVariantIntentBridge />
-        <HaloHeroInteractions />
         <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
         <SiteHeaderServer
           categories={categories}

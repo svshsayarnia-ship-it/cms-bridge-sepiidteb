@@ -4,7 +4,6 @@ import Link from "next/link";
 import { whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
-import { getSitePresentation } from "./lib/site-presentation";
 import { getCompactBrandLabel } from "./lib/public-copy";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
@@ -47,11 +46,30 @@ function formatToman(value: number) {
   return `${Math.round(value).toLocaleString("fa-IR")} تومان`;
 }
 
+const featuredVisuals: Record<string, string> = {
+  fillers: "/images/product-fillers-v2.webp",
+  "skin-boosters": "/images/product-skin-booster-v2.webp",
+  "botulinum-toxins": "/images/product-clinic-supplies-v2.webp",
+  "rejuvenation-cocktails": "/images/product-category-panorama.webp",
+  "brightening-cocktails": "/images/product-skin-booster-v2.webp",
+  "eye-cocktails": "/images/product-clinic-supplies-v2.webp",
+  "hair-cocktails": "/images/product-hair-care-v2.webp",
+};
+
+function getFeaturedVisual(category: string | undefined, index: number) {
+  const fallback = [
+    "/images/product-fillers-v2.webp",
+    "/images/product-skin-booster-v2.webp",
+    "/images/product-clinic-supplies-v2.webp",
+    "/images/product-hair-care-v2.webp",
+  ];
+  return featuredVisuals[category || ""] || fallback[index % fallback.length];
+}
+
 export default async function Home() {
-  const [{ products }, categories, presentation] = await Promise.all([
+  const [{ products }, categories] = await Promise.all([
     getStorefrontCatalog(),
     getStorefrontCategories(),
-    getSitePresentation(),
   ]);
 
   const pricedProducts = products.filter((product) => {
@@ -62,18 +80,9 @@ export default async function Home() {
   });
 
   const featuredProducts = (pricedProducts.length >= 4 ? pricedProducts : products).slice(0, 4);
-  const heroProduct =
-    pricedProducts.find((product) =>
-      /juvederm|juvéd|ژوویدرم|ژوودرم/i.test(
-        `${product.nameFa ?? ""} ${product.nameEn ?? ""} ${product.brand ?? ""}`,
-      ),
-    ) ?? featuredProducts[0] ?? products[0];
-
-  const heroImage = heroProduct?.image || presentation.home.hero.image;
-  const heroName = heroProduct?.nameFa || heroProduct?.nameEn || "محصولات منتخب سپید بیوتی";
-  const heroBrand = heroProduct
-    ? getCompactBrandLabel(heroProduct.brand) || "Sepiid Beauty"
-    : "Sepiid Beauty";
+  const heroImage = "/images/hero-static-product-composition.webp";
+  const heroName = "ویترین محصولات تخصصی";
+  const heroBrand = "Sepiid Beauty";
 
   const brandLabels = Array.from(
     new Set(products.map((product) => getCompactBrandLabel(product.brand)).filter(Boolean)),
@@ -97,22 +106,17 @@ export default async function Home() {
             <Link className="halo-hero__trust-link" href="#trust">چرا به سپید بیوتی اعتماد کنم؟ ←</Link>
           </div>
 
-          <div className="halo-hero__visual" aria-label={heroName}>
+          <div className="halo-hero__visual" aria-label="ویترین ثابت چندمحصولی سپید بیوتی">
             <div className="halo-hero__product-stage">
-              {heroImage ? (
-                <img
-                  className="halo-hero__product-image"
-                  src={heroImage}
-                  alt={heroProduct?.imageAlt || heroName}
-                  width="900"
-                  height="680"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-              ) : null}
-              <img className="halo-hero__scene" src="/images/product-category-panorama.webp" alt="" width="1200" height="760" aria-hidden="true" />
-              <img className="halo-hero__wave halo-hero__wave--back" src="/images/hero-liquid-wave-v2.webp" alt="" width="1962" height="802" aria-hidden="true" />
-              <img className="halo-hero__wave halo-hero__wave--front" src="/images/hero-liquid-wave-v2.webp" alt="" width="1962" height="802" aria-hidden="true" />
+              <img
+                className="halo-hero__product-image"
+                src={heroImage}
+                alt="ویترین ثابت چندمحصولی سپید بیوتی شامل فیلر، مزوژل و سرنگ"
+                width="1800"
+                height="900"
+                fetchPriority="high"
+                decoding="async"
+              />
               <div className="halo-hero__product-meta">
                 <strong>{heroName}</strong>
                 <small>{heroBrand} · انتخاب ویژه سپید</small>
@@ -139,7 +143,7 @@ export default async function Home() {
         <div className="halo-shell halo-quick__grid">
           <Link className="halo-quick-card" href="/shop">
             <div><strong>اسم محصولم را می‌دانم</strong><small>جستجوی سریع محصول ←</small></div>
-            <img src={heroImage || "/images/product-fillers-v2.webp"} alt="" width="120" height="120" loading="lazy" />
+            <img src="/images/product-fillers-v2.webp" alt="" width="120" height="120" loading="lazy" />
           </Link>
           <Link className="halo-quick-card" href="/guides/dermal-fillers">
             <div><strong>بین دو مدل مرددم</strong><small>مقایسه و راهنمای انتخاب ←</small></div>
@@ -163,13 +167,13 @@ export default async function Home() {
             <Link className="halo-text-link" href="/shop">مشاهده همه محصولات ←</Link>
           </div>
           <div className="halo-product-rail">
-            {featuredProducts.map((product) => {
+            {featuredProducts.map((product, index) => {
               const price = Number(product.salePrice || product.regularPrice || product.price || product.priceToman);
               return (
                 <Link className="halo-product-card" data-category={product.category} href={`/product/${product.slug}`} key={product.slug}>
                     <div className="halo-product-card__image">
                     <span className="halo-product-card__badge">{product.stockStatus === "instock" ? "موجود" : "استعلام موجودی"}</span>
-                    <img src={product.image || "/images/product-category-panorama.webp"} alt={product.imageAlt || product.nameFa || product.nameEn} width="520" height="520" loading="lazy" decoding="async" />
+                    <img src={getFeaturedVisual(product.category, index)} alt={product.imageAlt || product.nameFa || product.nameEn} width="520" height="520" loading="lazy" decoding="async" />
                   </div>
                   <div className="halo-product-card__body">
                     <span className="halo-product-card__brand">{getCompactBrandLabel(product.brand) || product.categoryTitle || "Sepiid Beauty"}</span>

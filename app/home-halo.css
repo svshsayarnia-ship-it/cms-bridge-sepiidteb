@@ -209,7 +209,7 @@ body:has(.halo-home) .sb-nav {
 .halo-hero__product-stage {
   position: relative;
   width: min(660px, 94%);
-  aspect-ratio: 1.35 / 1;
+  aspect-ratio: 2 / 1;
   display: grid;
   place-items: center;
   isolation: isolate;
@@ -932,10 +932,13 @@ body:has(.halo-home) .sb-nav {
 .halo-hero__product-stage .halo-hero__product-image {
   position: relative;
   z-index: 3;
-  width: 60%;
-  height: 72%;
-  object-fit: contain;
-  mix-blend-mode: multiply;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 34px;
+  mix-blend-mode: normal;
+  animation: none;
+  filter: drop-shadow(0 26px 26px rgba(55, 39, 30, .13));
 }
 .halo-hero__product-stage .halo-hero__scene {
   position: absolute;
@@ -1025,7 +1028,7 @@ body:has(.halo-home) .sb-nav {
 
 @media (max-width: 620px) {
   .halo-hero__trust-link { margin-top: 13px; font-size: 11px; }
-  .halo-hero__product-stage .halo-hero__product-image { width: 66%; height: 72%; }
+  .halo-hero__product-stage .halo-hero__product-image { width: 100%; height: 100%; border-radius: 24px; }
   .halo-hero__product-stage .halo-hero__scene { width: 116%; height: 90%; opacity: .27; }
   .halo-hero__wave { width: 158%; }
   .halo-hero__wave--back { top: 20%; right: -28%; }
