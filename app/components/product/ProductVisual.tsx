@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- remote/SVG fallback stays centralized here */
+/* eslint-disable @next/next/no-img-element -- local SVG cutouts stay centralized here */
 
 import Image from "next/image";
 import {
@@ -17,7 +17,6 @@ import {
 } from "../../config/visualProfiles";
 import { getProductCutoutSrc } from "../../lib/product-image";
 
-const FALLBACK_PRODUCT_IMAGE = "/images/sepiid-logo.webp";
 const MAX_OFFSET = 5;
 const MIN_SCALE = 0.68;
 const MAX_SCALE = 1.06;
@@ -52,11 +51,6 @@ type ProductVisualProps = {
   decorative?: boolean;
   draggable?: boolean;
   showBackground?: boolean;
-  /**
-   * Product cutouts are already compact WebP assets in /public. Serving the
-   * carousel directly avoids a cold `/_next/image` optimisation request just
-   * when a visitor is trying to browse the page.
-   */
   unoptimized?: boolean;
   onLoad?: (event: SyntheticEvent<HTMLImageElement>) => void;
 };
@@ -65,6 +59,7 @@ type ProductVisualStyle = CSSProperties & {
   "--product-visual-scale": number;
   "--product-visual-offset-x": string;
   "--product-visual-offset-y": string;
+  "--product-category-background-image": string;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -101,9 +96,6 @@ function resolveVisualProfile(
   requestedProfile: ProductVisualProfile | null | undefined,
   categoryProfile: ProductVisualProfile,
 ): ProductVisualProfile {
-  // CMS uses `default` as an unset value. Treating it as a real override makes
-  // cards ignore their category geometry while PDPs fall back differently.
-  // Only a genuinely shape-specific profile may override the category profile.
   if (
     requestedProfile &&
     requestedProfile !== "default" &&
@@ -127,14 +119,11 @@ export function ProductVisual({
   unoptimized = false,
   onLoad,
 }: ProductVisualProps) {
-  const requestedSrc = getProductCutoutSrc(
-    product.masterImage?.trim() ||
-      product.image?.trim() ||
-      FALLBACK_PRODUCT_IMAGE,
-    product.slug,
-  );
+  const requestedSrc =
+    getProductCutoutSrc(product.masterImage?.trim(), product.slug) ||
+    getProductCutoutSrc(product.image?.trim(), product.slug);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const src = failedSrc === requestedSrc ? FALLBACK_PRODUCT_IMAGE : requestedSrc;
+  const src = failedSrc === requestedSrc ? "" : requestedSrc;
 
   const categoryConfig = getProductVisualCategoryConfig(product.category);
   const profile = resolveVisualProfile(
@@ -167,6 +156,7 @@ export function ProductVisual({
     "--product-visual-scale": scale,
     "--product-visual-offset-x": `${offsetX}%`,
     "--product-visual-offset-y": `${offsetY}%`,
+    "--product-category-background-image": `url("${categoryConfig.background}")`,
   };
 
   const imageAlt = decorative
@@ -175,10 +165,10 @@ export function ProductVisual({
   const imageClassName = "product-visual__image";
   const imageSizes = sizes ?? getVariantSizes(variant);
   const handleImageError = () => {
-    if (src !== FALLBACK_PRODUCT_IMAGE) setFailedSrc(requestedSrc);
+    if (src) setFailedSrc(requestedSrc);
   };
 
-  const image = canUseNextImage(src) ? (
+  const image = !src ? null : canUseNextImage(src) ? (
     <Image
       alt={imageAlt}
       className={imageClassName}
@@ -216,7 +206,7 @@ export function ProductVisual({
       style={visualStyle}
     >
       <span className="product-visual__background" aria-hidden="true" />
-      <span className="product-visual__stage">{image}</span>
+      {image ? <span className="product-visual__stage">{image}</span> : null}
     </span>
   );
 }

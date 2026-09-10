@@ -1,7 +1,6 @@
-/* Permanent Sepiid Beauty product image system.
-   Product assets are rendered only inside ProductVisual. Primary product
-   surfaces share one approved Sepiid stage so supplier/editorial backgrounds
-   never create a mixed visual language across cards, carousel and PDP. */
+/* Permanent Sepiid Beauty product visual system.
+   Every primary product surface inherits the exact approved artwork of its
+   category. Product foregrounds are local transparent cutouts only. */
 
 .product-visual {
   position: relative;
@@ -16,11 +15,6 @@
   background: transparent;
 }
 
-/* PDP safeguard: globals.css still contains a legacy direct-child span rule
-   for old gallery badges. ProductVisual is also a span, so that selector can
-   accidentally make the whole visual absolute and collapse the gallery.
-   Keep the product visual in normal flow and give the gallery deterministic
-   square geometry without changing any approved category styling. */
 .sb-product-gallery__main {
   aspect-ratio: 1 / 1;
   min-height: 0;
@@ -47,29 +41,31 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: transparent;
+  background-color: #f7f5f2;
+  background-image: var(--product-category-background-image);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   pointer-events: none;
 }
 
-/* One neutral, approved product stage for every customer-facing product image.
-   Tiny utility thumbnails stay transparent so search/header UI remains clean. */
+/* Cards, PDP, carousel and product hero use the exact same category artwork
+   as the category cards. There is no generic product-stage background. */
 .product-visual--with-background.product-visual--card .product-visual__background,
 .product-visual--with-background.product-visual--detail .product-visual__background,
 .product-visual--with-background.product-visual--carousel .product-visual__background,
 .product-visual--with-background.product-visual--hero .product-visual__background {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 250, 242, 0.08)),
-    url("/images/products/editorial/sepiid-natural-stage.webp") center / cover no-repeat,
-    #f7f5f2;
+  background-color: #f7f5f2;
+  background-image: var(--product-category-background-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
+/* Utility thumbnails may intentionally omit a background when their caller asks
+   for it. The foreground still remains local-only through ProductVisual. */
 .product-visual:not(.product-visual--with-background),
-.product-visual:not(.product-visual--with-background) .product-visual__background,
-.product-visual--search .product-visual__background,
-.product-visual--thumbnail .product-visual__background {
+.product-visual:not(.product-visual--with-background) .product-visual__background {
   background: transparent !important;
 }
 
@@ -140,8 +136,6 @@
   transform: scale(1.015);
 }
 
-/* Wrappers may still carry legacy/category decoration, but the opaque product
-   stage above is the single visual source seen behind every primary product. */
 :where(
     .sb-product-card__visual,
     .sb-product-gallery__main,
