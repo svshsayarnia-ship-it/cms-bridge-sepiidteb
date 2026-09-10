@@ -9,6 +9,19 @@ export const maxDuration = 120;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
+function withUniqueMediaName(file: File, token: string) {
+  const extensionIndex = file.name.lastIndexOf(".");
+  const suffix = token.replace(/[^a-z0-9]/giu, "").slice(0, 10) || Date.now().toString(36);
+  const filename = extensionIndex > 0
+    ? `${file.name.slice(0, extensionIndex)}-${suffix}${file.name.slice(extensionIndex)}`
+    : `${file.name}-${suffix}`;
+
+  return new File([file], filename, {
+    type: file.type,
+    lastModified: file.lastModified,
+  });
+}
+
 export async function POST(request: Request) {
   const correlationId = crypto.randomUUID();
   const startedAt = performance.now();
@@ -83,8 +96,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const image = await uploadMedia(
+    // WordPress may reuse a recently deleted filename. That can make browsers
+    // and intermediary caches keep showing the previous image even after the
+    // CMS write succeeded. Give each accepted upload an immutable URL instead.
+    const uploadFile = withUniqueMediaName(
       normalized.file,
+      correlationId.slice(0, 10),
+    );
+    const image = await uploadMedia(
+      uploadFile,
       String(form.get("alt") ?? ""),
       correlationId,
     );
