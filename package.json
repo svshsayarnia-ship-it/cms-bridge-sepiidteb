@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/restore-product-image-payloads.mjs && node scripts/apply-approved-product-images.mjs && node scripts/audit-storefront-image-references.mjs && node scripts/audit-product-visual-system.mjs && node scripts/audit-product-cache-unification.mjs && node scripts/audit-product-variant-media.mjs && node scripts/audit-account-auth-contract.mjs",
+    "prebuild": "node scripts/restore-product-image-payloads.mjs && node scripts/apply-approved-product-images.mjs && node scripts/audit-storefront-image-references.mjs && node scripts/audit-product-visual-system.mjs && node scripts/audit-product-cache-unification.mjs && node scripts/audit-product-variant-media.mjs && node scripts/audit-cms-image-authority.mjs && node scripts/audit-account-auth-contract.mjs",
     "build": "next build",
     "start": "next start",
     "test": "npm run build",
@@ -19,6 +19,7 @@
     "audit:product-visuals": "node scripts/audit-product-visual-system.mjs",
     "audit:product-cache": "node scripts/audit-product-cache-unification.mjs",
     "audit:variant-media": "node scripts/audit-product-variant-media.mjs",
+    "audit:cms-images": "node scripts/audit-cms-image-authority.mjs",
     "audit:account-auth": "node scripts/audit-account-auth-contract.mjs",
     "audit:commerce-live": "node scripts/commerce-live-smoke.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh"
