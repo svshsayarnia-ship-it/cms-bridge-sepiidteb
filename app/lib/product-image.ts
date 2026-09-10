@@ -5,6 +5,7 @@ const DRIVE_PRODUCT_ROOT = "/images/drive/product-";
 const TOP_AGE_PRO_SOURCE = "/images/products/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
+const REMOTE_IMAGE_CACHE_VERSION = "20260910-cms-image-refresh-1";
 
 /**
  * Checked-in cutouts are migration fallbacks only. When the CMS/WooCommerce
@@ -73,6 +74,15 @@ function isRemoteImage(src: string) {
   return /^(?:https?:)?\/\//iu.test(src.trim());
 }
 
+function withRemoteImageCacheVersion(src: string) {
+  const hashIndex = src.indexOf("#");
+  const base = hashIndex >= 0 ? src.slice(0, hashIndex) : src;
+  const hash = hashIndex >= 0 ? src.slice(hashIndex) : "";
+  const separator = base.includes("?") ? "&" : "?";
+
+  return `${base}${separator}sbv=${REMOTE_IMAGE_CACHE_VERSION}${hash}`;
+}
+
 /**
  * Resolve the product image used by ProductVisual.
  *
@@ -87,8 +97,12 @@ export function getProductCutoutSrc(
   const cleanSrc = src?.trim() ?? "";
 
   // ProductVisual renders remote media with a native <img>, so allowing the
-  // CMS URL here does not depend on Next/Image remotePatterns.
-  if (cleanSrc && isRemoteImage(cleanSrc)) return cleanSrc;
+  // CMS URL here does not depend on Next/Image remotePatterns. Append a stable
+  // storefront version so browsers/CDNs cannot keep an old image body after a
+  // CMS replacement that reused the same WordPress media path.
+  if (cleanSrc && isRemoteImage(cleanSrc)) {
+    return withRemoteImageCacheVersion(cleanSrc);
+  }
 
   if (cleanSrc) {
     const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
