@@ -1,4 +1,11 @@
 import { catalogProducts } from "../../catalog";
+import type { CmsImage, CmsProduct } from "../../lib/cms-types";
+import {
+  findCardRoleImage,
+  findVariantRoleImage,
+} from "../../lib/product-image-roles";
+import { canonicalStorefrontProductSlug } from "../../lib/storefront-canonical-product";
+import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -7,39 +14,85 @@ type PublicRoleImage = {
   alt: string;
 };
 
-function getVariantImages(slug: string, requestedVariantIds: string[]) {
-  const product = catalogProducts.find((item) => item.slug === slug);
-  const variants = product?.variants ?? [];
-  const defaultVariantId = variants[0]?.id ?? "";
-  const requested = new Set(requestedVariantIds);
+type ProductSnapshots = Awaited<ReturnType<typeof getStorefrontProductSnapshots>>;
 
-  return Object.fromEntries(
-    variants
-      .filter((variant) => variant.id !== defaultVariantId)
-      .filter((variant) => !requested.size || requested.has(variant.id))
-      .filter((variant) => {
-        const image = variant.image?.trim();
-        return Boolean(
-          image &&
-            (variant.imageVerified === true ||
-              variant.imageKind === "editorial-family" ||
-              variant.imageKind === "market-reference"),
-        );
-      })
-      .map((variant) => [
-        variant.id,
-        {
-          src: variant.image.trim(),
-          alt: variant.imageAlt?.trim() || `تصویر ${variant.nameFa}`,
-        } satisfies PublicRoleImage,
-      ]),
+function publicImage(image: CmsImage | null, fallbackAlt: string): PublicRoleImage | null {
+  if (!image?.src?.trim()) return null;
+  return {
+    src: image.src.trim(),
+    alt: image.alt?.trim() || fallbackAlt,
+  };
+}
+
+function resolveSnapshot(
+  snapshots: ProductSnapshots,
+  requestedSlug: string,
+): CmsProduct | null {
+  const canonicalSlug = canonicalStorefrontProductSlug(requestedSlug);
+  return snapshots[canonicalSlug] ?? snapshots[requestedSlug] ?? null;
+}
+
+function variantIdsFor(slug: string, requestedVariantIds: string[]): string[] {
+  if (requestedVariantIds.length) return requestedVariantIds;
+
+  const canonicalSlug = canonicalStorefrontProductSlug(slug);
+  return (
+    catalogProducts.find((product) => product.slug === canonicalSlug)?.variants ?? []
+  ).map((variant) => variant.id);
+}
+
+function roleSlugs(requestedSlug: string, product: CmsProduct): string[] {
+  return Array.from(
+    new Set(
+      [
+        requestedSlug,
+        canonicalStorefrontProductSlug(requestedSlug),
+        product.slug,
+      ]
+        .map((slug) => slug.trim())
+        .filter(Boolean),
+    ),
   );
 }
 
+function getRolePayload(
+  snapshots: ProductSnapshots,
+  requestedSlug: string,
+  requestedVariantIds: string[],
+) {
+  const product = resolveSnapshot(snapshots, requestedSlug);
+  if (!product) {
+    return {
+      cardImage: null,
+      variantImages: {} as Record<string, PublicRoleImage>,
+    };
+  }
+
+  const slugs = roleSlugs(requestedSlug, product);
+  const cardImage = publicImage(
+    findCardRoleImage(product.images, slugs),
+    `تصویر ${product.name}`,
+  );
+
+  const variantImages = Object.fromEntries(
+    variantIdsFor(requestedSlug, requestedVariantIds).flatMap((variantId) => {
+      const image = publicImage(
+        findVariantRoleImage(product.images, slugs, variantId),
+        `تصویر مدل ${variantId} از ${product.name}`,
+      );
+      return image ? [[variantId, image] as const] : [];
+    }),
+  );
+
+  return { cardImage, variantImages };
+}
+
 /**
- * The product-level image selected in CMS/WooCommerce belongs to the base
- * product/default variant. Sibling variants must keep their own verified media
- * so switching models does not make every variant inherit the same master image.
+ * Public product imagery is CMS-authoritative.
+ *
+ * This endpoint exposes only Sepiid CMS role uploads. It never falls back to a
+ * WooCommerce featured/gallery image and never substitutes one sibling
+ * variant's image for another. The same rule is used for every product family.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -70,22 +123,24 @@ export async function GET(request: Request) {
     );
   }
 
+  const snapshots = await getStorefrontProductSnapshots();
+
   if (slugs.length) {
     return Response.json(
       {
         cardImages: Object.fromEntries(
-          slugs.map((requestedSlug) => [requestedSlug, null]),
+          slugs.map((requestedSlug) => [
+            requestedSlug,
+            getRolePayload(snapshots, requestedSlug, []).cardImage,
+          ]),
         ),
       },
       { headers: { "cache-control": "no-store" } },
     );
   }
 
-  return Response.json(
-    {
-      cardImage: null,
-      variantImages: getVariantImages(slug, requestedVariantIds),
-    },
-    { headers: { "cache-control": "no-store" } },
-  );
+  const payload = getRolePayload(snapshots, slug, requestedVariantIds);
+  return Response.json(payload, {
+    headers: { "cache-control": "no-store" },
+  });
 }
