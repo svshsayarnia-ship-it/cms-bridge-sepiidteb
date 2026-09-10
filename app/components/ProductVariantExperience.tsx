@@ -283,47 +283,57 @@ export function ProductVariantExperience({
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
 
-  // Discovery cards and the initial PDP still use the same canonical master.
-  // Once the visitor explicitly chooses a model, however, sibling imagery must
-  // never masquerade as that model. Exact CMS variant media wins; otherwise the
-  // verified catalog variant or a neutral family visual is used.
+  // The CMS/WooCommerce storefront snapshot is the source of truth for the
+  // product image. A variant switch must never revive an older bundled asset.
+  // If variant-specific CMS media is introduced later it may override the live
+  // master; bundled variant imagery is only a fallback when no live image exists.
   const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
   const canonicalImageAlt =
     liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
-  const selectedVariantImage =
-    selectedCmsVariantImage?.src || selectedVariant?.image?.trim() || "";
-  const selectedVariantHasDisplayMedia = Boolean(
-    selectedCmsVariantImage?.src ||
-      (selectedVariantImage &&
-        (selectedVariant?.imageVerified === true ||
-          selectedVariant?.imageKind === "editorial-family" ||
-          selectedVariant?.imageKind === "market-reference")),
+  const selectedCmsImage = selectedCmsVariantImage?.src?.trim() || "";
+  const selectedBundledImage = selectedVariant?.image?.trim() || "";
+  const selectedBundledImageIsUsable = Boolean(
+    selectedBundledImage &&
+      (selectedVariant?.imageVerified === true ||
+        selectedVariant?.imageKind === "editorial-family" ||
+        selectedVariant?.imageKind === "market-reference"),
   );
-  const canUseSelectedVariantImage = Boolean(
-    hasExplicitVariantSelection && selectedVariantHasDisplayMedia,
+  const canUseCmsVariantImage = Boolean(
+    hasExplicitVariantSelection && selectedCmsImage,
+  );
+  const canUseBundledVariantImage = Boolean(
+    hasExplicitVariantSelection && !liveImage?.src && selectedBundledImageIsUsable,
   );
   const shouldUseNeutralVariantFallback = Boolean(
-    hasExplicitVariantSelection && selectedVariant && !selectedVariantHasDisplayMedia,
+    hasExplicitVariantSelection &&
+      selectedVariant &&
+      !liveImage?.src &&
+      !selectedCmsImage &&
+      !selectedBundledImageIsUsable,
   );
   const neutralVariantFallback =
     variantFallbackImages[product.category] || "/images/products/editorial/sepiid-natural-stage.webp";
-  const displayImage = canUseSelectedVariantImage
-    ? selectedVariantImage
-    : shouldUseNeutralVariantFallback
-      ? neutralVariantFallback
-      : canonicalImage;
-  const displayImageAlt = canUseSelectedVariantImage
+  const displayImage = canUseCmsVariantImage
+    ? selectedCmsImage
+    : canUseBundledVariantImage
+      ? selectedBundledImage
+      : shouldUseNeutralVariantFallback
+        ? neutralVariantFallback
+        : canonicalImage;
+  const displayImageAlt = canUseCmsVariantImage
     ? selectedCmsVariantImage?.alt || selectedVariant?.imageAlt || `نمای ${displayName}`
-    : shouldUseNeutralVariantFallback
-      ? `نمای هم‌خانواده برای ${displayName}`
-      : canonicalImageAlt;
-  const displayImageKind = canUseSelectedVariantImage
-    ? selectedCmsVariantImage?.src
-      ? "official"
-      : selectedVariant?.imageKind
-    : shouldUseNeutralVariantFallback
-      ? "editorial-family"
-      : product.imageKind;
+    : canUseBundledVariantImage
+      ? selectedVariant?.imageAlt || `نمای ${displayName}`
+      : shouldUseNeutralVariantFallback
+        ? `نمای هم‌خانواده برای ${displayName}`
+        : canonicalImageAlt;
+  const displayImageKind = canUseCmsVariantImage
+    ? "official"
+    : canUseBundledVariantImage
+      ? selectedVariant?.imageKind
+      : shouldUseNeutralVariantFallback
+        ? "editorial-family"
+        : product.imageKind;
   const isEditorialFamilyImage = displayImageKind === "editorial-family";
 
   const pricing = livePricing ?? (hasVariants
