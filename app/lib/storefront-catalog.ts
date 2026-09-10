@@ -14,7 +14,7 @@ import {
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
 import {
-  findCardRoleImage,
+  findPrimaryProductRoleImage,
   findVariantRoleImage,
 } from "./product-image-roles";
 import {
@@ -24,7 +24,6 @@ import {
 } from "./public-copy";
 import {
   isPublicCmsProduct,
-  isPublicImageSrc,
   isPublicStaticProduct,
 } from "./public-product";
 import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
@@ -147,6 +146,17 @@ function versionCmsImage(src: string, modifiedGmt: string): string {
   }
 }
 
+function blankVariantMedia(variant: NonNullable<Product["variants"]>[number]) {
+  return {
+    ...variant,
+    image: DEFAULT_PRODUCT_IMAGE,
+    imageAlt: `تصویر اختصاصی ${variant.nameFa} هنوز در CMS ثبت نشده است`,
+    imageVerified: false,
+    imageKind: undefined,
+    imageApproved: false,
+  };
+}
+
 function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProduct {
   const primaryCategory = product.categories?.[0];
   const sourceCategorySlug = primaryCategory?.slug || fallback?.category || "products";
@@ -158,8 +168,6 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     catalogCategories.some((category) => category.slug === fallback.category)
     ? fallback.category
     : null;
-  // Commerce taxonomy can still be used for catalogue structure, but product
-  // media is resolved separately and only from Sepiid CMS role uploads.
   const categorySlug = catalogCategories.some(
     (category) => category.slug === normalizedCategorySlug,
   )
@@ -180,15 +188,13 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
   const roleSlugs = Array.from(
     new Set([product.slug, fallback?.slug ?? ""].filter(Boolean)),
   );
-  const verifiedFallbackImage =
-    fallback?.imageVerified === true && isPublicImageSrc(fallback.image)
-      ? { src: fallback.image, alt: fallback.imageAlt ?? "" }
-      : null;
-  const cmsPrimaryImage = findCardRoleImage(product.images ?? [], roleSlugs);
-  const liveImage = cmsPrimaryImage ?? verifiedFallbackImage;
+  const cmsPrimaryImage = findPrimaryProductRoleImage(
+    product.images ?? [],
+    roleSlugs,
+  );
   const liveImageSrc = cmsPrimaryImage?.src
     ? versionCmsImage(cmsPrimaryImage.src, product.dateModifiedGmt)
-    : liveImage?.src;
+    : "";
   const variants = fallback?.variants?.map((variant) => {
     const cmsVariantImage = findVariantRoleImage(
       product.images ?? [],
@@ -196,7 +202,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
       variant.id,
     );
 
-    if (!cmsVariantImage?.src?.trim()) return variant;
+    if (!cmsVariantImage?.src?.trim()) return blankVariantMedia(variant);
 
     return {
       ...variant,
@@ -225,11 +231,11 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     group: fallback?.group || group?.slug,
     groupTitle: fallback?.groupTitle || group?.title,
     badge: product.featured ? "منتخب" : fallback?.badge,
-    image: liveImageSrc || fallback?.image || DEFAULT_PRODUCT_IMAGE,
-    imageAlt: liveImage?.alt || fallback?.imageAlt || `تصویر ${product.name}`,
-    imageVerified: Boolean(liveImageSrc) || Boolean(fallback?.imageVerified),
-    imageKind: liveImageSrc ? "official" : fallback?.imageKind,
-    imageApproved: Boolean(liveImageSrc) || Boolean(fallback?.imageApproved),
+    image: liveImageSrc || DEFAULT_PRODUCT_IMAGE,
+    imageAlt: cmsPrimaryImage?.alt || `تصویر اصلی ${product.name} هنوز در CMS ثبت نشده است`,
+    imageVerified: Boolean(liveImageSrc),
+    imageKind: liveImageSrc ? "official" : undefined,
+    imageApproved: Boolean(liveImageSrc),
     position: fallback?.position || "50%",
     volume: fallback?.volume,
     priceToman,
@@ -276,6 +282,12 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
 function mapFallbackProduct(product: Product): StorefrontProduct {
   return {
     ...product,
+    image: DEFAULT_PRODUCT_IMAGE,
+    imageAlt: `تصویر اصلی ${product.nameFa} هنوز در CMS ثبت نشده است`,
+    imageVerified: false,
+    imageKind: undefined,
+    imageApproved: false,
+    variants: product.variants?.map(blankVariantMedia),
     wooId: null,
     sku: "",
     price: "",
@@ -311,10 +323,6 @@ function publicFallbackForProduct(
   const exact = fallbackBySlug.get(product.slug);
   if (exact) return exact;
 
-  // Commerce can append -2, -3, ... when a historical slug is still occupied.
-  // Resolve only a plausible duplicate suffix and only when that canonical
-  // catalog slug actually exists. Do not strip arbitrary model numbers such as
-  // neuronox-100 or dyston-500.
   const duplicateMatch = product.slug.match(/^(.*)-(\d+)$/u);
   if (!duplicateMatch) return undefined;
 
@@ -350,8 +358,6 @@ function preferSnapshot(
     return current;
   }
 
-  // If legacy snapshots lack reliable modification timestamps, prefer the one
-  // carrying a CMS-authorized role image over a static migration fallback.
   const currentHasCmsImage = current.imageKind === "official";
   const candidateHasCmsImage = candidate.imageKind === "official";
   if (candidateHasCmsImage !== currentHasCmsImage) {
@@ -362,11 +368,6 @@ function preferSnapshot(
 }
 
 async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
-
-  // SepiidTeb is the temporary source of truth for which product families may
-  // appear publicly. Keep the large legacy catalog intact for migration and
-  // content references, but never let an old commerce snapshot or legacy seed
-  // leak an unapproved product back into the storefront.
   const approvedCatalogProducts = catalogProducts.filter((product) =>
     isApprovedInventorySlug(product.slug),
   );
@@ -417,12 +418,11 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 }
 
 // Public rendering intentionally performs no live commerce-origin request.
-// Confirmed CMS writes populate the storefront snapshot and invalidate affected
-// routes; if the origin is slow or unavailable, the public site still renders
-// immediately from the last confirmed snapshot plus the local migration data.
+// Product media comes only from CMS role slots. Checked-in product photos are
+// retained for migration/reference but are never emitted by this catalogue.
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v6-cms-media"],
+  ["storefront-catalog-v7-cms-role-only"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
