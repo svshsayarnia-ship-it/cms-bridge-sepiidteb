@@ -46,14 +46,14 @@ function formatToman(value: number) {
   return `${Math.round(value).toLocaleString("fa-IR")} تومان`;
 }
 
-const featuredVisuals: Record<string, string> = {
-  fillers: "/images/product-fillers-v2.webp",
-  "skin-boosters": "/images/product-skin-booster-v2.webp",
-  "botulinum-toxins": "/images/product-clinic-supplies-v2.webp",
-  "rejuvenation-cocktails": "/images/product-category-panorama.webp",
-  "brightening-cocktails": "/images/product-skin-booster-v2.webp",
-  "eye-cocktails": "/images/product-clinic-supplies-v2.webp",
-  "hair-cocktails": "/images/product-hair-care-v2.webp",
+const featuredVisuals: Record<string, string[]> = {
+  fillers: ["/images/product-fillers-v2.webp", "/images/product-clinic-supplies-v2.webp", "/images/product-skin-booster-v2.webp", "/images/product-hair-care-v2.webp"],
+  "skin-boosters": ["/images/product-skin-booster-v2.webp", "/images/product-clinic-supplies-v2.webp", "/images/product-fillers-v2.webp", "/images/product-hair-care-v2.webp"],
+  "botulinum-toxins": ["/images/product-clinic-supplies-v2.webp", "/images/product-fillers-v2.webp", "/images/product-skin-booster-v2.webp", "/images/product-hair-care-v2.webp"],
+  "rejuvenation-cocktails": ["/images/product-clinic-supplies-v2.webp", "/images/product-skin-booster-v2.webp", "/images/product-fillers-v2.webp", "/images/product-hair-care-v2.webp"],
+  "brightening-cocktails": ["/images/product-skin-booster-v2.webp", "/images/product-fillers-v2.webp", "/images/product-clinic-supplies-v2.webp", "/images/product-hair-care-v2.webp"],
+  "eye-cocktails": ["/images/product-clinic-supplies-v2.webp", "/images/product-skin-booster-v2.webp", "/images/product-fillers-v2.webp", "/images/product-hair-care-v2.webp"],
+  "hair-cocktails": ["/images/product-hair-care-v2.webp", "/images/product-clinic-supplies-v2.webp", "/images/product-skin-booster-v2.webp", "/images/product-fillers-v2.webp"],
 };
 
 function getFeaturedVisual(category: string | undefined, index: number) {
@@ -63,7 +63,8 @@ function getFeaturedVisual(category: string | undefined, index: number) {
     "/images/product-clinic-supplies-v2.webp",
     "/images/product-hair-care-v2.webp",
   ];
-  return featuredVisuals[category || ""] || fallback[index % fallback.length];
+  const visuals = featuredVisuals[category || ""] || fallback;
+  return visuals[index % visuals.length];
 }
 
 export default async function Home() {
