@@ -128,6 +128,21 @@ function humanizeStorefrontProduct(product: StorefrontProduct): StorefrontProduc
   };
 }
 
+function versionCmsImage(src: string, modifiedGmt: string): string {
+  const cleanSrc = src.trim();
+  const version = modifiedGmt.trim();
+  if (!cleanSrc || !version || !/^https?:\/\//iu.test(cleanSrc)) return cleanSrc;
+
+  try {
+    const url = new URL(cleanSrc);
+    url.searchParams.set("v", version);
+    return url.toString();
+  } catch {
+    const separator = cleanSrc.includes("?") ? "&" : "?";
+    return `${cleanSrc}${separator}v=${encodeURIComponent(version)}`;
+  }
+}
+
 function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProduct {
   const primaryCategory = product.categories?.[0];
   const sourceCategorySlug = primaryCategory?.slug || fallback?.category || "products";
@@ -163,7 +178,11 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     fallback?.imageVerified === true && isPublicImageSrc(fallback.image)
       ? { src: fallback.image, alt: fallback.imageAlt ?? "" }
       : null;
-  const liveImage = product.images?.find((image) => Boolean(image.src)) ?? verifiedFallbackImage;
+  const cmsImage = product.images?.find((image) => Boolean(image.src));
+  const liveImage = cmsImage ?? verifiedFallbackImage;
+  const liveImageSrc = cmsImage?.src
+    ? versionCmsImage(cmsImage.src, product.dateModifiedGmt)
+    : liveImage?.src;
   const descriptionText = plainText(product.shortDescription || product.description || "");
   const summary = descriptionText || fallback?.summary || "اگر درباره مدل، حجم یا بسته این محصول سؤال دارید، قبل از سفارش از تیم سپید بپرسید.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);
@@ -182,11 +201,11 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     group: fallback?.group || group?.slug,
     groupTitle: fallback?.groupTitle || group?.title,
     badge: product.featured ? "منتخب" : fallback?.badge,
-    image: liveImage?.src || fallback?.image || DEFAULT_PRODUCT_IMAGE,
+    image: liveImageSrc || fallback?.image || DEFAULT_PRODUCT_IMAGE,
     imageAlt: liveImage?.alt || fallback?.imageAlt || `تصویر ${product.name}`,
-    imageVerified: Boolean(liveImage?.src) || Boolean(fallback?.imageVerified),
-    imageKind: liveImage?.src ? "official" : fallback?.imageKind,
-    imageApproved: Boolean(liveImage?.src) || Boolean(fallback?.imageApproved),
+    imageVerified: Boolean(liveImageSrc) || Boolean(fallback?.imageVerified),
+    imageKind: liveImageSrc ? "official" : fallback?.imageKind,
+    imageApproved: Boolean(liveImageSrc) || Boolean(fallback?.imageApproved),
     position: fallback?.position || "50%",
     volume: fallback?.volume,
     priceToman,
@@ -380,7 +399,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 // immediately from the last confirmed snapshot plus the local migration data.
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v4"],
+  ["storefront-catalog-v5"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
