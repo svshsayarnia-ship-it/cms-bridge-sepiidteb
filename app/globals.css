@@ -6686,6 +6686,507 @@ overflow-x: hidden; padding-block: clamp(86px, 10vw, 145px); background: #171513
   }
 }
 
+/* Signature Hero: Dock interaction + Halo atmosphere. */
+.sb-hero--dock {
+  isolation: isolate;
+  overflow: clip;
+  background: #fdfdfc;
+}
+
+.sb-hero--dock::before,
+.sb-hero--dock::after {
+  display: none;
+}
+
+.sb-hero--dock .sb-hero__grid {
+  min-height: clamp(650px, calc(100vh - 92px), 780px);
+  grid-template-columns: minmax(300px, 0.82fr) minmax(540px, 1.18fr);
+  align-items: stretch;
+  gap: clamp(44px, 7vw, 108px);
+}
+
+.sb-hero--dock .sb-hero__content {
+  position: relative;
+  z-index: 3;
+  align-self: center;
+  padding-block: clamp(72px, 8vw, 116px);
+}
+
+.sb-hero--dock .sb-hero__content .sb-eyebrow i {
+  width: 34px;
+  background: var(--sb-gold);
+}
+
+.sb-hero--dock h1 {
+  max-width: 10ch;
+  margin: 21px 0 0;
+  color: var(--sb-text);
+  font-size: clamp(3rem, 5vw, 5.35rem);
+  font-weight: 560;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.sb-hero--dock h1 em {
+  display: inline;
+  color: inherit;
+  font-style: normal;
+  font-weight: 560;
+}
+
+.sb-hero--dock .sb-hero__content > p {
+  max-width: 34rem;
+  margin-top: 24px;
+  color: #68645f;
+  font-size: 1rem;
+  line-height: 2.05;
+}
+
+.sb-hero--dock .sb-hero__actions {
+  margin-top: 30px;
+  gap: 10px;
+}
+
+.sb-hero--dock .sb-hero__microproof {
+  max-width: 35rem;
+  margin-top: 34px;
+  padding-top: 18px;
+  gap: 16px 24px;
+  border-color: rgba(92, 83, 70, 0.14);
+}
+
+.sb-hero--dock .sb-hero__microproof span {
+  color: #77716a;
+  font-size: 0.72rem;
+}
+
+.sb-hero--dock .sb-hero__media {
+  position: relative;
+  min-height: 620px;
+  margin: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  perspective: 1200px;
+}
+
+.sb-hero--dock .sb-hero__media-meta,
+.sb-hero--dock .sb-hero__media-foot {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(73, 67, 61, 0.52);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.13em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.sb-hero--dock .sb-hero__media-meta {
+  width: min(100%, 700px);
+  margin: 0 auto 13px;
+  padding-inline: 10px;
+}
+
+.sb-hero--dock .sb-hero__media-foot {
+  width: min(100%, 700px);
+  margin: 13px auto 0;
+  padding-inline: 10px;
+  direction: rtl;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sb-hero--dock .sb-hero__stage {
+  position: relative;
+  width: 100%;
+  min-height: 540px;
+  overflow: hidden;
+  border: 1px solid rgba(92, 83, 70, 0.12);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 51% 57%, rgba(225, 219, 255, 0.48), transparent 30%),
+    radial-gradient(circle at 78% 25%, rgba(250, 230, 203, 0.38), transparent 28%),
+    linear-gradient(145deg, #ffffff 0%, #fbfaf8 57%, #f6f3ee 100%);
+  box-shadow:
+    0 26px 70px rgba(64, 54, 45, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  direction: ltr;
+  touch-action: pan-y;
+}
+
+.sb-hero--dock .sb-hero__stage::before {
+  position: absolute;
+  inset: 9% 8%;
+  border: 1px solid rgba(187, 170, 143, 0.12);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  transform: rotate(-8deg) scaleX(1.12);
+}
+
+.sb-hero--dock .sb-hero__stage::after {
+  position: absolute;
+  right: 9%;
+  bottom: 10%;
+  left: 9%;
+  height: 23%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(76, 66, 55, 0.14), transparent 68%);
+  content: "";
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.sb-hero--dock .sb-hero__halo {
+  position: absolute;
+  z-index: 1;
+  top: 20%;
+  left: 21%;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.82), transparent 34%),
+    radial-gradient(circle at 45% 52%, rgba(207, 195, 255, 0.35), rgba(211, 188, 135, 0.08) 47%, transparent 70%);
+  filter: blur(24px);
+  opacity: 0.54;
+  pointer-events: none;
+  transition: opacity 520ms var(--sb-ease), transform 820ms var(--sb-ease);
+  animation: sb-hero-halo-drift 24s ease-in-out infinite;
+}
+
+.sb-hero--dock .sb-hero__halo--active {
+  opacity: 0.74;
+  transform: scale(1.07) translate3d(0, -7px, 0);
+}
+
+.sb-hero--dock .sb-hero__halo--secondary {
+  z-index: 0;
+  top: 39%;
+  left: 46%;
+  width: 27%;
+  opacity: 0.3;
+  filter: blur(32px);
+  animation-delay: -8s;
+  animation-duration: 29s;
+}
+
+@keyframes sb-hero-halo-drift {
+  0%,
+  100% {
+    transform: translate3d(-1%, 0, 0) scale(0.98);
+  }
+
+  50% {
+    transform: translate3d(2%, -1.5%, 0) scale(1.03);
+  }
+}
+
+.sb-hero--dock .sb-hero__stage-line {
+  position: absolute;
+  z-index: 2;
+  right: 9%;
+  bottom: 18%;
+  left: 9%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(111, 99, 83, 0.23) 18%, rgba(111, 99, 83, 0.23) 82%, transparent);
+  box-shadow: 0 12px 24px rgba(89, 77, 61, 0.12);
+}
+
+.sb-hero--dock .sb-hero__product {
+  position: absolute;
+  z-index: 3;
+  bottom: 17%;
+  width: 21%;
+  height: 54%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sb-text);
+  cursor: pointer;
+  transform: translate3d(0, 0, 0) scale(0.92);
+  transform-origin: center bottom;
+  transition:
+    transform 480ms var(--sb-ease),
+    opacity 400ms ease,
+    filter 400ms ease;
+}
+
+.sb-hero--dock .sb-hero__product--1 { left: 4%; }
+.sb-hero--dock .sb-hero__product--2 { left: 27%; }
+.sb-hero--dock .sb-hero__product--3 { left: 50%; }
+.sb-hero--dock .sb-hero__product--4 { left: 73%; }
+
+.sb-hero--dock .sb-hero__product--active {
+  z-index: 8;
+  filter: saturate(1.05);
+  transform: translate3d(0, -22px, 0) scale(1.1);
+}
+
+.sb-hero--dock .sb-hero__product--neighbor {
+  z-index: 5;
+  opacity: 0.92;
+  transform: translate3d(0, -5px, 0) scale(1.02);
+}
+
+.sb-hero--dock .sb-hero__product--rest {
+  opacity: 0.68;
+}
+
+.sb-hero--dock .sb-hero__product:focus-visible {
+  outline: 2px solid rgba(129, 102, 66, 0.75);
+  outline-offset: 8px;
+  border-radius: 18px;
+}
+
+.sb-hero--dock .sb-hero__product-label {
+  position: absolute;
+  z-index: 3;
+  top: -9%;
+  right: 50%;
+  display: grid;
+  min-width: max-content;
+  gap: 1px;
+  color: #60584f;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(50%, 8px);
+  transition: opacity 220ms ease, transform 320ms var(--sb-ease);
+  white-space: nowrap;
+}
+
+.sb-hero--dock .sb-hero__product--active .sb-hero__product-label {
+  opacity: 1;
+  transform: translate(50%, 0);
+}
+
+.sb-hero--dock .sb-hero__product-label strong {
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sb-hero--dock .sb-hero__product-label small {
+  color: rgba(96, 88, 79, 0.65);
+  font-size: 0.58rem;
+}
+
+.sb-hero--dock .sb-hero__product-shadow {
+  position: absolute;
+  z-index: 0;
+  right: 8%;
+  bottom: -1%;
+  left: 8%;
+  height: 16%;
+  border-radius: 50%;
+  background: rgba(72, 62, 51, 0.22);
+  filter: blur(13px);
+  opacity: 0.4;
+  transition: opacity 420ms ease, transform 480ms var(--sb-ease);
+}
+
+.sb-hero--dock .sb-hero__product--active .sb-hero__product-shadow {
+  opacity: 0.64;
+  transform: scale(0.88);
+}
+
+.sb-hero--dock .sb-hero__product-image {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+}
+
+.sb-hero--dock .sb-hero__product-image img {
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 18px 14px rgba(64, 53, 42, 0.14));
+}
+
+.sb-hero--dock .sb-hero__active-caption {
+  position: absolute;
+  z-index: 9;
+  right: 5%;
+  bottom: 6%;
+  display: grid;
+  gap: 1px;
+  direction: rtl;
+  color: rgba(80, 72, 63, 0.74);
+  text-align: right;
+  pointer-events: none;
+}
+
+.sb-hero--dock .sb-hero__active-caption span {
+  font-size: 0.59rem;
+}
+
+.sb-hero--dock .sb-hero__active-caption strong {
+  color: var(--sb-text);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.sb-hero--dock .sb-hero__active-caption small {
+  color: rgba(80, 72, 63, 0.58);
+  font-family: "Estedad Variable", sans-serif;
+  font-size: 0.58rem;
+  direction: ltr;
+  text-align: right;
+}
+
+@media (max-width: 1040px) {
+  .sb-hero--dock .sb-hero__grid {
+    grid-template-columns: minmax(260px, 0.78fr) minmax(440px, 1.22fr);
+    gap: 34px;
+  }
+
+  .sb-hero--dock .sb-hero__stage {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 900px) {
+  .sb-hero--dock .sb-hero__grid {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .sb-hero--dock .sb-hero__content {
+    padding: 58px 0 18px;
+  }
+
+  .sb-hero--dock h1 {
+    max-width: 15ch;
+  }
+
+  .sb-hero--dock .sb-hero__media {
+    min-height: 550px;
+    padding-bottom: 42px;
+  }
+}
+
+@media (max-width: 680px) {
+  .sb-hero--dock .sb-hero__grid {
+    width: calc(100% - 32px);
+  }
+
+  .sb-hero--dock .sb-hero__content {
+    padding-top: 42px;
+  }
+
+  .sb-hero--dock h1 {
+    max-width: 12ch;
+    margin-top: 15px;
+    font-size: clamp(2.35rem, 10.5vw, 3.2rem);
+    letter-spacing: -0.025em;
+  }
+
+  .sb-hero--dock .sb-hero__content > p {
+    margin-top: 17px;
+    font-size: 0.9rem;
+    line-height: 1.95;
+  }
+
+  .sb-hero--dock .sb-hero__actions {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
+  .sb-hero--dock .sb-hero__actions .sb-btn {
+    min-height: 46px;
+    padding-inline: 12px;
+    font-size: 0.72rem;
+  }
+
+  .sb-hero--dock .sb-hero__microproof {
+    margin-top: 25px;
+    gap: 10px 15px;
+  }
+
+  .sb-hero--dock .sb-hero__media {
+    min-height: 450px;
+    padding-bottom: 20px;
+  }
+
+  .sb-hero--dock .sb-hero__media-meta,
+  .sb-hero--dock .sb-hero__media-foot {
+    font-size: 0.49rem;
+  }
+
+  .sb-hero--dock .sb-hero__stage {
+    min-height: 410px;
+    border-radius: 24px;
+  }
+
+  .sb-hero--dock .sb-hero__stage::before {
+    inset: 11% 4%;
+  }
+
+  .sb-hero--dock .sb-hero__halo {
+    top: 22%;
+    left: 17%;
+    width: 66%;
+  }
+
+  .sb-hero--dock .sb-hero__product {
+    bottom: 18%;
+    width: 29%;
+    height: 51%;
+  }
+
+  .sb-hero--dock .sb-hero__product--1 { left: 1%; }
+  .sb-hero--dock .sb-hero__product--2 { left: 35%; }
+  .sb-hero--dock .sb-hero__product--3 { left: 69%; }
+  .sb-hero--dock .sb-hero__product--4 { display: none; }
+
+  .sb-hero--dock .sb-hero__product--active {
+    transform: translate3d(0, -15px, 0) scale(1.08);
+  }
+
+  .sb-hero--dock .sb-hero__product-label {
+    top: -12%;
+  }
+
+  .sb-hero--dock .sb-hero__product-label strong {
+    font-size: 0.72rem;
+  }
+
+  .sb-hero--dock .sb-hero__product-label small {
+    font-size: 0.52rem;
+  }
+
+  .sb-hero--dock .sb-hero__active-caption {
+    right: 5%;
+    bottom: 6%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-hero--dock .sb-hero__halo,
+  .sb-hero--dock .sb-hero__product,
+  .sb-hero--dock .sb-hero__product-label,
+  .sb-hero--dock .sb-hero__product-shadow {
+    animation: none;
+    transition: none;
+  }
+
+  .sb-hero--dock .sb-hero__product,
+  .sb-hero--dock .sb-hero__product--active,
+  .sb-hero--dock .sb-hero__product--neighbor,
+  .sb-hero--dock .sb-hero__product--rest,
+  .sb-hero--dock .sb-hero__halo--active {
+    transform: none;
+  }
+}
+
 @media (max-width: 360px) {
   .sb-shell {
     width: calc(100% - 28px);
