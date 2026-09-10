@@ -7,8 +7,9 @@ const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pr
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
 
 /**
- * Storefront visuals never trust a WooCommerce/WordPress URL. Slug aliases
- * resolve known products directly to checked-in local transparent cutouts.
+ * Checked-in cutouts are migration fallbacks only. When the CMS/WooCommerce
+ * product supplies an explicit remote image, that image is authoritative and
+ * must be allowed to reach ProductVisual.
  */
 const PRODUCT_SLUG_CUTOUT_ALIASES = new Map<string, string>([
   ["fusion-f-mesomatrix", "f-mesomatrix.webp"],
@@ -73,57 +74,60 @@ function isRemoteImage(src: string) {
 }
 
 /**
- * Resolve only to a local, approved storefront cutout. Remote CMS/Woo URLs and
- * unrelated baked/editorial backgrounds intentionally resolve to an empty
- * string so ProductVisual falls back to the inherited category artwork only.
+ * Resolve the product image used by ProductVisual.
+ *
+ * CMS/WooCommerce media is the source of truth whenever an explicit remote
+ * image exists. Local transparent cutouts remain as safe migration fallbacks
+ * for products that have not yet received a CMS image.
  */
 export function getProductCutoutSrc(
   src?: string | null,
   productSlug?: string | null,
 ): string {
-  const productSlugCutout = resolveProductSlugCutout(productSlug);
-  if (productSlugCutout) return productSlugCutout;
-  if (!src) return "";
+  const cleanSrc = src?.trim() ?? "";
 
-  const cleanSrc = src.trim();
-  if (!cleanSrc) return "";
+  // ProductVisual renders remote media with a native <img>, so allowing the
+  // CMS URL here does not depend on Next/Image remotePatterns.
+  if (cleanSrc && isRemoteImage(cleanSrc)) return cleanSrc;
 
-  const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
-  if (masterSpecCutout) return masterSpecCutout;
+  if (cleanSrc) {
+    const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
+    if (masterSpecCutout) return masterSpecCutout;
 
-  // Hard boundary: no WooCommerce/WordPress/supplier URL can enter UI rendering.
-  if (isRemoteImage(cleanSrc)) return "";
+    if (cleanSrc === TOP_AGE_PRO_SOURCE || cleanSrc === TOP_AGE_PRO_CUTOUT) {
+      return TOP_AGE_PRO_CLEAN_CUTOUT;
+    }
 
-  if (cleanSrc === TOP_AGE_PRO_SOURCE || cleanSrc === TOP_AGE_PRO_CUTOUT) {
-    return TOP_AGE_PRO_CLEAN_CUTOUT;
+    if (cleanSrc.startsWith(CUTOUT_ROOT)) return cleanSrc;
+
+    if (
+      cleanSrc.startsWith(PRODUCT_ROOT) &&
+      !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)
+    ) {
+      const relative = cleanSrc
+        .slice(PRODUCT_ROOT.length)
+        .replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
+      return `${CUTOUT_ROOT}${relative}`;
+    }
+
+    if (cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)) {
+      const filename = cleanSrc
+        .split("/")
+        .pop()
+        ?.replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
+      return filename ? `${CUTOUT_ROOT}drive/${filename}` : "";
+    }
   }
 
-  if (cleanSrc.startsWith(CUTOUT_ROOT)) return cleanSrc;
-
-  if (
-    cleanSrc.startsWith(PRODUCT_ROOT) &&
-    !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)
-  ) {
-    const relative = cleanSrc
-      .slice(PRODUCT_ROOT.length)
-      .replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-    return `${CUTOUT_ROOT}${relative}`;
-  }
-
-  if (cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)) {
-    const filename = cleanSrc
-      .split("/")
-      .pop()
-      ?.replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-    return filename ? `${CUTOUT_ROOT}drive/${filename}` : "";
-  }
-
-  return "";
+  // A checked-in slug cutout is only a fallback. It must never override an
+  // image that the editor explicitly selected in the CMS.
+  return resolveProductSlugCutout(productSlug) ?? "";
 }
 
 export function hasLocalProductCutout(
   src?: string | null,
   productSlug?: string | null,
 ): boolean {
-  return Boolean(getProductCutoutSrc(src, productSlug));
+  const resolved = getProductCutoutSrc(src, productSlug);
+  return Boolean(resolved && !isRemoteImage(resolved));
 }
