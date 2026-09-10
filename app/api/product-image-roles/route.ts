@@ -1,12 +1,12 @@
 export const dynamic = "force-dynamic";
 
 /**
- * Storefront product imagery is intentionally local-only.
+ * Legacy compatibility endpoint for older product-card clients.
  *
- * This compatibility endpoint remains because older client components still
- * ask for role imagery, but it never reads or returns WooCommerce/WordPress
- * media. Returning null keeps those clients stable while enforcing the visual
- * rule centrally: category artwork + checked-in local cutouts only.
+ * Primary product imagery now comes from the storefront product snapshot,
+ * where an image explicitly selected in CMS/WooCommerce is authoritative.
+ * Returning null here prevents this deprecated role layer from overriding that
+ * source of truth while keeping older callers stable.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
