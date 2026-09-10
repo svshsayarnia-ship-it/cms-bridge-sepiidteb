@@ -1,7 +1,7 @@
 import { catalogProducts } from "../../catalog";
 import type { CmsImage, CmsProduct } from "../../lib/cms-types";
 import {
-  findCardRoleImage,
+  findPrimaryProductRoleImage,
   findVariantRoleImage,
 } from "../../lib/product-image-roles";
 import { canonicalStorefrontProductSlug } from "../../lib/storefront-canonical-product";
@@ -70,7 +70,7 @@ function getRolePayload(
 
   const slugs = roleSlugs(requestedSlug, product);
   const cardImage = publicImage(
-    findCardRoleImage(product.images, slugs),
+    findPrimaryProductRoleImage(product.images, slugs),
     `تصویر ${product.name}`,
   );
 
@@ -91,8 +91,10 @@ function getRolePayload(
  * Public product imagery is CMS-authoritative.
  *
  * This endpoint exposes only Sepiid CMS role uploads. It never falls back to a
- * WooCommerce featured/gallery image and never substitutes one sibling
- * variant's image for another. The same rule is used for every product family.
+ * WooCommerce featured/gallery image or a checked-in product photograph. When
+ * the explicit CMS Primary slot is empty, the first existing CMS variant image
+ * may act as the base/card visual until a Primary image is uploaded. Exact
+ * variant requests still return only that variant's own CMS media.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
