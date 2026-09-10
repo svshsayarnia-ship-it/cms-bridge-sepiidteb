@@ -131,6 +131,7 @@ export function ProductVisual({
     product.masterImage?.trim() ||
       product.image?.trim() ||
       FALLBACK_PRODUCT_IMAGE,
+    product.slug,
   );
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = failedSrc === requestedSrc ? FALLBACK_PRODUCT_IMAGE : requestedSrc;
