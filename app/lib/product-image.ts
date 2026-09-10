@@ -7,6 +7,23 @@ const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pr
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
 
 /**
+ * Product slugs are the most reliable identity for CMS/Woo images whose remote
+ * filenames are generic numeric uploads. Prefer the approved transparent local
+ * cutout so supplier/editorial backgrounds can never leak into storefront UI.
+ */
+const PRODUCT_SLUG_CUTOUT_ALIASES = new Map<string, string>([
+  ["fusion-f-mesomatrix", "f-mesomatrix.webp"],
+  ["fusion-f-lift-face", "fusion-lift-face.webp"],
+  ["fusion-f-radiance", "fusion-f-radiance.webp"],
+  ["fusion-f-melaclear", "fusion-melaclear.webp"],
+  ["fusion-f-vitamin-c", "f-vitamin-c.webp"],
+  ["fusion-f-melirutin", "f-melirutin.webp"],
+  ["fusion-f-eye-contour", "f-eye-contour.webp"],
+  ["fusion-f-hair", "f-hair.webp"],
+  ["fusion-f-hair-men", "fusion-hair-men.webp"],
+]);
+
+/**
  * Known source/editorial filenames that already have an approved transparent
  * master in `public/images/products/cutouts/sourced`. Keeping the mapping here
  * prevents a baked editorial background from becoming the foreground inside
@@ -45,13 +62,26 @@ function filenameFromSrc(src: string) {
   }
 }
 
+function resolveProductSlugCutout(slug?: string | null) {
+  const normalizedSlug = slug?.trim().toLowerCase();
+  if (!normalizedSlug) return null;
+
+  const target = PRODUCT_SLUG_CUTOUT_ALIASES.get(normalizedSlug);
+  return target ? `${SOURCED_CUTOUT_ROOT}${target}` : null;
+}
+
 function resolveMasterSpecCutout(src: string) {
   const target = MASTER_SPEC_CUTOUT_ALIASES.get(filenameFromSrc(src));
   return target ? `${SOURCED_CUTOUT_ROOT}${target}` : null;
 }
 
-/** Resolve an approved local product photograph to its normalized alpha cutout. */
-export function getProductCutoutSrc(src?: string | null): string {
+/** Resolve an approved product photograph to its normalized alpha cutout. */
+export function getProductCutoutSrc(
+  src?: string | null,
+  productSlug?: string | null,
+): string {
+  const productSlugCutout = resolveProductSlugCutout(productSlug);
+  if (productSlugCutout) return productSlugCutout;
   if (!src) return "";
 
   if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
@@ -84,8 +114,13 @@ export function getProductCutoutSrc(src?: string | null): string {
   return src;
 }
 
-export function hasLocalProductCutout(src?: string | null): boolean {
+export function hasLocalProductCutout(
+  src?: string | null,
+  productSlug?: string | null,
+): boolean {
+  if (resolveProductSlugCutout(productSlug)) return true;
   if (!src) return false;
+
   return (
     Boolean(resolveMasterSpecCutout(src)) ||
     src.startsWith(CUTOUT_ROOT) ||
