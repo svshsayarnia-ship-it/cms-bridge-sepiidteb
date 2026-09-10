@@ -10,6 +10,7 @@ import type {
 import type { SitePresentation } from "./site-presentation";
 import type { CmsPricingState } from "./pricing-types";
 import { parsePricingState } from "./pricing-types";
+import { cmsMediaSrc } from "./cms-media";
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
@@ -397,7 +398,9 @@ async function wooRequest<T>(
 function mapImage(image: WooImage): CmsImage {
   return {
     id: image.id,
-    src: image.src,
+    // Keep the attachment ID for CMS writes, but expose only a same-origin
+    // media URL to the browser and to the public storefront snapshot.
+    src: image.id > 0 ? cmsMediaSrc(image.id) : image.src,
     name: image.name ?? "",
     alt: image.alt ?? "",
   };
@@ -1081,6 +1084,101 @@ export async function uploadMedia(
             : "woo_connection_failed",
     });
     throw error;
+  }
+}
+
+type WordPressMediaResponse = {
+  source_url?: string;
+  mime_type?: string;
+};
+
+export async function getCmsMediaAsset(id: number): Promise<{
+  body: ArrayBuffer;
+  contentType: string;
+}> {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new WooCommerceError("شناسه تصویر معتبر نیست.", 400, "invalid_media_id");
+  }
+
+  const { storeUrl, consumerKey, consumerSecret } = config();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+
+  try {
+    const mediaUrl = new URL(`${storeUrl}/wp-json/wp/v2/media/${id}`);
+    const response = await fetch(mediaUrl, {
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        authorization: `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new WooCommerceError(
+        `تصویر CMS با خطای ${response.status} پاسخ داد.`,
+        response.status === 404 ? 404 : 502,
+        "cms_media_metadata_failed",
+      );
+    }
+
+    const media = await response.json() as WordPressMediaResponse;
+    if (!media.source_url) {
+      throw new WooCommerceError(
+        "آدرس فایل تصویر CMS پیدا نشد.",
+        404,
+        "cms_media_source_missing",
+      );
+    }
+
+    const imageResponse = await fetch(media.source_url, {
+      cache: "no-store",
+      headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,*/*" },
+      signal: controller.signal,
+    });
+
+    if (!imageResponse.ok) {
+      throw new WooCommerceError(
+        `فایل تصویر CMS با خطای ${imageResponse.status} پاسخ داد.`,
+        imageResponse.status === 404 ? 404 : 502,
+        "cms_media_file_failed",
+      );
+    }
+
+    const contentType =
+      media.mime_type ||
+      imageResponse.headers.get("content-type") ||
+      "application/octet-stream";
+
+    if (!contentType.startsWith("image/")) {
+      throw new WooCommerceError(
+        "فایل دریافت‌شده تصویر معتبر نیست.",
+        415,
+        "cms_media_not_image",
+      );
+    }
+
+    return {
+      body: await imageResponse.arrayBuffer(),
+      contentType,
+    };
+  } catch (error) {
+    if (error instanceof WooCommerceError) throw error;
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new WooCommerceError(
+        "دریافت تصویر CMS بیش از حد طول کشید.",
+        504,
+        "cms_media_timeout",
+      );
+    }
+    throw new WooCommerceError(
+      error instanceof Error ? error.message : "دریافت تصویر CMS ناموفق بود.",
+      502,
+      "cms_media_connection_failed",
+    );
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

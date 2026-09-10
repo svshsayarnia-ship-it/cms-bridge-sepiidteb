@@ -90,9 +90,9 @@ if (!productExperience.includes("liveImage?.src || catalogImage?.src || product.
   );
 }
 
-if (!productExperience.includes("selectedVariant?.imageVerified === true")) {
+if (!productExperience.includes("selectedCmsVariantImage?.src")) {
   failures.push(
-    "ProductVariantExperience.tsx: an unverified variant image can replace the canonical product master",
+    "ProductVariantExperience.tsx: CMS variant media is not wired to the selected model",
   );
 }
 

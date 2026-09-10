@@ -1,57 +1,19 @@
-type StoreProduct = {
-  id: number;
-  slug: string;
-  images?: Array<{
-    id: number;
-    src: string;
-    alt?: string;
-  }>;
-};
+import { getStorefrontProductSnapshots } from "@/app/lib/storefront-product-snapshots";
 
 type LiveProductImage = {
   image: string | null;
   alt: string;
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const wordpressUrl = (
-      process.env.WORDPRESS_URL || "https://wp.sepiidbeauty.ir"
-    ).replace(/\/$/, "");
-
-    const url = new URL(
-      `${wordpressUrl}/wp-json/wc/store/v1/products`,
-    );
-
-    url.searchParams.set("per_page", "100");
-
-    const response = await fetch(url, {
-      headers: {
-        accept: "application/json",
-      },
-      next: {
-        revalidate: 300,
-      },
-    });
-
-    if (!response.ok) {
-      return Response.json(
-        {
-          error: `WooCommerce error ${response.status}`,
-          images: {},
-        },
-        { status: 502 },
-      );
-    }
-
-    const products = (await response.json()) as StoreProduct[];
-
+    const products = await getStorefrontProductSnapshots();
     const images: Record<string, LiveProductImage> = {};
 
-    for (const product of products) {
-      const image = product.images?.[0];
+    for (const product of Object.values(products)) {
+      const image = product.images?.find((item) => Boolean(item.src));
 
       images[product.slug] = {
         image: image?.src || null,
@@ -74,7 +36,7 @@ export async function GET() {
         error:
           error instanceof Error
             ? error.message
-            : "دریافت تصاویر محصولات ناموفق بود.",
+            : "دریافت تصاویر CMS ناموفق بود.",
         images: {},
       },
       { status: 500 },

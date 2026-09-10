@@ -23,6 +23,8 @@ export type Product = {
   groupTitle?: string;
   badge?: string;
   image: string;
+  /** Previously approved local asset used only when the CMS proxy fails. */
+  fallbackImage?: string;
   imageAlt?: string;
   imageVerified?: boolean;
   imageKind?: "official" | "market-reference" | "editorial-family";

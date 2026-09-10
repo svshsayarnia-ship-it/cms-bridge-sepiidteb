@@ -15,6 +15,7 @@ type HeaderProduct = Pick<
   | "category"
   | "categoryTitle"
   | "image"
+  | "fallbackImage"
   | "masterImage"
   | "imageAlt"
   | "position"
@@ -53,6 +54,7 @@ export async function SiteHeaderServer({
       category,
       categoryTitle,
       image,
+      fallbackImage,
       masterImage,
       imageAlt,
       position,
@@ -68,6 +70,7 @@ export async function SiteHeaderServer({
       category,
       categoryTitle,
       image,
+      fallbackImage,
       masterImage,
       imageAlt,
       position,

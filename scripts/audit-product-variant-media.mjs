@@ -23,12 +23,10 @@ const fillers = await read("app/inventory/fillers.ts");
 const skinSupport = await read("app/inventory/skin-support.ts");
 
 const requiredExperienceTokens = [
-  "variantFallbackImages",
-  "selectedBundledImageIsUsable",
+  "selectedCmsVariantImage",
   "canUseCmsVariantImage",
-  "shouldUseNeutralVariantFallback",
-  'selectedVariant?.imageKind === "editorial-family"',
-  'selectedVariant?.imageKind === "market-reference"',
+  "canonicalImage",
+  "selectedCmsImage",
 ];
 
 for (const token of requiredExperienceTokens) {
@@ -37,13 +35,9 @@ for (const token of requiredExperienceTokens) {
   }
 }
 
-if (
-  experience.includes(
-    "selectedVariant?.imageVerified === true &&\n      selectedVariant.image?.trim()",
-  )
-) {
+if (experience.includes("selectedBundledImage") || experience.includes("variantFallbackImages")) {
   failures.push(
-    "ProductVariantExperience.tsx: variant selection is still restricted to exact verified images",
+    "ProductVariantExperience.tsx: variant selection still contains non-CMS image fallbacks",
   );
 }
 

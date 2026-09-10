@@ -763,6 +763,79 @@ const officialImageOverrides: Record<
   string,
   Pick<ProductSeed, "image" | "imageAlt" | "imageVerified" | "imageKind">
 > = {
+  // APPROVED_PRODUCT_IMAGES_BUILD
+  "masport": {
+    image: "/images/products/editorial/approved/masport.webp",
+    imageAlt: "تصویر ادیتوریال مصپورت ۵۰۰ واحد",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "dyston-500": {
+    image: "/images/products/editorial/approved/dyston-500.webp",
+    imageAlt: "تصویر ادیتوریال دیستون ۵۰۰",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "blank-b": {
+    image: "/images/products/editorial/approved/blank-b.webp",
+    imageAlt: "تصویر ادیتوریال بلانک بی",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-eye-contour": {
+    image: "/images/products/editorial/approved/fusion-f-eye-contour.webp",
+    imageAlt: "تصویر ادیتوریال فیوژن اف آی کانتور",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-mesomatrix": {
+    image: "/images/products/editorial/approved/fusion-f-mesomatrix.webp",
+    imageAlt: "تصویر ادیتوریال فیوژن اف مزوماتریکس",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-vitamin-c": {
+    image: "/images/products/editorial/approved/fusion-f-vitamin-c.webp",
+    imageAlt: "تصویر ادیتوریال فیوژن اف ویتامین سی",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-melirutin": {
+    image: "/images/products/editorial/approved/fusion-f-melirutin.webp",
+    imageAlt: "تصویر ادیتوریال فیوژن اف ملی‌روتین",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-glutathione": {
+    image: "/images/products/editorial/approved/mesolike-glutathione.webp",
+    imageAlt: "تصویر ادیتوریال مزولایک گلوتاتیون",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "fusion-f-hair": {
+    image: "/images/products/editorial/approved/fusion-f-hair.webp",
+    imageAlt: "تصویر ادیتوریال فیوژن اف هیر",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-eye-top": {
+    image: "/images/products/editorial/approved/mesolike-eye-top.webp",
+    imageAlt: "تصویر ادیتوریال مزولایک آی تاپ",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-hair-men": {
+    image: "/images/products/editorial/approved/mesolike-hair-men.webp",
+    imageAlt: "تصویر ادیتوریال مزولایک هیر من",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
+  "mesolike-hair": {
+    image: "/images/products/editorial/approved/mesolike-hair.webp",
+    imageAlt: "تصویر ادیتوریال مزولایک ضدریزش مو",
+    imageVerified: false,
+    imageKind: "market-reference",
+  },
   "mesoheal-plus": marketReferenceImage(
     "mesoheal-plus",
     "نمای بسته مزوژل مزوهیل پلاس",
@@ -891,12 +964,6 @@ const officialImageOverrides: Record<
     "medicube-pdrn",
     "نمای ویال مدی‌کیوب PDRN",
   ),
-  "fusion-f-mesomatrix": {
-    image: "/images/products/sourced/f-mesomatrix.webp",
-    imageAlt: "نمای بسته و ویال فیوژن اف مزوماتریکس",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
   "fusion-f-radiance": {
     image: "/images/products/sourced/fusion-f-radiance.webp",
     imageAlt: "نمای بسته و ویال فیوژن اف رادیانس",
@@ -915,30 +982,6 @@ const officialImageOverrides: Record<
     imageVerified: true,
     imageKind: "official",
   },
-  "fusion-f-vitamin-c": {
-    image: "/images/products/sourced/f-vitamin-c.webp",
-    imageAlt: "نمای بسته و ویال فیوژن اف ویتامین سی",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
-  "fusion-f-melirutin": {
-    image: "/images/products/sourced/f-melirutin.webp",
-    imageAlt: "نمای بسته و ویال فیوژن اف ملی‌روتین",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
-  "fusion-f-eye-contour": {
-    image: "/images/products/sourced/f-eye-contour.webp",
-    imageAlt: "نمای بسته و ویال فیوژن اف آی کانتور",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
-  "fusion-f-hair": {
-    image: "/images/products/sourced/f-hair.webp",
-    imageAlt: "نمای بسته و ویال فیوژن اف هیر",
-    imageVerified: false,
-    imageKind: "market-reference",
-  },
   "revitacare-532": marketReferenceImage(
     "revitacare-532",
     "نمای بسته کوکتل رویتاکر ۵۳۲",
@@ -946,10 +989,6 @@ const officialImageOverrides: Record<
   "mesolike-whitening-shine": marketReferenceImage(
     "mesolike-whitening-shine",
     "نمای بسته کوکتل مزولایک وایتنینگ شاین",
-  ),
-  "mesolike-glutathione": marketReferenceImage(
-    "mesolike-glutathione",
-    "نمای بسته کوکتل مزولایک گلوتاتیون",
   ),
   "dermaheal-sb": marketReferenceImage(
     "dermaheal-sb",
@@ -959,10 +998,6 @@ const officialImageOverrides: Record<
     "genosys-sws",
     "نمای بسته کوکتل ژنوسیس SWS",
   ),
-  "mesolike-eye-top": marketReferenceImage(
-    "mesolike-eye-top",
-    "نمای بسته کوکتل مزولایک آی تاپ",
-  ),
   "revitacare-haircare": marketReferenceImage(
     "revitacare-haircare",
     "نمای بسته کوکتل رویتاکر هیرکر",
@@ -970,14 +1005,6 @@ const officialImageOverrides: Record<
   "dermaheal-hl": marketReferenceImage(
     "dermaheal-hl",
     "نمای بسته کوکتل درماهیل HL",
-  ),
-  "mesolike-hair": marketReferenceImage(
-    "mesolike-hair",
-    "نمای بسته کوکتل ضدریزش مو مزولایک",
-  ),
-  "mesolike-hair-men": marketReferenceImage(
-    "mesolike-hair-men",
-    "نمای بسته کوکتل مزولایک هیرمن",
   ),
   "genosys-hr3": marketReferenceImage(
     "genosys-hr3",

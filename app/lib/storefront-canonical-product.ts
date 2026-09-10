@@ -3,6 +3,7 @@ import {
   canonicalInventorySlug,
   isApprovedInventorySlug,
 } from "../current-inventory";
+import { normalizeCmsImages } from "./cms-media";
 import { storefrontRoleImages } from "./product-image-roles";
 
 /**
@@ -46,7 +47,7 @@ export function canonicalizeStorefrontProduct(
   product: CmsProduct,
 ): CmsProduct {
   const slug = canonicalStorefrontProductSlug(product.slug);
-  const images = storefrontRoleImages(product.images ?? []);
+  const images = storefrontRoleImages(normalizeCmsImages(product.images ?? []));
 
   return {
     ...product,

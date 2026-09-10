@@ -1,3 +1,5 @@
+import { isCmsMediaSrc } from "./cms-media";
+
 const PRODUCT_ROOT = "/images/products/";
 const CUTOUT_ROOT = "/images/products/cutouts/";
 const SOURCED_CUTOUT_ROOT = `${CUTOUT_ROOT}sourced/`;
@@ -93,7 +95,10 @@ function withRemoteImageCacheVersion(src: string) {
  */
 export function isCmsManagedProductImageSrc(src?: string | null): boolean {
   const cleanSrc = src?.trim() ?? "";
-  return Boolean(cleanSrc && filenameFromSrc(cleanSrc).includes(CMS_ROLE_TOKEN));
+  return Boolean(
+    cleanSrc &&
+      (isCmsMediaSrc(cleanSrc) || filenameFromSrc(cleanSrc).includes(CMS_ROLE_TOKEN)),
+  );
 }
 
 /**
@@ -108,6 +113,7 @@ export function getProductCutoutSrc(
   src?: string | null,
   _productSlug?: string | null,
 ): string {
+  void _productSlug;
   const cleanSrc = src?.trim() ?? "";
   if (!isCmsManagedProductImageSrc(cleanSrc)) return "";
 

@@ -28,8 +28,6 @@ import {
 } from "./public-product";
 import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
 
-const DEFAULT_PRODUCT_IMAGE = "/images/editorial-detail.webp";
-
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
 export type StorefrontCatalogSource =
@@ -149,7 +147,7 @@ function versionCmsImage(src: string, modifiedGmt: string): string {
 function blankVariantMedia(variant: NonNullable<Product["variants"]>[number]) {
   return {
     ...variant,
-    image: DEFAULT_PRODUCT_IMAGE,
+    image: "",
     imageAlt: `تصویر اختصاصی ${variant.nameFa} هنوز در CMS ثبت نشده است`,
     imageVerified: false,
     imageKind: undefined,
@@ -231,7 +229,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     group: fallback?.group || group?.slug,
     groupTitle: fallback?.groupTitle || group?.title,
     badge: product.featured ? "منتخب" : fallback?.badge,
-    image: liveImageSrc || DEFAULT_PRODUCT_IMAGE,
+    image: liveImageSrc,
     imageAlt: cmsPrimaryImage?.alt || `تصویر اصلی ${product.name} هنوز در CMS ثبت نشده است`,
     imageVerified: Boolean(liveImageSrc),
     imageKind: liveImageSrc ? "official" : undefined,
@@ -282,7 +280,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
 function mapFallbackProduct(product: Product): StorefrontProduct {
   return {
     ...product,
-    image: DEFAULT_PRODUCT_IMAGE,
+    image: "",
     imageAlt: `تصویر اصلی ${product.nameFa} هنوز در CMS ثبت نشده است`,
     imageVerified: false,
     imageKind: undefined,

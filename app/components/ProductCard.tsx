@@ -21,6 +21,7 @@ import {
   getPublicPackagingLabel,
   getPublicVolumeLabel,
 } from "../lib/public-copy";
+import { isCmsMediaSrc } from "../lib/cms-media";
 import { ArrowIcon, CloseIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
 import { addToCart } from "../lib/cart";
@@ -149,7 +150,9 @@ function getVariantImage(variant: PublicProductVariant, fallback: string) {
         variant.imageKind === "editorial-family"),
   );
 
-  return hasApprovedVariantImage ? variantImage : fallback;
+  return hasApprovedVariantImage && isCmsMediaSrc(variantImage)
+    ? variantImage
+    : fallback;
 }
 
 function getVariantSecondaryLabel(variant: PublicProductVariant) {

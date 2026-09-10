@@ -22,10 +22,10 @@ const required = [
   [roles, "findPrimaryProductRoleImage", "CMS primary must be derived only from CMS role media"],
   [resolver, "isCmsManagedProductImageSrc", "ProductVisual resolver must identify CMS role URLs"],
   [resolver, "if (!isCmsManagedProductImageSrc(cleanSrc)) return \"\"", "render boundary must reject all non-CMS product media"],
-  [canonical, "storefrontRoleImages(product.images", "public snapshots must strip ordinary WooCommerce images"],
+  [canonical, "storefrontRoleImages(normalizeCmsImages(product.images", "public snapshots must strip ordinary WooCommerce images"],
   [catalog, "findPrimaryProductRoleImage", "storefront catalog must resolve the CMS primary image"],
   [catalog, "findVariantRoleImage", "storefront catalog must resolve exact CMS variant images"],
-  [catalog, "image: liveImageSrc || DEFAULT_PRODUCT_IMAGE", "products without CMS media must use a neutral placeholder, not a product photo"],
+  [catalog, "image: liveImageSrc,", "products without CMS media must not manufacture a WooCommerce or product-photo placeholder"],
   [roleApi, "getStorefrontProductSnapshots", "role API must read confirmed CMS storefront snapshots"],
   [roleApi, "findPrimaryProductRoleImage", "role API must expose a CMS-only base/card image"],
   [roleApi, "findVariantRoleImage", "role API must return exact CMS variant media"],
@@ -37,6 +37,7 @@ for (const [source, token, message] of required) {
 }
 
 const forbidden = [
+  [catalog, "DEFAULT_PRODUCT_IMAGE", "storefront catalog still contains a hard-coded product image placeholder"],
   [catalog, "const cmsImage = product.images?.find((image) => Boolean(image.src))", "storefront catalog still accepts arbitrary WooCommerce product images"],
   [catalog, "liveImageSrc || fallback?.image", "storefront catalog can still fall back to a checked-in product photograph"],
   [roleApi, "variant.image.trim()", "role API still serves bundled/catalog variant imagery instead of CMS role media"],

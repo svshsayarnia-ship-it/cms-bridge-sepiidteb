@@ -34,6 +34,7 @@ export type ProductVisualProduct = {
   nameFa: string;
   category?: string;
   image?: string | null;
+  fallbackImage?: string | null;
   masterImage?: string | null;
   imageAlt?: string | null;
   visualProfile?: ProductVisualProfile | null;
@@ -119,11 +120,20 @@ export function ProductVisual({
   unoptimized = false,
   onLoad,
 }: ProductVisualProps) {
-  const requestedSrc =
+  const primarySrc =
     getProductCutoutSrc(product.masterImage?.trim(), product.slug) ||
     getProductCutoutSrc(product.image?.trim(), product.slug);
+  const fallbackSrc = getProductCutoutSrc(
+    product.fallbackImage?.trim(),
+    product.slug,
+  );
+  const requestedSrc = primarySrc || fallbackSrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const src = failedSrc === requestedSrc ? "" : requestedSrc;
+  const src = failedSrc
+    ? failedSrc === primarySrc
+      ? fallbackSrc
+      : ""
+    : requestedSrc;
 
   const categoryConfig = getProductVisualCategoryConfig(product.category);
   const profile = resolveVisualProfile(
@@ -165,7 +175,7 @@ export function ProductVisual({
   const imageClassName = "product-visual__image";
   const imageSizes = sizes ?? getVariantSizes(variant);
   const handleImageError = () => {
-    if (src) setFailedSrc(requestedSrc);
+    if (src) setFailedSrc(src);
   };
 
   const image = !src ? null : canUseNextImage(src) ? (

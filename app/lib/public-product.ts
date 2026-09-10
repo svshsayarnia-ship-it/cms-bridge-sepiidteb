@@ -1,6 +1,7 @@
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
 import type { CmsProduct } from "./cms-types";
+import { isCmsManagedProductImageSrc } from "./product-image";
 import {
   getCompactBrandLabel,
   getPublicVolumeLabel,
@@ -39,6 +40,7 @@ export type PublicProduct = Pick<
   | "categoryTitle"
   | "badge"
   | "image"
+  | "fallbackImage"
   | "imageAlt"
   | "imageKind"
   | "position"
@@ -66,7 +68,11 @@ const placeholderImagePattern =
   /(?:category-|editorial-detail|placeholder|default-product|product-placeholder)/iu;
 
 export function isPublicImageSrc(value?: string | null): boolean {
-  return Boolean(value && !placeholderImagePattern.test(value));
+  return Boolean(
+    value &&
+      !placeholderImagePattern.test(value) &&
+      isCmsManagedProductImageSrc(value),
+  );
 }
 
 export function toPublicProduct(
@@ -80,6 +86,7 @@ export function toPublicProduct(
     | "categoryTitle"
     | "badge"
     | "image"
+    | "fallbackImage"
     | "imageAlt"
     | "imageKind"
     | "position"
@@ -119,6 +126,7 @@ export function toPublicProduct(
     categoryTitle: toPublicCopy(product.categoryTitle),
     badge: product.badge ? toPublicCopy(product.badge) : product.badge,
     image: product.image,
+    fallbackImage: product.fallbackImage,
     masterImage: product.image,
     imageAlt: toPublicCopy(product.imageAlt || `تصویر ${product.nameFa}`),
     imageKind: product.imageKind,

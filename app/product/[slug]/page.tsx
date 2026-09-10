@@ -305,24 +305,15 @@ function buildCmsOnlyProduct(
       cmsProduct.featured
         ? "منتخب"
         : fallback?.badge,
-    image:
-      image?.src ||
-      fallback?.image ||
-      "/images/editorial-detail.webp",
+    image: image?.src || "",
+    fallbackImage: undefined,
     imageAlt:
       image?.alt ||
       fallback?.imageAlt ||
       `تصویر ${cmsProduct.name}`,
-    imageVerified:
-      Boolean(image?.src) ||
-      Boolean(fallback?.imageVerified),
-    imageKind:
-      image?.src
-        ? "official"
-        : fallback?.imageKind,
-    imageApproved:
-      Boolean(image?.src) ||
-      Boolean(fallback?.imageApproved),
+    imageVerified: Boolean(image?.src),
+    imageKind: image?.src ? "official" : undefined,
+    imageApproved: Boolean(image?.src),
     position:
       fallback?.position || "center",
     volume: fallback?.volume,
@@ -725,7 +716,7 @@ export default async function ProductPage({
 
   const schemaAvailability =
     getSchemaAvailability(liveProduct);
-  const image = liveImage?.src || product.image;
+  const image = liveImage?.src || (isPublicImageSrc(product.image) ? product.image : "");
   const variants = productExperience.variants ?? [];
   const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
   const absoluteImage = (value: string) =>
@@ -856,7 +847,7 @@ export default async function ProductPage({
               name: getCompactBrandLabel(product.brand),
             },
             description: schemaDescription,
-            image: absoluteImage(image),
+            ...(image ? { image: absoluteImage(image) } : {}),
             url: `${siteOrigin}/product/${product.slug}`,
             sku: liveProduct?.sku || product.slug,
             ...(schemaPrice

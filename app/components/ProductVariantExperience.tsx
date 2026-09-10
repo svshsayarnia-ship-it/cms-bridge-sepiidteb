@@ -151,17 +151,6 @@ const visibleSpecLabels = new Map<string, string>([
   ["واحد قیمت", "واحد قیمت"],
 ]);
 
-const variantFallbackImages: Record<string, string> = {
-  fillers: "/images/products/editorial/fillers-family.webp",
-  "skin-boosters": "/images/products/editorial/skin-boosters-family.webp",
-  "botulinum-toxins": "/images/products/editorial/botulinum-family.webp",
-  "rejuvenation-cocktails": "/images/products/editorial/rejuvenation-family.webp",
-  "brightening-cocktails": "/images/products/editorial/brightening-family.webp",
-  "eye-cocktails": "/images/products/editorial/eye-family.webp",
-  "hair-cocktails": "/images/products/editorial/hair-family.webp",
-  "hyaluronidase-products": "/images/products/editorial/sepiid-natural-stage.webp",
-};
-
 function getVisibleSpecs(specs: Array<[string, string]>) {
   const seen = new Set<string>();
 
@@ -283,57 +272,25 @@ export function ProductVariantExperience({
   const displayVolume = selectedVariant?.volume ?? product.volume;
   const packagingLabel = getPublicPackagingLabel(displayVolume);
 
-  // The CMS/WooCommerce storefront snapshot is the source of truth for the
-  // product image. A variant switch must never revive an older bundled asset.
-  // If variant-specific CMS media is introduced later it may override the live
-  // master; bundled variant imagery is only a fallback when no live image exists.
+  // CMS is the sole source of product media. A variant switch may use the
+  // exact CMS role image; when that role is empty, retain the CMS primary image
+  // rather than reviving an older bundled or WooCommerce photograph.
   const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
   const canonicalImageAlt =
     liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
   const selectedCmsImage = selectedCmsVariantImage?.src?.trim() || "";
-  const selectedBundledImage = selectedVariant?.image?.trim() || "";
-  const selectedBundledImageIsUsable = Boolean(
-    selectedBundledImage &&
-      (selectedVariant?.imageVerified === true ||
-        selectedVariant?.imageKind === "editorial-family" ||
-        selectedVariant?.imageKind === "market-reference"),
-  );
   const canUseCmsVariantImage = Boolean(
     hasExplicitVariantSelection && selectedCmsImage,
   );
-  const canUseBundledVariantImage = Boolean(
-    hasExplicitVariantSelection && !liveImage?.src && selectedBundledImageIsUsable,
-  );
-  const shouldUseNeutralVariantFallback = Boolean(
-    hasExplicitVariantSelection &&
-      selectedVariant &&
-      !liveImage?.src &&
-      !selectedCmsImage &&
-      !selectedBundledImageIsUsable,
-  );
-  const neutralVariantFallback =
-    variantFallbackImages[product.category] || "/images/products/editorial/sepiid-natural-stage.webp";
   const displayImage = canUseCmsVariantImage
     ? selectedCmsImage
-    : canUseBundledVariantImage
-      ? selectedBundledImage
-      : shouldUseNeutralVariantFallback
-        ? neutralVariantFallback
-        : canonicalImage;
+    : canonicalImage;
   const displayImageAlt = canUseCmsVariantImage
     ? selectedCmsVariantImage?.alt || selectedVariant?.imageAlt || `نمای ${displayName}`
-    : canUseBundledVariantImage
-      ? selectedVariant?.imageAlt || `نمای ${displayName}`
-      : shouldUseNeutralVariantFallback
-        ? `نمای هم‌خانواده برای ${displayName}`
-        : canonicalImageAlt;
+    : canonicalImageAlt;
   const displayImageKind = canUseCmsVariantImage
     ? "official"
-    : canUseBundledVariantImage
-      ? selectedVariant?.imageKind
-      : shouldUseNeutralVariantFallback
-        ? "editorial-family"
-        : product.imageKind;
+    : product.imageKind;
   const isEditorialFamilyImage = displayImageKind === "editorial-family";
 
   const pricing = livePricing ?? (hasVariants
