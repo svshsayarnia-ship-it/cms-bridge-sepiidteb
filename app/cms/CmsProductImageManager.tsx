@@ -43,14 +43,6 @@ async function api<T>(url: string, options?: RequestInit): Promise<T> {
   return body;
 }
 
-function roleIdentity(image: CmsImage): string {
-  return `${image.name} ${image.src}`.toLowerCase();
-}
-
-function isManagedRoleImage(image: CmsImage): boolean {
-  return roleIdentity(image).includes("sepiid-role-");
-}
-
 function resolveFamily(
   productSlug: string,
   families: CmsImageFamilyDefinition[],
@@ -137,10 +129,6 @@ export function CmsProductImageManager({
   const roleSlugs = selected
     ? Array.from(new Set([selected.slug, family?.slug ?? ""].filter(Boolean)))
     : [];
-  const masterImage =
-    selected?.images.find((image) => !isManagedRoleImage(image)) ??
-    selected?.images[0] ??
-    null;
   const cardImage = selected
     ? findCardRoleImage(selected.images, roleSlugs)
     : null;
@@ -221,7 +209,7 @@ export function CmsProductImageManager({
       form.set(
         "alt",
         target.kind === "card"
-          ? `تصویر کارت ${currentProduct.name}`
+          ? `تصویر اصلی ${currentProduct.name}`
           : `تصویر ${target.variantName}`,
       );
 
@@ -243,8 +231,8 @@ export function CmsProductImageManager({
       await saveImages(currentProduct, [...retainedImages, uploaded.image]);
       setNotice(
         target.kind === "card"
-          ? "عکس بیرونی محصول ذخیره شد."
-          : `عکس ${target.variantName} ذخیره شد.`,
+          ? "عکس اصلی CMS ذخیره شد و در همه بخش‌های ویترین استفاده می‌شود."
+          : `عکس اختصاصی ${target.variantName} ذخیره شد.`,
       );
     } catch (uploadError) {
       setError(
@@ -286,7 +274,7 @@ export function CmsProductImageManager({
       await saveImages(currentProduct, images);
       setNotice(
         target.kind === "card"
-          ? "عکس بیرونی محصول حذف شد؛ کارت از تصویر پیش‌فرض استفاده می‌کند."
+          ? "عکس اصلی CMS حذف شد؛ تا ثبت عکس جدید فقط fallback داخلی نمایش داده می‌شود و تصویر Woo استفاده نمی‌شود."
           : `عکس اختصاصی ${target.variantName} حذف شد.`,
       );
     } catch (removeError) {
@@ -305,9 +293,9 @@ export function CmsProductImageManager({
       <div className="spb-role-manager__head">
         <div>
           <span className="spb-role-manager__eyebrow">مدیریت تصویر محصول</span>
-          <h2>عکس کارت بیرونی و عکس هر مدل</h2>
+          <h2>منبع واحد تصاویر: CMS</h2>
           <p>
-            عکس Master صفحه محصول دست‌نخورده می‌ماند. برای خانواده‌های چندمدلی، هر مدل جایگاه مستقل خودش را دارد.
+            عکس اصلی محصول و عکس هر مدل از همین بخش کنترل می‌شوند. تصاویر Featured یا Gallery ووکامرس در ویترین سایت نادیده گرفته می‌شوند.
           </p>
         </div>
         <span className={connection?.mediaUploadReady ? "is-ready" : "is-offline"}>
@@ -347,36 +335,36 @@ export function CmsProductImageManager({
         <div className="spb-role-manager__body">
           <div className="spb-role-manager__summary">
             <div className="spb-role-manager__preview">
-              {masterImage?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element -- WooCommerce media is remote.
-                <img src={masterImage.src} alt={masterImage.alt || selected.name} />
+              {cardImage?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element -- CMS media can be remote.
+                <img src={cardImage.src} alt={cardImage.alt || selected.name} />
               ) : (
-                <span>بدون Master</span>
+                <span>عکس اصلی CMS ثبت نشده</span>
               )}
             </div>
             <div>
-              <small>تصویر اصلی صفحه محصول / Master</small>
+              <small>منبع نمایش عمومی</small>
               <strong>{selected.name}</strong>
-              <p>این تصویر از بخش اصلی CMS مدیریت می‌شود و این قسمت آن را تغییر نمی‌دهد.</p>
+              <p>همه کارت‌ها، پیشنهادها، لیست‌ها و نمای پایه صفحه محصول از عکس اصلی CMS دستور می‌گیرند؛ انتخاب مدل، فقط عکس اختصاصی همان مدل را جایگزین می‌کند.</p>
             </div>
           </div>
 
           <article className="spb-role-card is-card-role">
             <div className="spb-role-card__visual">
               {cardImage?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element -- WooCommerce media is remote.
+                // eslint-disable-next-line @next/next/no-img-element -- CMS media can be remote.
                 <img src={cardImage.src} alt={cardImage.alt || selected.name} />
               ) : (
-                <span>از Master استفاده می‌شود</span>
+                <span>هنوز عکس اصلی CMS ندارد</span>
               )}
             </div>
             <div className="spb-role-card__content">
-              <small>قبل از کلیک کاربر</small>
-              <h3>عکس بیرونی محصول / Product Card</h3>
-              <p>فقط روی کارت‌های صفحه اصلی، دسته‌بندی و لیست محصولات نمایش داده می‌شود.</p>
+              <small>تصویر پایه همه سطوح</small>
+              <h3>عکس اصلی محصول / CMS Primary</h3>
+              <p>این تصویر روی کارت محصول، صفحه اصلی، دسته‌بندی، نتایج، پیشنهادها و حالت پایه صفحه محصول استفاده می‌شود.</p>
               <div className="spb-role-card__actions">
                 <label className={`spb-button is-primary${!connection?.mediaUploadReady ? " is-disabled" : ""}`}>
-                  {workingKey === "card" ? "در حال ذخیره..." : cardImage ? "تعویض عکس کارت" : "آپلود عکس کارت"}
+                  {workingKey === "card" ? "در حال ذخیره..." : cardImage ? "تعویض عکس اصلی" : "آپلود عکس اصلی"}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
@@ -395,7 +383,7 @@ export function CmsProductImageManager({
                     disabled={Boolean(workingKey)}
                     onClick={() => void removeRole({ kind: "card" })}
                   >
-                    حذف عکس کارت
+                    حذف عکس اصلی
                   </button>
                 )}
               </div>
@@ -410,7 +398,7 @@ export function CmsProductImageManager({
               </div>
               <p>
                 {family
-                  ? "برای هر مدل عکس دقیق همان بسته را جداگانه بارگذاری کن."
+                  ? "برای هر مدل عکس دقیق همان بسته را جداگانه بارگذاری کن؛ هیچ مدل عکس خواهر/برادر خودش را به ارث نمی‌برد."
                   : "برای این محصول در کاتالوگ فعلی مدل جداگانه‌ای تعریف نشده است."}
               </p>
             </div>
@@ -429,7 +417,7 @@ export function CmsProductImageManager({
                     <article className="spb-role-card" key={variant.id}>
                       <div className="spb-role-card__visual">
                         {image?.src ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- WooCommerce media is remote.
+                          // eslint-disable-next-line @next/next/no-img-element -- CMS media can be remote.
                           <img src={image.src} alt={image.alt || variant.nameFa} />
                         ) : (
                           <span>هنوز عکس اختصاصی ندارد</span>
