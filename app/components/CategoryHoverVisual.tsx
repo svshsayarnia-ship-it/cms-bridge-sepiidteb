@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getCategoryArtwork } from "../config/productVisualConfig";
 
 type CategoryHoverVisualProps = {
   slug: string;
@@ -8,17 +9,6 @@ type CategoryHoverVisualProps = {
   summary: string;
 };
 
-const categoryArtwork: Record<string, string> = {
-  fillers: "/images/categories/boho-fillers.webp",
-  "skin-boosters": "/images/categories/boho-skin-boosters.webp",
-  "botulinum-toxins": "/images/categories/boho-botox-v2.webp",
-  "rejuvenation-cocktails": "/images/categories/boho-rejuvenation.webp",
-  "brightening-cocktails": "/images/categories/boho-brightening.webp",
-  "eye-cocktails": "/images/categories/boho-eye.webp",
-  "hair-cocktails": "/images/categories/boho-hair.webp",
-  "hyaluronidase-products": "/images/categories/boho-hyaluronidase.webp",
-};
-
 export function CategoryHoverVisual({
   slug,
   title,
@@ -26,7 +16,7 @@ export function CategoryHoverVisual({
   note,
   summary,
 }: CategoryHoverVisualProps) {
-  const image = categoryArtwork[slug] ?? categoryArtwork.fillers;
+  const image = getCategoryArtwork(slug);
 
   return (
     <div className="sb-category-visual" data-category={slug}>
