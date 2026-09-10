@@ -121,6 +121,19 @@ export function storefrontRoleImages(images: CmsImage[]): CmsImage[] {
     });
 }
 
+/**
+ * The explicit CMS Primary/Card slot wins. During migration, when that slot has
+ * not yet been filled but one or more CMS variant slots exist, the first CMS
+ * variant becomes the base visual. This keeps the storefront CMS-only without
+ * reviving a Woo/local product photograph.
+ */
+export function findPrimaryProductRoleImage(
+  images: CmsImage[],
+  slugs: string | string[],
+): CmsImage | null {
+  return findCardRoleImage(images, slugs) ?? storefrontRoleImages(images)[0] ?? null;
+}
+
 export function roleUploadFileName(
   fileName: string,
   token: string,
