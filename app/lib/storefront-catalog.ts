@@ -14,6 +14,10 @@ import {
 import type { Product } from "../data";
 import type { CmsProduct } from "./cms-types";
 import {
+  findCardRoleImage,
+  findVariantRoleImage,
+} from "./product-image-roles";
+import {
   getEnglishBrandLabel,
   getPublicSourceUrl,
   toPublicCopy,
@@ -154,9 +158,8 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     catalogCategories.some((category) => category.slug === fallback.category)
     ? fallback.category
     : null;
-  // Never let a stale or newly-created WooCommerce category silently remove a
-  // product from the public catalogue. Keep a known static category as the
-  // safe fallback until the CMS taxonomy is reconciled.
+  // Commerce taxonomy can still be used for catalogue structure, but product
+  // media is resolved separately and only from Sepiid CMS role uploads.
   const categorySlug = catalogCategories.some(
     (category) => category.slug === normalizedCategorySlug,
   )
@@ -174,15 +177,36 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     "محصولات";
   const group = getGroupForCategory(categorySlug);
 
+  const roleSlugs = Array.from(
+    new Set([product.slug, fallback?.slug ?? ""].filter(Boolean)),
+  );
   const verifiedFallbackImage =
     fallback?.imageVerified === true && isPublicImageSrc(fallback.image)
       ? { src: fallback.image, alt: fallback.imageAlt ?? "" }
       : null;
-  const cmsImage = product.images?.find((image) => Boolean(image.src));
-  const liveImage = cmsImage ?? verifiedFallbackImage;
-  const liveImageSrc = cmsImage?.src
-    ? versionCmsImage(cmsImage.src, product.dateModifiedGmt)
+  const cmsPrimaryImage = findCardRoleImage(product.images ?? [], roleSlugs);
+  const liveImage = cmsPrimaryImage ?? verifiedFallbackImage;
+  const liveImageSrc = cmsPrimaryImage?.src
+    ? versionCmsImage(cmsPrimaryImage.src, product.dateModifiedGmt)
     : liveImage?.src;
+  const variants = fallback?.variants?.map((variant) => {
+    const cmsVariantImage = findVariantRoleImage(
+      product.images ?? [],
+      roleSlugs,
+      variant.id,
+    );
+
+    if (!cmsVariantImage?.src?.trim()) return variant;
+
+    return {
+      ...variant,
+      image: versionCmsImage(cmsVariantImage.src, product.dateModifiedGmt),
+      imageAlt: cmsVariantImage.alt?.trim() || variant.imageAlt || `تصویر ${variant.nameFa}`,
+      imageVerified: true,
+      imageKind: "official" as const,
+      imageApproved: true,
+    };
+  });
   const descriptionText = plainText(product.shortDescription || product.description || "");
   const summary = descriptionText || fallback?.summary || "اگر درباره مدل، حجم یا بسته این محصول سؤال دارید، قبل از سفارش از تیم سپید بپرسید.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);
@@ -243,7 +267,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     visualScale: product.visualScale,
     visualOffsetX: product.visualOffsetX,
     visualOffsetY: product.visualOffsetY,
-    variants: fallback?.variants,
+    variants,
     dateModifiedGmt: product.dateModifiedGmt,
     live: true,
   };
@@ -287,7 +311,7 @@ function publicFallbackForProduct(
   const exact = fallbackBySlug.get(product.slug);
   if (exact) return exact;
 
-  // WooCommerce appends -2, -3, ... when a historical slug is still occupied.
+  // Commerce can append -2, -3, ... when a historical slug is still occupied.
   // Resolve only a plausible duplicate suffix and only when that canonical
   // catalog slug actually exists. Do not strip arbitrary model numbers such as
   // neuronox-100 or dyston-500.
@@ -327,8 +351,7 @@ function preferSnapshot(
   }
 
   // If legacy snapshots lack reliable modification timestamps, prefer the one
-  // carrying a real CMS/Woo image over a static fallback. This prevents an old
-  // slug alias with no media from replacing the current CMS photograph.
+  // carrying a CMS-authorized role image over a static migration fallback.
   const currentHasCmsImage = current.imageKind === "official";
   const candidateHasCmsImage = candidate.imageKind === "official";
   if (candidateHasCmsImage !== currentHasCmsImage) {
@@ -342,8 +365,8 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
   // SepiidTeb is the temporary source of truth for which product families may
   // appear publicly. Keep the large legacy catalog intact for migration and
-  // content references, but never let an old Woo snapshot or legacy seed leak
-  // an unapproved product back into the storefront.
+  // content references, but never let an old commerce snapshot or legacy seed
+  // leak an unapproved product back into the storefront.
   const approvedCatalogProducts = catalogProducts.filter((product) =>
     isApprovedInventorySlug(product.slug),
   );
@@ -393,13 +416,13 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   };
 }
 
-// Public rendering intentionally performs no WooCommerce network request.
+// Public rendering intentionally performs no live commerce-origin request.
 // Confirmed CMS writes populate the storefront snapshot and invalidate affected
-// routes; if WordPress is slow or unavailable, the public site still renders
+// routes; if the origin is slow or unavailable, the public site still renders
 // immediately from the last confirmed snapshot plus the local migration data.
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v5"],
+  ["storefront-catalog-v6-cms-media"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
