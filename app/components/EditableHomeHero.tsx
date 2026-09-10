@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 import type { SitePresentation } from "../lib/site-presentation";
 import { ArrowIcon } from "./Icons";
 
@@ -14,6 +19,8 @@ type HeroTreatment = {
   image: string;
   alt: string;
 };
+
+const MOBILE_TREATMENT_NAV_DELAY_MS = 700;
 
 const HERO_TREATMENTS: HeroTreatment[] = [
   {
@@ -51,12 +58,23 @@ const HERO_TREATMENTS: HeroTreatment[] = [
 ];
 
 export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["hero"] }) {
+  const router = useRouter();
   const treatmentRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const lastPointerTypeRef = useRef<string | null>(null);
+  const touchNavigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const activeTreatment = activeIndex === null ? null : HERO_TREATMENTS[activeIndex];
 
+  useEffect(() => {
+    return () => {
+      if (touchNavigationTimerRef.current) {
+        clearTimeout(touchNavigationTimerRef.current);
+      }
+    };
+  }, []);
+
   const selectNearestTreatment = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch") return;
+    if (event.pointerType !== "mouse") return;
 
     let nearestIndex = -1;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -77,6 +95,31 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
 
     setActiveIndex(nearestDistance < 155 && nearestIndex >= 0 ? nearestIndex : null);
   }, []);
+
+  const handleTreatmentClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>, index: number, href: string) => {
+      const pointerType = lastPointerTypeRef.current;
+      lastPointerTypeRef.current = null;
+
+      if (pointerType !== "touch" && pointerType !== "pen") return;
+
+      event.preventDefault();
+      setActiveIndex(index);
+
+      if (touchNavigationTimerRef.current) {
+        clearTimeout(touchNavigationTimerRef.current);
+      }
+
+      const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+      const delay = prefersReducedMotion ? 80 : MOBILE_TREATMENT_NAV_DELAY_MS;
+
+      touchNavigationTimerRef.current = setTimeout(() => {
+        touchNavigationTimerRef.current = null;
+        router.push(href);
+      }, delay);
+    },
+    [router],
+  );
 
   return (
     <section className="sb-hero sb-hero--dock" aria-labelledby="home-hero-title">
@@ -117,7 +160,9 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
           <div
             className="sb-hero__stage"
             onPointerMove={selectNearestTreatment}
-            onPointerLeave={() => setActiveIndex(null)}
+            onPointerLeave={(event) => {
+              if (event.pointerType === "mouse") setActiveIndex(null);
+            }}
           >
             <span className={`sb-hero__halo${activeIndex !== null ? " sb-hero__halo--active" : ""}`} aria-hidden="true" />
             <span className="sb-hero__halo sb-hero__halo--secondary" aria-hidden="true" />
@@ -137,8 +182,19 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
                     className={`sb-hero__treatment${isActive ? " sb-hero__treatment--active" : ""}`}
                     aria-label={`${treatment.label}: ${treatment.result}. ورود به دسته ${treatment.label}`}
                     onPointerEnter={(event) => {
-                      if (event.pointerType !== "touch") setActiveIndex(index);
+                      if (event.pointerType === "mouse") setActiveIndex(index);
                     }}
+                    onPointerDown={(event) => {
+                      lastPointerTypeRef.current = event.pointerType;
+                      if (event.pointerType === "touch" || event.pointerType === "pen") {
+                        setActiveIndex(index);
+                      }
+                    }}
+                    onPointerCancel={() => {
+                      lastPointerTypeRef.current = null;
+                      setActiveIndex(null);
+                    }}
+                    onClick={(event) => handleTreatmentClick(event, index, treatment.href)}
                     onFocus={() => setActiveIndex(index)}
                   >
                     <span className="sb-hero__face" style={style} aria-hidden="true">
