@@ -5,12 +5,13 @@ const DRIVE_PRODUCT_ROOT = "/images/drive/product-";
 const TOP_AGE_PRO_SOURCE = "/images/products/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro.webp";
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
-const REMOTE_IMAGE_CACHE_VERSION = "20260910-cms-image-refresh-1";
+const REMOTE_IMAGE_CACHE_VERSION = "20260910-cms-role-only-1";
+const CMS_ROLE_TOKEN = "sepiid-role-";
 
 /**
- * Checked-in cutouts are migration fallbacks only. When the CMS/WooCommerce
- * product supplies an explicit remote image, that image is authoritative and
- * must be allowed to reach ProductVisual.
+ * Legacy cutout mappings remain checked in for migration tooling and visual
+ * reference, but public ProductVisual rendering no longer consumes them. Public
+ * product media is controlled exclusively by CMS role uploads.
  */
 const PRODUCT_SLUG_CUTOUT_ALIASES = new Map<string, string>([
   ["fusion-f-mesomatrix", "f-mesomatrix.webp"],
@@ -57,6 +58,8 @@ function filenameFromSrc(src: string) {
   }
 }
 
+// Retained for migration/reference audits. Public rendering intentionally does
+// not call these legacy resolvers anymore.
 function resolveProductSlugCutout(slug?: string | null) {
   const normalizedSlug = slug?.trim().toLowerCase();
   if (!normalizedSlug) return null;
@@ -84,58 +87,37 @@ function withRemoteImageCacheVersion(src: string) {
 }
 
 /**
- * Resolve the product image used by ProductVisual.
+ * True only for media uploaded into a Sepiid CMS product role slot. The role
+ * token is embedded in the CMS-generated file name, so arbitrary WooCommerce
+ * featured/gallery images cannot pass this check.
+ */
+export function isCmsManagedProductImageSrc(src?: string | null): boolean {
+  const cleanSrc = src?.trim() ?? "";
+  return Boolean(cleanSrc && filenameFromSrc(cleanSrc).includes(CMS_ROLE_TOKEN));
+}
+
+/**
+ * Resolve the image used by every ProductVisual consumer.
  *
- * CMS/WooCommerce media is the source of truth whenever an explicit remote
- * image exists. Local transparent cutouts remain as safe migration fallbacks
- * for products that have not yet received a CMS image.
+ * This is the final render-boundary guard: only CMS role media is accepted.
+ * Legacy checked-in product cutouts and ordinary WooCommerce media return an
+ * empty source. Category/background artwork is handled separately and is not
+ * affected by this product-media rule.
  */
 export function getProductCutoutSrc(
   src?: string | null,
-  productSlug?: string | null,
+  _productSlug?: string | null,
 ): string {
   const cleanSrc = src?.trim() ?? "";
+  if (!isCmsManagedProductImageSrc(cleanSrc)) return "";
 
-  // ProductVisual renders remote media with a native <img>, so allowing the
-  // CMS URL here does not depend on Next/Image remotePatterns. Append a stable
-  // storefront version so browsers/CDNs cannot keep an old image body after a
-  // CMS replacement that reused the same WordPress media path.
-  if (cleanSrc && isRemoteImage(cleanSrc)) {
+  if (isRemoteImage(cleanSrc)) {
     return withRemoteImageCacheVersion(cleanSrc);
   }
 
-  if (cleanSrc) {
-    const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
-    if (masterSpecCutout) return masterSpecCutout;
-
-    if (cleanSrc === TOP_AGE_PRO_SOURCE || cleanSrc === TOP_AGE_PRO_CUTOUT) {
-      return TOP_AGE_PRO_CLEAN_CUTOUT;
-    }
-
-    if (cleanSrc.startsWith(CUTOUT_ROOT)) return cleanSrc;
-
-    if (
-      cleanSrc.startsWith(PRODUCT_ROOT) &&
-      !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)
-    ) {
-      const relative = cleanSrc
-        .slice(PRODUCT_ROOT.length)
-        .replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-      return `${CUTOUT_ROOT}${relative}`;
-    }
-
-    if (cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)) {
-      const filename = cleanSrc
-        .split("/")
-        .pop()
-        ?.replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-      return filename ? `${CUTOUT_ROOT}drive/${filename}` : "";
-    }
-  }
-
-  // A checked-in slug cutout is only a fallback. It must never override an
-  // image that the editor explicitly selected in the CMS.
-  return resolveProductSlugCutout(productSlug) ?? "";
+  // A future CMS storage adapter may return a same-origin role URL. Preserve it
+  // as-is; the embedded role token is the authority check.
+  return cleanSrc;
 }
 
 export function hasLocalProductCutout(
@@ -145,3 +127,13 @@ export function hasLocalProductCutout(
   const resolved = getProductCutoutSrc(src, productSlug);
   return Boolean(resolved && !isRemoteImage(resolved));
 }
+
+// Keep legacy symbols referenced so migration tooling can still inspect the
+// approved historical mappings without granting them storefront authority.
+void PRODUCT_ROOT;
+void DRIVE_PRODUCT_ROOT;
+void TOP_AGE_PRO_SOURCE;
+void TOP_AGE_PRO_CUTOUT;
+void TOP_AGE_PRO_CLEAN_CUTOUT;
+void resolveProductSlugCutout;
+void resolveMasterSpecCutout;
