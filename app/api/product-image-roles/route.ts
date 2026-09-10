@@ -1,12 +1,45 @@
+import { catalogProducts } from "../../catalog";
+
 export const dynamic = "force-dynamic";
 
+type PublicRoleImage = {
+  src: string;
+  alt: string;
+};
+
+function getVariantImages(slug: string, requestedVariantIds: string[]) {
+  const product = catalogProducts.find((item) => item.slug === slug);
+  const variants = product?.variants ?? [];
+  const defaultVariantId = variants[0]?.id ?? "";
+  const requested = new Set(requestedVariantIds);
+
+  return Object.fromEntries(
+    variants
+      .filter((variant) => variant.id !== defaultVariantId)
+      .filter((variant) => !requested.size || requested.has(variant.id))
+      .filter((variant) => {
+        const image = variant.image?.trim();
+        return Boolean(
+          image &&
+            (variant.imageVerified === true ||
+              variant.imageKind === "editorial-family" ||
+              variant.imageKind === "market-reference"),
+        );
+      })
+      .map((variant) => [
+        variant.id,
+        {
+          src: variant.image.trim(),
+          alt: variant.imageAlt?.trim() || `تصویر ${variant.nameFa}`,
+        } satisfies PublicRoleImage,
+      ]),
+  );
+}
+
 /**
- * Legacy compatibility endpoint for older product-card clients.
- *
- * Primary product imagery now comes from the storefront product snapshot,
- * where an image explicitly selected in CMS/WooCommerce is authoritative.
- * Returning null here prevents this deprecated role layer from overriding that
- * source of truth while keeping older callers stable.
+ * The product-level image selected in CMS/WooCommerce belongs to the base
+ * product/default variant. Sibling variants must keep their own verified media
+ * so switching models does not make every variant inherit the same master image.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -14,6 +47,15 @@ export async function GET(request: Request) {
   const slugs = Array.from(
     new Set(
       (url.searchParams.get("slugs") ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 100),
+    ),
+  );
+  const requestedVariantIds = Array.from(
+    new Set(
+      (url.searchParams.get("variants") ?? "")
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean)
@@ -40,7 +82,10 @@ export async function GET(request: Request) {
   }
 
   return Response.json(
-    { cardImage: null, variantImages: {} },
+    {
+      cardImage: null,
+      variantImages: getVariantImages(slug, requestedVariantIds),
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }
