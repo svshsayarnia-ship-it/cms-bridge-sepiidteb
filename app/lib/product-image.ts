@@ -7,9 +7,8 @@ const TOP_AGE_PRO_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pr
 const TOP_AGE_PRO_CLEAN_CUTOUT = "/images/products/cutouts/sourced/mesolike-top-age-pro-clean.svg";
 
 /**
- * Product slugs are the most reliable identity for CMS/Woo images whose remote
- * filenames are generic numeric uploads. Prefer the approved transparent local
- * cutout so supplier/editorial backgrounds can never leak into storefront UI.
+ * Storefront visuals never trust a WooCommerce/WordPress URL. Slug aliases
+ * resolve known products directly to checked-in local transparent cutouts.
  */
 const PRODUCT_SLUG_CUTOUT_ALIASES = new Map<string, string>([
   ["fusion-f-mesomatrix", "f-mesomatrix.webp"],
@@ -23,12 +22,6 @@ const PRODUCT_SLUG_CUTOUT_ALIASES = new Map<string, string>([
   ["fusion-f-hair-men", "fusion-hair-men.webp"],
 ]);
 
-/**
- * Known source/editorial filenames that already have an approved transparent
- * master in `public/images/products/cutouts/sourced`. Keeping the mapping here
- * prevents a baked editorial background from becoming the foreground inside
- * ProductVisual while preserving the category stage, scale and frame.
- */
 const MASTER_SPEC_CUTOUT_ALIASES = new Map<string, string>([
   ["f-mesomatrix.webp", "f-mesomatrix.webp"],
   ["fusion-f-mesomatrix.webp", "f-mesomatrix.webp"],
@@ -75,7 +68,15 @@ function resolveMasterSpecCutout(src: string) {
   return target ? `${SOURCED_CUTOUT_ROOT}${target}` : null;
 }
 
-/** Resolve an approved product photograph to its normalized alpha cutout. */
+function isRemoteImage(src: string) {
+  return /^(?:https?:)?\/\//iu.test(src.trim());
+}
+
+/**
+ * Resolve only to a local, approved storefront cutout. Remote CMS/Woo URLs and
+ * unrelated baked/editorial backgrounds intentionally resolve to an empty
+ * string so ProductVisual falls back to the inherited category artwork only.
+ */
 export function getProductCutoutSrc(
   src?: string | null,
   productSlug?: string | null,
@@ -84,48 +85,45 @@ export function getProductCutoutSrc(
   if (productSlugCutout) return productSlugCutout;
   if (!src) return "";
 
-  if (src === TOP_AGE_PRO_SOURCE || src === TOP_AGE_PRO_CUTOUT) {
+  const cleanSrc = src.trim();
+  if (!cleanSrc) return "";
+
+  const masterSpecCutout = resolveMasterSpecCutout(cleanSrc);
+  if (masterSpecCutout) return masterSpecCutout;
+
+  // Hard boundary: no WooCommerce/WordPress/supplier URL can enter UI rendering.
+  if (isRemoteImage(cleanSrc)) return "";
+
+  if (cleanSrc === TOP_AGE_PRO_SOURCE || cleanSrc === TOP_AGE_PRO_CUTOUT) {
     return TOP_AGE_PRO_CLEAN_CUTOUT;
   }
 
-  const masterSpecCutout = resolveMasterSpecCutout(src);
-  if (masterSpecCutout) return masterSpecCutout;
-
-  if (src.startsWith(CUTOUT_ROOT)) return src;
+  if (cleanSrc.startsWith(CUTOUT_ROOT)) return cleanSrc;
 
   if (
-    src.startsWith(PRODUCT_ROOT) &&
-    !src.startsWith(`${PRODUCT_ROOT}editorial/`)
+    cleanSrc.startsWith(PRODUCT_ROOT) &&
+    !cleanSrc.startsWith(`${PRODUCT_ROOT}editorial/`)
   ) {
-    const relative = src
+    const relative = cleanSrc
       .slice(PRODUCT_ROOT.length)
       .replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
     return `${CUTOUT_ROOT}${relative}`;
   }
 
-  if (src.startsWith(DRIVE_PRODUCT_ROOT)) {
-    const filename = src
+  if (cleanSrc.startsWith(DRIVE_PRODUCT_ROOT)) {
+    const filename = cleanSrc
       .split("/")
       .pop()
       ?.replace(/\.(?:png|jpe?g|webp)$/iu, ".webp");
-    return filename ? `${CUTOUT_ROOT}drive/${filename}` : src;
+    return filename ? `${CUTOUT_ROOT}drive/${filename}` : "";
   }
 
-  return src;
+  return "";
 }
 
 export function hasLocalProductCutout(
   src?: string | null,
   productSlug?: string | null,
 ): boolean {
-  if (resolveProductSlugCutout(productSlug)) return true;
-  if (!src) return false;
-
-  return (
-    Boolean(resolveMasterSpecCutout(src)) ||
-    src.startsWith(CUTOUT_ROOT) ||
-    (src.startsWith(PRODUCT_ROOT) &&
-      !src.startsWith(`${PRODUCT_ROOT}editorial/`)) ||
-    src.startsWith(DRIVE_PRODUCT_ROOT)
-  );
+  return Boolean(getProductCutoutSrc(src, productSlug));
 }
