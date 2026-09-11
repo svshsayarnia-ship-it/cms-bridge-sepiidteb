@@ -134,9 +134,13 @@ export function getProductCutoutSrc(
  */
 export function getTransparentProductCutoutSrc(
   src?: string | null,
+  productSlug?: string | null,
 ): string {
   const cleanSrc = src?.trim() ?? "";
   if (!cleanSrc.startsWith(PRODUCT_ROOT)) return "";
+
+  const alias = resolveProductSlugCutout(productSlug);
+  if (alias) return alias;
 
   const relative = cleanSrc.slice(PRODUCT_ROOT.length);
   if (!relative || relative.includes("..")) return "";
