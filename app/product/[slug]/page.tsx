@@ -34,7 +34,10 @@ import {
   toPublicCopy,
 } from "../../lib/public-copy";
 import { fillerCopyOverrides } from "../../lib/filler-copy";
-import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
+import {
+  getStorefrontProductSnapshots,
+  hydrateStorefrontSnapshotsFromCms,
+} from "../../lib/storefront-product-snapshots";
 import {
   getRuntimeStorefrontProduct,
 } from "../../lib/storefront-runtime-cache";
@@ -174,13 +177,34 @@ const getLiveProduct = cache(async (
     return runtimeProduct;
   }
 
-  const snapshots = await getStorefrontProductSnapshots();
-  const snapshot = latestProduct(
+  let snapshots = await getStorefrontProductSnapshots();
+  let snapshot = latestProduct(
     slugCandidates
       .map((candidate) => snapshots[candidate])
       .filter((product): product is CmsProduct => Boolean(product)),
   );
-  if (snapshot && hasPublicCmsImage(snapshot)) {
+
+  if (
+    (!snapshot || !hasPublicCmsImage(snapshot)) &&
+    process.env.NEXT_PHASE !== "phase-production-build"
+  ) {
+    try {
+      const hydratedSnapshots = await hydrateStorefrontSnapshotsFromCms();
+      snapshots = { ...snapshots, ...hydratedSnapshots };
+      snapshot = latestProduct(
+        slugCandidates
+          .map((candidate) => snapshots[candidate])
+          .filter((product): product is CmsProduct => Boolean(product)),
+      );
+    } catch (error) {
+      console.warn("[storefront-product] CMS image hydration failed", {
+        requestedSlug: slug,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (snapshot && hasPublicCmsImage(snapshot))
     console.info("[storefront-product] snapshot product resolved", {
       requestedSlug: slug,
       resolvedSlug: snapshot.slug,
