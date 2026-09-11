@@ -180,29 +180,38 @@ async function readAsset(value) {
 const authHeader = `Basic ${Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64")}`;
 
 async function requestJson(endpoint, options = {}, timeoutMs = 90_000) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${storeUrl}/wp-json/wc/v3/${endpoint}`, {
-      ...options,
-      headers: {
-        accept: "application/json",
-        "cache-control": "no-cache, no-store, max-age=0",
-        authorization: authHeader,
-        ...(options.headers ?? {}),
-      },
-      signal: controller.signal,
-    });
-    const text = await response.text();
-    let body = null;
-    try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-    if (!response.ok) throw new Error(`${response.status}: ${body?.message ?? "WooCommerce request failed"}`);
-    return body;
-  } finally {
-    clearTimeout(timeout);
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(`${storeUrl}/wp-json/wc/v3/${endpoint}`, {
+        ...options,
+        headers: {
+          accept: "application/json",
+          "cache-control": "no-cache, no-store, max-age=0",
+          authorization: authHeader,
+          ...(options.headers ?? {}),
+        },
+        signal: controller.signal,
+      });
+      const text = await response.text();
+      let body = null;
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+      if (!response.ok) throw new Error(`${response.status}: ${body?.message ?? "WooCommerce request failed"}`);
+      return body;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      const transient = /fetch failed|ETIMEDOUT|ECONNRESET|ECONNREFUSED|UND_ERR|aborted/i.test(message);
+      if (!transient || attempt === 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+  throw lastError ?? new Error("WooCommerce request failed after retries");
 }
-
 async function uploadAsset(asset, token, alt) {
   const form = new FormData();
   form.set("file", new Blob([asset.bytes], { type: asset.mime }), roleFileName(asset.fileName, token));
