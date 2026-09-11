@@ -439,6 +439,7 @@ function getProductExperience(
     category: product.category,
     categoryTitle: product.categoryTitle,
     image: isPublicImageSrc(product.image) ? product.image : "",
+    fallbackImage: product.fallbackImage,
     imageAlt: product.imageAlt,
     imageKind: product.imageKind,
     volume: product.volume,

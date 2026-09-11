@@ -141,7 +141,7 @@ export function getTransparentProductCutoutSrc(
   const relative = cleanSrc.slice(PRODUCT_ROOT.length);
   if (!relative || relative.includes("..")) return "";
 
-  return `${CUTOUT_ROOT}${relative.replace(/^cutouts\\//u, "")}`;
+  return `${CUTOUT_ROOT}${relative.replace(/^cutouts\//u, "")}`;
 }
 
 export function hasLocalProductCutout(
