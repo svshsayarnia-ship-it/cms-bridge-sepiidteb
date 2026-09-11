@@ -204,7 +204,7 @@ const getLiveProduct = cache(async (
     }
   }
 
-  if (snapshot && hasPublicCmsImage(snapshot))
+  if (snapshot && hasPublicCmsImage(snapshot)) {
     console.info("[storefront-product] snapshot product resolved", {
       requestedSlug: slug,
       resolvedSlug: snapshot.slug,
