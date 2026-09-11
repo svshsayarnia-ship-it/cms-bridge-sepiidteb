@@ -129,6 +129,7 @@ export function ProductVisual({
     getProductCutoutSrc(product.image?.trim(), product.slug);
   const transparentCutoutSrc = getTransparentProductCutoutSrc(
     product.fallbackImage?.trim(),
+    product.slug,
   );
   const primarySrc = transparentCutoutSrc || cmsSrc;
   const fallbackSrc = transparentCutoutSrc ? cmsSrc : "";
