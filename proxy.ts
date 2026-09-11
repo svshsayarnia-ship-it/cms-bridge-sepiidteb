@@ -13,7 +13,7 @@ import {
   canonicalArticleSlug,
   isLegacyArticleSlug,
 } from "./app/lib/article-url";
-import { isPublicStaticProduct } from "./app/lib/public-product";
+import { isCatalogFallbackProduct } from "./app/lib/public-product";
 
 type WooProductProbe = {
   slug?: string;
@@ -483,10 +483,11 @@ export async function proxy(request: NextRequest) {
 
   const staticProduct = staticProducts.get(slug);
 
-  // Keep proxy visibility in lockstep with the App Router. Approved local
-  // market-reference images are valid public product images too, so they must
-  // not be rejected before the product page gets a chance to render.
-  if (isPublicStaticProduct(staticProduct)) return;
+  // Keep proxy visibility in lockstep with the App Router. Product visibility
+  // is independent from media availability: the detail page may render copy
+  // and inquiry actions while CMS media is being repaired, but the render
+  // boundary still rejects every non-CMS image.
+  if (isCatalogFallbackProduct(staticProduct)) return;
 
   const remoteStatus = await probeWooProduct(slug);
   if (remoteStatus === true) return;
