@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/restore-product-image-payloads.mjs && node scripts/apply-approved-product-images.mjs && node scripts/audit-storefront-image-references.mjs && node scripts/audit-product-visual-system.mjs && node scripts/audit-product-cache-unification.mjs && node scripts/audit-product-variant-media.mjs && node scripts/audit-cms-image-authority.mjs && node scripts/audit-account-auth-contract.mjs",
+    "prebuild": "node scripts/restore-legacy-media-once.mjs && node scripts/restore-product-image-payloads.mjs && node scripts/apply-approved-product-images.mjs && node scripts/audit-storefront-image-references.mjs && node scripts/audit-product-visual-system.mjs && node scripts/audit-product-cache-unification.mjs && node scripts/audit-product-variant-media.mjs && node scripts/audit-cms-image-authority.mjs && node scripts/audit-account-auth-contract.mjs",
     "build": "next build",
     "start": "next start",
     "test": "npm run build",
