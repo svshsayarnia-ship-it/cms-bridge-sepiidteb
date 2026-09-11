@@ -23,6 +23,7 @@ import { merchantReturnPolicyReference } from "../../lib/merchant-policy";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
+  hasPublicCmsImage,
   isCatalogFallbackProduct,
   isPublicCmsProduct,
   isPublicImageSrc,
@@ -164,7 +165,7 @@ const getLiveProduct = cache(async (
       slugCandidates.map((candidate) => getRuntimeStorefrontProduct(candidate)),
     )).filter((product): product is CmsProduct => Boolean(product)),
   );
-  if (runtimeProduct) {
+  if (runtimeProduct && hasPublicCmsImage(runtimeProduct)) {
     console.info("[storefront-product] runtime product resolved", {
       requestedSlug: slug,
       resolvedSlug: runtimeProduct.slug,
@@ -179,7 +180,7 @@ const getLiveProduct = cache(async (
       .map((candidate) => snapshots[candidate])
       .filter((product): product is CmsProduct => Boolean(product)),
   );
-  if (snapshot) {
+  if (snapshot && hasPublicCmsImage(snapshot)) {
     console.info("[storefront-product] snapshot product resolved", {
       requestedSlug: slug,
       resolvedSlug: snapshot.slug,
@@ -187,6 +188,12 @@ const getLiveProduct = cache(async (
     });
     return snapshot;
   }
+
+  // A stale runtime record can still contain valid copy and pricing while its
+  // media array is empty. Prefer the confirmed CMS snapshot with a public role
+  // image so the PDP never renders an empty gallery for a recovered product.
+  if (runtimeProduct) return runtimeProduct;
+  if (snapshot) return snapshot;
 
   // Public product pages never fetch WooCommerce on demand. A CMS mutation
   // writes and verifies its storefront snapshot before revalidating routes;
