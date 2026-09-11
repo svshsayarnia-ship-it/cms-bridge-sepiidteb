@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 3600,
     localPatterns: [
       {
+        // Editorial/category artwork is bundled with the site. Product media
+        // still passes through ProductVisual's CMS-only render guard below.
+        pathname: "/images/:path*",
+      },
+      {
         pathname: "/api/cms/public-media",
         search: "?id=*",
       },
@@ -71,9 +76,9 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Referer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          {
+           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
