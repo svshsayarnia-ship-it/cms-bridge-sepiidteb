@@ -384,8 +384,10 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
   if (needsCmsHydration && !isProductionBuild) {
     try {
-      await hydrateStorefrontSnapshotsFromCms();
-      snapshots = await getStorefrontProductSnapshots();
+      const hydratedSnapshots = await hydrateStorefrontSnapshotsFromCms();
+      // Consume the confirmed CMS response in this request. Hydration may run
+      // during render, where revalidateTag/other cache writes are unsupported.
+      snapshots = { ...snapshots, ...hydratedSnapshots };
     } catch (error) {
       console.warn("[storefront-catalog] CMS snapshot hydration failed", {
         error: error instanceof Error ? error.message : String(error),

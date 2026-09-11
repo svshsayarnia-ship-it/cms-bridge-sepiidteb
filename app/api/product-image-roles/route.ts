@@ -4,8 +4,12 @@ import {
   findPrimaryProductRoleImage,
   findVariantRoleImage,
 } from "../../lib/product-image-roles";
-import { canonicalStorefrontProductSlug } from "../../lib/storefront-canonical-product";
+import {
+  canonicalStorefrontProductSlug,
+  canonicalizeStorefrontProduct,
+} from "../../lib/storefront-canonical-product";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
+import { listProducts } from "../../lib/woocommerce";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +19,41 @@ type PublicRoleImage = {
 };
 
 type ProductSnapshots = Awaited<ReturnType<typeof getStorefrontProductSnapshots>>;
+
+async function hydrateMissingCmsProducts(
+  snapshots: ProductSnapshots,
+  requestedSlugs: string[],
+): Promise<ProductSnapshots> {
+  const missingMedia = requestedSlugs.some((requestedSlug) => {
+    const product = resolveSnapshot(snapshots, requestedSlug);
+    return !product?.images?.length;
+  });
+
+  if (!missingMedia) return snapshots;
+
+  try {
+    const result = await listProducts({
+      page: 1,
+      perPage: 100,
+      status: "publish",
+      requestTimeoutMs: 12_000,
+      requestMaxAttempts: 1,
+    });
+    const directProducts = Object.fromEntries(
+      result.products.map((product) => {
+        const normalized = canonicalizeStorefrontProduct(product);
+        return [normalized.slug, normalized] as const;
+      }),
+    );
+    return { ...snapshots, ...directProducts };
+  } catch (error) {
+    console.warn("[product-image-roles] direct CMS media read failed", {
+      requestedSlugs,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return snapshots;
+  }
+}
 
 function publicImage(image: CmsImage | null, fallbackAlt: string): PublicRoleImage | null {
   if (!image?.src?.trim()) return null;
@@ -125,7 +164,11 @@ export async function GET(request: Request) {
     );
   }
 
-  const snapshots = await getStorefrontProductSnapshots();
+  let snapshots = await getStorefrontProductSnapshots();
+  snapshots = await hydrateMissingCmsProducts(
+    snapshots,
+    slugs.length ? slugs : [slug],
+  );
 
   if (slugs.length) {
     return Response.json(

@@ -19,7 +19,7 @@ type ProductSnapshots = Record<string, CmsProduct>;
 // regular storefront reads the cached value is returned, so no request needs
 // to wait for an unreliable WordPress connection.
 let snapshotSeed: ProductSnapshots | null = null;
-let cmsHydrationInFlight: Promise<void> | null = null;
+let cmsHydrationInFlight: Promise<ProductSnapshots> | null = null;
 
 async function snapshotValue(): Promise<ProductSnapshots> {
   return snapshotSeed ?? {};
@@ -100,7 +100,7 @@ export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots>
  * only sanitized/role-only records behind. This is a server-side CMS read;
  * every returned attachment is normalized before it can reach the browser.
  */
-export async function hydrateStorefrontSnapshotsFromCms(): Promise<void> {
+export async function hydrateStorefrontSnapshotsFromCms(): Promise<ProductSnapshots> {
   if (cmsHydrationInFlight) return cmsHydrationInFlight;
 
   cmsHydrationInFlight = (async () => {
@@ -109,21 +109,32 @@ export async function hydrateStorefrontSnapshotsFromCms(): Promise<void> {
     let totalPages = 1;
 
     do {
-      const result = await listProducts({
-        page,
-        perPage: 100,
-        status: "publish",
-        requestTimeoutMs: 8_000,
-        requestMaxAttempts: 1,
-      });
-      products.push(...result.products);
-      totalPages = Math.max(1, result.totalPages);
-      page += 1;
+      try {
+        const result = await listProducts({
+          page,
+          perPage: 100,
+          status: "publish",
+          requestTimeoutMs: 12_000,
+          requestMaxAttempts: 1,
+        });
+        products.push(...result.products);
+        totalPages = Math.max(1, result.totalPages);
+        page += 1;
+      } catch (error) {
+        // Hydration is also used during a dynamic route render. Cache writes
+        // are rejected in that phase, so return any CMS pages already read
+        // instead of trying to mutate Next's Data Cache here.
+        console.warn("[storefront-snapshots] CMS hydration page failed", {
+          page,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        break;
+      }
     } while (page <= totalPages && page <= 20);
 
-    if (products.length > 0) {
-      await rememberStorefrontProducts(products);
-    }
+    return canonicalizeSnapshots(
+      Object.fromEntries(products.map((product) => [product.slug, product])),
+    );
   })().finally(() => {
     cmsHydrationInFlight = null;
   });
