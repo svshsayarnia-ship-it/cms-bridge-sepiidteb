@@ -380,7 +380,9 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
     (product) => !snapshots[product.slug]?.images?.length,
   );
 
-  if (needsCmsHydration) {
+  const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+  if (needsCmsHydration && !isProductionBuild) {
     try {
       await hydrateStorefrontSnapshotsFromCms();
       snapshots = await getStorefrontProductSnapshots();

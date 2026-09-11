@@ -113,8 +113,8 @@ export async function hydrateStorefrontSnapshotsFromCms(): Promise<void> {
         page,
         perPage: 100,
         status: "publish",
-        requestTimeoutMs: 30_000,
-        requestMaxAttempts: 2,
+        requestTimeoutMs: 8_000,
+        requestMaxAttempts: 1,
       });
       products.push(...result.products);
       totalPages = Math.max(1, result.totalPages);
