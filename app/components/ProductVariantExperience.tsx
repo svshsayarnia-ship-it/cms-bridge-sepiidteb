@@ -196,6 +196,7 @@ export function ProductVariantExperience({
   const [cmsVariantImages, setCmsVariantImages] = useState<
     Record<string, PublicRoleImage>
   >({});
+  const [cmsCardImage, setCmsCardImage] = useState<PublicRoleImage | null>(null);
   const variantIds = product.variants?.map((variant) => variant.id).join(",") ?? "";
 
   useEffect(() => {
@@ -220,6 +221,7 @@ export function ProductVariantExperience({
         return (await response.json()) as ProductImageRolesResponse;
       })
       .then((data) => {
+        if (data?.cardImage) setCmsCardImage(data.cardImage);
         if (data?.variantImages) setCmsVariantImages(data.variantImages);
       })
       .catch((error) => {
@@ -277,11 +279,15 @@ export function ProductVariantExperience({
   // exact CMS role image; when that role is empty, retain the CMS primary image
   // rather than reviving an older bundled or WooCommerce photograph.
   const canonicalImage =
-    [liveImage?.src, catalogImage?.src, product.image].find((src) =>
+    [liveImage?.src, cmsCardImage?.src, catalogImage?.src, product.image].find((src) =>
       isCmsManagedProductImageSrc(src),
     ) || "";
   const canonicalImageAlt =
-    liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
+    liveImage?.alt ||
+    cmsCardImage?.alt ||
+    catalogImage?.alt ||
+    product.imageAlt ||
+    `تصویر ${product.nameFa}`;
   const selectedCmsImage = selectedCmsVariantImage?.src?.trim() || "";
   const canUseCmsVariantImage = Boolean(
     hasExplicitVariantSelection && selectedCmsImage,
