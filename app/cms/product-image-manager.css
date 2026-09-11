@@ -69,6 +69,37 @@
   color: #9b3f32;
 }
 
+.spb-role-manager__restore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(98, 70, 45, 0.18);
+  border-radius: 18px;
+  background: #fbf4ec;
+}
+
+.spb-role-manager__restore strong {
+  display: block;
+}
+
+.spb-role-manager__restore p,
+.spb-role-manager__progress {
+  margin: 5px 0 0;
+  color: #746d65;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.spb-role-manager__progress {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #f7f3ee;
+}
+
 .spb-role-manager__alert {
   margin: 12px 0;
   padding: 11px 14px;
@@ -250,6 +281,11 @@
 
   .spb-role-manager__variant-grid {
     grid-template-columns: 1fr;
+  }
+
+  .spb-role-manager__restore {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

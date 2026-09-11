@@ -76,6 +76,7 @@ export function CmsProductImageManager({
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [workingKey, setWorkingKey] = useState("");
+  const [restoreProgress, setRestoreProgress] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -288,6 +289,51 @@ export function CmsProductImageManager({
     }
   }
 
+  async function restoreLegacyProduct(product: CmsProduct) {
+    const response = await api<{
+      product: CmsProduct;
+      restored: string[];
+      skipped: string[];
+      message?: string;
+    }>("/api/cms/restore-legacy-media", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ productId: product.id, slug: product.slug }),
+    });
+    setProducts((items) => replaceProductInList(items, response.product));
+    return response;
+  }
+
+  async function restoreAllLegacyProducts() {
+    if (workingKey || !products.length || !connection?.mediaUploadReady) return;
+    if (!window.confirm("عکس‌های قبلی همه محصولات از نسخهٔ پروژه داخل CMS آپلود و به نقش محصول وصل شوند؟")) return;
+
+    setWorkingKey("legacy-all");
+    setError("");
+    setNotice("");
+    let restoredCount = 0;
+    let failedCount = 0;
+
+    try {
+      for (let index = 0; index < products.length; index += 1) {
+        const product = products[index];
+        setRestoreProgress(`در حال بازیابی ${index + 1} از ${products.length}: ${product.name}`);
+        try {
+          const result = await restoreLegacyProduct(product);
+          restoredCount += result.restored.length;
+        } catch {
+          failedCount += 1;
+        }
+      }
+      setNotice(
+        `بازیابی تمام شد؛ ${restoredCount.toLocaleString("fa-IR")} جایگاه تصویر به CMS اضافه شد${failedCount ? ` و ${failedCount.toLocaleString("fa-IR")} محصول خطا داشت` : ""}.`,
+      );
+    } finally {
+      setWorkingKey("");
+      setRestoreProgress("");
+    }
+  }
+
   return (
     <section className="spb-role-manager" aria-busy={loading}>
       <div className="spb-role-manager__head">
@@ -302,6 +348,22 @@ export function CmsProductImageManager({
           {connection?.mediaUploadReady ? "آپلود مستقیم فعال" : "آپلود مستقیم غیرفعال"}
         </span>
       </div>
+
+      <div className="spb-role-manager__restore">
+        <div>
+          <strong>بازیابی تصاویر نسخهٔ قبلی</strong>
+          <p>عکس‌های مرتبط موجود در نسخهٔ قبلی پروژه را به CMS منتقل می‌کند تا بعد از آن کارت، صفحه محصول و مدل‌ها فقط از CMS بخوانند.</p>
+        </div>
+        <button
+          type="button"
+          className="spb-button is-primary"
+          disabled={Boolean(workingKey) || !connection?.mediaUploadReady || loading}
+          onClick={() => void restoreAllLegacyProducts()}
+        >
+          {workingKey === "legacy-all" ? "در حال بازیابی..." : "بازیابی عکس‌های همه محصولات"}
+        </button>
+      </div>
+      {restoreProgress && <div className="spb-role-manager__progress">{restoreProgress}</div>}
 
       {error && <div className="spb-role-manager__alert is-error">{error}</div>}
       {notice && <div className="spb-role-manager__alert is-success">{notice}</div>}
