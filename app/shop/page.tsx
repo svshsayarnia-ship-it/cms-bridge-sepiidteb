@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { JsonLd } from "../components/JsonLd";
-import { ProductVisual } from "../components/product/ProductVisual";
+import { CategoryPreviewVisual } from "../components/CategoryPreviewVisual";
 import { ShopCatalog } from "../components/ShopCatalog";
 import {
   catalogGroups,
@@ -141,9 +141,7 @@ export default async function ShopPage() {
             // product cards. A local cutout is deliberately not accepted by
             // ProductVisual's CMS-only product-media boundary.
             const previewProduct = products.find(
-              (product) =>
-                product.category === category.slug &&
-                product.image?.trim(),
+              (product) => product.category === category.slug,
             );
 
             return (
@@ -156,12 +154,7 @@ export default async function ShopPage() {
                   data-category={category.slug}
                 >
                   {previewProduct ? (
-                    <ProductVisual
-                      decorative
-                      product={previewProduct}
-                      sizes="64px"
-                      variant="thumbnail"
-                    />
+                    <CategoryPreviewVisual product={previewProduct} />
                   ) : null}
                 </div>
 
