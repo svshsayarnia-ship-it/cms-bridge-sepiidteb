@@ -3,6 +3,7 @@ import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 import type { CmsProduct } from "./cms-types";
 import { canonicalizeStorefrontProduct } from "./storefront-canonical-product";
+import { listProducts } from "./woocommerce";
 import {
   forgetRuntimeStorefrontProduct,
   getRuntimeStorefrontProducts,
@@ -18,6 +19,7 @@ type ProductSnapshots = Record<string, CmsProduct>;
 // regular storefront reads the cached value is returned, so no request needs
 // to wait for an unreliable WordPress connection.
 let snapshotSeed: ProductSnapshots | null = null;
+let cmsHydrationInFlight: Promise<void> | null = null;
 
 async function snapshotValue(): Promise<ProductSnapshots> {
   return snapshotSeed ?? {};
@@ -91,6 +93,42 @@ export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots>
   }
 
   return merged;
+}
+
+/**
+ * Rebuild the public snapshot from the CMS when a previous deployment left
+ * only sanitized/role-only records behind. This is a server-side CMS read;
+ * every returned attachment is normalized before it can reach the browser.
+ */
+export async function hydrateStorefrontSnapshotsFromCms(): Promise<void> {
+  if (cmsHydrationInFlight) return cmsHydrationInFlight;
+
+  cmsHydrationInFlight = (async () => {
+    const products: CmsProduct[] = [];
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const result = await listProducts({
+        page,
+        perPage: 100,
+        status: "publish",
+        requestTimeoutMs: 30_000,
+        requestMaxAttempts: 2,
+      });
+      products.push(...result.products);
+      totalPages = Math.max(1, result.totalPages);
+      page += 1;
+    } while (page <= totalPages && page <= 20);
+
+    if (products.length > 0) {
+      await rememberStorefrontProducts(products);
+    }
+  })().finally(() => {
+    cmsHydrationInFlight = null;
+  });
+
+  return cmsHydrationInFlight;
 }
 
 type RememberOptions = {

@@ -26,7 +26,10 @@ import {
   isPublicCmsProduct,
   isPublicStaticProduct,
 } from "./public-product";
-import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
+import {
+  getStorefrontProductSnapshots,
+  hydrateStorefrontSnapshotsFromCms,
+} from "./storefront-product-snapshots";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
@@ -372,7 +375,21 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   const fallbackBySlug = new Map(
     approvedCatalogProducts.map((product) => [product.slug, product]),
   );
-  const snapshots = await getStorefrontProductSnapshots();
+  let snapshots = await getStorefrontProductSnapshots();
+  const needsCmsHydration = approvedCatalogProducts.some(
+    (product) => !snapshots[product.slug]?.images?.length,
+  );
+
+  if (needsCmsHydration) {
+    try {
+      await hydrateStorefrontSnapshotsFromCms();
+      snapshots = await getStorefrontProductSnapshots();
+    } catch (error) {
+      console.warn("[storefront-catalog] CMS snapshot hydration failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   const mappedSnapshots = Object.values(snapshots)
     .filter((product) => {
       const fallback = publicFallbackForProduct(product, fallbackBySlug);

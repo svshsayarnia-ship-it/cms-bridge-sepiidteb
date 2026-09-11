@@ -12,6 +12,7 @@ async function read(relativePath) {
 const roles = await read("app/lib/product-image-roles.ts");
 const resolver = await read("app/lib/product-image.ts");
 const canonical = await read("app/lib/storefront-canonical-product.ts");
+const snapshots = await read("app/lib/storefront-product-snapshots.ts");
 const catalog = await read("app/lib/storefront-catalog.ts");
 const roleApi = await read("app/api/product-image-roles/route.ts");
 const manager = await read("app/cms/CmsProductImageManager.tsx");
@@ -23,6 +24,8 @@ const required = [
   [resolver, "isCmsManagedProductImageSrc", "ProductVisual resolver must identify CMS role URLs"],
   [resolver, "if (!isCmsManagedProductImageSrc(cleanSrc)) return \"\"", "render boundary must reject all non-CMS product media"],
   [canonical, "storefrontRoleImages(normalizeCmsImages(product.images", "public snapshots must normalize every CMS image before rendering"],
+  [snapshots, "hydrateStorefrontSnapshotsFromCms", "stale snapshots must be able to refresh from CMS"],
+  [snapshots, "await listProducts({", "snapshot hydration must read products through the server-side CMS client"],
   [catalog, "findPrimaryProductRoleImage", "storefront catalog must resolve the CMS primary image"],
   [catalog, "findVariantRoleImage", "storefront catalog must resolve exact CMS variant images"],
   [catalog, "image: liveImageSrc,", "products without CMS media must not manufacture a WooCommerce or product-photo placeholder"],
