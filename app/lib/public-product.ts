@@ -117,6 +117,11 @@ export function toPublicProduct(
     }>;
   },
 ): PublicProduct {
+  const publicImage = isPublicImageSrc(product.image) ? product.image : "";
+  const publicFallbackImage = isPublicImageSrc(product.fallbackImage)
+    ? product.fallbackImage
+    : undefined;
+
   return {
     slug: product.slug,
     nameFa: product.nameFa,
@@ -125,9 +130,9 @@ export function toPublicProduct(
     category: product.category,
     categoryTitle: toPublicCopy(product.categoryTitle),
     badge: product.badge ? toPublicCopy(product.badge) : product.badge,
-    image: product.image,
-    fallbackImage: product.fallbackImage,
-    masterImage: product.image,
+    image: publicImage,
+    fallbackImage: publicFallbackImage,
+    masterImage: publicImage,
     imageAlt: toPublicCopy(product.imageAlt || `تصویر ${product.nameFa}`),
     imageKind: product.imageKind,
     position: product.position,
@@ -149,7 +154,7 @@ export function toPublicProduct(
       label: toPublicCopy(variant.label),
       nameFa: toPublicCopy(variant.nameFa),
       nameEn: toPublicCopy(variant.nameEn),
-      image: variant.image,
+      image: isPublicImageSrc(variant.image) ? variant.image : "",
       imageAlt: toPublicCopy(variant.imageAlt || `تصویر ${variant.nameFa}`),
       imageVerified: variant.imageVerified,
       imageKind: variant.imageKind,
@@ -185,6 +190,18 @@ export function isPublicStaticProduct(
           product.imageApproved === true)) &&
       isPublicImageSrc(product.image),
   );
+}
+
+/**
+ * A catalogue entry may remain publicly discoverable while its CMS media is
+ * being repaired. This is deliberately separate from image visibility: the
+ * page can render its copy and inquiry action without reviving a local or Woo
+ * image.
+ */
+export function isCatalogFallbackProduct(
+  product: Pick<Product, "slug" | "publishedInCatalog"> | null | undefined,
+): boolean {
+  return Boolean(product?.slug && product.publishedInCatalog === true);
 }
 
 export function hasPublicCmsImage(

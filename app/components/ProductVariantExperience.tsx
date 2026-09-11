@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
+import { isCmsManagedProductImageSrc } from "../lib/product-image";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ProductVisual } from "./product/ProductVisual";
 import { AddToCartButton } from "./AddToCartButton";
@@ -275,7 +276,10 @@ export function ProductVariantExperience({
   // CMS is the sole source of product media. A variant switch may use the
   // exact CMS role image; when that role is empty, retain the CMS primary image
   // rather than reviving an older bundled or WooCommerce photograph.
-  const canonicalImage = liveImage?.src || catalogImage?.src || product.image;
+  const canonicalImage =
+    [liveImage?.src, catalogImage?.src, product.image].find((src) =>
+      isCmsManagedProductImageSrc(src),
+    ) || "";
   const canonicalImageAlt =
     liveImage?.alt || catalogImage?.alt || product.imageAlt || `تصویر ${product.nameFa}`;
   const selectedCmsImage = selectedCmsVariantImage?.src?.trim() || "";

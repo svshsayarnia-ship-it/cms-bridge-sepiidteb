@@ -220,7 +220,7 @@ export function ProductCard({
     nameFa: product.nameFa,
     nameEn: product.nameEn,
     brand,
-    image: displayProduct.image,
+    image: isCmsMediaSrc(displayProduct.image) ? displayProduct.image : "",
     volume,
     priceToman: visiblePrice ?? undefined,
   };

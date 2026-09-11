@@ -23,14 +23,10 @@ import { merchantReturnPolicyReference } from "../../lib/merchant-policy";
 import type { CmsProduct } from "../../lib/cms-types";
 import { buildSeoMetadata } from "../../lib/seo";
 import {
+  isCatalogFallbackProduct,
   isPublicCmsProduct,
   isPublicImageSrc,
-  isPublicStaticProduct,
 } from "../../lib/public-product";
-import {
-  getProductCutoutSrc,
-  hasLocalProductCutout,
-} from "../../lib/product-image";
 import {
   getCompactBrandLabel,
   getEnglishBrandLabel,
@@ -208,7 +204,7 @@ function isUsableLiveProduct(
     cmsProduct &&
       cmsProduct.status === "publish" &&
       cmsProduct.catalogVisibility !== "hidden" &&
-      (isPublicCmsProduct(cmsProduct) || isPublicStaticProduct(staticProduct)),
+      (isPublicCmsProduct(cmsProduct) || isCatalogFallbackProduct(staticProduct)),
   );
 }
 
@@ -411,7 +407,7 @@ function getProductExperience(
     brand: getCompactBrandLabel(product.brand),
     category: product.category,
     categoryTitle: product.categoryTitle,
-    image: product.image,
+    image: isPublicImageSrc(product.image) ? product.image : "",
     imageAlt: product.imageAlt,
     imageKind: product.imageKind,
     volume: product.volume,
@@ -521,7 +517,7 @@ function buildTransactionalProductTitle(
 export function generateStaticParams() {
   return products
     .filter(
-      (product) => isPublicStaticProduct(product),
+      (product) => isCatalogFallbackProduct(product),
     )
     .map((product) => ({ slug: product.slug }));
 }
@@ -544,7 +540,7 @@ export async function generateMetadata({
 
   if (
     !isPublicCmsProduct(cmsProduct) &&
-    !isPublicStaticProduct(staticProduct)
+    !isCatalogFallbackProduct(staticProduct)
   ) {
     return {
       robots: {
@@ -588,9 +584,7 @@ export async function generateMetadata({
     getPublicSummary(product.summary) ||
     `${product.nameFa}؛ مشاهده مشخصات بسته و استعلام قیمت.`;
 
-  const image =
-    liveImage?.src ||
-    product.image;
+  const image = liveImage?.src || (isPublicImageSrc(product.image) ? product.image : "");
 
   const metadata = buildSeoMetadata({
     title,
@@ -632,7 +626,7 @@ export default async function ProductPage({
 
   if (
     !isPublicCmsProduct(cmsProduct) &&
-    !isPublicStaticProduct(staticProduct)
+    !isCatalogFallbackProduct(staticProduct)
   ) {
     notFound();
   }
@@ -700,12 +694,9 @@ export default async function ProductPage({
 
   const livePricing = getLiveProductPricing(liveProduct);
   const liveImage = getLiveProductImage(liveProduct, staticProduct ?? undefined);
-  const catalogImage = staticProduct && hasLocalProductCutout(staticProduct.image)
-    ? {
-        src: getProductCutoutSrc(staticProduct.image),
-        alt: staticProduct.imageAlt || `تصویر ${staticProduct.nameFa}`,
-      }
-    : null;
+  // Product media is CMS-authoritative. A checked-in image is never promoted
+  // into the detail page when a CMS snapshot is temporarily unavailable.
+  const catalogImage = null;
 
   const schemaDescription =
     getPublicSummary(product.summary) || product.nameFa;
