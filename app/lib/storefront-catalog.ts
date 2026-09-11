@@ -393,7 +393,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   const snapshotProducts = Array.from(snapshotBySlug.values());
   const snapshotSlugs = new Set(snapshotProducts.map((product) => product.slug));
   const fallbackProducts = approvedCatalogProducts
-    .filter((product) => isPublicStaticProduct(product) && !snapshotSlugs.has(product.slug))
+    .filter((product) => !snapshotSlugs.has(product.slug))
     .map(mapFallbackProduct);
 
   const products = Array.from(
@@ -416,11 +416,12 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 }
 
 // Public rendering intentionally performs no live commerce-origin request.
-// Product media comes only from CMS role slots. Checked-in product photos are
-// retained for migration/reference but are never emitted by this catalogue.
+// Product media comes from the CMS snapshot and is normalized to same-origin
+// CMS proxy URLs. Checked-in product photos are retained for migration/reference
+// but are never emitted by this catalogue fallback.
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v7-cms-role-only"],
+  ["storefront-catalog-v8-cms-media-authoritative"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],

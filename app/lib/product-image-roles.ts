@@ -38,10 +38,10 @@ export function imageHasRoleToken(image: CmsImage, token: string): boolean {
 }
 
 /**
- * Only images explicitly uploaded through Sepiid CMS image-role controls are
- * allowed to become storefront product media. Ordinary WooCommerce gallery
- * images may stay attached to the product for migration/back-office purposes,
- * but public rendering must ignore them completely.
+ * Role uploads are preferred, but every image returned by the Sepiid CMS is
+ * still valid CMS media. Older products may have been managed before the
+ * role slots existed; dropping those images makes products look empty and
+ * removes them from the public catalogue.
  */
 export function isManagedProductRoleImage(image: CmsImage): boolean {
   return imageIdentity(image).includes(`${ROLE_PREFIX}-`);
@@ -108,24 +108,25 @@ export function findVariantRoleImage(
 }
 
 /**
- * Normalize public product media so CMS primary/card media is first, followed
- * by CMS variant media. Non-role WooCommerce images are deliberately removed.
+ * Normalize public product media so CMS role media is first, followed by
+ * older CMS product images. The caller must normalize attachment IDs through
+ * the CMS proxy before this list reaches a public surface.
  */
 export function storefrontRoleImages(images: CmsImage[]): CmsImage[] {
-  return images
-    .filter(isManagedProductRoleImage)
-    .sort((first, second) => {
+  const roleImages = images.filter(isManagedProductRoleImage).sort((first, second) => {
       const firstRank = isAnyCardRoleImage(first) ? 0 : isAnyVariantRoleImage(first) ? 1 : 2;
       const secondRank = isAnyCardRoleImage(second) ? 0 : isAnyVariantRoleImage(second) ? 1 : 2;
       return firstRank - secondRank;
     });
+  const legacyCmsImages = images.filter((image) => !isManagedProductRoleImage(image));
+
+  return [...roleImages, ...legacyCmsImages];
 }
 
 /**
  * The explicit CMS Primary/Card slot wins. During migration, when that slot has
- * not yet been filled but one or more CMS variant slots exist, the first CMS
- * variant becomes the base visual. This keeps the storefront CMS-only without
- * reviving a Woo/local product photograph.
+ * not yet been filled, the first CMS image becomes the base visual. This keeps
+ * the storefront CMS-only while preserving older CMS-managed products.
  */
 export function findPrimaryProductRoleImage(
   images: CmsImage[],

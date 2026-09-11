@@ -274,7 +274,7 @@ export function CmsProductImageManager({
       await saveImages(currentProduct, images);
       setNotice(
         target.kind === "card"
-          ? "عکس اصلی CMS حذف شد؛ تا ثبت عکس جدید فقط fallback داخلی نمایش داده می‌شود و تصویر Woo استفاده نمی‌شود."
+          ? "عکس اصلی CMS حذف شد؛ تا ثبت عکس جدید عکس CMS قدیمی محصول حفظ می‌شود و تصویر مستقیم ووکامرس استفاده نمی‌شود."
           : `عکس اختصاصی ${target.variantName} حذف شد.`,
       );
     } catch (removeError) {

@@ -39,9 +39,10 @@ export function canonicalStorefrontProductSlug(slug: string): string {
 /**
  * Public product records are deliberately image-sanitized at the cache edge.
  * Pricing, stock, copy and taxonomy may still originate from the commerce
- * backend, but product media is controlled exclusively by Sepiid CMS role
- * uploads. Ordinary WooCommerce gallery/featured images never survive this
- * boundary and therefore cannot leak into PDPs, cards, carousels or metadata.
+ * backend, but product media is controlled exclusively by the Sepiid CMS
+ * record. Attachment IDs are converted to same-origin CMS proxy URLs before
+ * any public surface receives them. Role uploads are preferred; older CMS
+ * product images remain available for products that predate role slots.
  */
 export function canonicalizeStorefrontProduct(
   product: CmsProduct,

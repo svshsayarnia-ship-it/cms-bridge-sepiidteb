@@ -169,9 +169,10 @@ type StaticProductVisibility = Pick<
 };
 
 /**
- * A product is public only when it is explicitly published and has either an
- * exact verified image or an approved editorial-family image. Category
- * placeholders must never make a product indexable or appear in the store.
+ * A CMS product is public when it is explicitly published and visible. Image
+ * presence is intentionally not a visibility gate: a product must not vanish
+ * from the catalogue just because its CMS image is temporarily empty. The
+ * render boundary still rejects every non-CMS image and shows no placeholder.
  */
 export function isPublicStaticProduct(
   product: StaticProductVisibility | null | undefined,
@@ -203,7 +204,6 @@ export function isPublicCmsProduct(
   return Boolean(
     product?.slug &&
       product.status === "publish" &&
-      product.catalogVisibility !== "hidden" &&
-      hasPublicCmsImage(product),
+      product.catalogVisibility !== "hidden",
   );
 }

@@ -22,7 +22,7 @@ const required = [
   [roles, "findPrimaryProductRoleImage", "CMS primary must be derived only from CMS role media"],
   [resolver, "isCmsManagedProductImageSrc", "ProductVisual resolver must identify CMS role URLs"],
   [resolver, "if (!isCmsManagedProductImageSrc(cleanSrc)) return \"\"", "render boundary must reject all non-CMS product media"],
-  [canonical, "storefrontRoleImages(normalizeCmsImages(product.images", "public snapshots must strip ordinary WooCommerce images"],
+  [canonical, "storefrontRoleImages(normalizeCmsImages(product.images", "public snapshots must normalize every CMS image before rendering"],
   [catalog, "findPrimaryProductRoleImage", "storefront catalog must resolve the CMS primary image"],
   [catalog, "findVariantRoleImage", "storefront catalog must resolve exact CMS variant images"],
   [catalog, "image: liveImageSrc,", "products without CMS media must not manufacture a WooCommerce or product-photo placeholder"],
@@ -54,4 +54,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("CMS image authority audit passed: all ProductVisual media is CMS-role controlled; Woo and checked-in product photos are blocked.");
+console.log("CMS image authority audit passed: all ProductVisual media is CMS-controlled through the same-origin proxy; raw Woo and checked-in fallback URLs are blocked.");

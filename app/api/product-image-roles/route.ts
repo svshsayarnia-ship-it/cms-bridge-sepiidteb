@@ -90,11 +90,11 @@ function getRolePayload(
 /**
  * Public product imagery is CMS-authoritative.
  *
- * This endpoint exposes only Sepiid CMS role uploads. It never falls back to a
- * WooCommerce featured/gallery image or a checked-in product photograph. When
- * the explicit CMS Primary slot is empty, the first existing CMS variant image
- * may act as the base/card visual until a Primary image is uploaded. Exact
- * variant requests still return only that variant's own CMS media.
+ * This endpoint exposes Sepiid CMS media, with explicit role uploads taking
+ * priority. It never exposes a raw WooCommerce URL or a checked-in product
+ * photograph. When the explicit CMS Primary slot is empty, the first existing
+ * CMS image may act as the base/card visual until a Primary image is uploaded.
+ * Exact variant requests still return only that variant's own CMS role media.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
