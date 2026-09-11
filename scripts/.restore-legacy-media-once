@@ -1,1 +1,1 @@
-Run the one-time CMS legacy product media restore during the next production build.
+Retry the one-time CMS legacy product media restore after transient network failures.
