@@ -84,7 +84,12 @@ if (/<(?:img|Image)\b/gu.test(productExperience)) {
   failures.push("ProductVariantExperience.tsx: raw image element found outside ProductVisual");
 }
 
-if (!productExperience.includes("liveImage?.src || catalogImage?.src || product.image")) {
+if (
+  !productExperience.includes("isCmsManagedProductImageSrc") ||
+  !productExperience.includes("liveImage?.src") ||
+  !productExperience.includes("catalogImage?.src") ||
+  !productExperience.includes("product.image")
+) {
   failures.push(
     "ProductVariantExperience.tsx: PDP canonical image must prefer the same Woo/CMS master used by discovery surfaces",
   );
