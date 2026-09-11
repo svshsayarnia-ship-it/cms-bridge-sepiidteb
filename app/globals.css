@@ -10910,3 +10910,34 @@ footer {
     height: 12px;
   }
 }
+/* Keep button labels and trailing/leading icons visually independent in RTL. */
+:where(.sb-btn, .sb-text-link, .sb-product-card__cta) {
+  align-items: center;
+  column-gap: 12px;
+}
+
+:where(.sb-btn, .sb-text-link, .sb-product-card__cta) > svg {
+  flex: 0 0 auto;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-inline-start: 2px;
+}
+
+.sb-product-card__cta {
+  justify-content: center;
+  min-inline-size: 0;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.sb-product-card__cta > span {
+  min-inline-size: 0;
+  overflow-wrap: normal;
+}
+
+@media (max-width: 820px) {
+  .sb-product-card__cta {
+    column-gap: 9px;
+    padding-inline: 11px;
+  }
+}

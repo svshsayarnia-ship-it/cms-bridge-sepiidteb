@@ -13,8 +13,10 @@ const nextConfig: NextConfig = {
         pathname: "/images/**",
       },
       {
+        // CMS role media is served from this same-origin endpoint with an id
+        // query parameter. Leaving search open is intentional: Next's image
+        // pattern matcher does not treat `*` as a query-string glob here.
         pathname: "/api/cms/public-media",
-        search: "?id=*",
       },
     ],
   },

@@ -25,20 +25,6 @@ const groupDescriptions: Record<string, string> = {
     "محصولات پشتیبان حرفه‌ای را با نام دقیق، قدرت درج‌شده و نوع بسته کنار هم ببینید.",
 };
 
-// These are the same 1400px transparent product cutouts used by product
-// cards. Keeping category shortcuts on local assets prevents a WordPress media
-// request from leaving an empty thumbnail on slower mobile connections.
-const categoryPreviewImages: Record<string, string> = {
-  fillers: "/images/products/cutouts/alcarisa-16.webp",
-  "skin-boosters": "/images/products/cutouts/jalupro-hmw.webp",
-  "botulinum-toxins": "/images/products/cutouts/masport-500.webp",
-  "rejuvenation-cocktails": "/images/products/cutouts/ejal-40.webp",
-  "brightening-cocktails": "/images/products/cutouts/sourced/fusion-melaclear.webp",
-  "eye-cocktails": "/images/products/cutouts/sourced/f-eye-contour.webp",
-  "hair-cocktails": "/images/products/cutouts/sourced/f-hair.webp",
-  "hyaluronidase-products": "/images/products/cutouts/liporase-1500.webp",
-};
-
 export const metadata = buildSeoMetadata({
   title: "فروشگاه سپید بیوتی | قیمت و مقایسه محصولات زیبایی",
   description:
@@ -151,14 +137,14 @@ export default async function ShopPage() {
               (product) =>
                   product.category === category.slug,
             ).length;
-            const previewProduct = {
-              slug: `category-preview-${category.slug}`,
-              nameFa: category.title,
-              category: category.slug,
-              image:
-                categoryPreviewImages[category.slug] ??
-                "/images/sepiid-logo.webp",
-            };
+            // Category shortcuts must use the same CMS role media as the
+            // product cards. A local cutout is deliberately not accepted by
+            // ProductVisual's CMS-only product-media boundary.
+            const previewProduct = products.find(
+              (product) =>
+                product.category === category.slug &&
+                product.image?.trim(),
+            );
 
             return (
               <Link
@@ -169,12 +155,14 @@ export default async function ShopPage() {
                   className="sb-shop-categories__visual"
                   data-category={category.slug}
                 >
-                  <ProductVisual
-                    decorative
-                    product={previewProduct}
-                    sizes="64px"
-                    variant="thumbnail"
-                  />
+                  {previewProduct ? (
+                    <ProductVisual
+                      decorative
+                      product={previewProduct}
+                      sizes="64px"
+                      variant="thumbnail"
+                    />
+                  ) : null}
                 </div>
 
                 <span>{category.title}</span>

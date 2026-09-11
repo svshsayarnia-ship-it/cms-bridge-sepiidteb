@@ -557,8 +557,6 @@ export default async function CategoryPage({
         </div>
       </div>
 
-      {category.slug === "fillers" ? <FillerCategoryIntro /> : null}
-
       <section id="category-products" className="sb-section sb-catalog-section">
         <div className="sb-shell">
           <ShopCatalog
@@ -567,6 +565,8 @@ export default async function CategoryPage({
           />
         </div>
       </section>
+
+      {category.slug === "fillers" ? <FillerCategoryIntro /> : null}
 
       {category.slug === "fillers" ? <FillerCategoryGuide /> : null}
 

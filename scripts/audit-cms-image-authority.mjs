@@ -35,11 +35,17 @@ const required = [
   [roleApi, "findVariantRoleImage", "role API must return exact CMS variant media"],
   [manager, "منبع واحد تصاویر: CMS", "CMS UI must communicate the global image authority"],
   [nextConfig, 'pathname: "/api/cms/public-media"', "Next Image must allow the same-origin CMS media proxy"],
-  [nextConfig, 'search: "?id=*"', "CMS media proxy query parameters must be explicitly allowed"],
 ];
 
 for (const [source, token, message] of required) {
   if (!source.includes(token)) failures.push(message);
+}
+
+// Next's localPatterns.search is an exact URL-search matcher, not a glob.
+// The proxy pathname is therefore intentionally allowed without a search
+// restriction so every numeric CMS media id can be served.
+if (nextConfig.includes('search: "?id=*"')) {
+  failures.push("CMS media proxy must not use the unsupported wildcard search pattern");
 }
 
 const forbidden = [

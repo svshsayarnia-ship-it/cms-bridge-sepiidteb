@@ -15,7 +15,10 @@ import {
   VISUAL_PROFILES,
   type ProductVisualProfile,
 } from "../../config/visualProfiles";
-import { getProductCutoutSrc } from "../../lib/product-image";
+import {
+  getProductCutoutSrc,
+  isCmsManagedProductImageSrc,
+} from "../../lib/product-image";
 
 const MAX_OFFSET = 5;
 const MIN_SCALE = 0.68;
@@ -174,6 +177,7 @@ export function ProductVisual({
     : product.imageAlt?.trim() || `تصویر ${product.nameFa}`;
   const imageClassName = "product-visual__image";
   const imageSizes = sizes ?? getVariantSizes(variant);
+  const isCmsMedia = Boolean(src && isCmsManagedProductImageSrc(src));
   const handleImageError = () => {
     if (src) setFailedSrc(src);
   };
@@ -189,7 +193,10 @@ export function ProductVisual({
       priority={priority}
       sizes={imageSizes}
       src={src}
-      unoptimized={unoptimized}
+      // The CMS endpoint already returns the optimized role asset. Bypassing
+      // Next's second optimizer also keeps the browser on the CMS authority
+      // and avoids an optimizer request being mistaken for a missing image.
+      unoptimized={unoptimized || isCmsMedia}
     />
   ) : (
     <img
