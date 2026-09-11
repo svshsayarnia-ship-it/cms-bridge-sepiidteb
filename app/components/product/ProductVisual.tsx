@@ -17,6 +17,7 @@ import {
 } from "../../config/visualProfiles";
 import {
   getProductCutoutSrc,
+  getTransparentProductCutoutSrc,
   isCmsManagedProductImageSrc,
 } from "../../lib/product-image";
 
@@ -123,14 +124,15 @@ export function ProductVisual({
   unoptimized = false,
   onLoad,
 }: ProductVisualProps) {
-  const primarySrc =
+  const cmsSrc =
     getProductCutoutSrc(product.masterImage?.trim(), product.slug) ||
     getProductCutoutSrc(product.image?.trim(), product.slug);
-  const fallbackSrc = getProductCutoutSrc(
+  const transparentCutoutSrc = getTransparentProductCutoutSrc(
     product.fallbackImage?.trim(),
-    product.slug,
   );
-  const requestedSrc = primarySrc || fallbackSrc;
+  const primarySrc = transparentCutoutSrc || cmsSrc;
+  const fallbackSrc = transparentCutoutSrc ? cmsSrc : "";
+  const requestedSrc = primarySrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = failedSrc
     ? failedSrc === primarySrc

@@ -333,7 +333,7 @@ function buildCmsOnlyProduct(
         ? "منتخب"
         : fallback?.badge,
     image: image?.src || "",
-    fallbackImage: undefined,
+    fallbackImage: fallback?.image,
     imageAlt:
       image?.alt ||
       fallback?.imageAlt ||

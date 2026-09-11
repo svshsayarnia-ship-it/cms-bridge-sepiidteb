@@ -23,6 +23,7 @@ const required = [
   [roles, "storefrontRoleImages", "product-image-roles.ts must expose the public image sanitizer"],
   [roles, "findPrimaryProductRoleImage", "CMS primary must be derived only from CMS role media"],
   [resolver, "isCmsManagedProductImageSrc", "ProductVisual resolver must identify CMS role URLs"],
+  [resolver, "getTransparentProductCutoutSrc", "transparent product foregrounds must be resolved only from approved catalog assets"],
   [resolver, "if (!isCmsManagedProductImageSrc(cleanSrc)) return \"\"", "render boundary must reject all non-CMS product media"],
   [canonical, "storefrontRoleImages(normalizeCmsImages(product.images", "public snapshots must normalize every CMS image before rendering"],
   [snapshots, "hydrateStorefrontSnapshotsFromCms", "stale snapshots must be able to refresh from CMS"],

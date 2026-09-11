@@ -126,6 +126,24 @@ export function getProductCutoutSrc(
   return cleanSrc;
 }
 
+/**
+ * Resolve the approved transparent foreground paired with a catalog source.
+ * The CMS role remains the authority for the product and its current media;
+ * this presentation-only asset prevents a composed CMS scene from being
+ * rendered as a second background inside the category stage.
+ */
+export function getTransparentProductCutoutSrc(
+  src?: string | null,
+): string {
+  const cleanSrc = src?.trim() ?? "";
+  if (!cleanSrc.startsWith(PRODUCT_ROOT)) return "";
+
+  const relative = cleanSrc.slice(PRODUCT_ROOT.length);
+  if (!relative || relative.includes("..")) return "";
+
+  return `${CUTOUT_ROOT}${relative.replace(/^cutouts\\//u, "")}`;
+}
+
 export function hasLocalProductCutout(
   src?: string | null,
   productSlug?: string | null,

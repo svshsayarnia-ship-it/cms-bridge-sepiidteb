@@ -118,9 +118,7 @@ export function toPublicProduct(
   },
 ): PublicProduct {
   const publicImage = isPublicImageSrc(product.image) ? product.image : "";
-  const publicFallbackImage = isPublicImageSrc(product.fallbackImage)
-    ? product.fallbackImage
-    : undefined;
+  const publicFallbackImage = product.fallbackImage?.trim() || undefined;
 
   return {
     slug: product.slug,

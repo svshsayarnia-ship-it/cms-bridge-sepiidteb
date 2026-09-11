@@ -233,6 +233,7 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     groupTitle: fallback?.groupTitle || group?.title,
     badge: product.featured ? "منتخب" : fallback?.badge,
     image: liveImageSrc,
+    fallbackImage: fallback?.image,
     imageAlt: cmsPrimaryImage?.alt || `تصویر اصلی ${product.name} هنوز در CMS ثبت نشده است`,
     imageVerified: Boolean(liveImageSrc),
     imageKind: liveImageSrc ? "official" : undefined,

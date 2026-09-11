@@ -31,6 +31,7 @@ type ProductExperienceVariant = Pick<
   | "nameFa"
   | "nameEn"
   | "image"
+  | "fallbackImage"
   | "imageAlt"
   | "imageVerified"
   | "imageKind"
@@ -346,6 +347,7 @@ export function ProductVariantExperience({
                   nameFa: displayName,
                   category: product.category,
                   masterImage: displayImage,
+                  fallbackImage: product.fallbackImage,
                   imageAlt: displayImageAlt,
                   visualProfile: product.visualProfile,
                   visualScale: product.visualScale,
