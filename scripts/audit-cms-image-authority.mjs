@@ -16,6 +16,7 @@ const snapshots = await read("app/lib/storefront-product-snapshots.ts");
 const catalog = await read("app/lib/storefront-catalog.ts");
 const roleApi = await read("app/api/product-image-roles/route.ts");
 const manager = await read("app/cms/CmsProductImageManager.tsx");
+const nextConfig = await read("next.config.ts");
 
 const required = [
   [roles, "isManagedProductRoleImage", "product-image-roles.ts must identify CMS-managed role images"],
@@ -33,6 +34,8 @@ const required = [
   [roleApi, "findPrimaryProductRoleImage", "role API must expose a CMS-only base/card image"],
   [roleApi, "findVariantRoleImage", "role API must return exact CMS variant media"],
   [manager, "منبع واحد تصاویر: CMS", "CMS UI must communicate the global image authority"],
+  [nextConfig, 'pathname: "/api/cms/public-media"', "Next Image must allow the same-origin CMS media proxy"],
+  [nextConfig, 'search: "?id=*"', "CMS media proxy query parameters must be explicitly allowed"],
 ];
 
 for (const [source, token, message] of required) {

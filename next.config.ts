@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 3600,
+    localPatterns: [
+      {
+        pathname: "/api/cms/public-media",
+        search: "?id=*",
+      },
+    ],
   },
   async redirects() {
     return [
