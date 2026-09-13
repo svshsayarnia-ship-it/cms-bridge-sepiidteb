@@ -3,6 +3,8 @@ import type {
   MarketPricingProduct,
 } from "./market-pricing";
 import { parsePricingState } from "./pricing-types";
+import { quickPriceEditorId } from "./quick-price-id";
+import { listQuickPriceItems } from "./variant-pricing";
 import { WooCommerceError } from "./woocommerce";
 
 type WooMeta = {
@@ -187,9 +189,38 @@ async function listPublishedProducts(): Promise<MarketPricingProduct[]> {
 
 export async function getMarketPricingDashboardDirect(): Promise<MarketPricingDashboard> {
   const products = await listPublishedProducts();
+  const byId = new Map(products.map((product) => [product.id, product]));
+
+  let editableProducts: MarketPricingProduct[] = products;
+  try {
+    const quickItems = await listQuickPriceItems();
+    editableProducts = quickItems.map((item) => {
+      const parentId = item.parentId ?? item.productId;
+      const parent = byId.get(parentId);
+      const id = item.kind === "product"
+        ? item.productId
+        : quickPriceEditorId(item.key);
+
+      return {
+        id,
+        name: item.name,
+        slug: item.slug,
+        sku: item.sku,
+        price: item.price,
+        regularPrice: item.regularPrice,
+        salePrice: item.salePrice,
+        pricing: parent?.pricing ?? parsePricingState(""),
+      };
+    });
+  } catch (error) {
+    console.warn("[pricing-dashboard] variant list unavailable; using products only", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   return {
     products,
-    editableProducts: products,
+    editableProducts,
     generatedAt: new Date().toISOString(),
   };
 }
