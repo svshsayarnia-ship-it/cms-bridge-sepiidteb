@@ -431,11 +431,6 @@ function getProductExperience(
   product: Product,
   cmsProduct: CmsProduct | null,
 ): ProductExperienceProduct {
-  const fallbackVariantImage = isPublicImageSrc(product.image)
-    ? product.image
-    : "";
-  const fallbackVariantAlt = product.imageAlt || `تصویر ${product.nameFa}`;
-
   return {
     slug: product.slug,
     nameFa: product.nameFa,
@@ -443,7 +438,7 @@ function getProductExperience(
     brand: getCompactBrandLabel(product.brand),
     category: product.category,
     categoryTitle: product.categoryTitle,
-    image: fallbackVariantImage,
+    image: isPublicImageSrc(product.image) ? product.image : "",
     fallbackImage: product.fallbackImage,
     imageAlt: product.imageAlt,
     imageKind: product.imageKind,
@@ -456,35 +451,29 @@ function getProductExperience(
     visualScale: cmsProduct?.visualScale,
     visualOffsetX: cmsProduct?.visualOffsetX,
     visualOffsetY: cmsProduct?.visualOffsetY,
-    // Variant availability is a commerce concern, not a media-verification
-    // concern. Keep every configured model selectable on mobile and desktop.
-    // When a variant does not have an approved independent image, reuse the
-    // canonical product image while the CMS role-image endpoint can still
-    // replace it after an explicit selection.
-    variants: product.variants?.map((variant) => {
-      const hasApprovedVariantImage = Boolean(
-        (variant.imageVerified === true ||
-          (variant.imageKind === "editorial-family" &&
-            variant.imageApproved === true)) &&
+    variants: product.variants
+      ?.filter(
+        (variant) =>
+          (variant.imageVerified === true ||
+            (variant.imageKind === "editorial-family" &&
+              variant.imageApproved === true)) &&
           isPublicImageSrc(variant.image),
-      );
-
-      return {
+      )
+      .map((variant) => ({
         id: variant.id,
         label: variant.label,
         nameFa: variant.nameFa,
         nameEn: variant.nameEn,
-        image: hasApprovedVariantImage ? variant.image : fallbackVariantImage,
-        imageAlt: hasApprovedVariantImage ? variant.imageAlt : fallbackVariantAlt,
-        imageVerified: hasApprovedVariantImage,
-        imageKind: hasApprovedVariantImage ? variant.imageKind : product.imageKind,
+        image: variant.image,
+        imageAlt: variant.imageAlt,
+        imageVerified: variant.imageVerified,
+        imageKind: variant.imageKind,
         volume: variant.volume,
         summary: toPublicCopy(variant.summary),
         specs: getPublicSpecs(variant.specs),
         priceToman: variant.priceToman,
         priceNote: variant.priceNote,
-      };
-    }),
+      })),
   };
 }
 
@@ -771,7 +760,7 @@ export default async function ProductPage({
         alternateName: variant.nameEn,
         url: variantUrl,
         sku: `${product.slug}-${variant.id}`,
-        ...(variant.image ? { image: absoluteImage(variant.image) } : {}),
+        image: absoluteImage(variant.image),
         description: variant.summary || variant.nameFa,
         isVariantOf: { "@id": productGroupId },
         ...(variantPrice
