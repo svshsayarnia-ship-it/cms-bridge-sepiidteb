@@ -24,6 +24,16 @@ type ProductImageRolesResponse = {
   variantImages: Record<string, PublicRoleImage>;
 };
 
+type VariantPriceOverride = {
+  regularPrice: string;
+  salePrice: string;
+  updatedAt?: string;
+};
+
+type ProductVariantPricesResponse = {
+  prices: Record<string, VariantPriceOverride>;
+};
+
 type ProductExperienceVariant = Pick<
   ProductVariant,
   | "id"
@@ -198,6 +208,9 @@ export function ProductVariantExperience({
     Record<string, PublicRoleImage>
   >({});
   const [cmsCardImage, setCmsCardImage] = useState<PublicRoleImage | null>(null);
+  const [cmsVariantPrices, setCmsVariantPrices] = useState<
+    Record<string, VariantPriceOverride>
+  >({});
   const variantIds = product.variants?.map((variant) => variant.id).join(",") ?? "";
 
   useEffect(() => {
@@ -232,6 +245,30 @@ export function ProductVariantExperience({
 
     return () => controller.abort();
   }, [variantIds]);
+
+  useEffect(() => {
+    if (!variantIds || !product.slug) return;
+
+    const controller = new AbortController();
+    const query = new URLSearchParams({ slug: product.slug });
+    void fetch(`/api/product-variant-prices?${query.toString()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as ProductVariantPricesResponse;
+      })
+      .then((data) => {
+        if (data?.prices) setCmsVariantPrices(data.prices);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.warn("[product-variant] price override load failed", error);
+      });
+
+    return () => controller.abort();
+  }, [product.slug, variantIds]);
 
   const selectedVariant = product.variants?.find((variant) => variant.id === selectedId);
   const selectedCmsVariantImage = selectedVariant
@@ -304,15 +341,39 @@ export function ProductVariantExperience({
     : product.imageKind;
   const isEditorialFamilyImage = displayImageKind === "editorial-family";
 
-  const pricing = livePricing ?? (hasVariants
-    ? {
-        label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
-        note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت امروز",
-      }
-    : {
+  const hasSavedVariantPrice = Boolean(
+    selectedVariant &&
+      Object.prototype.hasOwnProperty.call(cmsVariantPrices, selectedVariant.id),
+  );
+  const savedVariantPrice = selectedVariant
+    ? cmsVariantPrices[selectedVariant.id]
+    : undefined;
+  const savedCurrentPrice = Number(
+    savedVariantPrice?.salePrice || savedVariantPrice?.regularPrice || 0,
+  );
+  const selectedPriceToman = hasSavedVariantPrice
+    ? (Number.isFinite(savedCurrentPrice) && savedCurrentPrice > 0
+        ? savedCurrentPrice
+        : undefined)
+    : selectedVariant?.priceToman ?? product.priceToman;
+
+  const pricing = hasVariants
+    ? hasSavedVariantPrice
+      ? {
+          label: formatStaticPrice(selectedPriceToman),
+          note:
+            savedVariantPrice?.salePrice && savedVariantPrice.regularPrice
+              ? `قیمت عادی: ${formatStaticPrice(Number(savedVariantPrice.regularPrice))}`
+              : "قیمت ثبت‌شده در سایت",
+        }
+      : {
+          label: formatStaticPrice(selectedVariant?.priceToman ?? product.priceToman),
+          note: selectedVariant?.priceNote ?? product.priceNote ?? "قیمت امروز",
+        }
+    : livePricing ?? {
         label: formatStaticPrice(product.priceToman),
         note: product.priceNote ?? "قیمت امروز",
-      });
+      };
 
   const inquiryProduct = {
     slug: product.slug,
@@ -321,7 +382,7 @@ export function ProductVariantExperience({
     brand: product.brand,
     image: displayImage,
     volume: displayVolume,
-    priceToman: selectedVariant?.priceToman ?? product.priceToman,
+    priceToman: selectedPriceToman,
   };
 
   function selectVariant(id: string) {
