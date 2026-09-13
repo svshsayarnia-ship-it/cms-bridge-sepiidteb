@@ -451,15 +451,7 @@ function getProductExperience(
     visualScale: cmsProduct?.visualScale,
     visualOffsetX: cmsProduct?.visualOffsetX,
     visualOffsetY: cmsProduct?.visualOffsetY,
-    variants: product.variants
-      ?.filter(
-        (variant) =>
-          (variant.imageVerified === true ||
-            (variant.imageKind === "editorial-family" &&
-              variant.imageApproved === true)) &&
-          isPublicImageSrc(variant.image),
-      )
-      .map((variant) => ({
+    variants: product.variants?.map((variant) => ({
         id: variant.id,
         label: variant.label,
         nameFa: variant.nameFa,
