@@ -1,0 +1,29 @@
+name: Promote verified mobile variant preview
+
+on:
+  push:
+    branches:
+      - ops/promote-mobile-variant-preview
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Check Vercel token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::VERCEL_TOKEN secret is not configured in this repository"
+            exit 1
+          fi
+      - name: Promote verified preview to production
+        run: >-
+          npx --yes vercel@latest promote
+          cms-bridge-sepiidteb-3vi339rfj-svshsayarnia-ship-its-projects.vercel.app
+          --token="$VERCEL_TOKEN"
+          --scope=svshsayarnia-ship-its-projects
+          --yes
