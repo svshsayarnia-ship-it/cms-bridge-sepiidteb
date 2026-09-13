@@ -1,0 +1,65 @@
+name: Apply and verify all-variant selector fix
+
+on:
+  push:
+    branches:
+      - fix/all-variants-preserve-media
+    paths:
+      - .github/workflows/fix-all-variants-preserve-media.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/all-variants-preserve-media
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Remove media-gating filter without mutating variant media fields
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/product/[slug]/page.tsx')
+          text = path.read_text()
+          old = '''    variants: product.variants
+                ?.filter(
+                  (variant) =>
+                    (variant.imageVerified === true ||
+                      (variant.imageKind === "editorial-family" &&
+                        variant.imageApproved === true)) &&
+                    isPublicImageSrc(variant.image),
+                )
+                .map((variant) => ({
+          '''
+          new = '''    variants: product.variants?.map((variant) => ({
+          '''
+          if old not in text:
+              raise SystemExit('Expected variant filter block not found; refusing to modify file')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - run: npm ci
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add 'app/product/[slug]/page.tsx'
+          git commit -m 'fix: show all variants while preserving variant media'
+          git push origin HEAD:fix/all-variants-preserve-media
