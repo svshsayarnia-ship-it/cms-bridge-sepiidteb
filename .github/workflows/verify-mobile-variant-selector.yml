@@ -1,0 +1,21 @@
+name: Verify mobile variant selector
+
+on:
+  push:
+    branches:
+      - fix/mobile-product-variant-selector
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Next build
+        run: npm run build
