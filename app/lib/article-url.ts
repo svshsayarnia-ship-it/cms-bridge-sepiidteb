@@ -3,6 +3,8 @@ const legacyArticleSlugRedirects = {
     "neuramis-filler-guide",
   "۱۰-فیلر-برتر-بازار-ایران-راهنمای-انتخاب-آگاهانه":
     "best-fillers-iran-guide",
+  "تفاوت-فیلر-۱-۲-و-۱۰-سی-سی":
+    "filler-1cc-vs-10cc-guide",
 } as const;
 
 const persianLetters: Record<string, string> = {
