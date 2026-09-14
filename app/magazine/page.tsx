@@ -14,6 +14,24 @@ import { buildSeoMetadata } from "../lib/seo";
 // magazine index too so they are never orphaned from the editorial hub.
 const staticEditorialGuides: Article[] = [
   {
+    slug: "filler-1cc-vs-10cc-guide",
+    title: "فیلر ۱، ۲ یا ۱۰ سی‌سی؛ تفاوت حجم فیلر چیست؟",
+    excerpt:
+      "راهنمای مقایسه فیلرهای ۱، ۲ و ۱۰ سی‌سی؛ تفاوت حجم هر سرنگ با حجم کل بسته، نورامیس ۱۰ سی‌سی و روش درست مقایسه قیمت.",
+    category: "راهنمای انتخاب فیلر",
+    date: "شهریور ۱۴۰۵",
+    readTime: "۹ دقیقه",
+    image: "/images/product-fillers-v2.webp",
+    imageAlt: "مقایسه حجم فیلر ۱، ۲ و ۱۰ سی‌سی",
+    lead: "",
+    notice: "",
+    sections: [],
+    sources: [],
+    relatedProducts: [],
+    datePublished: "2026-09-15",
+    dateModified: "2026-09-15",
+  },
+  {
     slug: "revofil-10ml-vs-1ml-guide",
     title: "رووفیل ۱۰ سی‌سی یا ۱ سی‌سی؟ تفاوت حجم، مدل و روش درست مقایسه قیمت",
     excerpt:
