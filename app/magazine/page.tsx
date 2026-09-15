@@ -3,21 +3,21 @@ import Link from "next/link";
 import { ArticleCard } from "../components/ArticleCard";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon, ClockIcon } from "../components/Icons";
-import type { Article } from "../data";
-import { getManagedArticles, getSitePresentation } from "../lib/site-presentation";
+import { articles, type Article } from "../data";
 import { articlePath } from "../lib/article-url";
 import { sortArticlesNewestFirst } from "../lib/article-order";
 import { buildSeoMetadata } from "../lib/seo";
 
-// Static revenue guides use dedicated App Router pages so their SEO metadata,
-// FAQ schema and internal commerce links remain deterministic. Keep them in the
-// magazine index too so they are never orphaned from the editorial hub.
+// Keep dedicated static guides in the magazine index so they are never orphaned.
+// The index itself intentionally uses the local editorial dataset so the complete
+// magazine is present in the first server response instead of waiting on a remote
+// presentation lookup before the page can render on mobile.
 const staticEditorialGuides: Article[] = [
   {
     slug: "filler-by-area-guide",
     title: "فیلر مناسب لب، زیر چشم، گونه، چانه و بدن؛ برای هر ناحیه چه چیزی را باید مقایسه کنیم؟",
     excerpt:
-      "راهنمای سناریومحور انتخاب و مقایسه فیلر بر اساس ناحیه و هدف؛ با منابع رسمی، لینک محصولات، شفافیت پزشکی و مسیر خرید بدون فشار.",
+      "راهنمای سناریومحور انتخاب و مقایسه فیلر بر اساس ناحیه و هدف؛ با پیشنهادهای کاربردی، لینک محصولات و منابع قابل بررسی.",
     category: "راهنمای انتخاب فیلر",
     date: "شهریور ۱۴۰۵",
     readTime: "۱۲ دقیقه",
@@ -105,8 +105,6 @@ const staticEditorialGuides: Article[] = [
   },
 ];
 
-export const dynamic = "force-dynamic";
-
 export const metadata = buildSeoMetadata({
   title: "مجله سپید؛ راهنماهای اصالت، انتخاب و مراقبت",
   description:
@@ -116,11 +114,11 @@ export const metadata = buildSeoMetadata({
   imageAlt: "مجله سپید بیوتی",
 });
 
-export default async function MagazinePage() {
+export default function MagazinePage() {
   const staticSlugs = new Set(staticEditorialGuides.map((article) => article.slug));
-  const editableArticles = sortArticlesNewestFirst(
-    getManagedArticles(await getSitePresentation()),
-  ).filter((article) => !staticSlugs.has(article.slug));
+  const editableArticles = sortArticlesNewestFirst(articles).filter(
+    (article) => !staticSlugs.has(article.slug),
+  );
   const allArticles = [...staticEditorialGuides, ...editableArticles];
   const featured = allArticles[0];
 
@@ -137,8 +135,8 @@ export default async function MagazinePage() {
             <h1>مجله راهنمای محصولات زیبایی و خرید آگاهانه</h1>
           </div>
           <p>
-            تحریریه سپید بیوتی، محتوای آموزشی را با تاریخ بازبینی، محدودیت روشن و
-            لینک مستقیم به منابع رسمی یا پژوهشی منتشر می‌کند.
+            راهنماهای کاربردی برای مقایسه محصول، شناخت تفاوت مدل‌ها و تصمیم‌گیری
+            ساده‌تر قبل از خرید.
           </p>
         </div>
 
@@ -191,7 +189,7 @@ export default async function MagazinePage() {
               <span className="sb-eyebrow">تازه‌ترین مطالب</span>
               <h2>تازه‌ترین راهنماها</h2>
             </div>
-            <p>{allArticles.length} مقاله با صفحه مستقل و منابع قابل بررسی</p>
+            <p>{allArticles.length} مقاله برای انتخاب و مقایسه بهتر محصولات</p>
             <div className="sb-preferred-source" aria-label="منبع ترجیحی گوگل">
               <div google-add-preferred-source-btn></div>
               <small>اگر مطالب سپید برایتان مفید است، آن را به منابع ترجیحی گوگل اضافه کنید.</small>
@@ -202,38 +200,6 @@ export default async function MagazinePage() {
               <ArticleCard article={article} key={article.slug} />
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="sb-editorial-policy">
-        <div className="sb-shell sb-editorial-policy__grid">
-          <div>
-            <span className="sb-eyebrow sb-eyebrow--gold">روش کار تحریریه</span>
-            <h2>استاندارد تحریریه سپید</h2>
-          </div>
-          <ol>
-            <li>
-              <span>۰۱</span>
-              <div>
-                <strong>منبع مستقیم</strong>
-                <p>اولویت با نهادهای رسمی و پژوهش‌های منتشرشده است.</p>
-              </div>
-            </li>
-            <li>
-              <span>۰۲</span>
-              <div>
-                <strong>ادعای محتاطانه</strong>
-                <p>نتیجه قطعی، بی‌خطر یا مناسب برای همه نمی‌نویسیم.</p>
-              </div>
-            </li>
-            <li>
-              <span>۰۳</span>
-              <div>
-                <strong>بازبینی و اصلاح</strong>
-                <p>تاریخ بازبینی و لینک منابع روی هر مقاله دیده می‌شود.</p>
-              </div>
-            </li>
-          </ol>
         </div>
       </section>
     </main>
