@@ -14,6 +14,27 @@ import { buildSeoMetadata } from "../lib/seo";
 // magazine index too so they are never orphaned from the editorial hub.
 const staticEditorialGuides: Article[] = [
   {
+    slug: "filler-by-area-guide",
+    title: "فیلر مناسب لب، زیر چشم، گونه، چانه و بدن؛ برای هر ناحیه چه چیزی را باید مقایسه کنیم؟",
+    excerpt:
+      "راهنمای سناریومحور انتخاب و مقایسه فیلر بر اساس ناحیه و هدف؛ با منابع رسمی، لینک محصولات، شفافیت پزشکی و مسیر خرید بدون فشار.",
+    category: "راهنمای انتخاب فیلر",
+    date: "شهریور ۱۴۰۵",
+    readTime: "۱۲ دقیقه",
+    image: "/images/product-fillers-v2.webp",
+    imageAlt: "نمای ادیتوریال محصولات فیلر برای راهنمای انتخاب بر اساس ناحیه",
+    lead: "",
+    notice: "",
+    sections: [],
+    sources: [],
+    relatedProducts: ["neuramis-deep-lidocaine", "eptq-1ml", "alcarisa-family", "revofil-ultra"],
+    datePublished: "2026-09-15",
+    dateModified: "2026-09-15",
+    authorName: "تحریریه سپید بیوتی",
+    reviewerName: "تیم بازبینی محتوای سپید بیوتی",
+    reviewerRole: "بازبینی منبع‌محور",
+  },
+  {
     slug: "filler-1cc-vs-10cc-guide",
     title: "فیلر ۱، ۲ یا ۱۰ سی‌سی؛ تفاوت حجم فیلر چیست؟",
     excerpt:
