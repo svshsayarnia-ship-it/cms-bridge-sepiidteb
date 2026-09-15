@@ -1,0 +1,152 @@
+.section {
+  padding: 28px 16px 52px;
+  background: linear-gradient(180deg, rgba(248, 244, 238, 0.28), rgba(248, 244, 238, 0.72));
+}
+
+.shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  border: 1px solid rgba(91, 69, 50, 0.14);
+  border-radius: 28px;
+  padding: clamp(20px, 3vw, 34px);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 55px rgba(58, 42, 30, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.headingRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(78, 58, 43, 0.62);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.35;
+  color: #241a14;
+}
+
+.lead {
+  max-width: 780px;
+  margin: 10px 0 0;
+  color: rgba(36, 26, 20, 0.68);
+  line-height: 1.95;
+  font-size: 14px;
+}
+
+.reviewBadge {
+  flex: 0 0 auto;
+  min-width: 168px;
+  border: 1px solid rgba(91, 69, 50, 0.14);
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: rgba(248, 244, 238, 0.72);
+}
+
+.reviewBadge span,
+.reviewBadge strong {
+  display: block;
+}
+
+.reviewBadge span {
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: rgba(36, 26, 20, 0.58);
+}
+
+.reviewBadge strong {
+  font-size: 13px;
+  color: #241a14;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.specCard {
+  min-width: 0;
+  border: 1px solid rgba(91, 69, 50, 0.12);
+  border-radius: 18px;
+  padding: 15px 16px;
+  background: rgba(250, 248, 245, 0.82);
+}
+
+.specCard dt {
+  margin-bottom: 7px;
+  color: rgba(36, 26, 20, 0.56);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.specCard dd {
+  margin: 0;
+  color: #241a14;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.notes {
+  margin-top: 18px;
+  border-top: 1px solid rgba(91, 69, 50, 0.12);
+  padding-top: 18px;
+}
+
+.notes h3 {
+  margin: 0 0 10px;
+  color: #241a14;
+  font-size: 15px;
+}
+
+.notes p {
+  margin: 6px 0 0;
+  color: rgba(36, 26, 20, 0.68);
+  line-height: 1.9;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 18px 12px 34px;
+  }
+
+  .shell {
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .headingRow {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .reviewBadge {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
