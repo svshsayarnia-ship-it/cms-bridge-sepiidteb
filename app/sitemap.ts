@@ -50,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/brands",
     "/guides",
     "/magazine",
+    "/magazine/filler-by-area-guide",
     "/magazine/filler-1cc-vs-10cc-guide",
     "/magazine/neuramis-10ml-pack-guide",
     "/magazine/revofil-10ml-vs-1ml-guide",
