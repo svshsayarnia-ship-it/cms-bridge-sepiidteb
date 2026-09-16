@@ -18,8 +18,6 @@ import { Reveal } from "./components/Reveal";
 import { articles, whatsappHref } from "./data";
 import { getStorefrontCatalog } from "./lib/storefront-catalog";
 import { getStorefrontCategories } from "./lib/storefront-categories";
-import { getSitePresentation } from "./lib/site-presentation";
-import { EditableHomeHero } from "./components/EditableHomeHero";
 import { getCompactBrandLabel } from "./lib/public-copy";
 import { toPublicProduct } from "./lib/public-product";
 import {
@@ -62,12 +60,10 @@ const featuredRotationIntervalMs = 3 * 60 * 60 * 1_000;
 const iranUtcOffsetMs = 3.5 * 60 * 60 * 1_000;
 
 export default async function Home() {
-  const [{ products }, categories, presentation] =
-    await Promise.all([
-      getStorefrontCatalog(),
-      getStorefrontCategories(),
-      getSitePresentation(),
-    ]);
+  const [{ products }, categories] = await Promise.all([
+    getStorefrontCatalog(),
+    getStorefrontCategories(),
+  ]);
 
   const pricedProducts = products.filter((product) => {
     const visiblePrice = Number(
@@ -95,9 +91,7 @@ export default async function Home() {
         .map((product) => getCompactBrandLabel(product.brand))
         .filter(Boolean),
     ),
-  ).sort((first, second) =>
-    first.localeCompare(second, "fa"),
-  );
+  ).sort((first, second) => first.localeCompare(second, "fa"));
   const brandCounts = new Map<string, number>();
   for (const product of products) {
     const label = getCompactBrandLabel(product.brand);
@@ -133,73 +127,10 @@ export default async function Home() {
 
     return { label, href };
   });
+
   return (
     <main id="main-content">
       <CustomerJourney />
-      <EditableHomeHero hero={presentation.home.hero} />
-
-      <section className="sb-proof-strip" id="trust">
-        <div className="sb-shell sb-proof-strip__grid">
-            <article>
-              <ShieldIcon />
-              <div>
-                <strong>مدل و بسته را دقیق ببینید</strong>
-                <p>نام مدل، حجم و تعداد داخل بسته را جدا می‌کنیم تا گزینه‌های شبیه به هم قاطی نشوند.</p>
-            </div>
-            <Link href="/magazine/verify-dermal-filler-authenticity">چطور بررسی کنم؟</Link>
-          </article>
-          <article>
-            <PackageIcon />
-            <div>
-                <strong>قیمت را برای همان واحد بخوانید</strong>
-                <p>قیمت یک سرنگ، ویال یا جعبه کامل یکی نیست؛ واحد و تعداد را پیش از سفارش روشن می‌کنیم.</p>
-            </div>
-            <Link href="/shop">دیدن قیمت و بسته‌ها</Link>
-          </article>
-          <article>
-            <HeadsetIcon />
-            <div>
-                <strong>قیمت و موجودی را قبل از ثبت نهایی چک کنید</strong>
-                <p>نام دقیق محصول را بفرستید تا مدل، بسته‌بندی، موجودی و زمان تحویل همان مورد بررسی شود.</p>
-            </div>
-            <Link href={whatsappHref()}>پیام به سپید</Link>
-          </article>
-          <article>
-            <PhoneIcon />
-            <div>
-              <strong>پاسخ‌گویی از دفتر سپید بیوتی</strong>
-              <p>برای پیگیری خرید یا سؤال پیش از سفارش، از تلفن ثابت دفتر و پشتیبانی مستقیم استفاده کنید.</p>
-            </div>
-            <Link href="tel:+982128422578">تماس با ۰۲۱-۲۸۴۲۲۵۷۸</Link>
-          </article>
-        </div>
-      </section>
-
-      <HomeFinder products={products.map(toPublicProduct)} />
-
-      <Reveal>
-        <section className="sb-section sb-categories">
-          <div className="sb-shell">
-            <div className="sb-section-head">
-              <div>
-                <span className="sb-eyebrow">دسته‌بندی محصولات</span>
-                <h2>دنبال چه نوع محصولی هستید؟</h2>
-              </div>
-              <p>دسته موردنظر را باز کنید؛ مدل‌ها و قیمت‌ها همان‌جا جلوی چشم شماست.</p>
-            </div>
-            <div className="sb-category-grid">
-              {categories.map((category, index) => (
-                <CategoryStoryCard
-                  index={index}
-                  key={category.slug}
-                  slug={category.slug}
-                  title={category.title}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      </Reveal>
 
       <Reveal>
         <FeaturedProductCarousel
@@ -225,6 +156,69 @@ export default async function Home() {
           }))}
         />
       </Reveal>
+
+      <Reveal>
+        <section className="sb-section sb-categories">
+          <div className="sb-shell">
+            <div className="sb-section-head">
+              <div>
+                <span className="sb-eyebrow">دسته‌بندی محصولات</span>
+                <h2>دنبال چه نوع محصولی هستید؟</h2>
+              </div>
+              <p>دسته موردنظر را باز کنید؛ مدل‌ها و قیمت‌ها همان‌جا جلوی چشم شماست.</p>
+            </div>
+            <div className="sb-category-grid">
+              {categories.map((category, index) => (
+                <CategoryStoryCard
+                  index={index}
+                  key={category.slug}
+                  slug={category.slug}
+                  title={category.title}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      </Reveal>
+
+      <HomeFinder products={products.map(toPublicProduct)} />
+
+      <section className="sb-proof-strip" id="trust">
+        <div className="sb-shell sb-proof-strip__grid">
+          <article>
+            <ShieldIcon />
+            <div>
+              <strong>مدل و بسته را دقیق ببینید</strong>
+              <p>نام مدل، حجم و تعداد داخل بسته را جدا می‌کنیم تا گزینه‌های شبیه به هم قاطی نشوند.</p>
+            </div>
+            <Link href="/magazine/verify-dermal-filler-authenticity">چطور بررسی کنم؟</Link>
+          </article>
+          <article>
+            <PackageIcon />
+            <div>
+              <strong>قیمت را برای همان واحد بخوانید</strong>
+              <p>قیمت یک سرنگ، ویال یا جعبه کامل یکی نیست؛ واحد و تعداد را پیش از سفارش روشن می‌کنیم.</p>
+            </div>
+            <Link href="/shop">دیدن قیمت و بسته‌ها</Link>
+          </article>
+          <article>
+            <HeadsetIcon />
+            <div>
+              <strong>قیمت و موجودی را قبل از ثبت نهایی چک کنید</strong>
+              <p>نام دقیق محصول را بفرستید تا مدل، بسته‌بندی، موجودی و زمان تحویل همان مورد بررسی شود.</p>
+            </div>
+            <Link href={whatsappHref()}>پیام به سپید</Link>
+          </article>
+          <article>
+            <PhoneIcon />
+            <div>
+              <strong>پاسخ‌گویی از دفتر سپید بیوتی</strong>
+              <p>برای پیگیری خرید یا سؤال پیش از سفارش، از تلفن ثابت دفتر و پشتیبانی مستقیم استفاده کنید.</p>
+            </div>
+            <Link href="tel:+982128422578">تماس با ۰۲۱-۲۸۴۲۲۵۷۸</Link>
+          </article>
+        </div>
+      </section>
 
       <Reveal>
         <section className="sb-section sb-professional-home">
@@ -327,7 +321,6 @@ export default async function Home() {
           </div>
         </section>
       </Reveal>
-
     </main>
   );
 }
