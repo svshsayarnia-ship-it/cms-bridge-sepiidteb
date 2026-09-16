@@ -64,6 +64,12 @@ const autoplayDelay = 5_600;
 const rotationInterval = 3 * 60 * 60 * 1_000;
 const iranUtcOffset = 3.5 * 60 * 60 * 1_000;
 const visibleProductCount = 4;
+const variantShowcaseSlugs = new Set([
+  "neuramis-deep-lidocaine",
+  "neurafill-deep-lidocaine",
+  "inovosense-family",
+  "alcarisa-family",
+]);
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 
 function numericPrice(value?: string | number | null) {
@@ -92,15 +98,23 @@ function hashRotationKey(value: string) {
 }
 
 function selectRotatingProducts(products: FeaturedCarouselProduct[], seed: number) {
-  return Array.from(
+  const ranked = Array.from(
     new Map(products.map((product) => [product.slug, product])).values(),
-  )
-    .sort((first, second) => {
-      const firstScore = hashRotationKey(`${seed}:${first.slug}`);
-      const secondScore = hashRotationKey(`${seed}:${second.slug}`);
-      return firstScore - secondScore || first.slug.localeCompare(second.slug);
-    })
-    .slice(0, visibleProductCount);
+  ).sort((first, second) => {
+    const firstScore = hashRotationKey(`${seed}:${first.slug}`);
+    const secondScore = hashRotationKey(`${seed}:${second.slug}`);
+    return firstScore - secondScore || first.slug.localeCompare(second.slug);
+  });
+
+  const variantShowcase = ranked.find((product) => variantShowcaseSlugs.has(product.slug));
+  if (!variantShowcase) return ranked.slice(0, visibleProductCount);
+
+  const selected = ranked
+    .filter((product) => product.slug !== variantShowcase.slug)
+    .slice(0, visibleProductCount - 1);
+
+  selected.splice(Math.min(1, selected.length), 0, variantShowcase);
+  return selected.slice(0, visibleProductCount);
 }
 
 function cleanVolume(value?: string) {
