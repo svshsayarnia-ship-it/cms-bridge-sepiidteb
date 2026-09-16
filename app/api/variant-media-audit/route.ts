@@ -1,6 +1,4 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 
 import { getStorefrontCatalog } from "@/app/lib/storefront-catalog";
 
@@ -16,7 +14,9 @@ type MediaUse = {
   imageVerified: boolean | null;
   imageKind: string | null;
   imageApproved: boolean | null;
-  localSha256: string | null;
+  mediaSha256: string | null;
+  mediaStatus: number | null;
+  mediaType: string | null;
 };
 
 function normalizeImage(value: string) {
@@ -30,17 +30,28 @@ function normalizeImage(value: string) {
   }
 }
 
-async function localHash(image: string) {
+async function inspectRenderedMedia(image: string) {
   const normalized = normalizeImage(image);
-  if (!normalized.startsWith("/")) return null;
-  if (normalized.startsWith("/api/")) return null;
-  const pathname = normalized.split("?")[0];
-  const candidate = path.join(process.cwd(), "public", pathname.replace(/^\/+/, ""));
+  if (!normalized) return { sha256: null, status: null, type: null };
+
+  const target = image.startsWith("http")
+    ? image
+    : new URL(normalized, "https://sepiidbeauty.ir").toString();
+
   try {
-    const bytes = await readFile(candidate);
-    return createHash("sha256").update(bytes).digest("hex");
+    const response = await fetch(target, { cache: "no-store", redirect: "follow" });
+    const type = response.headers.get("content-type");
+    if (!response.ok || !type?.toLowerCase().startsWith("image/")) {
+      return { sha256: null, status: response.status, type };
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return {
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      status: response.status,
+      type,
+    };
   } catch {
-    return null;
+    return { sha256: null, status: null, type: null };
   }
 }
 
@@ -52,6 +63,9 @@ export async function GET() {
   for (const product of variantProducts) {
     for (const variant of product.variants ?? []) {
       const image = variant.image?.trim() ?? "";
+      const inspected = image
+        ? await inspectRenderedMedia(image)
+        : { sha256: null, status: null, type: null };
       uses.push({
         productSlug: product.slug,
         productName: product.nameFa,
@@ -62,16 +76,21 @@ export async function GET() {
         imageVerified: typeof variant.imageVerified === "boolean" ? variant.imageVerified : null,
         imageKind: variant.imageKind ?? null,
         imageApproved: typeof variant.imageApproved === "boolean" ? variant.imageApproved : null,
-        localSha256: image ? await localHash(image) : null,
+        mediaSha256: inspected.sha256,
+        mediaStatus: inspected.status,
+        mediaType: inspected.type,
       });
     }
   }
 
   const issues: Array<Record<string, unknown>> = [];
   const missingImages = uses.filter((item) => !item.image);
-  for (const item of missingImages) {
-    issues.push({ type: "missing-image", ...item });
-  }
+  const unreadableImages = uses.filter(
+    (item) => item.image && (!item.mediaSha256 || item.mediaStatus !== 200 || !item.mediaType?.startsWith("image/")),
+  );
+
+  for (const item of missingImages) issues.push({ type: "missing-image", ...item });
+  for (const item of unreadableImages) issues.push({ type: "unreadable-image", ...item });
 
   for (const product of variantProducts) {
     const productUses = uses.filter((item) => item.productSlug === product.slug);
@@ -84,10 +103,10 @@ export async function GET() {
         group.push(item);
         byPath.set(item.normalizedImage, group);
       }
-      if (item.localSha256) {
-        const group = byHash.get(item.localSha256) ?? [];
+      if (item.mediaSha256) {
+        const group = byHash.get(item.mediaSha256) ?? [];
         group.push(item);
-        byHash.set(item.localSha256, group);
+        byHash.set(item.mediaSha256, group);
       }
     }
 
@@ -102,7 +121,7 @@ export async function GET() {
       }
     }
     for (const [sha256, group] of byHash) {
-      if (group.length > 1 && new Set(group.map((item) => item.normalizedImage)).size > 1) {
+      if (group.length > 1) {
         issues.push({
           type: "duplicate-image-bytes-within-product",
           productSlug: product.slug,
@@ -122,10 +141,10 @@ export async function GET() {
       group.push(item);
       globalByPath.set(item.normalizedImage, group);
     }
-    if (item.localSha256) {
-      const group = globalByHash.get(item.localSha256) ?? [];
+    if (item.mediaSha256) {
+      const group = globalByHash.get(item.mediaSha256) ?? [];
       group.push(item);
-      globalByHash.set(item.localSha256, group);
+      globalByHash.set(item.mediaSha256, group);
     }
   }
 
@@ -150,7 +169,9 @@ export async function GET() {
         variantProductCount: variantProducts.length,
         variantCount: uses.length,
         missingImageCount: missingImages.length,
-        withinProductIssueCount: issues.length,
+        unreadableImageCount: unreadableImages.length,
+        withinProductIssueCount: issues.filter((item) => String(item.type).includes("within-product")).length,
+        totalIssueCount: issues.length,
         globalDuplicatePathCount: globalDuplicatePaths.length,
         globalDuplicateByteCount: globalDuplicateBytes.length,
       },
@@ -165,7 +186,9 @@ export async function GET() {
             name: item.variantName,
             image: item.image,
             normalizedImage: item.normalizedImage,
-            localSha256: item.localSha256,
+            mediaSha256: item.mediaSha256,
+            mediaStatus: item.mediaStatus,
+            mediaType: item.mediaType,
             imageVerified: item.imageVerified,
             imageKind: item.imageKind,
             imageApproved: item.imageApproved,
