@@ -17,6 +17,7 @@ const steps = [
   },
 ];
 
+// Keep this compact journey rail independent from the reordered storefront blocks below it.
 export function CustomerJourney() {
   return (
     <nav className="sb-page-journey" aria-label="مراحل خرید در سپید بیوتی">
