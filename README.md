@@ -24,6 +24,10 @@ The project is a standard Next.js App Router application. Vercel runs
 - `vercel.json` declares the Next.js framework and build command
 - `scripts/validate-artifact.sh` checks the uploadable project shape and secret hygiene
 
+The homepage storefront flow keeps product discovery close to the top of the
+page: featured products first, category discovery next, and the five-step
+selection guide immediately after categories.
+
 ## Workspace Auth Headers
 
 OpenAI workspace sites can read the current user's email from
