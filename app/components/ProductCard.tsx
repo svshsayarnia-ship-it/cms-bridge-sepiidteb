@@ -206,7 +206,6 @@ export function ProductCard({
   const href = productHref(product);
   const volume = getPublicVolumeLabel(product.volume);
   const brand = getCompactBrandLabel(product.brand);
-  const packagingLabel = getPublicPackagingLabel(volume);
   const salePrice = numericPrice(product.salePrice);
   const regularPrice = numericPrice(
     product.regularPrice || product.price,
