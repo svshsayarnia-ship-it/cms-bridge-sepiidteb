@@ -76,6 +76,18 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
   const selectNearestTreatment = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse") return;
 
+    const stageRect = event.currentTarget.getBoundingClientRect();
+    const pointerX = (event.clientX - stageRect.left) / stageRect.width - 0.5;
+    const pointerY = (event.clientY - stageRect.top) / stageRect.height - 0.5;
+    event.currentTarget.style.setProperty(
+      "--sb-stage-shift-x",
+      `${(pointerX * 12).toFixed(2)}px`,
+    );
+    event.currentTarget.style.setProperty(
+      "--sb-stage-shift-y",
+      `${(pointerY * 8).toFixed(2)}px`,
+    );
+
     let nearestIndex = -1;
     let nearestDistance = Number.POSITIVE_INFINITY;
 
@@ -161,7 +173,11 @@ export function EditableHomeHero({ hero }: { hero: SitePresentation["home"]["her
             className="sb-hero__stage"
             onPointerMove={selectNearestTreatment}
             onPointerLeave={(event) => {
-              if (event.pointerType === "mouse") setActiveIndex(null);
+              if (event.pointerType === "mouse") {
+                event.currentTarget.style.setProperty("--sb-stage-shift-x", "0px");
+                event.currentTarget.style.setProperty("--sb-stage-shift-y", "0px");
+                setActiveIndex(null);
+              }
             }}
           >
             <span className={`sb-hero__halo${activeIndex !== null ? " sb-hero__halo--active" : ""}`} aria-hidden="true" />
