@@ -291,12 +291,26 @@ export default async function Home() {
       <section className="sb-section sb-brands-home">
         <div className="sb-shell">
           <span className="sb-eyebrow">برندهای موجود</span>
-          <div className="sb-brands-home__row">
-            {homeBrands.map((brand) => (
-              <Link href={brand.href} key={brand.label}>
-                {brand.label}
-              </Link>
-            ))}
+          <div className="sb-brands-home__marquee" aria-label="برندهای موجود">
+            <div className="sb-brands-home__track">
+              {[0, 1].map((copyIndex) => (
+                <div
+                  className="sb-brands-home__group"
+                  aria-hidden={copyIndex === 1 ? true : undefined}
+                  key={`brand-loop-${copyIndex}`}
+                >
+                  {homeBrands.map((brand) => (
+                    <Link
+                      href={brand.href}
+                      key={`${copyIndex}-${brand.label}`}
+                      tabIndex={copyIndex === 1 ? -1 : undefined}
+                    >
+                      {brand.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
           <Link className="sb-text-link" href="/brands">
             دیدن محصولات بر اساس برند
