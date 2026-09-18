@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 import { productHref } from "../catalog";
 import type {
@@ -176,6 +177,7 @@ export function ProductCard({
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectorPosition, setSelectorPosition] = useState<SelectorPosition | null>(null);
   const [added, setAdded] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const addedTimerRef = useRef<number | null>(null);
@@ -214,6 +216,24 @@ export function ProductCard({
   const variants = product.variants ?? [];
   const hasVariants = variants.length > 0;
   const selectedVariant = variants.find((variant) => variant.id === selectedVariantId) ?? null;
+  const previewVariant = selectorOpen ? selectedVariant : null;
+  const previewImage = previewVariant
+    ? getVariantImage(previewVariant, displayProduct.image)
+    : displayProduct.image;
+  const previewVolume = previewVariant?.volume
+    ? getPublicVolumeLabel(previewVariant.volume)
+    : volume;
+  const previewPackagingLabel = getPublicPackagingLabel(previewVolume);
+  const previewPrice = numericPrice(previewVariant?.priceToman) ?? visiblePrice;
+  const previewProduct: PublicProduct = previewVariant
+    ? {
+        ...displayProduct,
+        nameFa: previewVariant.nameFa || displayProduct.nameFa,
+        nameEn: previewVariant.nameEn || displayProduct.nameEn,
+        image: previewImage,
+        imageAlt: previewVariant.imageAlt || displayProduct.imageAlt,
+      }
+    : displayProduct;
   const parentOutOfStock = product.stockStatus === "outofstock";
   const cartProduct = {
     slug: product.slug,
@@ -229,6 +249,41 @@ export function ProductCard({
     if (addedTimerRef.current) window.clearTimeout(addedTimerRef.current);
     setAdded(true);
     addedTimerRef.current = window.setTimeout(() => setAdded(false), 1800);
+  }, []);
+
+  const resetTilt = useCallback(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.setProperty("--sb-card-tilt-x", "0deg");
+    card.style.setProperty("--sb-card-tilt-y", "0deg");
+    card.style.setProperty("--sb-card-glare-x", "50%");
+    card.style.setProperty("--sb-card-glare-y", "50%");
+  }, []);
+
+  const handleTiltMove = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+    event.currentTarget.style.setProperty(
+      "--sb-card-tilt-x",
+      `${(-y * 4.8).toFixed(2)}deg`,
+    );
+    event.currentTarget.style.setProperty(
+      "--sb-card-tilt-y",
+      `${(x * 5.8).toFixed(2)}deg`,
+    );
+    event.currentTarget.style.setProperty(
+      "--sb-card-glare-x",
+      `${((x + 0.5) * 100).toFixed(1)}%`,
+    );
+    event.currentTarget.style.setProperty(
+      "--sb-card-glare-y",
+      `${((y + 0.5) * 100).toFixed(1)}%`,
+    );
   }, []);
 
   const updateSelectorPosition = useCallback(() => {
@@ -442,14 +497,20 @@ export function ProductCard({
     : null;
 
   return (
-    <article className="sb-product-card" data-category={product.category}>
+    <article
+      ref={cardRef}
+      className="sb-product-card"
+      data-category={product.category}
+      onPointerMove={handleTiltMove}
+      onPointerLeave={resetTilt}
+    >
       <Link
         className="sb-product-card__visual"
         href={href}
         aria-label={`دیدن ${product.nameFa}`}
       >
         <ProductVisual
-          product={displayProduct}
+          product={previewProduct}
           variant="card"
           priority={priority}
           sizes={productImageSizes}
@@ -458,8 +519,8 @@ export function ProductCard({
         {displayProduct.imageKind === "editorial-family" && (
           <span className="sb-product-card__identity" aria-hidden="true">
             <small>{brand || "سپید بیوتی"}</small>
-            <strong>{displayProduct.nameFa}</strong>
-            {displayProduct.nameEn && <em>{displayProduct.nameEn}</em>}
+            <strong>{previewProduct.nameFa}</strong>
+            {previewProduct.nameEn && <em>{previewProduct.nameEn}</em>}
           </span>
         )}
 
@@ -481,17 +542,17 @@ export function ProductCard({
         </div>
 
         <Link href={href}>
-          <h3>{product.nameFa}</h3>
+          <h3>{previewProduct.nameFa}</h3>
 
-          {product.nameEn && (
-            <small>{product.nameEn}</small>
+          {previewProduct.nameEn && (
+            <small>{previewProduct.nameEn}</small>
           )}
         </Link>
 
-        {volume && (
-          <div className="sb-product-card__facts">
-            <span>{volume}</span>
-            {packagingLabel && <span>{packagingLabel}</span>}
+        {previewVolume && (
+          <div className="sb-product-card__facts" aria-live="polite">
+            <span>{previewVolume}</span>
+            {previewPackagingLabel && <span>{previewPackagingLabel}</span>}
           </div>
         )}
 
@@ -501,10 +562,10 @@ export function ProductCard({
             aria-label={`قیمت ${product.nameFa}`}
           >
             <span>{salePrice ? "قیمت ویژه" : "قیمت"}</span>
-            {visiblePrice ? (
+            {previewPrice ? (
               <div>
-                <strong>{formatPrice(visiblePrice)}</strong>
-                {salePrice && regularPrice && salePrice < regularPrice
+                <strong>{formatPrice(previewPrice)}</strong>
+                {!previewVariant && salePrice && regularPrice && salePrice < regularPrice
                   ? <del>{formatPrice(regularPrice)}</del>
                   : null}
               </div>
