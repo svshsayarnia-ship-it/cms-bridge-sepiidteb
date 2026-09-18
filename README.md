@@ -133,3 +133,5 @@ Import the GitHub repository as a new Vercel project. Keep the project root at
 the repository root, leave the output directory at its default, and add the
 variables from `.env.example` in Vercel Environment Variables. Never upload
 `.env`, `.env.local`, or real WooCommerce credentials to GitHub.
+
+<!-- vercel-production-redeploy: 2026-09-19 -->
