@@ -14,7 +14,7 @@ import { siteOrigin } from "./lib/site-url";
 
 // Keep static sitemap URLs fresh when a release changes their indexable content.
 // Product and editorial URLs retain their own source dates below.
-const staticContentLastModified = new Date("2026-09-15T00:00:00.000Z");
+const staticContentLastModified = new Date("2026-09-19T00:00:00.000Z");
 
 function getProductLastModified(
   dateModifiedGmt: string,
