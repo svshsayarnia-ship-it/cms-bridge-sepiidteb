@@ -376,12 +376,16 @@ export function SiteHeader({
                     ))}
                   </div>
                   <figure className="sb-mega-menu__visual">
-                    <img
-                      src="/images/drive/category-skinbooster.webp"
-                      alt=""
-                      width="1254"
-                      height="1254"
-                    />
+                    {categoriesOpen && (
+                      <img
+                        src="/images/drive/category-skinbooster.webp"
+                        alt=""
+                        width="1254"
+                        height="1254"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
                     <figcaption>محصول را دقیق‌تر پیدا کنید</figcaption>
                   </figure>
                 </div>
