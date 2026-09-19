@@ -135,25 +135,39 @@ export default async function Home() {
       <Reveal>
         <FeaturedProductCarousel
           initialRotationSeed={initialRotationSeed}
-          products={featuredProducts.map((product) => ({
-            slug: product.slug,
-            nameFa: product.nameFa,
-            nameEn: product.nameEn,
-            brand: getCompactBrandLabel(product.brand),
-            category: product.category,
-            categoryTitle: product.categoryTitle,
-            badge: product.badge,
-            image: product.image,
-            imageAlt: product.imageAlt,
-            volume: product.volume,
-            shortBenefit: product.shortBenefit,
-            position: product.position,
-            price: product.price,
-            regularPrice: product.regularPrice,
-            salePrice: product.salePrice,
-            priceToman: product.priceToman,
-            stockStatus: product.stockStatus,
-          }))}
+          products={featuredProducts.map((product) => {
+            const publicProduct = toPublicProduct(product);
+            return {
+              slug: product.slug,
+              nameFa: product.nameFa,
+              nameEn: product.nameEn,
+              brand: getCompactBrandLabel(product.brand),
+              category: product.category,
+              categoryTitle: product.categoryTitle,
+              badge: product.badge,
+              image: product.image,
+              imageAlt: product.imageAlt,
+              volume: product.volume,
+              shortBenefit: product.shortBenefit,
+              position: product.position,
+              price: product.price,
+              regularPrice: product.regularPrice,
+              salePrice: product.salePrice,
+              priceToman: product.priceToman,
+              stockStatus: product.stockStatus,
+              variants: publicProduct.variants?.map((variant) => ({
+                id: variant.id,
+                label: variant.label,
+                nameFa: variant.nameFa,
+                nameEn: variant.nameEn,
+                image: variant.image,
+                imageAlt: variant.imageAlt,
+                volume: variant.volume,
+                priceToman: variant.priceToman,
+                stockStatus: variant.stockStatus,
+              })),
+            };
+          })}
         />
       </Reveal>
 

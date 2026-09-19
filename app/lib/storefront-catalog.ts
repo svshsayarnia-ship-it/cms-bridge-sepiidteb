@@ -25,6 +25,7 @@ import {
 import {
   isPublicCmsProduct,
   isPublicStaticProduct,
+  isPublicVariantImageSrc,
 } from "./public-product";
 import {
   getStorefrontProductSnapshots,
@@ -203,7 +204,15 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
       variant.id,
     );
 
-    if (!cmsVariantImage?.src?.trim()) return blankVariantMedia(variant);
+    if (!cmsVariantImage?.src?.trim()) {
+      return isPublicVariantImageSrc(variant.image, variant.imageVerified)
+        ? {
+            ...variant,
+            image: variant.image.trim(),
+            imageApproved: true,
+          }
+        : blankVariantMedia(variant);
+    }
 
     return {
       ...variant,
@@ -289,7 +298,11 @@ function mapFallbackProduct(product: Product): StorefrontProduct {
     imageVerified: false,
     imageKind: undefined,
     imageApproved: false,
-    variants: product.variants?.map(blankVariantMedia),
+    variants: product.variants?.map((variant) =>
+      isPublicVariantImageSrc(variant.image, variant.imageVerified)
+        ? { ...variant, imageApproved: true }
+        : blankVariantMedia(variant),
+    ),
     wooId: null,
     sku: "",
     price: "",

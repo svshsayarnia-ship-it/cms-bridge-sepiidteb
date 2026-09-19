@@ -13,9 +13,10 @@ import {
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 import { productHref } from "../catalog";
-import type {
-  PublicProduct,
-  PublicProductVariant,
+import {
+  isPublicVariantImageSrc,
+  type PublicProduct,
+  type PublicProductVariant,
 } from "../lib/public-product";
 import {
   getCompactBrandLabel,
@@ -141,17 +142,12 @@ function formatPrice(value: number): string {
   return `${priceFormatter.format(value)} تومان`;
 }
 
-function getVariantImage(variant: PublicProductVariant, fallback: string) {
-  const variantImage = variant.image?.trim();
-  const hasApprovedVariantImage = Boolean(
-    variantImage &&
-      (variant.imageVerified === true ||
-        variant.imageKind === "official" ||
-        variant.imageKind === "market-reference" ||
-        variant.imageKind === "editorial-family"),
-  );
-
-  return hasApprovedVariantImage && isCmsMediaSrc(variantImage)
+function getVariantImage(
+  variant: PublicProductVariant,
+  fallback = "",
+) {
+  const variantImage = variant.image?.trim() ?? "";
+  return isPublicVariantImageSrc(variantImage, variant.imageVerified)
     ? variantImage
     : fallback;
 }
@@ -217,8 +213,11 @@ export function ProductCard({
   const selectedVariant = variants.find((variant) => variant.id === selectedVariantId) ?? null;
   const previewVariant = selectorOpen ? selectedVariant : null;
   const previewImage = previewVariant
-    ? getVariantImage(previewVariant, displayProduct.image)
+    ? getVariantImage(previewVariant)
     : displayProduct.image;
+  const previewImageIsCms = Boolean(
+    previewImage && isCmsMediaSrc(previewImage),
+  );
   const previewVolume = previewVariant?.volume
     ? getPublicVolumeLabel(previewVariant.volume)
     : volume;
@@ -229,8 +228,12 @@ export function ProductCard({
         ...displayProduct,
         nameFa: previewVariant.nameFa || displayProduct.nameFa,
         nameEn: previewVariant.nameEn || displayProduct.nameEn,
-        image: previewImage,
+        image: previewImageIsCms ? previewImage : "",
+        masterImage: previewImageIsCms ? previewImage : "",
+        fallbackImage:
+          !previewImageIsCms && previewImage ? previewImage : undefined,
         imageAlt: previewVariant.imageAlt || displayProduct.imageAlt,
+        imageKind: previewImage ? previewVariant.imageKind : undefined,
       }
     : displayProduct;
   const parentOutOfStock = product.stockStatus === "outofstock";
@@ -395,7 +398,7 @@ export function ProductCard({
       nameFa: selectedVariant.nameFa || product.nameFa,
       nameEn: selectedVariant.nameEn || product.nameEn,
       brand,
-      image: getVariantImage(selectedVariant, displayProduct.image),
+      image: getVariantImage(selectedVariant),
       volume: selectedVariant.volume || volume,
       priceToman: variantPrice,
       variantId: selectedVariant.id,
@@ -442,7 +445,10 @@ export function ProductCard({
               const selected = variant.id === selectedVariantId;
               const secondaryLabel = getVariantSecondaryLabel(variant);
               const variantPrice = numericPrice(variant.priceToman);
-              const variantImage = getVariantImage(variant, displayProduct.image);
+              const variantImage = getVariantImage(variant);
+              const variantImageIsCms = Boolean(
+                variantImage && isCmsMediaSrc(variantImage),
+              );
 
               return (
                 <button
@@ -460,7 +466,11 @@ export function ProductCard({
                       slug: `${product.slug}-${variant.id}`,
                       nameFa: variant.nameFa || variant.label,
                       category: product.category,
-                      masterImage: variantImage,
+                      masterImage: variantImageIsCms ? variantImage : "",
+                      fallbackImage:
+                        !variantImageIsCms && variantImage
+                          ? variantImage
+                          : undefined,
                       imageAlt: variant.imageAlt || `تصویر ${variant.nameFa}`,
                     }}
                     variant="thumbnail"

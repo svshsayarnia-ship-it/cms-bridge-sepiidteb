@@ -18,13 +18,18 @@ async function requireAsset(relativePath) {
 }
 
 const experience = await read("app/components/ProductVariantExperience.tsx");
+const productCard = await read("app/components/ProductCard.tsx");
+const publicProduct = await read("app/lib/public-product.ts");
+const storefrontCatalog = await read("app/lib/storefront-catalog.ts");
+const featuredCarousel = await read("app/components/FeaturedProductCarousel.tsx");
+const homePage = await read("app/page.tsx");
 const currentInventory = await read("app/current-inventory.ts");
 const fillers = await read("app/inventory/fillers.ts");
 const skinSupport = await read("app/inventory/skin-support.ts");
 
 const requiredExperienceTokens = [
   "selectedCmsVariantImage",
-  "canUseCmsVariantImage",
+  "selectedVariantImage",
   "canonicalImage",
   "selectedCmsImage",
 ];
@@ -38,6 +43,69 @@ for (const token of requiredExperienceTokens) {
 if (experience.includes("selectedBundledImage") || experience.includes("variantFallbackImages")) {
   failures.push(
     "ProductVariantExperience.tsx: variant selection still contains non-CMS image fallbacks",
+  );
+}
+
+
+const regressionChecks = [
+  {
+    source: productCard,
+    token: 'getVariantImage(previewVariant)',
+    message: "ProductCard.tsx: selected card variant does not resolve its own image",
+  },
+  {
+    source: productCard,
+    token: 'fallbackImage:',
+    message: "ProductCard.tsx: selected local variant is not routed through its own fallback image",
+  },
+  {
+    source: publicProduct,
+    token: "isPublicVariantImageSrc",
+    message: "public-product.ts: verified model-specific variant assets are not public",
+  },
+  {
+    source: storefrontCatalog,
+    token: "isPublicVariantImageSrc(variant.image, variant.imageVerified)",
+    message: "storefront-catalog.ts: missing exact local variant fallback when CMS role is empty",
+  },
+  {
+    source: featuredCarousel,
+    token: "priority={productIndex === 0}",
+    message: "FeaturedProductCarousel.tsx: more than the first visible product may be eagerly loaded",
+  },
+  {
+    source: featuredCarousel,
+    token: "product.variants ?? []",
+    message: "FeaturedProductCarousel.tsx: SSR variant data is not used for first paint",
+  },
+  {
+    source: homePage,
+    token: "variants: publicProduct.variants?.map",
+    message: "page.tsx: homepage does not hydrate variant media on the server",
+  },
+];
+
+for (const check of regressionChecks) {
+  if (!check.source.includes(check.token)) {
+    failures.push(check.message);
+  }
+}
+
+if (productCard.includes("getVariantImage(variant, displayProduct.image)")) {
+  failures.push(
+    "ProductCard.tsx: a missing variant image still falls back to the parent image",
+  );
+}
+
+if (featuredCarousel.includes("variant.image || product.image")) {
+  failures.push(
+    "FeaturedProductCarousel.tsx: a missing variant image still falls back to the parent image",
+  );
+}
+
+if (/variant="carousel"[\s\S]{0,240}\bpriority\s*(?:\n|\r|\s|>)/u.test(featuredCarousel)) {
+  failures.push(
+    "FeaturedProductCarousel.tsx: carousel images use unconditional priority",
   );
 }
 

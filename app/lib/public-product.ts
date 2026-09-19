@@ -75,6 +75,30 @@ export function isPublicImageSrc(value?: string | null): boolean {
   );
 }
 
+function isVerifiedLocalVariantAsset(
+  value?: string | null,
+  imageVerified = false,
+): boolean {
+  const clean = value?.trim() ?? "";
+  return Boolean(
+    imageVerified &&
+      clean.startsWith("/images/products/") &&
+      !clean.includes("/editorial/") &&
+      !placeholderImagePattern.test(clean),
+  );
+}
+
+export function isPublicVariantImageSrc(
+  value?: string | null,
+  imageVerified = false,
+): boolean {
+  const clean = value?.trim() ?? "";
+  return (
+    isPublicImageSrc(clean) ||
+    isVerifiedLocalVariantAsset(clean, imageVerified)
+  );
+}
+
 export function toPublicProduct(
   product: Pick<
     Product,
@@ -152,7 +176,9 @@ export function toPublicProduct(
       label: toPublicCopy(variant.label),
       nameFa: toPublicCopy(variant.nameFa),
       nameEn: toPublicCopy(variant.nameEn),
-      image: isPublicImageSrc(variant.image) ? variant.image : "",
+      image: isPublicVariantImageSrc(variant.image, variant.imageVerified)
+        ? variant.image
+        : "",
       imageAlt: toPublicCopy(variant.imageAlt || `تصویر ${variant.nameFa}`),
       imageVerified: variant.imageVerified,
       imageKind: variant.imageKind,

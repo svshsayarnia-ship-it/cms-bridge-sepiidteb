@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { ProductVisualProfile } from "../config/visualProfiles";
 import type { Product, ProductVariant } from "../data";
 import { isCmsManagedProductImageSrc } from "../lib/product-image";
+import { isPublicVariantImageSrc } from "../lib/public-product";
 import { getPublicPackagingLabel, toPublicCopy } from "../lib/public-copy";
 import { ProductVisual } from "./product/ProductVisual";
 import { AddToCartButton } from "./AddToCartButton";
@@ -201,9 +202,6 @@ export function ProductVariantExperience({
       ? initialVariantId ?? defaultVariantId
       : defaultVariantId,
   );
-  const [hasExplicitVariantSelection, setHasExplicitVariantSelection] = useState(
-    hasInitialVariantSelection,
-  );
   const [cmsVariantImages, setCmsVariantImages] = useState<
     Record<string, PublicRoleImage>
   >({});
@@ -327,19 +325,33 @@ export function ProductVariantExperience({
     product.imageAlt ||
     `تصویر ${product.nameFa}`;
   const selectedCmsImage = selectedCmsVariantImage?.src?.trim() || "";
-  const canUseCmsVariantImage = Boolean(
-    hasExplicitVariantSelection && selectedCmsImage,
-  );
-  const displayImage = canUseCmsVariantImage
-    ? selectedCmsImage
+  const selectedLocalImage =
+    selectedVariant &&
+    isPublicVariantImageSrc(
+      selectedVariant.image,
+      selectedVariant.imageVerified,
+    )
+      ? selectedVariant.image.trim()
+      : "";
+  const selectedVariantImage = selectedCmsImage || selectedLocalImage;
+  const displayImage = selectedVariant
+    ? selectedVariantImage
     : canonicalImage;
-  const displayImageAlt = canUseCmsVariantImage
-    ? selectedCmsVariantImage?.alt || selectedVariant?.imageAlt || `نمای ${displayName}`
+  const displayImageAlt = selectedVariant
+    ? selectedCmsVariantImage?.alt ||
+      selectedVariant.imageAlt ||
+      (displayImage
+        ? `نمای ${displayName}`
+        : `تصویر اختصاصی ${displayName} در حال تکمیل است`)
     : canonicalImageAlt;
-  const displayImageKind = canUseCmsVariantImage
-    ? "official"
+  const displayImageIsCms = Boolean(
+    displayImage && isCmsManagedProductImageSrc(displayImage),
+  );
+  const displayImageKind = selectedVariant
+    ? selectedVariant.imageKind
     : product.imageKind;
-  const isEditorialFamilyImage = displayImageKind === "editorial-family";
+  const isEditorialFamilyImage =
+    !selectedVariant && displayImageKind === "editorial-family";
 
   const hasSavedVariantPrice = Boolean(
     selectedVariant &&
@@ -387,7 +399,6 @@ export function ProductVariantExperience({
 
   function selectVariant(id: string) {
     setSelectedId(id);
-    setHasExplicitVariantSelection(true);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -407,8 +418,12 @@ export function ProductVariantExperience({
                 product={{
                   nameFa: displayName,
                   category: product.category,
-                  masterImage: displayImage,
-                  fallbackImage: product.fallbackImage,
+                  masterImage: displayImageIsCms ? displayImage : "",
+                  fallbackImage: selectedVariant
+                    ? !displayImageIsCms && displayImage
+                      ? displayImage
+                      : undefined
+                    : product.fallbackImage,
                   imageAlt: displayImageAlt,
                   visualProfile: product.visualProfile,
                   visualScale: product.visualScale,
@@ -418,6 +433,11 @@ export function ProductVariantExperience({
                 variant="detail"
                 priority
               />
+              {selectedVariant && !displayImage && (
+                <span className="sb-product-gallery__image-note" role="status">
+                  تصویر اختصاصی این مدل هنوز ثبت نشده است.
+                </span>
+              )}
               {isEditorialFamilyImage && (
                 <span className="sb-product-gallery__identity" aria-hidden="true">
                   <small>{product.brand || "سپید بیوتی"}</small>

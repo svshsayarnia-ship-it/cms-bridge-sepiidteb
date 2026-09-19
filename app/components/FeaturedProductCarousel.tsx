@@ -19,6 +19,7 @@ import {
 } from "../lib/cart";
 import { ArrowIcon, ChevronIcon } from "./Icons";
 import { ProductVisual } from "./product/ProductVisual";
+import { isCmsManagedProductImageSrc } from "../lib/product-image";
 import styles from "./FeaturedProductCarousel.module.css";
 
 export type FeaturedCarouselProduct = {
@@ -39,6 +40,7 @@ export type FeaturedCarouselProduct = {
   salePrice: string;
   priceToman?: number;
   stockStatus: string;
+  variants?: FeaturedVariant[];
 };
 
 type FeaturedVariant = {
@@ -152,7 +154,15 @@ export function FeaturedProductCarousel({
     () => selectRotatingProducts(productPool, rotationSeed),
     [productPool, rotationSeed],
   );
-  const [variantsBySlug, setVariantsBySlug] = useState<Record<string, FeaturedVariant[]>>({});
+  const [variantsBySlug, setVariantsBySlug] = useState<Record<string, FeaturedVariant[]>>(
+    () =>
+      Object.fromEntries(
+        productPool.map((product) => [
+          product.slug,
+          product.variants ?? [],
+        ]),
+      ),
+  );
   const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, string>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
@@ -193,11 +203,11 @@ export function FeaturedProductCarousel({
     if (!products.length) return;
     const controller = new AbortController();
     const slugs = products.map((product) => product.slug).join(",");
-
-    void fetch(`/api/featured-product-variants?slugs=${encodeURIComponent(slugs)}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
+    const refreshTimer = window.setTimeout(() => {
+      void fetch(`/api/featured-product-variants?slugs=${encodeURIComponent(slugs)}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Variant request failed with ${response.status}`);
         return (await response.json()) as VariantResponse;
@@ -216,8 +226,12 @@ export function FeaturedProductCarousel({
         if (error instanceof Error && error.name === "AbortError") return;
         console.warn("[featured-carousel] variant data unavailable", error);
       });
+    }, 900);
 
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(refreshTimer);
+      controller.abort();
+    };
   }, [products]);
 
   useEffect(
@@ -339,7 +353,7 @@ export function FeaturedProductCarousel({
             onPointerCancel={() => setPaused(false)}
             aria-label="محصولات پیشنهادی"
           >
-            {products.map((product) => {
+            {products.map((product, productIndex) => {
               const variants = variantsBySlug[product.slug] ?? [];
               const selectedVariantId = selectedVariantIds[product.slug];
               const selectedVariant =
@@ -348,7 +362,12 @@ export function FeaturedProductCarousel({
               const displayName = selectedVariant?.nameFa || product.nameFa;
               const displayNameEn = selectedVariant?.nameEn || product.nameEn;
               const displayVolume = cleanVolume(selectedVariant?.volume || product.volume);
-              const displayImage = selectedVariant?.image || product.image;
+              const displayImage = selectedVariant
+                ? selectedVariant.image
+                : product.image;
+              const displayImageIsCms = Boolean(
+                displayImage && isCmsManagedProductImageSrc(displayImage),
+              );
               const regularPrice = selectedVariant
                 ? numericPrice(selectedVariant.regularPrice) ?? numericPrice(selectedVariant.priceToman)
                 : numericPrice(product.regularPrice || product.price) ?? numericPrice(product.priceToman);
@@ -415,15 +434,18 @@ export function FeaturedProductCarousel({
                           slug: selectedVariant ? `${product.slug}-${selectedVariant.id}` : product.slug,
                           nameFa: displayName,
                           category: product.category,
-                          image: displayImage,
-                          masterImage: displayImage,
+                          image: displayImageIsCms ? displayImage : "",
+                          masterImage: displayImageIsCms ? displayImage : "",
+                          fallbackImage:
+                            !displayImageIsCms && displayImage
+                              ? displayImage
+                              : undefined,
                           imageAlt: selectedVariant?.imageAlt || product.imageAlt || `تصویر ${displayName}`,
                         }}
                         variant="carousel"
-                        priority
-                        sizes="(max-width: 720px) 70vw, (max-width: 1040px) 38vw, 26vw"
+                        priority={productIndex === 0}
+                        sizes="(max-width: 720px) 64vw, (max-width: 1040px) 34vw, 270px"
                         showBackground={false}
-                        unoptimized
                       />
                     ) : (
                       <span className={styles.emptyImage}>تصویر محصول در حال تکمیل است</span>
@@ -446,7 +468,11 @@ export function FeaturedProductCarousel({
                         <>
                           {variants.slice(0, 5).map((variant, index) => {
                             const active = variant.id === (selectedVariant?.id ?? variants[0]?.id);
-                            const variantImage = variant.image || product.image;
+                            const variantImage = variant.image;
+                            const variantImageIsCms = Boolean(
+                              variantImage &&
+                                isCmsManagedProductImageSrc(variantImage),
+                            );
                             return (
                               <button
                                 type="button"
@@ -469,15 +495,18 @@ export function FeaturedProductCarousel({
                                       slug: `${product.slug}-${variant.id}-${index}`,
                                       nameFa: variant.nameFa || variant.label,
                                       category: product.category,
-                                      image: variantImage,
-                                      masterImage: variantImage,
+                                      image: variantImageIsCms ? variantImage : "",
+                                      masterImage: variantImageIsCms ? variantImage : "",
+                                      fallbackImage:
+                                        !variantImageIsCms && variantImage
+                                          ? variantImage
+                                          : undefined,
                                       imageAlt: "",
                                     }}
                                     variant="thumbnail"
                                     decorative
                                     sizes="31px"
                                     showBackground={false}
-                                    unoptimized
                                   />
                                 )}
                               </button>
