@@ -67,8 +67,8 @@ final class Customer_Otp_Controller {
 
 	/**
 	 * Enforce phone uniqueness and require a verified phone proof for registration.
-	 * Password-based customer login is deliberately disabled so mobile login cannot
-	 * bypass OTP.
+	 * Password login is handled by Customer_Auth_Controller; OTP remains an optional
+	 * second login method and the mandatory phone-verification path for registration.
 	 *
 	 * @param mixed            $result Existing result.
 	 * @param \WP_REST_Server  $server REST server.
@@ -82,13 +82,6 @@ final class Customer_Otp_Controller {
 		}
 
 		$route = $request->get_route();
-		if ( '/sepiid/v1/auth/login' === $route ) {
-			return $this->error(
-				'sepiid_sms_login_required',
-				'ورود با رمز ثابت غیرفعال است. کد یک‌بارمصرف پیامکی درخواست کن.',
-				403
-			);
-		}
 
 		if ( ! in_array( $route, array( '/sepiid/v1/auth/register', '/sepiid/v1/auth/profile' ), true ) ) {
 			return $result;
@@ -235,7 +228,9 @@ final class Customer_Otp_Controller {
 			array(
 				'challenge' => $challenge,
 				'expiresIn' => self::OTP_TTL,
-				'message'   => 'اگر شماره برای این عملیات معتبر باشد، کد ورود پیامک شد.',
+				'message'   => 'register' === $purpose
+					? 'کد تأیید شماره برای ثبت‌نام پیامک شد.'
+					: 'کد ورود یک‌بارمصرف پیامک شد.',
 			)
 		);
 	}
