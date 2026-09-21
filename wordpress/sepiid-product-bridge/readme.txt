@@ -4,7 +4,7 @@ Tags: woocommerce, rest-api, cms, media
 Requires at least: 6.9
 Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 1.8.14
+Stable tag: 1.8.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,12 @@ Sepiid Product Bridge قابلیت‌های تکمیلی موردنیاز Sepiid
 صحیح است. مرورگر بدون Consumer Key و Consumer Secret نباید به این مسیر دسترسی داشته باشد. آزمون واقعی باید از CMS یا ابزار API امن انجام شود.
 
 == Changelog ==
+
+= 1.8.16 =
+
+* افزودن ورود دوحالته: نام کاربری/ایمیل/موبایل + رمز عبور، یا رمز یک‌بارمصرف پیامکی.
+* جداکردن Pattern پیامک رازبان برای ورود و ثبت‌نام با fallback سازگار با تنظیم قبلی.
+* تفکیک متن OTP ورود و ثبت‌نام برای جلوگیری از نمایش پیام اشتباه در پنل پیامکی.
 
 = 1.8.13 =
 
