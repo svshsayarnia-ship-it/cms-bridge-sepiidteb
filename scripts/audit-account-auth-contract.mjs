@@ -13,6 +13,7 @@ const checks = [
     file: "app/api/account/auth/[action]/route.ts",
     needles: [
       '"register"',
+      '"login"',
       '"logout"',
       '"otp-request"',
       '"otp-verify"',
@@ -25,6 +26,8 @@ const checks = [
   {
     file: "app/components/CustomerAccount.tsx",
     needles: [
+      'accountRequest<{ user: CustomerUser }>("login"',
+      'type LoginMethod = "password" | "otp";',
       'accountRequest<OtpRequestResult>("otp-request"',
       'accountRequest<OtpVerifyResult>("otp-verify"',
       'accountRequest<{ user: CustomerUser }>("register"',
@@ -79,6 +82,8 @@ const checks = [
       "? 'razban' : 'kavenegar'",
       "SEPIID_RAZBAN_API_TOKEN",
       "SEPIID_RAZBAN_PATTERN",
+      "SEPIID_RAZBAN_LOGIN_PATTERN",
+      "SEPIID_RAZBAN_REGISTER_PATTERN",
       "SEPIID_RAZBAN_FROM_NUMBER",
       "https://edge.ippanel.com/v1/api/send",
       "'sending_type' => 'pattern'",
@@ -101,7 +106,7 @@ const checks = [
   },
   {
     file: "wordpress/sepiid-product-bridge/sepiid-product-bridge.php",
-    needles: ["Version:           1.8.15", "const VERSION = '1.8.15';"],
+    needles: ["Version:           1.8.16", "const VERSION = '1.8.16';"],
   },
 ];
 
