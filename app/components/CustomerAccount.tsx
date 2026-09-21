@@ -15,6 +15,7 @@ import type { CustomerUser } from "../lib/customer-auth";
 
 type AccountMode = "login" | "register" | "profile" | "forgot";
 type OtpPurpose = "login" | "register";
+type LoginMethod = "password" | "otp";
 
 type CustomerProfile = {
   email: string;
@@ -70,6 +71,8 @@ export function CustomerAccount({
     initialUser ? profileFromUser(initialUser) : emptyProfile,
   );
   const [identifier, setIdentifier] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -155,6 +158,39 @@ export function CustomerAccount({
     setLoginChallenge("");
     setLoginCode("");
     setMessage("");
+  }
+
+  async function submitPasswordLogin(event: FormEvent) {
+    event.preventDefault();
+    const loginIdentifier = identifier.trim();
+    if (!loginIdentifier || !loginPassword) {
+      setMessage("نام کاربری، ایمیل یا موبایل و رمز عبور را وارد کن.");
+      return;
+    }
+
+    setPending(true);
+    setMessage("");
+    try {
+      const result = await accountRequest<{ user: CustomerUser }>("login", {
+        identifier: loginIdentifier,
+        password: loginPassword,
+      });
+      if (!result.user) throw new Error("ورود تکمیل نشد. دوباره تلاش کن.");
+      setUser(result.user);
+      setProfile(profileFromUser(result.user));
+      setLoginPassword("");
+      setLoginChallenge("");
+      setLoginCode("");
+      setMode("profile");
+      setMessage("ورود با رمز عبور با موفقیت انجام شد.");
+
+      const returnTo = safeReturnTo(new URLSearchParams(window.location.search).get("return_to"));
+      if (returnTo !== "/account/profile") window.location.assign(returnTo);
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setPending(false);
+    }
   }
 
   async function requestOtp(purpose: OtpPurpose) {
@@ -354,6 +390,8 @@ export function CustomerAccount({
       setUser(null);
       setProfile(emptyProfile);
       setIdentifier("");
+      setLoginPassword("");
+      setLoginMethod("password");
       setPassword("");
       setConfirmPassword("");
       setLoginChallenge("");
@@ -376,13 +414,13 @@ export function CustomerAccount({
             <span className="sb-eyebrow">حساب کاربری</span>
             <h1>حساب کاربری سپید بیوتی</h1>
             <p>
-              ورود با کد یک‌بارمصرف پیامکی انجام می‌شود و هر شماره موبایل فقط می‌تواند
-              به یک حساب مشتری متصل باشد.
+              می‌توانی با نام کاربری/ایمیل/موبایل و رمز عبور وارد شوی یا روش کد
+              یک‌بارمصرف پیامکی را انتخاب کنی.
             </p>
           </div>
           <div className="sb-account-status">
             <strong>{user ? user.fullName || user.email : "وارد حساب نشده‌ای"}</strong>
-            <span>{user ? user.phone || user.email : "ورود امن با SMS"}</span>
+            <span>{user ? user.phone || user.email : "ورود با رمز یا SMS"}</span>
           </div>
         </div>
       </section>
@@ -405,69 +443,156 @@ export function CustomerAccount({
             {message && <p className="sb-account-message" role="status">{message}</p>}
 
             {mode === "login" && (
-              <form className="sb-account-form" onSubmit={verifyLoginOtp}>
+              <form
+                className="sb-account-form"
+                onSubmit={loginMethod === "password" ? submitPasswordLogin : verifyLoginOtp}
+              >
                 <div>
-                  <span className="sb-eyebrow">ورود با پیامک</span>
-                  <h2>ورود با کد پیامکی</h2>
-                  <p>شماره موبایل حساب را وارد کن؛ ورود فقط با رمز یک‌بارمصرف انجام می‌شود.</p>
+                  <span className="sb-eyebrow">ورود به حساب</span>
+                  <h2>روش ورود را انتخاب کن</h2>
+                  <p>با رمز عبور یا رمز یک‌بارمصرف پیامکی وارد حساب سپید بیوتی شو.</p>
                 </div>
-                <label>
-                  <span>شماره موبایل</span>
-                  <input
-                    dir="ltr"
-                    type="tel"
-                    autoComplete="tel"
-                    inputMode="numeric"
-                    maxLength={11}
-                    minLength={11}
-                    pattern="09[0-9]{9}"
-                    value={identifier}
-                    onChange={(event) => updateLoginPhone(event.target.value)}
-                    placeholder="09xxxxxxxxx"
-                    aria-invalid={identifier.length > 0 && !loginPhoneValid}
-                    aria-describedby="login-phone-help"
-                    required
-                  />
-                  <small
-                    id="login-phone-help"
-                    className={loginPhoneError ? "sb-account-field-error" : "sb-account-field-help"}
-                    role={loginPhoneError ? "alert" : undefined}
-                  >
-                    {loginPhoneError || "شماره باید ۱۱ رقم و با 09 شروع شود."}
-                  </small>
-                </label>
-                {!loginChallenge ? (
+
+                <div className="sb-account-actions" role="group" aria-label="انتخاب روش ورود">
                   <button
                     type="button"
-                    className="sb-btn sb-btn--dark"
-                    disabled={pending || !loginPhoneValid}
-                    onClick={() => void requestOtp("login")}
+                    className={`sb-btn ${loginMethod === "password" ? "sb-btn--dark" : "sb-btn--ghost"}`}
+                    aria-pressed={loginMethod === "password"}
+                    onClick={() => {
+                      setLoginMethod("password");
+                      setMessage("");
+                    }}
                   >
-                    {pending ? "در حال ارسال..." : "دریافت رمز پیامکی"}
+                    نام کاربری و رمز عبور
                   </button>
-                ) : (
+                  <button
+                    type="button"
+                    className={`sb-btn ${loginMethod === "otp" ? "sb-btn--dark" : "sb-btn--ghost"}`}
+                    aria-pressed={loginMethod === "otp"}
+                    onClick={() => {
+                      setLoginMethod("otp");
+                      setLoginChallenge("");
+                      setLoginCode("");
+                      setMessage("");
+                    }}
+                  >
+                    رمز یک‌بارمصرف
+                  </button>
+                </div>
+
+                {loginMethod === "password" ? (
                   <>
                     <label>
-                      <span>رمز یک‌بارمصرف ۶ رقمی</span>
+                      <span>نام کاربری، ایمیل یا موبایل</span>
                       <input
                         dir="ltr"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        maxLength={6}
-                        value={loginCode}
-                        onChange={(event) => setLoginCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
-                        placeholder="------"
+                        type="text"
+                        autoComplete="username"
+                        value={identifier}
+                        onChange={(event) => {
+                          setIdentifier(event.target.value);
+                          setMessage("");
+                        }}
+                        placeholder="username / email / 09xxxxxxxxx"
                         required
                       />
                     </label>
-                    <button type="submit" className="sb-btn sb-btn--dark" disabled={pending || loginCode.length !== 6 || !loginPhoneValid}>
-                      {pending ? "در حال تأیید..." : "تأیید کد و ورود"}
+                    <label>
+                      <span>رمز عبور</span>
+                      <input
+                        dir="ltr"
+                        type="password"
+                        autoComplete="current-password"
+                        value={loginPassword}
+                        onChange={(event) => {
+                          setLoginPassword(event.target.value);
+                          setMessage("");
+                        }}
+                        required
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="sb-btn sb-btn--dark"
+                      disabled={pending || !identifier.trim() || !loginPassword}
+                    >
+                      {pending ? "در حال ورود..." : "ورود با رمز عبور"}
                     </button>
-                    <button type="button" className="sb-account-inline" disabled={pending} onClick={() => void requestOtp("login")}>
-                      ارسال دوباره کد
+                    <button type="button" className="sb-account-inline" onClick={() => setMode("forgot")}>
+                      رمز عبور را فراموش کرده‌ام
                     </button>
                   </>
+                ) : (
+                  <>
+                    <label>
+                      <span>شماره موبایل</span>
+                      <input
+                        dir="ltr"
+                        type="tel"
+                        autoComplete="tel"
+                        inputMode="numeric"
+                        maxLength={11}
+                        minLength={11}
+                        pattern="09[0-9]{9}"
+                        value={identifier}
+                        onChange={(event) => updateLoginPhone(event.target.value)}
+                        placeholder="09xxxxxxxxx"
+                        aria-invalid={identifier.length > 0 && !loginPhoneValid}
+                        aria-describedby="login-phone-help"
+                        required
+                      />
+                      <small
+                        id="login-phone-help"
+                        className={loginPhoneError ? "sb-account-field-error" : "sb-account-field-help"}
+                        role={loginPhoneError ? "alert" : undefined}
+                      >
+                        {loginPhoneError || "شماره باید ۱۱ رقم و با 09 شروع شود."}
+                      </small>
+                    </label>
+                    {!loginChallenge ? (
+                      <button
+                        type="button"
+                        className="sb-btn sb-btn--dark"
+                        disabled={pending || !loginPhoneValid}
+                        onClick={() => void requestOtp("login")}
+                      >
+                        {pending ? "در حال ارسال..." : "دریافت رمز پیامکی"}
+                      </button>
+                    ) : (
+                      <>
+                        <label>
+                          <span>رمز یک‌بارمصرف ۶ رقمی</span>
+                          <input
+                            dir="ltr"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            value={loginCode}
+                            onChange={(event) => setLoginCode(toAsciiDigits(event.target.value).replace(/\D/g, "").slice(0, 6))}
+                            placeholder="------"
+                            required
+                          />
+                        </label>
+                        <button
+                          type="submit"
+                          className="sb-btn sb-btn--dark"
+                          disabled={pending || loginCode.length !== 6 || !loginPhoneValid}
+                        >
+                          {pending ? "در حال تأیید..." : "تأیید کد و ورود"}
+                        </button>
+                        <button
+                          type="button"
+                          className="sb-account-inline"
+                          disabled={pending}
+                          onClick={() => void requestOtp("login")}
+                        >
+                          ارسال دوباره کد
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
+
                 <button type="button" className="sb-account-inline" onClick={() => setMode("register")}>
                   هنوز حساب ندارم
                 </button>
