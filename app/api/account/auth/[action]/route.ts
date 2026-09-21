@@ -54,6 +54,7 @@ export async function POST(request: NextRequest, context: Context) {
   if (
     !new Set([
       "register",
+      "login",
       "logout",
       "otp-request",
       "otp-verify",
@@ -87,6 +88,22 @@ export async function POST(request: NextRequest, context: Context) {
 
     const input = await readJsonObject(request);
     if (!input) return jsonError("بدنه درخواست معتبر نیست.", 400, "invalid_json");
+
+    if (action === "login") {
+      const result = await customerAuthRequest<AuthResult>("login", {
+        method: "POST",
+        body: {
+          identifier: asString(input.identifier),
+          password: asString(input.password),
+        },
+        userAgent: request.headers.get("user-agent"),
+      });
+      if (!result.token || !result.user) {
+        return jsonError("پاسخ ورود کامل نیست.", 502, "invalid_auth_response");
+      }
+      setCustomerSessionCookie(store, result.token);
+      return Response.json({ user: result.user }, { headers: JSON_HEADERS });
+    }
 
     if (action === "otp-request") {
       const result = await customerAuthRequest<AuthResult>("otp/request", {
