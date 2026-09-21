@@ -26,15 +26,15 @@ jobs:
       - name: Build WordPress plugin ZIP
         run: |
           cd wordpress
-          zip -r ../sepiid-product-bridge-1.8.15.zip sepiid-product-bridge
+          zip -r ../sepiid-product-bridge-1.8.16.zip sepiid-product-bridge
 
       - name: Verify ZIP contents
-        run: unzip -t sepiid-product-bridge-1.8.15.zip
+        run: unzip -t sepiid-product-bridge-1.8.16.zip
 
       - name: Upload installable plugin
         uses: actions/upload-artifact@v4
         with:
-          name: sepiid-product-bridge-1.8.15
-          path: sepiid-product-bridge-1.8.15.zip
+          name: sepiid-product-bridge-1.8.16
+          path: sepiid-product-bridge-1.8.16.zip
           if-no-files-found: error
           retention-days: 14
