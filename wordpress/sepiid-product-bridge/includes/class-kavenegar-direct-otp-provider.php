@@ -57,10 +57,15 @@ final class Kavenegar_Direct_Otp_Provider {
 			$sender = self::DEFAULT_SENDER;
 		}
 
-		$message = sprintf(
-			"کد تأیید سپید بیوتی: %s\nاعتبار: ۳ دقیقه",
-			(string) $code
-		);
+		$message = 'register' === $purpose
+			? sprintf(
+				"کد تأیید شماره برای ثبت‌نام سپید بیوتی: %s\nاعتبار: ۳ دقیقه",
+				(string) $code
+			)
+			: sprintf(
+				"کد ورود یک‌بارمصرف سپید بیوتی: %s\nاعتبار: ۳ دقیقه",
+				(string) $code
+			);
 		$message = (string) apply_filters( 'sepiid_otp_sms_message', $message, $code, $purpose, $phone );
 
 		$url = 'https://api.kavenegar.com/v1/' . rawurlencode( $api_key ) . '/sms/send.json';
