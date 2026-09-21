@@ -45,10 +45,20 @@ final class Razban_Otp_Provider {
 			return $result;
 		}
 
+		$pattern = 'register' === $purpose
+			? $this->config_value( 'SEPIID_RAZBAN_REGISTER_PATTERN' )
+			: $this->config_value( 'SEPIID_RAZBAN_LOGIN_PATTERN' );
+		if ( '' === $pattern ) {
+			// Backward-compatible fallback for existing installations. New setups
+			// should use separate login/register patterns so panel copy cannot leak
+			// between authentication flows.
+			$pattern = $this->config_value( 'SEPIID_RAZBAN_PATTERN' );
+		}
+
 		$config = array(
 			'api_url'     => $this->config_value( 'SEPIID_RAZBAN_API_URL', self::DEFAULT_API_URL ),
 			'api_token'   => $this->config_value( 'SEPIID_RAZBAN_API_TOKEN' ),
-			'pattern'     => $this->config_value( 'SEPIID_RAZBAN_PATTERN' ),
+			'pattern'     => $pattern,
 			'from_number' => $this->config_value( 'SEPIID_RAZBAN_FROM_NUMBER' ),
 			'param_key'   => $this->config_value( 'SEPIID_RAZBAN_PARAM_KEY', 'Code' ),
 		);
@@ -68,7 +78,7 @@ final class Razban_Otp_Provider {
 			if ( empty( $config[ $key ] ) ) {
 				return $this->error(
 					'sepiid_razban_not_configured',
-					'اتصال رازبان هنوز کامل تنظیم نشده است. توکن، کد پترن و خط ارسال را روی وردپرس وارد کن.'
+					'اتصال رازبان هنوز کامل تنظیم نشده است. توکن، خط ارسال و پترن مناسب ورود/ثبت‌نام را روی وردپرس وارد کن.'
 				);
 			}
 		}
@@ -200,12 +210,16 @@ final class Razban_Otp_Provider {
 
 	/** @return bool */
 	private function has_complete_razban_config() {
-		foreach ( array( 'SEPIID_RAZBAN_API_TOKEN', 'SEPIID_RAZBAN_PATTERN', 'SEPIID_RAZBAN_FROM_NUMBER' ) as $name ) {
+		foreach ( array( 'SEPIID_RAZBAN_API_TOKEN', 'SEPIID_RAZBAN_FROM_NUMBER' ) as $name ) {
 			if ( '' === $this->config_value( $name ) ) {
 				return false;
 			}
 		}
-		return true;
+
+		$shared_pattern = $this->config_value( 'SEPIID_RAZBAN_PATTERN' );
+		$login_pattern = $this->config_value( 'SEPIID_RAZBAN_LOGIN_PATTERN' );
+		$register_pattern = $this->config_value( 'SEPIID_RAZBAN_REGISTER_PATTERN' );
+		return '' !== $shared_pattern || ( '' !== $login_pattern && '' !== $register_pattern );
 	}
 
 	/** @return string */
