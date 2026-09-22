@@ -102,6 +102,16 @@ function prepareNeuramisGuideHtml(value: string) {
   return html;
 }
 
+function normalizeKnownEditorialEntities(slug: string, value: string) {
+  if (slug === "best-fillers-iran-guide") {
+    return value
+      .replace(/مدل‌هایی مانند Light، Deep و Volume/gu, "مدل‌هایی مانند Lido، Deep و Volume")
+      .replace(/مدل‌هایی مانند Light, Deep و Volume/gu, "مدل‌هایی مانند Lido، Deep و Volume");
+  }
+
+  return value;
+}
+
 function prepareArticleHtml(value: string) {
   const fragmentByLabel = new Map<string, string>();
   for (const match of value.matchAll(/<a\b[^>]*href=["']#([a-z][a-z0-9_-]{0,79})["'][^>]*>([\s\S]*?)<\/a>/gi)) {
@@ -210,9 +220,12 @@ export default async function ArticlePage({
   if (!article) notFound();
   const renderedHtmlContent = article.contentMode === "html"
     ? prepareArticleHtml(
-        isNeuramisGuide(article.slug)
-          ? prepareNeuramisGuideHtml(article.htmlContent ?? "")
-          : article.htmlContent ?? "",
+        normalizeKnownEditorialEntities(
+          article.slug,
+          isNeuramisGuide(article.slug)
+            ? prepareNeuramisGuideHtml(article.htmlContent ?? "")
+            : article.htmlContent ?? "",
+        ),
       )
     : "";
   const hasEmbeddedSources = hasHtmlAnchor(renderedHtmlContent, "sources");
