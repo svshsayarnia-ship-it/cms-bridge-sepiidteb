@@ -731,8 +731,7 @@ export default async function ProductPage({
     product.priceToman,
   );
 
-  const schemaAvailability =
-    getSchemaAvailability(liveProduct);
+  const schemaAvailability = getSchemaAvailability(liveProduct);
   const image = liveImage?.src || (isPublicImageSrc(product.image) ? product.image : "");
   const variants = productExperience.variants ?? [];
   const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
