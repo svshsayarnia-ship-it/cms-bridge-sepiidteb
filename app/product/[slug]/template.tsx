@@ -30,13 +30,16 @@ export default function ProductTemplate({ children }: { children: ReactNode }) {
   const params = useParams<{ slug?: string | string[] }>();
   const rawSlug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
   const slug = useMemo(() => rawSlug?.trim() ?? "", [rawSlug]);
-  const [details, setDetails] = useState<PublicSpecsPayload | null>(null);
+  const [detailsState, setDetailsState] = useState<{
+    slug: string;
+    payload: PublicSpecsPayload;
+  } | null>(null);
+  const details = detailsState?.slug === slug ? detailsState.payload : null;
 
   useEffect(() => {
     if (!slug) return;
 
     const controller = new AbortController();
-    setDetails(null);
 
     void fetch(`/api/product-public-specs?slug=${encodeURIComponent(slug)}`, {
       credentials: "same-origin",
@@ -47,7 +50,7 @@ export default function ProductTemplate({ children }: { children: ReactNode }) {
         return (await response.json()) as PublicSpecsPayload;
       })
       .then((payload) => {
-        if (payload) setDetails(payload);
+        if (payload) setDetailsState({ slug, payload });
       })
       .catch((error) => {
         if (error instanceof DOMException && error.name === "AbortError") return;

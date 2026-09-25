@@ -131,20 +131,25 @@ export function TransactionalCheckoutClient() {
     syncCart();
     const unsubscribe = onCartUpdated(syncCart);
 
-    try {
-      const saved = window.sessionStorage.getItem(DRAFT_KEY);
-      if (saved) {
-        setForm({
-          ...initialForm,
-          ...JSON.parse(saved),
-          termsAccepted: false,
-        });
+    const draftTimer = window.setTimeout(() => {
+      try {
+        const saved = window.sessionStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          setForm({
+            ...initialForm,
+            ...JSON.parse(saved),
+            termsAccepted: false,
+          });
+        }
+      } catch {
+        // Invalid old browser state must not block checkout.
       }
-    } catch {
-      // Invalid old browser state must not block checkout.
-    }
+    }, 0);
 
-    return unsubscribe;
+    return () => {
+      window.clearTimeout(draftTimer);
+      unsubscribe();
+    };
   }, []);
 
   const browserSubtotal = useMemo(
