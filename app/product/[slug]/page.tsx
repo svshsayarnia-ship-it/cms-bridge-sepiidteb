@@ -492,9 +492,11 @@ function getSchemaPrice(
 
 function getSchemaAvailability(
   cmsProduct: CmsProduct | null,
-): string {
+): string | null {
+  // Without a live CMS stock record, availability is unknown. Do not publish
+  // a fabricated PreOrder state in structured data.
   if (!cmsProduct) {
-    return "https://schema.org/PreOrder";
+    return null;
   }
 
   if (cmsProduct.stockStatus === "outofstock") {
@@ -762,7 +764,7 @@ export default async function ProductPage({
                 url: variantUrl,
                 price: variantPrice,
                 priceCurrency: "IRR",
-                availability: schemaAvailability,
+                ...(schemaAvailability ? { availability: schemaAvailability } : {}),
                 itemCondition: "https://schema.org/NewCondition",
                 ...merchantReturnPolicyReference,
               },
@@ -872,7 +874,7 @@ export default async function ProductPage({
                     url: `${siteOrigin}/product/${product.slug}`,
                     price: schemaPrice,
                     priceCurrency: "IRR",
-                    availability: schemaAvailability,
+                    ...(schemaAvailability ? { availability: schemaAvailability } : {}),
                     itemCondition: "https://schema.org/NewCondition",
                     ...merchantReturnPolicyReference,
                   },
