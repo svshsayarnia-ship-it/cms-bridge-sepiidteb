@@ -504,7 +504,10 @@ export function ProductVariantExperience({
                 <strong>{pricing.label}</strong>
                 <small>{toPublicCopy(pricing.note)}</small>
               </div>
-              <AddToCartButton product={inquiryProduct} />
+              <AddToCartButton
+                product={inquiryProduct}
+                label="افزودن به لیست استعلام"
+              />
             </div>
             <p className="sb-product-summary__notice">
               افزودن به لیست استعلام به معنی خرید یا پرداخت قطعی نیست؛ قیمت و موجودی روز قبل از تأیید سفارش بررسی می‌شود.
