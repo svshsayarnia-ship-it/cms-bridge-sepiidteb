@@ -535,7 +535,7 @@ function buildTransactionalProductTitle(
     .replace(/\s+/g, " ")
     .trim();
 
-  return `خرید ${titleFa} | قیمت ${titleEn} و مشخصات | سپید بیوتی`;
+  return `${titleFa} | قیمت، مشخصات و اطلاعات ${titleEn} | سپید بیوتی`;
 }
 
 export function generateStaticParams() {
