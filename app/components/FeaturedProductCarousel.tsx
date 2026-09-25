@@ -189,14 +189,18 @@ export function FeaturedProductCarousel({
   }, []);
 
   useEffect(() => {
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? "[]");
-      if (Array.isArray(parsed)) {
-        setFavorites(new Set(parsed.filter((item): item is string => typeof item === "string")));
+    const favoritesTimer = window.setTimeout(() => {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) ?? "[]");
+        if (Array.isArray(parsed)) {
+          setFavorites(new Set(parsed.filter((item): item is string => typeof item === "string")));
+        }
+      } catch {
+        setFavorites(new Set());
       }
-    } catch {
-      setFavorites(new Set());
-    }
+    }, 0);
+
+    return () => window.clearTimeout(favoritesTimer);
   }, []);
 
   useEffect(() => {
