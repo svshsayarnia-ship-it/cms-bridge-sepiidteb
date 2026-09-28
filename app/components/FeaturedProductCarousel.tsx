@@ -177,15 +177,22 @@ export function FeaturedProductCarousel({
       const rotation = getRotationWindow(Date.now());
       setRotationSeed((current) => (current === rotation.seed ? current : rotation.seed));
     };
-    syncRotation();
+    const initialRotationTimer = window.setTimeout(syncRotation, 0);
     const timer = window.setInterval(syncRotation, 60_000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(initialRotationTimer);
+      window.clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
     const syncCart = () => setCartItems(readCart());
-    syncCart();
-    return onCartUpdated(syncCart);
+    const cartTimer = window.setTimeout(syncCart, 0);
+    const unsubscribe = onCartUpdated(syncCart);
+    return () => {
+      window.clearTimeout(cartTimer);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
