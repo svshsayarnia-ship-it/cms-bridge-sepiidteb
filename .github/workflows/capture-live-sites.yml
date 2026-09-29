@@ -3,7 +3,7 @@ name: Temporary live site capture
 on:
   push:
     branches:
-      - tmp-live-site-capture-20260929
+      - main
     paths:
       - .github/workflows/capture-live-sites.yml
 
