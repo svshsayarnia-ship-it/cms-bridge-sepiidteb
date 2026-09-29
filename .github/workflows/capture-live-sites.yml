@@ -32,32 +32,68 @@ jobs:
           import sharp from 'sharp';
 
           const targets = [
-            { name: 'khottan', url: 'https://www.khottan.ir/' },
-            { name: 'sepiid-beauty', url: 'https://sepiidbeauty.ir/' },
+            {
+              name: 'khottan',
+              title: /ختن|Khottan/i,
+              urls: [
+                'https://www.khottan.ir/',
+                'https://khottan-platform-7wbv5cac6-svshsayarnia-ship-its-projects.vercel.app/'
+              ]
+            },
+            {
+              name: 'sepiid-beauty',
+              title: /سپید|Sepiid/i,
+              urls: [
+                'https://sepiidbeauty.ir/',
+                'https://www.sepiidbeauty.ir/',
+                'https://cms-bridge-sepiidteb-pgpy55ch9-svshsayarnia-ship-its-projects.vercel.app/'
+              ]
+            },
           ];
 
           const browser = await chromium.launch({ headless: true });
           const context = await browser.newContext({
-            viewport: { width: 1440, height: 864 },
+            viewport: { width: 1600, height: 960 },
             deviceScaleFactor: 1,
             locale: 'fa-IR',
             colorScheme: 'light',
             reducedMotion: 'reduce',
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36',
           });
 
           for (const target of targets) {
             const page = await context.newPage();
             page.setDefaultTimeout(30000);
-            await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-            await page.waitForTimeout(5000);
+            let loaded = false;
+            let lastError = null;
+
+            for (const url of target.urls) {
+              try {
+                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+                await page.waitForTimeout(6000);
+                const title = await page.title();
+                if (!target.title.test(title)) {
+                  throw new Error(`Unexpected title: ${title}`);
+                }
+                console.log(`${target.name}: ${title} -> ${page.url()}`);
+                loaded = true;
+                break;
+              } catch (error) {
+                lastError = error;
+                console.log(`Fallback after ${url}: ${error.message}`);
+              }
+            }
+
+            if (!loaded) {
+              throw lastError || new Error(`Could not load ${target.name}`);
+            }
+
             await page.evaluate(() => {
               window.scrollTo(0, 0);
               const style = document.createElement('style');
               style.textContent = '*{animation:none!important;transition:none!important;caret-color:transparent!important}';
               document.head.appendChild(style);
             });
-            await page.waitForTimeout(750);
+            await page.waitForTimeout(800);
 
             const rawPath = `${target.name}-raw.png`;
             const outPath = `${target.name}-800x480.png`;
@@ -66,7 +102,6 @@ jobs:
               .resize(800, 480, { fit: 'fill' })
               .png({ compressionLevel: 9 })
               .toFile(outPath);
-            console.log(`${target.name}: ${await page.title()} -> ${page.url()}`);
             await page.close();
           }
 
