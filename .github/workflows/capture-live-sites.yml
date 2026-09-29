@@ -30,6 +30,7 @@ jobs:
           cat > capture.mjs <<'EOF'
           import { chromium } from 'playwright';
           import sharp from 'sharp';
+          import { writeFile } from 'node:fs/promises';
 
           const targets = [
             {
@@ -97,7 +98,10 @@ jobs:
 
             const rawPath = `${target.name}-raw.png`;
             const outPath = `${target.name}-800x480.png`;
-            await page.screenshot({ path: rawPath, fullPage: false });
+            const cdp = await context.newCDPSession(page);
+            const shot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+            await writeFile(rawPath, Buffer.from(shot.data, 'base64'));
+            await cdp.detach();
             await sharp(rawPath)
               .resize(800, 480, { fit: 'fill' })
               .png({ compressionLevel: 9 })
