@@ -82,3 +82,77 @@ jobs:
           path: ${{ steps.package_bridge.outputs.artifact_path }}
           if-no-files-found: error
           retention-days: 14
+
+
+  capture_live_portfolio:
+    name: Capture live portfolio screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install screenshot tools
+        run: |
+          mkdir -p /tmp/site-capture
+          cd /tmp/site-capture
+          npm init -y
+          npm install playwright@1.55.0 sharp@0.34.3
+          npx playwright install --with-deps chromium
+
+      - name: Capture live sites
+        working-directory: /tmp/site-capture
+        run: |
+          cat > capture.mjs <<'EOF'
+          import { chromium } from "playwright";
+          import sharp from "sharp";
+
+          const targets = [
+            { name: "khottan", url: "https://www.khottan.ir/" },
+            { name: "sepiid-beauty", url: "https://sepiidbeauty.ir/" },
+          ];
+
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext({
+            viewport: { width: 1600, height: 960 },
+            deviceScaleFactor: 1,
+            locale: "fa-IR",
+            colorScheme: "light",
+            reducedMotion: "reduce",
+          });
+
+          for (const target of targets) {
+            const page = await context.newPage();
+            page.setDefaultTimeout(30000);
+            await page.goto(target.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+            await page.waitForTimeout(6000);
+            await page.evaluate(() => {
+              window.scrollTo(0, 0);
+              const style = document.createElement("style");
+              style.textContent = "*{animation:none!important;transition:none!important;caret-color:transparent!important}";
+              document.head.appendChild(style);
+            });
+            await page.waitForTimeout(800);
+            const raw = `${target.name}-raw.png`;
+            const output = `${target.name}-800x480.png`;
+            await page.screenshot({ path: raw, fullPage: false });
+            await sharp(raw).resize(800, 480, { fit: "fill" }).png().toFile(output);
+            console.log(`${target.name}: ${await page.title()} | ${page.url()}`);
+            await page.close();
+          }
+          await browser.close();
+          EOF
+          node capture.mjs
+
+      - name: Upload live screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-site-screenshots-800x480
+          path: |
+            /tmp/site-capture/khottan-800x480.png
+            /tmp/site-capture/sepiid-beauty-800x480.png
+          if-no-files-found: error
+          retention-days: 1
