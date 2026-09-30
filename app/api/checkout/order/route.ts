@@ -4,6 +4,11 @@ import {
   createPendingWooOrder,
 } from "../../../lib/checkout-woocommerce";
 import {
+  AbanGatewayError,
+  createAbanPayment,
+  isAbanConfigured,
+} from "../../../lib/aban-gateway";
+import {
   AqayePardakhtError,
   createAqayePardakhtPayment,
   isAqayePardakhtConfigured,
@@ -25,66 +30,130 @@ export async function POST(request: Request) {
       lines: body?.lines,
     });
 
-    if (!isAqayePardakhtConfigured()) {
-      return NextResponse.json(
-        { ok: true, order, payment: null, paymentConfigured: false },
-        {
-          status: order.existing ? 200 : 201,
-          headers: { "cache-control": "no-store" },
-        },
-      );
-    }
+    if (isAbanConfigured()) {
+      try {
+        const payment = await createAbanPayment({
+          orderId: order.id,
+          idempotencyKey,
+        });
 
-    try {
-      const payment = await createAqayePardakhtPayment({
-        orderId: order.id,
-        idempotencyKey,
-      });
-
-      return NextResponse.json(
-        {
-          ok: true,
-          order,
-          payment: { url: payment.url },
-          paymentConfigured: true,
-        },
-        {
-          status: order.existing ? 200 : 201,
-          headers: { "cache-control": "no-store" },
-        },
-      );
-    } catch (error) {
-      const paymentError =
-        error instanceof AqayePardakhtError
-          ? error
-          : new AqayePardakhtError(
-              "سفارش ثبت شد، اما اتصال به درگاه کامل نشد. دوباره تلاش کنید.",
-              502,
-              "payment_start_failed",
-            );
-
-      console.error("[checkout-order] payment start failed", {
-        orderId: order.id,
-        code: paymentError.code,
-        status: paymentError.status,
-        message: paymentError.message,
-      });
-
-      return NextResponse.json(
-        {
-          ok: false,
-          order,
-          error: {
-            code: paymentError.code,
-            message: `سفارش #${order.number} ثبت شد، اما ${paymentError.message} با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.`,
+        return NextResponse.json(
+          {
+            ok: true,
+            order,
+            payment: {
+              url: payment.url,
+              invoiceId: payment.invoiceId,
+              payableRial: payment.payableRial,
+              provider: "aban",
+            },
+            paymentConfigured: true,
           },
-        },
-        {
+          {
+            status: order.existing ? 200 : 201,
+            headers: { "cache-control": "no-store" },
+          },
+        );
+      } catch (error) {
+        const paymentError =
+          error instanceof AbanGatewayError
+            ? error
+            : new AbanGatewayError(
+                "سفارش ثبت شد، اما اتصال به آبان کامل نشد. دوباره تلاش کنید.",
+                502,
+                "payment_start_failed",
+              );
+
+        console.error("[checkout-order] Aban payment start failed", {
+          orderId: order.id,
+          code: paymentError.code,
           status: paymentError.status,
-          headers: { "cache-control": "no-store" },
-        },
-      );
+          message: paymentError.message,
+        });
+
+        return NextResponse.json(
+          {
+            ok: false,
+            order,
+            error: {
+              code: paymentError.code,
+              message:
+                "سفارش #" +
+                order.number +
+                " ثبت شد، اما " +
+                paymentError.message +
+                " با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.",
+            },
+          },
+          {
+            status: paymentError.status,
+            headers: { "cache-control": "no-store" },
+          },
+        );
+      }
     }
+
+    if (isAqayePardakhtConfigured()) {
+      try {
+        const legacyPayment = await createAqayePardakhtPayment({
+          orderId: order.id,
+          idempotencyKey,
+        });
+
+        return NextResponse.json(
+          {
+            ok: true,
+            order,
+            payment: {
+              url: legacyPayment.url,
+              provider: "aqayepardakht",
+            },
+            paymentConfigured: true,
+          },
+          {
+            status: order.existing ? 200 : 201,
+            headers: { "cache-control": "no-store" },
+          },
+        );
+      } catch (error) {
+        const paymentError =
+          error instanceof AqayePardakhtError
+            ? error
+            : new AqayePardakhtError(
+                "اتصال به درگاه پرداخت موقتاً کامل نشد. دوباره تلاش کنید.",
+                502,
+                "legacy_payment_start_failed",
+              );
+
+        return NextResponse.json(
+          {
+            ok: false,
+            order,
+            error: {
+              code: paymentError.code,
+              message:
+                "سفارش #" +
+                order.number +
+                " ثبت شد، اما " +
+                paymentError.message +
+                " با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.",
+            },
+          },
+          {
+            status: paymentError.status,
+            headers: { "cache-control": "no-store" },
+          },
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { ok: true, order, payment: null, paymentConfigured: false },
+      {
+        status: order.existing ? 200 : 201,
+        headers: { "cache-control": "no-store" },
+      },
+    );
   } catch (error) {
     const checkoutError =
       error instanceof CheckoutOrderError

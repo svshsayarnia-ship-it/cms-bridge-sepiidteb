@@ -112,8 +112,12 @@ function getIdempotencyKey(items: CartItem[]) {
 
 function goToGateway(payment: PaymentStart) {
   const url = new URL(payment.url);
-  if (url.protocol !== "https:" || url.hostname !== "panel.aqayepardakht.ir") {
-    throw new Error("آدرس درگاه پرداخت معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
+  const allowedHost =
+    url.hostname === "abangateway.ir" ||
+    url.hostname === "www.abangateway.ir" ||
+    url.hostname === "panel.aqayepardakht.ir";
+  if (url.protocol !== "https:" || !allowedHost) {
+    throw new Error("آدرس سرویس پرداخت معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
   }
   window.location.assign(url.toString());
 }
@@ -357,7 +361,8 @@ export function TransactionalCheckoutClient() {
               <div className={`${styles.paymentMethod} ${styles.paymentMethodSelected}`}>
                 <span className={styles.radioDot} aria-hidden="true" />
                 <div>
-                  <strong>پرداخت آنلاین با آقای پرداخت</strong>
+                  <strong>پرداخت امن سفارش</strong>
+                  <p>پس از ثبت سفارش، به سرویس پرداخت فعال سپید بیوتی منتقل می‌شوید. با فعال‌شدن آبان، پرداخت به‌صورت خودکار از مسیر آبان انجام می‌شود.</p>
                 </div>
                 <b>پرداخت امن</b>
               </div>
@@ -372,7 +377,7 @@ export function TransactionalCheckoutClient() {
                   disabled={submitting}
                 />
                 <span>
-                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت اطلاعات سفارش و انتقال به درگاه پرداخت موافقم.
+                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت سفارش و انتقال به سرویس پرداخت موافقم.
                 </span>
               </label>
               {errors.termsAccepted && <p className={styles.termsError}>{errors.termsAccepted}</p>}
@@ -387,7 +392,7 @@ export function TransactionalCheckoutClient() {
                 disabled={submitting}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال انتقال به پرداخت…" : "ادامه و پرداخت"}
+                {submitting ? "در حال آماده‌سازی پرداخت…" : "ادامه و پرداخت"}
               </button>
             </section>
           </div>

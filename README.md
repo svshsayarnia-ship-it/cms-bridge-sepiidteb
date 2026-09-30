@@ -117,6 +117,22 @@ stops the pricing scan or removes its CMS proposal.
 - `PRICE_ALERT_EMAIL`
 - `PRICE_ALERT_EMAIL_FROM` (a Resend-verified sender, for example `Sepiid Beauty <prices@sepiidbeauty.ir>`)
 
+## Aban Gateway Environment
+
+The storefront payment layer can use Aban Gateway while keeping WooCommerce as
+the durable order authority. Configure these secrets in Vercel; never commit
+real values to GitHub:
+
+- `ABAN_API_TOKEN`
+- `ABAN_WEBHOOK_SECRET`
+- `ABAN_BASE_URL` (optional; defaults to `https://api.abangateway.ir`)
+- `ABAN_CALLBACK_URL` (optional; defaults to `https://sepiidbeauty.ir/api/payment/aban/callback`)
+
+The checkout creates the WooCommerce order first, then creates an Aban invoice.
+The Aban callback verifies the HMAC signature from the exact raw request body
+and calls Aban's verify endpoint before the WooCommerce order is marked paid.
+Repeated callbacks and repeated checkout submits are handled idempotently.
+
 ## Diagnostic Commands
 
 - `npm ci`: install the lockfile exactly
