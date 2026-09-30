@@ -261,6 +261,12 @@ async function getOrder(orderId: number) {
   return order;
 }
 
+export async function getStoredAbanInvoiceId(orderId: number) {
+  const order = await getOrder(orderId);
+  const invoiceId = firstMetaString(order, ABAN_INVOICE_META_KEY);
+  return /^inv_[A-Za-z0-9_-]+$/.test(invoiceId) ? invoiceId : "";
+}
+
 function errorMessage(code: string, fallback = "آبان درخواست پرداخت را نپذیرفت.") {
   switch (code) {
     case "insufficient_fee_wallet":
@@ -452,22 +458,68 @@ export async function createAbanPayment(input: {
 
   const existingInvoice = firstMetaString(order, ABAN_INVOICE_META_KEY);
   if (/^inv_[A-Za-z0-9_-]+$/.test(existingInvoice)) {
-    return {
-      invoiceId: existingInvoice,
-      url: PAYMENT_ORIGIN + "/pay/" + encodeURIComponent(existingInvoice),
-      payableRial:
-        Number(firstMetaString(order, ABAN_PAYABLE_META_KEY)) || amountInRial(order),
-    };
+    try {
+      const { data } = await abanRequest<AbanInvoice>(
+        "invoices/" + encodeURIComponent(existingInvoice),
+      );
+      const existing = data as AbanInvoice | null;
+      const existingStatus = String(existing?.status ?? "");
+      const existingUrl = String(existing?.payment_url ?? "");
+      const existingPayable = Number(existing?.payable_rial);
+
+      if (
+        ["pending", "partially_paid"].includes(existingStatus) &&
+        existingUrl &&
+        Number.isSafeInteger(existingPayable) &&
+        existingPayable > 0
+      ) {
+        return {
+          invoiceId: existingInvoice,
+          url: validatePaymentUrl(existingUrl),
+          payableRial: existingPayable,
+        };
+      }
+
+      if (existingStatus === "paid") {
+        await verifyAbanInvoice({
+          invoiceId: existingInvoice,
+          orderId: order.id,
+        });
+        return {
+          invoiceId: existingInvoice,
+          url: existingUrl
+            ? validatePaymentUrl(existingUrl)
+            : PAYMENT_ORIGIN + "/pay/" + encodeURIComponent(existingInvoice),
+          payableRial:
+            existingPayable ||
+            Number(firstMetaString(order, ABAN_PAYABLE_META_KEY)) ||
+            amountInRial(order),
+        };
+      }
+
+      // expired/cancelled invoices must not trap a retry on an unusable page.
+      // Continue below and create a fresh invoice for the same WooCommerce order.
+    } catch (error) {
+      if (
+        !(error instanceof AbanGatewayError) ||
+        !["invoice_not_found", "http_404"].includes(error.code)
+      ) {
+        throw error;
+      }
+      // If the old invoice no longer exists at Aban, create a new one below.
+    }
   }
 
   const { callback } = gatewayConfig();
+  const callbackUrl = new URL(callback);
+  callbackUrl.searchParams.set("order", String(order.id));
   const amountRial = amountInRial(order);
   const { data } = await abanRequest<AbanInvoice>("invoices", {
     method: "POST",
     body: JSON.stringify({
       amount_rial: amountRial,
       order_id: String(order.id),
-      callback_url: callback,
+      callback_url: callbackUrl.toString(),
       description: "پرداخت سفارش #" + (order.number || order.id) + " سپید بیوتی",
       metadata: {
         store: "sepiidbeauty.ir",
