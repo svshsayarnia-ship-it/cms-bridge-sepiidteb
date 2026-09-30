@@ -81,6 +81,48 @@ type WooCategory = {
   count: number;
 };
 
+type WooCustomer = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  date_created: string;
+  date_modified: string;
+  role?: string;
+  username?: string;
+  is_paying_customer?: boolean;
+  orders_count?: number;
+  total_spent?: string;
+  billing?: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    city?: string;
+  };
+  meta_data?: WooMetaData[];
+};
+
+export type CmsCustomer = {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string;
+  clinicName: string;
+  accountType: "customer" | "clinic" | "doctor" | "buyer";
+  ordersCount: number;
+  totalSpent: string;
+  createdAt: string;
+  modifiedAt: string;
+};
+
+export type CmsCustomersResponse = {
+  customers: CmsCustomer[];
+  page: number;
+  total: number;
+  totalPages: number;
+};
+
 type WooRequestResult<T> = {
   data: T;
   headers: Headers;
@@ -478,6 +520,35 @@ function mapProduct(product: WooProduct): CmsProduct {
   };
 }
 
+function customerMeta(customer: WooCustomer, key: string): string {
+  const value = arrayValue<WooMetaData>(customer.meta_data).find((item) => item.key === key)?.value;
+  return typeof value === "string" ? value : "";
+}
+
+function mapCustomer(customer: WooCustomer): CmsCustomer {
+  const fullName = [customer.first_name || customer.billing?.first_name, customer.last_name || customer.billing?.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const rawAccountType = customerMeta(customer, "sepiid_account_type");
+  const accountType = ["customer", "clinic", "doctor", "buyer"].includes(rawAccountType)
+    ? (rawAccountType as CmsCustomer["accountType"])
+    : "customer";
+  return {
+    id: customer.id,
+    fullName: fullName || customer.username || "بدون نام",
+    email: customer.email,
+    phone: customer.billing?.phone ?? "",
+    city: customer.billing?.city ?? "",
+    clinicName: customerMeta(customer, "sepiid_clinic_name"),
+    accountType,
+    ordersCount: Number(customer.orders_count ?? 0),
+    totalSpent: String(customer.total_spent ?? "0"),
+    createdAt: customer.date_created,
+    modifiedAt: customer.date_modified,
+  };
+}
+
 function mapStorePrice(value: string | undefined, minorUnit: number): string {
   const amount = Number(value);
   const unit = Number.isSafeInteger(minorUnit)
@@ -613,6 +684,46 @@ export async function listProducts(params: {
     total: Number(response.headers.get("x-wp-total") ?? response.data.length),
     totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
   };
+}
+
+export async function listCustomers(params: {
+  page?: number;
+  perPage?: number;
+  search?: string;
+} = {}): Promise<CmsCustomersResponse> {
+  const page = Math.max(1, params.page ?? 1);
+  const perPage = Math.max(1, Math.min(100, params.perPage ?? 30));
+  const query = new URLSearchParams({ page: String(page), per_page: String(perPage), orderby: "registered_date", order: "desc" });
+  if (params.search?.trim()) query.set("search", params.search.trim());
+  const response = await wooRequest<WooCustomer[]>("customers", {}, query);
+  return {
+    customers: response.data.map(mapCustomer),
+    page,
+    total: Number(response.headers.get("x-wp-total") ?? response.data.length),
+    totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
+  };
+}
+
+export async function updateCustomer(id: number, customer: Pick<CmsCustomer, "fullName" | "email" | "phone" | "city" | "clinicName" | "accountType">): Promise<CmsCustomer> {
+  const fullName = customer.fullName.trim();
+  if (!fullName || !customer.email.trim()) {
+    throw new WooCommerceError("نام و ایمیل مشتری الزامی است.", 400, "invalid_customer");
+  }
+  const [firstName, ...lastName] = fullName.split(/\s+/u);
+  const response = await wooRequest<WooCustomer>(`customers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      email: customer.email.trim(),
+      first_name: firstName,
+      last_name: lastName.join(" "),
+      billing: { first_name: firstName, last_name: lastName.join(" "), phone: customer.phone.trim(), city: customer.city.trim() },
+      meta_data: [
+        { key: "sepiid_clinic_name", value: customer.clinicName.trim() },
+        { key: "sepiid_account_type", value: customer.accountType },
+      ],
+    }),
+  });
+  return mapCustomer(response.data);
 }
 
 export async function listStorefrontProducts(params: {
