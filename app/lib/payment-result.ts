@@ -10,7 +10,7 @@ type WooOrder = {
 };
 
 const CHECKOUT_SOURCE_META_KEY = "_sepiid_checkout_source";
-const GATEWAY_PAID_TRANSID_META_KEY = "_sepiid_aqayepardakht_paid_transid";
+const GATEWAY_PAID_TRANSID_META_KEY = "_sepiid_aban_paid_invoice_id";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 function config() {
