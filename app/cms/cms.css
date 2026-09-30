@@ -1791,3 +1791,28 @@ body:has(.spb-cms-login) {
 .spb-price-excluded > summary { cursor:pointer; color:#92400e; font-weight:700; }
 .spb-market-snapshot { padding:14px; }
 .spb-market-snapshot > p { margin:0 0 10px; line-height:1.9; }
+
+
+/* Customer manager */
+.spb-customer-manager { padding: 28px; }
+.spb-customer-manager__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.spb-customer-manager__head > div > span { color: #96773e; font-size: 11px; font-weight: 700; }
+.spb-customer-manager__head h1 { margin: 5px 0 6px; color: #173f37; font-size: 28px; }
+.spb-customer-manager__head p { margin: 0; color: #65756f; font-size: 13px; }
+.spb-customer-manager__head > b { padding: 10px 12px; color: #176044; background: #e5f3ec; border-radius: 9px; font-size: 12px; white-space: nowrap; }
+.spb-customer-manager__tools { margin: 22px 0 14px; display: flex; gap: 8px; }
+.spb-customer-manager__tools input, .spb-customer-manager__tools select, .spb-customer-form input, .spb-customer-form select { width: 100%; min-height: 42px; padding: 8px 10px; color: #1f302c; background: #fff; border: 1px solid #d3deda; border-radius: 7px; outline: none; font: inherit; font-size: 12px; }
+.spb-customer-manager__tools input { max-width: 360px; }
+.spb-customer-manager__tools select { width: 155px; }
+.spb-customer-manager__grid { display: grid; grid-template-columns: minmax(250px, .72fr) minmax(0, 1.45fr); gap: 14px; min-height: 510px; }
+.spb-customer-list, .spb-customer-detail { background: #fff; border: 1px solid #dce4e1; border-radius: 12px; }
+.spb-customer-list { max-height: 620px; overflow: auto; padding: 7px; }
+.spb-customer-list > p { padding: 15px; color: #73817d; font-size: 12px; }
+.spb-customer-list button { width: 100%; padding: 13px; display: grid; gap: 4px; text-align: right; color: #263632; background: transparent; border: 0; border-bottom: 1px solid #edf1ef; cursor: pointer; font: inherit; }
+.spb-customer-list button:hover, .spb-customer-list button.is-selected { background: #eef8f3; }
+.spb-customer-list button.is-selected { box-shadow: inset -3px 0 #176b55; }
+.spb-customer-list strong { font-size: 13px; }.spb-customer-list span { color: #5e706b; font-size: 11px; }.spb-customer-list small { color: #96773e; font-size: 10px; }
+.spb-customer-detail { padding: 22px; }.spb-customer-detail__empty { min-height: 290px; display: grid; place-items: center; color: #778681; font-size: 13px; }
+.spb-customer-detail__title { padding-bottom: 18px; display: flex; justify-content: space-between; border-bottom: 1px solid #e8efec; }.spb-customer-detail__title span { color: #8a6b35; font-size: 10px; }.spb-customer-detail__title h2 { margin: 5px 0 0; color: #173f37; font-size: 20px; }.spb-customer-detail__title > div:last-child { text-align: left; }.spb-customer-detail__title b, .spb-customer-detail__title small { display: block; }.spb-customer-detail__title b { color: #176044; }.spb-customer-detail__title small { margin-top: 4px; color: #74827e; font-size: 10px; }
+.spb-customer-form { margin: 20px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }.spb-customer-form label { display: grid; gap: 6px; color: #4d5e59; font-size: 11px; }.spb-customer-form input:focus, .spb-customer-form select:focus, .spb-customer-manager__tools input:focus, .spb-customer-manager__tools select:focus { border-color: #217a62; box-shadow: 0 0 0 3px rgba(33,122,98,.1); }.spb-customer-detail footer { padding-top: 16px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e8efec; }.spb-customer-detail footer span { color: #75847f; font-size: 10px; }
+@media (max-width: 760px) { .spb-customer-manager { padding: 18px 12px; }.spb-customer-manager__head { display: grid; }.spb-customer-manager__tools { display: grid; grid-template-columns: 1fr auto; }.spb-customer-manager__tools input { max-width: none; grid-column: 1 / -1; }.spb-customer-manager__tools select { width: 100%; }.spb-customer-manager__grid { grid-template-columns: 1fr; }.spb-customer-list { max-height: 280px; }.spb-customer-detail { padding: 16px; }.spb-customer-form { grid-template-columns: 1fr; }.spb-customer-detail footer { align-items: flex-start; gap: 12px; flex-direction: column; }.spb-customer-detail footer .spb-button { width: 100%; } }
