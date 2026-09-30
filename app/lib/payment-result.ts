@@ -10,7 +10,8 @@ type WooOrder = {
 };
 
 const CHECKOUT_SOURCE_META_KEY = "_sepiid_checkout_source";
-const GATEWAY_PAID_TRANSID_META_KEY = "_sepiid_aban_paid_invoice_id";
+const ABAN_PAID_TRANSID_META_KEY = "_sepiid_aban_paid_invoice_id";
+const LEGACY_PAID_TRANSID_META_KEY = "_sepiid_aqayepardakht_paid_transid";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 function config() {
@@ -81,9 +82,12 @@ export async function verifyPaymentResultView(input: {
 
   const order = await getOrder(input.orderId);
   const validSource = metaString(order, CHECKOUT_SOURCE_META_KEY) === "nextjs_storefront";
-  const paidTransid = metaString(order, GATEWAY_PAID_TRANSID_META_KEY);
+  const abanPaidTransid = metaString(order, ABAN_PAID_TRANSID_META_KEY);
+  const legacyPaidTransid = metaString(order, LEGACY_PAID_TRANSID_META_KEY);
   const validStatus = ["processing", "completed"].includes(order.status);
-  const validTransaction = order.transaction_id === transid && paidTransid === transid;
+  const validTransaction =
+    order.transaction_id === transid &&
+    (abanPaidTransid === transid || legacyPaidTransid === transid);
 
   if (!validSource || !validStatus || !validTransaction) return null;
 
