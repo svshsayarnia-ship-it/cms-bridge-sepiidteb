@@ -15,11 +15,13 @@ import { RichTextEditor } from "./RichTextEditor";
 import { emptyPricingState } from "../lib/pricing-types";
 import { PricingManager } from "./PricingManager";
 import { CmsOverview } from "./CmsOverview";
+import { CustomerManager } from "./CustomerManager";
 
-type CmsSection = "overview" | "products" | "pricing" | "content" | "categories" | "media" | "settings";
+type CmsSection = "overview" | "customers" | "products" | "pricing" | "content" | "categories" | "media" | "settings";
 
 const CMS_NAV: Array<{ id: CmsSection; label: string; hint: string }> = [
   { id: "overview", label: "نمای کلی", hint: "وضعیت امروز و کارهای فوری" },
+  { id: "customers", label: "مشتریان", hint: "حساب‌ها، خریدها و اطلاعات تماس" },
   { id: "products", label: "محصولات", hint: "کالا، موجودی، قیمت و سئو" },
   { id: "pricing", label: "پایش قیمت", hint: "قیمت بازار و پیشنهادها" },
   { id: "content", label: "مقالات و سایت", hint: "مجله و محتوای صفحات" },
@@ -624,6 +626,7 @@ export function CmsDashboard({
               onNavigate={(section) => setActiveSection(section)}
             />
           )}
+          {activeSection === "customers" && <CustomerManager />}
           {activeSection === "content" && <SiteContentManager />}
           {activeSection === "pricing" && <PricingManager />}
           {activeSection === "categories" && categories.length > 0 && (
