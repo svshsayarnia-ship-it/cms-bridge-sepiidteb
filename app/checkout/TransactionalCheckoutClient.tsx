@@ -113,9 +113,11 @@ function getIdempotencyKey(items: CartItem[]) {
 function goToGateway(payment: PaymentStart) {
   const url = new URL(payment.url);
   const allowedHost =
-    url.hostname === "abangateway.ir" || url.hostname === "www.abangateway.ir";
+    url.hostname === "abangateway.ir" ||
+    url.hostname === "www.abangateway.ir" ||
+    url.hostname === "panel.aqayepardakht.ir";
   if (url.protocol !== "https:" || !allowedHost) {
-    throw new Error("آدرس صفحه پرداخت آبان معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
+    throw new Error("آدرس سرویس پرداخت معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
   }
   window.location.assign(url.toString());
 }
@@ -359,10 +361,10 @@ export function TransactionalCheckoutClient() {
               <div className={`${styles.paymentMethod} ${styles.paymentMethodSelected}`}>
                 <span className={styles.radioDot} aria-hidden="true" />
                 <div>
-                  <strong>کارت‌به‌کارت هوشمند با تأیید خودکار آبان</strong>
-                  <p>مبلغ دقیق پرداخت را آبان نمایش می‌دهد و پس از واریز، سفارش به‌صورت خودکار تأیید می‌شود.</p>
+                  <strong>پرداخت امن سفارش</strong>
+                  <p>پس از ثبت سفارش، به سرویس پرداخت فعال سپید بیوتی منتقل می‌شوید. با فعال‌شدن آبان، پرداخت به‌صورت خودکار از مسیر آبان انجام می‌شود.</p>
                 </div>
-                <b>تأیید خودکار</b>
+                <b>پرداخت امن</b>
               </div>
             </section>
 
@@ -375,7 +377,7 @@ export function TransactionalCheckoutClient() {
                   disabled={submitting}
                 />
                 <span>
-                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت سفارش و انتقال به صفحه پرداخت آبان موافقم.
+                  شرایط استفاده و حریم خصوصی را مطالعه کرده‌ام و با ثبت سفارش و انتقال به سرویس پرداخت موافقم.
                 </span>
               </label>
               {errors.termsAccepted && <p className={styles.termsError}>{errors.termsAccepted}</p>}
@@ -390,7 +392,7 @@ export function TransactionalCheckoutClient() {
                 disabled={submitting}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال ساخت فاکتور آبان…" : "ادامه و پرداخت با آبان"}
+                {submitting ? "در حال آماده‌سازی پرداخت…" : "ادامه و پرداخت"}
               </button>
             </section>
           </div>
