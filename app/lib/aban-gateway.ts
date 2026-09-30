@@ -81,7 +81,7 @@ function wooConfig() {
 
 function wooApiUrl(path: string) {
   const { storeUrl, consumerKey, consumerSecret } = wooConfig();
-  const url = new URL(${storeUrl}/wp-json/wc/v3/${path.replace(/^\//, "")});
+  const url = new URL(storeUrl + "/wp-json/wc/v3/" + path.replace(/^\//, ""));
   if ((process.env.WOOCOMMERCE_AUTH_MODE ?? "basic") === "query") {
     url.searchParams.set("consumer_key", consumerKey);
     url.searchParams.set("consumer_secret", consumerSecret);
@@ -94,12 +94,14 @@ async function wooRequest<T>(path: string, options: RequestInit = {}): Promise<T
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
   headers.set("cache-control", "no-cache, no-store, max-age=0");
-  if (options.body && !headers.has("content-type")) headers.set("content-type", "application/json");
+  if (options.body && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
 
   if ((process.env.WOOCOMMERCE_AUTH_MODE ?? "basic") !== "query") {
     headers.set(
       "authorization",
-      `Basic ${Buffer.from(${consumerKey}:${consumerSecret}).toString("base64")}`,
+      "Basic " + Buffer.from(consumerKey + ":" + consumerSecret).toString("base64"),
     );
   }
 
@@ -126,7 +128,7 @@ async function wooRequest<T>(path: string, options: RequestInit = {}): Promise<T
     if (!response.ok) {
       const error = data as { message?: string; code?: string } | null;
       throw new AbanGatewayError(
-        error?.message || `WooCommerce با خطای ${response.status} پاسخ داد.`,
+        error?.message || "WooCommerce با خطای " + response.status + " پاسخ داد.",
         response.status,
         error?.code || "woocommerce_payment_error",
       );
@@ -248,7 +250,7 @@ async function getOrder(orderId: number) {
     throw new AbanGatewayError("شناسه سفارش معتبر نیست.", 400, "invalid_order_id");
   }
 
-  const order = await wooRequest<WooOrder>(`orders/${orderId}`);
+  const order = await wooRequest<WooOrder>("orders/" + orderId);
   if (firstMetaString(order, CHECKOUT_SOURCE_META_KEY) !== "nextjs_storefront") {
     throw new AbanGatewayError(
       "این سفارش متعلق به مسیر پرداخت سایت نیست.",
@@ -292,19 +294,24 @@ async function abanRequest<T>(
   const { token, base } = gatewayConfig();
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
-  headers.set("authorization", `Bearer ${token}`);
-  if (options.body && !headers.has("content-type")) headers.set("content-type", "application/json");
+  headers.set("authorization", "Bearer " + token);
+  if (options.body && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${base}/api/v1/${path.replace(/^\//, "")}`, {
-      ...options,
-      headers,
-      cache: "no-store",
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      base + "/api/v1/" + path.replace(/^\//, ""),
+      {
+        ...options,
+        headers,
+        cache: "no-store",
+        signal: controller.signal,
+      },
+    );
     const text = await response.text();
     let data: T | AbanErrorPayload | null = null;
 
@@ -318,7 +325,7 @@ async function abanRequest<T>(
 
     if (!response.ok && !allowedStatuses.includes(response.status)) {
       const error = data as AbanErrorPayload | null;
-      const code = String(error?.error?.code ?? `http_${response.status}`);
+      const code = String(error?.error?.code ?? "http_" + response.status);
       throw new AbanGatewayError(
         errorMessage(code, error?.error?.message || "آبان پاسخ معتبر نداد."),
         response.status >= 500 ? 502 : response.status,
@@ -373,7 +380,7 @@ function validatePaymentUrl(value: string) {
 }
 
 async function storeInvoice(order: WooOrder, invoiceId: string, payableRial: number) {
-  await wooRequest<WooOrder>(`orders/${order.id}`, {
+  await wooRequest<WooOrder>("orders/" + order.id, {
     method: "PUT",
     body: JSON.stringify({
       meta_data: [
@@ -392,7 +399,7 @@ async function markOrderPaid(order: WooOrder, invoiceId: string, paidAt?: string
     return order;
   }
 
-  return wooRequest<WooOrder>(`orders/${order.id}`, {
+  return wooRequest<WooOrder>("orders/" + order.id, {
     method: "PUT",
     body: JSON.stringify({
       set_paid: true,
@@ -447,8 +454,9 @@ export async function createAbanPayment(input: {
   if (/^inv_[A-Za-z0-9_-]+$/.test(existingInvoice)) {
     return {
       invoiceId: existingInvoice,
-      url: `${PAYMENT_ORIGIN}/pay/${encodeURIComponent(existingInvoice)}`,
-      payableRial: Number(firstMetaString(order, ABAN_PAYABLE_META_KEY)) || amountInRial(order),
+      url: PAYMENT_ORIGIN + "/pay/" + encodeURIComponent(existingInvoice),
+      payableRial:
+        Number(firstMetaString(order, ABAN_PAYABLE_META_KEY)) || amountInRial(order),
     };
   }
 
@@ -460,7 +468,7 @@ export async function createAbanPayment(input: {
       amount_rial: amountRial,
       order_id: String(order.id),
       callback_url: callback,
-      description: `پرداخت سفارش #${order.number || order.id} سپید بیوتی`,
+      description: "پرداخت سفارش #" + (order.number || order.id) + " سپید بیوتی",
       metadata: {
         store: "sepiidbeauty.ir",
         woo_order_id: order.id,
@@ -533,7 +541,7 @@ export async function verifyAbanInvoice(input: {
   }
 
   const { response, data } = await abanRequest<AbanInvoice>(
-    `invoices/${encodeURIComponent(invoiceId)}/verify`,
+    "invoices/" + encodeURIComponent(invoiceId) + "/verify",
     { method: "POST" },
     [409],
   );
@@ -568,7 +576,10 @@ export async function verifyAbanInvoice(input: {
     );
   }
 
-  if (String(verified.order_id ?? "") && String(verified.order_id) !== String(order.id)) {
+  if (
+    String(verified.order_id ?? "") &&
+    String(verified.order_id) !== String(order.id)
+  ) {
     throw new AbanGatewayError(
       "شناسه سفارش در پاسخ آبان مطابقت ندارد.",
       403,
