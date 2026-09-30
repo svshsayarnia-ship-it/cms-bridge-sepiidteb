@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   AbanGatewayError,
+  getStoredAbanInvoiceId,
   parseAbanWebhook,
   verifyAbanInvoice,
   verifyAbanWebhookSignature,
@@ -103,12 +104,20 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const invoiceId = cleanInvoiceId(
+  let invoiceId = cleanInvoiceId(
     url.searchParams.get("invoice_id") || url.searchParams.get("invoice"),
   );
   const orderId = cleanOrderId(
     url.searchParams.get("order_id") || url.searchParams.get("order"),
   );
+
+  if (!invoiceId && orderId) {
+    try {
+      invoiceId = await getStoredAbanInvoiceId(orderId);
+    } catch {
+      // The verified redirect below will show a safe generic error.
+    }
+  }
 
   if (!invoiceId || !orderId) {
     return NextResponse.redirect(
