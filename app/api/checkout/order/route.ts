@@ -4,10 +4,10 @@ import {
   createPendingWooOrder,
 } from "../../../lib/checkout-woocommerce";
 import {
-  AqayePardakhtError,
-  createAqayePardakhtPayment,
-  isAqayePardakhtConfigured,
-} from "../../../lib/aqayepardakht-v2";
+  AbanGatewayError,
+  createAbanPayment,
+  isAbanConfigured,
+} from "../../../lib/aban-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       lines: body?.lines,
     });
 
-    if (!isAqayePardakhtConfigured()) {
+    if (!isAbanConfigured()) {
       return NextResponse.json(
         { ok: true, order, payment: null, paymentConfigured: false },
         {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const payment = await createAqayePardakhtPayment({
+      const payment = await createAbanPayment({
         orderId: order.id,
         idempotencyKey,
       });
@@ -45,7 +45,11 @@ export async function POST(request: Request) {
         {
           ok: true,
           order,
-          payment: { url: payment.url },
+          payment: {
+            url: payment.url,
+            invoiceId: payment.invoiceId,
+            payableRial: payment.payableRial,
+          },
           paymentConfigured: true,
         },
         {
@@ -55,15 +59,15 @@ export async function POST(request: Request) {
       );
     } catch (error) {
       const paymentError =
-        error instanceof AqayePardakhtError
+        error instanceof AbanGatewayError
           ? error
-          : new AqayePardakhtError(
-              "سفارش ثبت شد، اما اتصال به درگاه کامل نشد. دوباره تلاش کنید.",
+          : new AbanGatewayError(
+              "سفارش ثبت شد، اما اتصال به آبان کامل نشد. دوباره تلاش کنید.",
               502,
               "payment_start_failed",
             );
 
-      console.error("[checkout-order] payment start failed", {
+      console.error("[checkout-order] Aban payment start failed", {
         orderId: order.id,
         code: paymentError.code,
         status: paymentError.status,
@@ -76,7 +80,12 @@ export async function POST(request: Request) {
           order,
           error: {
             code: paymentError.code,
-            message: `سفارش #${order.number} ثبت شد، اما ${paymentError.message} با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.`,
+            message:
+              "سفارش #" +
+              order.number +
+              " ثبت شد، اما " +
+              paymentError.message +
+              " با زدن دوباره دکمه پرداخت، سفارش تکراری ساخته نمی‌شود.",
           },
         },
         {
