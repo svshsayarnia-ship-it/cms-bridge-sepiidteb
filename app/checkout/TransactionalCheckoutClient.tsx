@@ -132,7 +132,7 @@ export function TransactionalCheckoutClient() {
 
   useEffect(() => {
     const syncCart = () => setItems(readCart());
-    syncCart();
+    const cartTimer = window.setTimeout(syncCart, 0);
     const unsubscribe = onCartUpdated(syncCart);
 
     const draftTimer = window.setTimeout(() => {
@@ -151,6 +151,7 @@ export function TransactionalCheckoutClient() {
     }, 0);
 
     return () => {
+      window.clearTimeout(cartTimer);
       window.clearTimeout(draftTimer);
       unsubscribe();
     };
