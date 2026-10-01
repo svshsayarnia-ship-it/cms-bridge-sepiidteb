@@ -2,6 +2,7 @@ import "server-only";
 
 import { isApprovedInventorySlug } from "../current-inventory";
 import { ensureApprovedInventoryProductsCheckoutReady } from "./inventory-woo-sync";
+import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
 
 export type CheckoutLineInput = {
   slug: string;
@@ -47,6 +48,11 @@ type WooOrder = {
   total: string;
   currency: string;
   meta_data?: WooMeta[];
+};
+
+type WooStoreProductRef = {
+  id: number;
+  slug: string;
 };
 
 const IDEMPOTENCY_META_KEY = "_sepiid_checkout_idempotency_key";
@@ -99,6 +105,69 @@ function apiUrl(path: string, query?: URLSearchParams) {
     url.searchParams.set("consumer_secret", consumerSecret);
   }
   return url;
+}
+
+function storeApiUrl(path: string, query?: URLSearchParams) {
+  const { storeUrl } = config();
+  const url = new URL(
+    `${storeUrl}/wp-json/wc/store/v1/${path.replace(/^\//, "")}`,
+  );
+  query?.forEach((value, key) => url.searchParams.set(key, value));
+  return url;
+}
+
+async function wooStoreRequest<T>(
+  path: string,
+  query?: URLSearchParams,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+
+  try {
+    const response = await fetch(storeApiUrl(path, query), {
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "cache-control": "no-cache, no-store, max-age=0",
+      },
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let data: unknown = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+    }
+
+    if (!response.ok) {
+      throw new CheckoutOrderError(
+        `Store API ووکامرس با خطای ${response.status} پاسخ داد.`,
+        response.status,
+        "woocommerce_store_lookup_failed",
+      );
+    }
+
+    return data as T;
+  } catch (error) {
+    if (error instanceof CheckoutOrderError) throw error;
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new CheckoutOrderError(
+        "زمان دریافت شناسه محصولات از WooCommerce تمام شد.",
+        504,
+        "woocommerce_store_lookup_timeout",
+      );
+    }
+    throw new CheckoutOrderError(
+      "دریافت شناسه محصولات از WooCommerce ناموفق بود.",
+      502,
+      "woocommerce_store_lookup_failed",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function wooRequest<T>(
@@ -217,6 +286,117 @@ async function getProductBySlug(slug: string) {
   return products[0] ?? null;
 }
 
+async function getProductsBySlugs(slugs: string[]) {
+  const uniqueSlugs = [...new Set(slugs.map((slug) => slug.trim()).filter(Boolean))];
+  const productBySlug = new Map<string, WooProduct | null>();
+
+  if (uniqueSlugs.length === 0) return productBySlug;
+
+  // One unique Woo product (including several local variants of the same
+  // product) should stay on the fastest one-request path.
+  if (uniqueSlugs.length === 1) {
+    const slug = uniqueSlugs[0];
+    productBySlug.set(slug, await getProductBySlug(slug));
+    return productBySlug;
+  }
+
+  const idBySlug = new Map<string, number>();
+
+  // Storefront snapshots already contain the Woo product id for most live
+  // products, so a normal multi-item checkout can jump straight to one
+  // authenticated include query without another network lookup.
+  try {
+    const snapshots = await getStorefrontProductSnapshots();
+    for (const slug of uniqueSlugs) {
+      const id = Number(snapshots[slug]?.id);
+      if (Number.isSafeInteger(id) && id > 0) {
+        idBySlug.set(slug, id);
+      }
+    }
+  } catch (error) {
+    console.warn("[checkout-order] storefront snapshot id lookup failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  let unresolved = uniqueSlugs.filter((slug) => !idBySlug.has(slug));
+
+  // On a cold runtime cache, Woo Store API can resolve several public slugs in
+  // one request. It is used only for ids; authoritative price/stock still come
+  // from the authenticated REST response below.
+  if (unresolved.length > 0) {
+    try {
+      const refs = await wooStoreRequest<WooStoreProductRef[]>(
+        "products",
+        new URLSearchParams({
+          slug: unresolved.join(","),
+          per_page: String(Math.min(100, unresolved.length)),
+          catalog_visibility: "visible",
+        }),
+      );
+      for (const product of refs) {
+        if (
+          unresolved.includes(product.slug) &&
+          Number.isSafeInteger(product.id) &&
+          product.id > 0
+        ) {
+          idBySlug.set(product.slug, product.id);
+        }
+      }
+    } catch (error) {
+      // Keep checkout available if the public Store API is slow. Missing ids
+      // fall back to the existing exact-slug REST lookup below.
+      console.warn("[checkout-order] batched Store API id lookup failed", {
+        slugs: unresolved,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  unresolved = uniqueSlugs.filter((slug) => !idBySlug.has(slug));
+
+  const requestedIds = [...new Set(idBySlug.values())];
+  if (requestedIds.length > 0) {
+    const products = await wooRequest<WooProduct[]>(
+      "products",
+      {},
+      new URLSearchParams({
+        include: requestedIds.join(","),
+        per_page: String(Math.min(100, requestedIds.length)),
+        status: "publish",
+        orderby: "include",
+      }),
+    );
+    const productById = new Map(products.map((product) => [product.id, product]));
+    for (const [slug, id] of idBySlug) {
+      productBySlug.set(slug, productById.get(id) ?? null);
+    }
+  }
+
+  if (unresolved.length > 0) {
+    const fallbackProducts = await Promise.all(
+      unresolved.map(async (slug) => [slug, await getProductBySlug(slug)] as const),
+    );
+    for (const [slug, product] of fallbackProducts) {
+      productBySlug.set(slug, product);
+    }
+  }
+
+  for (const slug of uniqueSlugs) {
+    if (!productBySlug.has(slug)) productBySlug.set(slug, null);
+  }
+
+  return productBySlug;
+}
+
+async function resolveCheckoutLines(lines: CheckoutLineInput[]) {
+  const productBySlug = await getProductsBySlugs(lines.map((line) => line.slug));
+  return lines.map((line) => ({
+    line,
+    product: productBySlug.get(line.slug) ?? null,
+  }));
+}
+
 async function findExistingOrder(idempotencyKey: string) {
   const after = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString();
   const orders = await wooRequest<WooOrder[]>(
@@ -278,9 +458,7 @@ export async function createPendingWooOrder(input: {
   const existing = input.retry ? await findExistingOrder(idempotencyKey) : null;
   if (existing) return toResult(existing, true);
 
-  let resolved = await Promise.all(
-    lines.map(async (line) => ({ line, product: await getProductBySlug(line.slug) })),
-  );
+  let resolved = await resolveCheckoutLines(lines);
 
   const repairableSlugs = resolved
     .filter(({ line, product }) => {
@@ -299,9 +477,7 @@ export async function createPendingWooOrder(input: {
         repairableSlugs,
       );
       console.info("[checkout-order] targeted approved inventory repair", repair);
-      resolved = await Promise.all(
-        lines.map(async (line) => ({ line, product: await getProductBySlug(line.slug) })),
-      );
+      resolved = await resolveCheckoutLines(lines);
     } catch (error) {
       console.error("[checkout-order] approved inventory repair failed", {
         slugs: repairableSlugs,
