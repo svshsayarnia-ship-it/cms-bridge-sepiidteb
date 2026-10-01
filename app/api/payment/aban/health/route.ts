@@ -7,6 +7,9 @@ export const runtime = "nodejs";
 const DEFAULT_API_BASE = "https://abangateway.ir";
 
 export async function GET() {
+  const relatedEnvKeys = Object.keys(process.env)
+    .filter((key) => /ABAN|GATEWAY/i.test(key))
+    .sort();
   const paymentStartReady = isAbanConfigured();
   const webhookReady = isAbanWebhookConfigured();
   const token = (process.env.ABAN_API_TOKEN ?? "").trim();
@@ -16,6 +19,7 @@ export async function GET() {
     return NextResponse.json(
       {
         provider: "aban",
+        relatedEnvKeys,
         paymentStartReady: false,
         webhookReady,
         reachable: false,
@@ -33,6 +37,7 @@ export async function GET() {
     return NextResponse.json(
       {
         provider: "aban",
+        relatedEnvKeys,
         paymentStartReady: true,
         webhookReady,
         reachable: false,
@@ -47,6 +52,7 @@ export async function GET() {
     return NextResponse.json(
       {
         provider: "aban",
+        relatedEnvKeys,
         paymentStartReady: true,
         webhookReady,
         reachable: false,
@@ -78,6 +84,7 @@ export async function GET() {
     return NextResponse.json(
       {
         provider: "aban",
+        relatedEnvKeys,
         paymentStartReady: true,
         webhookReady,
         reachable: true,
@@ -93,6 +100,7 @@ export async function GET() {
     return NextResponse.json(
       {
         provider: "aban",
+        relatedEnvKeys,
         paymentStartReady: true,
         webhookReady,
         reachable: false,
