@@ -154,8 +154,18 @@ async function wooRequest<T>(path: string, options: RequestInit = {}): Promise<T
   }
 }
 
+function readAbanApiToken() {
+  // Keep the canonical uppercase name, while accepting the already-configured
+  // production key created with lowercase letters in Vercel.
+  return (
+    process.env.ABAN_API_TOKEN ??
+    process.env["aban_api_token"] ??
+    ""
+  ).trim();
+}
+
 function gatewayConfig() {
-  const token = (process.env.ABAN_API_TOKEN ?? "").trim();
+  const token = readAbanApiToken();
   const callback = (process.env.ABAN_CALLBACK_URL ?? CANONICAL_CALLBACK).trim();
   const base = (process.env.ABAN_BASE_URL ?? DEFAULT_API_BASE).trim().replace(/\/$/, "");
 
@@ -212,7 +222,7 @@ function gatewayConfig() {
 }
 
 export function isAbanConfigured() {
-  return Boolean((process.env.ABAN_API_TOKEN ?? "").trim());
+  return Boolean(readAbanApiToken());
 }
 
 export function isAbanWebhookConfigured() {
