@@ -16,14 +16,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const idempotencyKey = body?.idempotencyKey;
-    const order = await createPendingWooOrder({
+    const checkoutOrder = await createPendingWooOrder({
       idempotencyKey,
+      retry: body?.retry === true,
       fullName: body?.fullName,
       phone: body?.phone,
       customerType: body?.customerType,
       note: body?.note,
       lines: body?.lines,
     });
+    const { __wooOrder, ...order } = checkoutOrder;
 
     // Aban is the only transactional gateway for the storefront.
     // Never silently fall back to a legacy provider when Aban is unavailable.
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
       const payment = await createAbanPayment({
         orderId: order.id,
         idempotencyKey,
+        orderSnapshot: __wooOrder,
       });
 
       return NextResponse.json(
