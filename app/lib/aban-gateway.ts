@@ -156,13 +156,17 @@ async function wooRequest<T>(path: string, options: RequestInit = {}): Promise<T
 
 function gatewayConfig() {
   const token = (process.env.ABAN_API_TOKEN ?? "").trim();
-  const webhookSecret = (process.env.ABAN_WEBHOOK_SECRET ?? "").trim();
   const callback = (process.env.ABAN_CALLBACK_URL ?? CANONICAL_CALLBACK).trim();
   const base = (process.env.ABAN_BASE_URL ?? DEFAULT_API_BASE).trim().replace(/\/$/, "");
 
-  if (!token || !webhookSecret) {
+  // Starting and verifying an Aban payment only requires the API token.
+  // The webhook signing secret is intentionally validated only when an
+  // incoming webhook is processed. Requiring both here incorrectly forced
+  // checkout to fall back to the legacy gateway when only the webhook
+  // secret was missing, even though Aban's payment API was ready.
+  if (!token) {
     throw new AbanGatewayError(
-      "درگاه آبان هنوز روی سرور فعال نشده است.",
+      "توکن API آبان هنوز روی سرور فعال نشده است.",
       503,
       "gateway_not_configured",
     );
@@ -202,17 +206,17 @@ function gatewayConfig() {
 
   return {
     token,
-    webhookSecret,
     callback: callbackUrl.toString(),
     base: apiBase.toString().replace(/\/$/, ""),
   };
 }
 
 export function isAbanConfigured() {
-  return Boolean(
-    (process.env.ABAN_API_TOKEN ?? "").trim() &&
-    (process.env.ABAN_WEBHOOK_SECRET ?? "").trim(),
-  );
+  return Boolean((process.env.ABAN_API_TOKEN ?? "").trim());
+}
+
+export function isAbanWebhookConfigured() {
+  return Boolean((process.env.ABAN_WEBHOOK_SECRET ?? "").trim());
 }
 
 function firstMetaString(order: WooOrder, key: string) {
@@ -651,10 +655,13 @@ export async function verifyAbanInvoice(input: {
 }
 
 export function verifyAbanWebhookSignature(rawBody: string, signature: string) {
-  const { webhookSecret } = gatewayConfig();
+  const webhookSecret = (process.env.ABAN_WEBHOOK_SECRET ?? "").trim();
   const given = String(signature ?? "").trim().toLowerCase();
 
-  if (!/^[a-f0-9]{64}$/.test(given)) return false;
+  // A missing signing secret must never block payment creation or the
+  // browser return flow. It only disables webhook acceptance until the
+  // secret is configured.
+  if (!webhookSecret || !/^[a-f0-9]{64}$/.test(given)) return false;
 
   const expected = crypto
     .createHmac("sha256", webhookSecret)
