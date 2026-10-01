@@ -125,7 +125,7 @@ real values to GitHub:
 
 - `ABAN_API_TOKEN`
 - `ABAN_WEBHOOK_SECRET`
-- `ABAN_BASE_URL` (optional; defaults to `https://api.abangateway.ir`)
+- `ABAN_BASE_URL` (optional; defaults to `https://abangateway.ir`)
 - `ABAN_CALLBACK_URL` (optional; defaults to `https://sepiidbeauty.ir/api/payment/aban/callback`)
 
 The checkout creates the WooCommerce order first, then creates an Aban invoice.
