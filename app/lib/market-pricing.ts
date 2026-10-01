@@ -239,7 +239,10 @@ async function synchronizeCatalogProductsForPricing(): Promise<{
   added: number;
   baselinePricesApplied: number;
 }> {
-  const existing = await listAllProductsForPricing();
+  const [existing, allExisting] = await Promise.all([
+    listAllProductsForPricing(),
+    listAllProductsForManualPriceEditing(),
+  ]);
   const catalogBySlug = new Map(
     catalogProducts.map((product) => [product.slug, product]),
   );
@@ -256,7 +259,10 @@ async function synchronizeCatalogProductsForPricing(): Promise<{
   const pricedExisting = existing.map(
     (product) => updatedById.get(product.id) ?? product,
   );
-  const existingSlugs = new Set(existing.map((product) => product.slug));
+  // Draft/private products still reserve their slug in WooCommerce. Count
+  // every status here so the pricing sync never creates a "-2" duplicate
+  // merely because the canonical product is temporarily unpublished.
+  const existingSlugs = new Set(allExisting.map((product) => product.slug));
   const missing = catalogProducts.filter(
     (product) =>
       product.publishedInCatalog !== false &&

@@ -15,6 +15,7 @@ import {
   createProductsBatch,
   listCategories,
   listProducts,
+  setProductPricesBatch,
   updateProductPublicationState,
 } from "./woocommerce";
 
@@ -235,7 +236,9 @@ export async function ensureApprovedInventoryProductsAvailable(
   );
 
   const missing: Product[] = [];
-  const repaired: CmsProduct[] = [];
+  const publicationRepairs: CmsProduct[] = [];
+  const missingPriceUpdates: Array<{ id: number; priceToman: number }> = [];
+  const generatedDuplicatesToHide: CmsProduct[] = [];
 
   for (const product of approved) {
     const existing = existingByExactSlug.get(product.slug);
@@ -244,17 +247,64 @@ export async function ensureApprovedInventoryProductsAvailable(
       continue;
     }
 
+    let canonical = existing;
     if (
       existing.status !== "publish" ||
       existing.catalogVisibility === "hidden"
     ) {
-      repaired.push(
-        await updateProductPublicationState(existing.id, {
-          status: "publish",
-          catalogVisibility: "visible",
-        }),
-      );
+      canonical = await updateProductPublicationState(existing.id, {
+        status: "publish",
+        catalogVisibility: "visible",
+      });
+      publicationRepairs.push(canonical);
     }
+
+    const currentPrice = Number(
+      canonical.salePrice || canonical.regularPrice || canonical.price,
+    );
+    if (
+      (!Number.isFinite(currentPrice) || currentPrice <= 0) &&
+      Number.isSafeInteger(product.priceToman) &&
+      Number(product.priceToman) > 0
+    ) {
+      missingPriceUpdates.push({
+        id: canonical.id,
+        priceToman: Number(product.priceToman),
+      });
+    }
+
+    const generatedSku = `SPB-${product.slug}`;
+    const duplicatePrefix = `${product.slug}-`;
+    for (const candidate of existingProducts) {
+      if (
+        candidate.id === canonical.id ||
+        candidate.sku !== generatedSku ||
+        !candidate.slug.startsWith(duplicatePrefix)
+      ) {
+        continue;
+      }
+      const suffix = candidate.slug.slice(duplicatePrefix.length);
+      if (!/^\d+$/u.test(suffix) || Number(suffix) < 2) continue;
+      generatedDuplicatesToHide.push(candidate);
+    }
+  }
+
+  const priced = await setProductPricesBatch(missingPriceUpdates);
+
+  const hiddenDuplicates: CmsProduct[] = [];
+  for (const duplicate of generatedDuplicatesToHide) {
+    if (
+      duplicate.status === "draft" &&
+      duplicate.catalogVisibility === "hidden"
+    ) {
+      continue;
+    }
+    hiddenDuplicates.push(
+      await updateProductPublicationState(duplicate.id, {
+        status: "draft",
+        catalogVisibility: "hidden",
+      }),
+    );
   }
 
   const created: CmsProduct[] = [];
@@ -266,18 +316,31 @@ export async function ensureApprovedInventoryProductsAvailable(
     created.push(...(await createProductsBatch(inputs)));
   }
 
-  const changed = [...created, ...repaired];
+  const changed = [
+    ...created,
+    ...publicationRepairs,
+    ...priced,
+    ...hiddenDuplicates,
+  ];
   if (changed.length > 0) {
     await rememberStorefrontProducts(changed);
     revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
   }
 
+  const repairedSlugs = Array.from(
+    new Set(
+      [...publicationRepairs, ...priced, ...hiddenDuplicates].map(
+        (product) => product.slug,
+      ),
+    ),
+  );
+
   const result: InventoryAvailabilityRepairResult = {
     checked: approved.length,
     created: created.length,
-    repaired: repaired.length,
+    repaired: repairedSlugs.length,
     createdSlugs: created.map((product) => product.slug),
-    repairedSlugs: repaired.map((product) => product.slug),
+    repairedSlugs,
   };
 
   console.info("[inventory-woo-sync] availability repaired", result);
