@@ -210,7 +210,10 @@ export function TransactionalCheckoutClient() {
       };
 
       if (!response.ok || !payload.ok || !payload.order) {
-        throw new Error("ثبت سفارش یا شروع پرداخت کامل نشد. لطفاً دوباره تلاش کنید.");
+        throw new Error(
+          payload.error?.message ||
+            "ثبت سفارش یا شروع پرداخت کامل نشد. لطفاً دوباره تلاش کنید.",
+        );
       }
 
       if (payload.payment?.url) {

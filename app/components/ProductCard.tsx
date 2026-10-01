@@ -236,7 +236,8 @@ export function ProductCard({
         imageKind: previewImage ? previewVariant.imageKind : undefined,
       }
     : displayProduct;
-  const parentOutOfStock = product.stockStatus === "outofstock";
+  const parentUnavailable =
+    product.live === false || product.stockStatus === "outofstock";
   const cartProduct = {
     slug: product.slug,
     nameFa: product.nameFa,
@@ -372,6 +373,8 @@ export function ProductCard({
   }, [closeSelector, selectorOpen, updateSelectorPosition]);
 
   function handleCartClick() {
+    if (parentUnavailable) return;
+
     if (!hasVariants) {
       addToCart(cartProduct);
       markAdded();
@@ -390,7 +393,7 @@ export function ProductCard({
 
   function handleVariantAdd() {
     if (!selectedVariant) return;
-    if (parentOutOfStock || selectedVariant.stockStatus === "outofstock") return;
+    if (parentUnavailable || selectedVariant.stockStatus === "outofstock") return;
 
     const variantPrice = numericPrice(selectedVariant.priceToman) ?? visiblePrice ?? undefined;
     addToCart({
@@ -441,7 +444,7 @@ export function ProductCard({
 
           <div className={selectorStyles.list}>
             {variants.map((variant) => {
-              const unavailable = parentOutOfStock || variant.stockStatus === "outofstock";
+              const unavailable = parentUnavailable || variant.stockStatus === "outofstock";
               const selected = variant.id === selectedVariantId;
               const secondaryLabel = getVariantSecondaryLabel(variant);
               const variantPrice = numericPrice(variant.priceToman);
@@ -598,6 +601,7 @@ export function ProductCard({
             className="sb-product-card__cart"
             type="button"
             onClick={handleCartClick}
+            disabled={parentUnavailable}
             aria-label={
               hasVariants
                 ? `انتخاب مدل ${product.nameFa} برای افزودن به لیست استعلام`
@@ -607,11 +611,13 @@ export function ProductCard({
             aria-controls={hasVariants && selectorOpen ? selectorId : undefined}
             aria-haspopup={hasVariants ? "dialog" : undefined}
           >
-            {added
-              ? "به لیست اضافه شد"
-              : hasVariants
-                ? "انتخاب مدل و افزودن"
-                : "افزودن به لیست استعلام"}
+            {parentUnavailable
+              ? "فعلاً قابل سفارش نیست"
+              : added
+                ? "به لیست اضافه شد"
+                : hasVariants
+                  ? "انتخاب مدل و افزودن"
+                  : "افزودن به لیست استعلام"}
           </button>
           {selector}
         </div>

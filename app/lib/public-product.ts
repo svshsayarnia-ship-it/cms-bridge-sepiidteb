@@ -58,6 +58,8 @@ export type PublicProduct = Pick<
   regularPrice?: string;
   salePrice?: string;
   stockStatus?: PublicVariantStockStatus;
+  /** False when the item only exists as a static migration fallback and is not live in WooCommerce. */
+  live?: boolean;
   /** Minimal public variant data needed for explicit selection on catalogue cards. */
   variants?: PublicProductVariant[];
   /** Volumes of selectable variants, used by catalog package-volume filters. */
@@ -126,6 +128,7 @@ export function toPublicProduct(
     regularPrice?: string;
     salePrice?: string;
     stockStatus?: PublicVariantStockStatus;
+    live?: boolean;
     variants?: Array<{
       id: string;
       label: string;
@@ -171,6 +174,7 @@ export function toPublicProduct(
     regularPrice: product.regularPrice,
     salePrice: product.salePrice,
     stockStatus: product.stockStatus,
+    live: product.live,
     variants: product.variants?.map((variant) => ({
       id: variant.id,
       label: toPublicCopy(variant.label),

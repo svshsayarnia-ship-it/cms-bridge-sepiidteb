@@ -1,5 +1,8 @@
 import "server-only";
 
+import { isApprovedInventorySlug } from "../current-inventory";
+import { ensureApprovedInventoryProductsAvailable } from "./inventory-woo-sync";
+
 export type CheckoutLineInput = {
   slug: string;
   quantity: number;
@@ -265,9 +268,28 @@ export async function createPendingWooOrder(input: {
   const existing = await findExistingOrder(idempotencyKey);
   if (existing) return toResult(existing, true);
 
-  const resolved = await Promise.all(
+  let resolved = await Promise.all(
     lines.map(async (line) => ({ line, product: await getProductBySlug(line.slug) })),
   );
+
+  const repairableSlugs = resolved
+    .filter(({ line, product }) => !product && isApprovedInventorySlug(line.slug))
+    .map(({ line }) => line.slug);
+
+  if (repairableSlugs.length > 0) {
+    try {
+      const repair = await ensureApprovedInventoryProductsAvailable(repairableSlugs);
+      console.info("[checkout-order] approved inventory repair", repair);
+      resolved = await Promise.all(
+        lines.map(async (line) => ({ line, product: await getProductBySlug(line.slug) })),
+      );
+    } catch (error) {
+      console.error("[checkout-order] approved inventory repair failed", {
+        slugs: repairableSlugs,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 
   for (const { line, product } of resolved) {
     if (!product || product.status !== "publish") {

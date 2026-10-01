@@ -882,6 +882,34 @@ export async function updateProductPriceFields(
   return mapProduct(response.data);
 }
 
+export async function updateProductPublicationState(
+  id: number,
+  input: {
+    status?: CmsProduct["status"];
+    catalogVisibility?: CmsProduct["catalogVisibility"];
+  },
+): Promise<CmsProduct> {
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new WooCommerceError("شناسه محصول معتبر نیست.", 400, "invalid_product_id");
+  }
+
+  const payload: Record<string, string> = {};
+  if (input.status) payload.status = input.status;
+  if (input.catalogVisibility) {
+    payload.catalog_visibility = input.catalogVisibility;
+  }
+
+  if (!Object.keys(payload).length) {
+    return getProduct(id);
+  }
+
+  const response = await wooRequest<WooProduct>(`products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return mapProduct(response.data);
+}
+
 export async function getProductBySlug(
   slug: string,
   options: {
