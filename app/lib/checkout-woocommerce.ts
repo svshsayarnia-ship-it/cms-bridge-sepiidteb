@@ -486,6 +486,34 @@ export async function createPendingWooOrder(input: {
     }
   }
 
+  const aggregateQuantityByProduct = new Map<
+    number,
+    { product: WooProduct; quantity: number }
+  >();
+
+  for (const { line, product } of resolved) {
+    if (!product) continue;
+    const current = aggregateQuantityByProduct.get(product.id);
+    aggregateQuantityByProduct.set(product.id, {
+      product,
+      quantity: (current?.quantity ?? 0) + line.quantity,
+    });
+  }
+
+  for (const { product, quantity } of aggregateQuantityByProduct.values()) {
+    if (
+      product.manage_stock &&
+      product.stock_quantity !== null &&
+      product.stock_quantity < quantity
+    ) {
+      throw new CheckoutOrderError(
+        `موجودی «${product.name}» برای مجموع تعداد انتخاب‌شده کافی نیست.`,
+        409,
+        "insufficient_stock",
+      );
+    }
+  }
+
   for (const { line, product } of resolved) {
     if (!product || product.status !== "publish") {
       throw new CheckoutOrderError(
@@ -504,17 +532,6 @@ export async function createPendingWooOrder(input: {
     }
     if (product.stock_status === "outofstock") {
       throw new CheckoutOrderError(`«${product.name}» ناموجود است.`, 409, "out_of_stock");
-    }
-    if (
-      product.manage_stock &&
-      product.stock_quantity !== null &&
-      product.stock_quantity < line.quantity
-    ) {
-      throw new CheckoutOrderError(
-        `موجودی «${product.name}» برای تعداد انتخاب‌شده کافی نیست.`,
-        409,
-        "insufficient_stock",
-      );
     }
   }
 
