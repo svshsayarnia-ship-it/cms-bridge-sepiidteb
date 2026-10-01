@@ -50,7 +50,7 @@ const ABAN_PAYABLE_META_KEY = "_sepiid_aban_payable_rial";
 const ABAN_PAID_INVOICE_META_KEY = "_sepiid_aban_paid_invoice_id";
 const REQUEST_TIMEOUT_MS = 15_000;
 const CANONICAL_CALLBACK = "https://sepiidbeauty.ir/api/payment/aban/callback";
-const DEFAULT_API_BASE = "https://api.abangateway.ir";
+const DEFAULT_API_BASE = "https://abangateway.ir";
 const PAYMENT_ORIGIN = "https://abangateway.ir";
 
 export class AbanGatewayError extends Error {
@@ -191,7 +191,7 @@ function gatewayConfig() {
 
   if (
     apiBase.protocol !== "https:" ||
-    !["api.abangateway.ir", "abangateway.ir"].includes(apiBase.hostname)
+    apiBase.hostname !== "abangateway.ir"
   ) {
     throw new AbanGatewayError(
       "آدرس API آبان معتبر نیست.",
