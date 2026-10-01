@@ -15,6 +15,7 @@ import {
   createProductsBatch,
   listCategories,
   listProducts,
+  updateProductPublicationState,
 } from "./woocommerce";
 
 const AUTO_SYNC_TTL_MS = 5 * 60 * 1000;
@@ -183,6 +184,103 @@ async function performSync(): Promise<InventoryWooSyncResult> {
   };
 
   console.info("[inventory-woo-sync] completed", result);
+  return result;
+}
+
+export type InventoryAvailabilityRepairResult = {
+  checked: number;
+  created: number;
+  repaired: number;
+  createdSlugs: string[];
+  repairedSlugs: string[];
+};
+
+export async function ensureApprovedInventoryProductsAvailable(
+  slugs: string[],
+): Promise<InventoryAvailabilityRepairResult> {
+  const requested = new Set(
+    slugs
+      .map((slug) => canonicalInventorySlug(String(slug ?? "").trim()))
+      .filter((slug) => isApprovedInventorySlug(slug)),
+  );
+
+  if (!requested.size) {
+    return {
+      checked: 0,
+      created: 0,
+      repaired: 0,
+      createdSlugs: [],
+      repairedSlugs: [],
+    };
+  }
+
+  const approved = approvedCatalogProducts().filter((product) =>
+    requested.has(product.slug),
+  );
+  const [existingProducts, categories] = await Promise.all([
+    listAllWooProducts(),
+    listCategories({
+      requestTimeoutMs: 30_000,
+      requestMaxAttempts: 2,
+    }),
+  ]);
+
+  const existingByExactSlug = new Map(
+    existingProducts
+      .map((product) => [product.slug.trim(), product] as const)
+      .filter(([slug]) => Boolean(slug)),
+  );
+  const categoryIds = new Map(
+    categories.map((category) => [category.slug, category.id] as const),
+  );
+
+  const missing: Product[] = [];
+  const repaired: CmsProduct[] = [];
+
+  for (const product of approved) {
+    const existing = existingByExactSlug.get(product.slug);
+    if (!existing) {
+      missing.push(product);
+      continue;
+    }
+
+    if (
+      existing.status !== "publish" ||
+      existing.catalogVisibility === "hidden"
+    ) {
+      repaired.push(
+        await updateProductPublicationState(existing.id, {
+          status: "publish",
+          catalogVisibility: "visible",
+        }),
+      );
+    }
+  }
+
+  const created: CmsProduct[] = [];
+  for (let index = 0; index < missing.length; index += BATCH_SIZE) {
+    const batch = missing.slice(index, index + BATCH_SIZE);
+    const inputs = batch.map((product) =>
+      productToInput(product, categoryIds.get(product.category)),
+    );
+    created.push(...(await createProductsBatch(inputs)));
+  }
+
+  const changed = [...created, ...repaired];
+  if (changed.length > 0) {
+    await rememberStorefrontProducts(changed);
+    revalidateTag(STOREFRONT_CATALOG_TAG, { expire: 0 });
+  }
+
+  const result: InventoryAvailabilityRepairResult = {
+    checked: approved.length,
+    created: created.length,
+    repaired: repaired.length,
+    createdSlugs: created.map((product) => product.slug),
+    repairedSlugs: repaired.map((product) => product.slug),
+  };
+
+  console.info("[inventory-woo-sync] availability repaired", result);
   return result;
 }
 
