@@ -227,9 +227,12 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
   const summary = descriptionText || fallback?.summary || "اگر درباره مدل، حجم یا بسته این محصول سؤال دارید، قبل از سفارش از تیم سپید بپرسید.";
   const specs = addSkuToSpecs([...(fallback?.specs ?? [])], product.sku);
   const livePrice = Number(product.salePrice || product.regularPrice || product.price);
+  // Once a CMS product is live, its commerce fields are authoritative.
+  // Do not revive a checked-in fallback price when the live CMS price is empty,
+  // because that can make Shop/Brand cards disagree with Product/Offer schema.
   const priceToman = Number.isSafeInteger(livePrice) && livePrice > 0
     ? livePrice
-    : fallback?.priceToman;
+    : undefined;
 
   return {
     slug: fallback?.slug || product.slug,
