@@ -321,10 +321,10 @@ async function getProductsBySlugs(slugs: string[]) {
 
   let unresolved = uniqueSlugs.filter((slug) => !idBySlug.has(slug));
 
-  // On a cold runtime cache, Woo Store API can resolve several public slugs in
-  // one request. It is used only for ids; authoritative price/stock still come
-  // from the authenticated REST response below.
-  if (unresolved.length > 0) {
+  // A Store API preflight only pays off for larger cold-cache carts. For one
+  // or two unresolved products the previous exact lookups remain faster when
+  // run in parallel, so do not add another serial round trip.
+  if (unresolved.length >= 3) {
     try {
       const refs = await wooStoreRequest<WooStoreProductRef[]>(
         "products",
@@ -354,32 +354,39 @@ async function getProductsBySlugs(slugs: string[]) {
   }
 
   unresolved = uniqueSlugs.filter((slug) => !idBySlug.has(slug));
-
   const requestedIds = [...new Set(idBySlug.values())];
-  if (requestedIds.length > 0) {
-    const products = await wooRequest<WooProduct[]>(
-      "products",
-      {},
-      new URLSearchParams({
-        include: requestedIds.join(","),
-        per_page: String(Math.min(100, requestedIds.length)),
-        status: "publish",
-        orderby: "include",
-      }),
-    );
-    const productById = new Map(products.map((product) => [product.id, product]));
-    for (const [slug, id] of idBySlug) {
-      productBySlug.set(slug, productById.get(id) ?? null);
-    }
+
+  const [batchedProducts, fallbackProducts] = await Promise.all([
+    requestedIds.length > 0
+      ? wooRequest<WooProduct[]>(
+          "products",
+          {},
+          new URLSearchParams({
+            include: requestedIds.join(","),
+            per_page: String(Math.min(100, requestedIds.length)),
+            status: "publish",
+            orderby: "include",
+          }),
+        )
+      : Promise.resolve([] as WooProduct[]),
+    unresolved.length > 0
+      ? Promise.all(
+          unresolved.map(
+            async (slug) => [slug, await getProductBySlug(slug)] as const,
+          ),
+        )
+      : Promise.resolve([] as Array<readonly [string, WooProduct | null]>),
+  ]);
+
+  const productById = new Map(
+    batchedProducts.map((product) => [product.id, product]),
+  );
+  for (const [slug, id] of idBySlug) {
+    productBySlug.set(slug, productById.get(id) ?? null);
   }
 
-  if (unresolved.length > 0) {
-    const fallbackProducts = await Promise.all(
-      unresolved.map(async (slug) => [slug, await getProductBySlug(slug)] as const),
-    );
-    for (const [slug, product] of fallbackProducts) {
-      productBySlug.set(slug, product);
-    }
+  for (const [slug, product] of fallbackProducts) {
+    productBySlug.set(slug, product);
   }
 
   for (const slug of uniqueSlugs) {
