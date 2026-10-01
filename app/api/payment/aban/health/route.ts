@@ -12,7 +12,11 @@ export async function GET() {
     .sort();
   const paymentStartReady = isAbanConfigured();
   const webhookReady = isAbanWebhookConfigured();
-  const token = (process.env.ABAN_API_TOKEN ?? "").trim();
+  const token = (
+    process.env.ABAN_API_TOKEN ??
+    process.env["aban_api_token"] ??
+    ""
+  ).trim();
   const rawBase = (process.env.ABAN_BASE_URL ?? DEFAULT_API_BASE).trim().replace(/\/$/, "");
 
   if (!paymentStartReady || !token) {
