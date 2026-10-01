@@ -114,8 +114,7 @@ function goToGateway(payment: PaymentStart) {
   const url = new URL(payment.url);
   const allowedHost =
     url.hostname === "abangateway.ir" ||
-    url.hostname === "www.abangateway.ir" ||
-    url.hostname === "panel.aqayepardakht.ir";
+    url.hostname === "www.abangateway.ir";
   if (url.protocol !== "https:" || !allowedHost) {
     throw new Error("آدرس سرویس پرداخت معتبر نیست. لطفاً با پشتیبانی سپید بیوتی تماس بگیرید.");
   }
@@ -366,7 +365,7 @@ export function TransactionalCheckoutClient() {
                 <span className={styles.radioDot} aria-hidden="true" />
                 <div>
                   <strong>پرداخت امن سفارش</strong>
-                  <p>پس از ثبت سفارش، به سرویس پرداخت فعال سپید بیوتی منتقل می‌شوید. با فعال‌شدن آبان، پرداخت به‌صورت خودکار از مسیر آبان انجام می‌شود.</p>
+                  <p>پس از ثبت سفارش، مستقیماً به درگاه آبان منتقل می‌شوید و پرداخت فقط از مسیر آبان انجام می‌شود.</p>
                 </div>
                 <b>پرداخت امن</b>
               </div>
