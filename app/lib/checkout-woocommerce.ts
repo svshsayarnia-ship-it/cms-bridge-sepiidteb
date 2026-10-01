@@ -16,6 +16,14 @@ export type PendingWooOrder = {
   total: string;
   currency: string;
   existing: boolean;
+  __wooOrder?: {
+    id: number;
+    number: string;
+    status: string;
+    total: string;
+    currency: string;
+    meta_data?: Array<{ key: string; value: unknown }>;
+  };
 };
 
 type WooMeta = { key: string; value: unknown };
@@ -238,11 +246,13 @@ function toResult(order: WooOrder, existing: boolean): PendingWooOrder {
     total: order.total,
     currency: order.currency,
     existing,
+    __wooOrder: order,
   };
 }
 
 export async function createPendingWooOrder(input: {
   idempotencyKey: string;
+  retry?: boolean;
   fullName: string;
   phone: string;
   customerType?: "consumer" | "clinic";
@@ -265,7 +275,7 @@ export async function createPendingWooOrder(input: {
   }
 
   const lines = sanitizeLines(input.lines);
-  const existing = await findExistingOrder(idempotencyKey);
+  const existing = input.retry ? await findExistingOrder(idempotencyKey) : null;
   if (existing) return toResult(existing, true);
 
   let resolved = await Promise.all(

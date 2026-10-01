@@ -87,7 +87,7 @@ function createRandomKey() {
   return `sb_${Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function getIdempotencyKey(items: CartItem[]) {
+function getCheckoutAttempt(items: CartItem[]) {
   const fingerprint = cartFingerprint(items);
   try {
     const saved = window.sessionStorage.getItem(IDEMPOTENCY_KEY);
@@ -98,7 +98,7 @@ function getIdempotencyKey(items: CartItem[]) {
         typeof parsed.key === "string" &&
         /^[A-Za-z0-9_-]{16,80}$/.test(parsed.key)
       ) {
-        return parsed.key;
+        return { key: parsed.key, retry: true };
       }
     }
   } catch {
@@ -107,7 +107,7 @@ function getIdempotencyKey(items: CartItem[]) {
 
   const key = createRandomKey();
   window.sessionStorage.setItem(IDEMPOTENCY_KEY, JSON.stringify({ fingerprint, key }));
-  return key;
+  return { key, retry: false };
 }
 
 function goToGateway(payment: PaymentStart) {
@@ -181,13 +181,15 @@ export function TransactionalCheckoutClient() {
 
     setSubmitting(true);
     try {
-      const idempotencyKey = getIdempotencyKey(items);
+      const checkoutAttempt = getCheckoutAttempt(items);
+      const idempotencyKey = checkoutAttempt.key;
       const response = await fetch("/api/checkout/order", {
         method: "POST",
         headers: { "content-type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
           idempotencyKey,
+          retry: checkoutAttempt.retry,
           fullName: form.fullName,
           phone: form.phone,
           customerType: form.customerType,

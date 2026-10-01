@@ -435,6 +435,7 @@ async function markOrderPaid(order: WooOrder, invoiceId: string, paidAt?: string
 export async function createAbanPayment(input: {
   orderId: number;
   idempotencyKey: string;
+  orderSnapshot?: WooOrder;
 }) {
   const idempotencyKey = String(input.idempotencyKey ?? "").trim();
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(idempotencyKey)) {
@@ -445,7 +446,21 @@ export async function createAbanPayment(input: {
     );
   }
 
-  const order = await getOrder(Number(input.orderId));
+  const orderId = Number(input.orderId);
+  const snapshot =
+    input.orderSnapshot &&
+    input.orderSnapshot.id === orderId &&
+    firstMetaString(input.orderSnapshot, CHECKOUT_SOURCE_META_KEY) ===
+      "nextjs_storefront" &&
+    firstMetaString(input.orderSnapshot, CHECKOUT_IDEMPOTENCY_META_KEY) ===
+      idempotencyKey
+      ? input.orderSnapshot
+      : null;
+
+  // A freshly-created/recovered checkout order already came from WooCommerce.
+  // Reuse that authoritative response instead of immediately fetching the same
+  // order again. If the snapshot is incomplete, fall back to the normal GET.
+  const order = snapshot ?? (await getOrder(orderId));
   if (firstMetaString(order, CHECKOUT_IDEMPOTENCY_META_KEY) !== idempotencyKey) {
     throw new AbanGatewayError(
       "اجازه پرداخت این سفارش تأیید نشد.",
