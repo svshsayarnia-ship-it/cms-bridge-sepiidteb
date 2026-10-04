@@ -12,6 +12,7 @@ import {
 
 const SNAPSHOT_TAG = "storefront-product-snapshots";
 const SNAPSHOT_KEY = ["storefront-product-snapshots-v1"];
+const RENDER_HYDRATION_TIMEOUT_MS = 400;
 
 type ProductSnapshots = Record<string, CmsProduct>;
 
@@ -97,8 +98,9 @@ export async function getStorefrontProductSnapshots(): Promise<ProductSnapshots>
 
 /**
  * Rebuild the public snapshot from the CMS when a previous deployment left
- * only sanitized/role-only records behind. This is a server-side CMS read;
- * every returned attachment is normalized before it can reach the browser.
+ * only sanitized/role-only records behind. This is a best-effort render-time
+ * recovery path, not the authoritative CMS-write path. Public requests must
+ * therefore fall back quickly instead of inheriting a slow WordPress TTFB.
  */
 export async function hydrateStorefrontSnapshotsFromCms(): Promise<ProductSnapshots> {
   if (cmsHydrationInFlight) return cmsHydrationInFlight;
@@ -114,7 +116,7 @@ export async function hydrateStorefrontSnapshotsFromCms(): Promise<ProductSnapsh
           page,
           perPage: 100,
           status: "publish",
-          requestTimeoutMs: 12_000,
+          requestTimeoutMs: RENDER_HYDRATION_TIMEOUT_MS,
           requestMaxAttempts: 1,
         });
         products.push(...result.products);
