@@ -10,7 +10,7 @@ import { ProductCard } from "../../components/ProductCard";
 import {
   brandPages,
   getBrandPage,
-} from "../../content-architecture";
+} from "../../lib/brand-pages";
 import { getCompactBrandLabel, toPublicCopy } from "../../lib/public-copy";
 import { buildSeoMetadata } from "../../lib/seo";
 import { siteOrigin } from "../../lib/site-url";

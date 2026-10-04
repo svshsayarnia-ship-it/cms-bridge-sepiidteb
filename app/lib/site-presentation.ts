@@ -2,9 +2,12 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { articles, type Article } from "../data";
+import { articles as baseArticles, type Article } from "../data";
+import { inovosenseVsNeuramisArticle } from "../content/inovosense-vs-neuramis";
 import { decodeArticleHtml, normalizeArticleHtml } from "./article-html";
 import { getSitePresentation as getRemotePresentation } from "./woocommerce";
+
+const articles: Article[] = [...baseArticles, inovosenseVsNeuramisArticle];
 
 export type NavItem = { label: string; href: string };
 export type ArticlePresentation = Article;
