@@ -14,6 +14,7 @@ declare global {
   interface Window {
     dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
+    posthog?: { capture: (name: string, properties?: Record<string, unknown>) => void };
   }
 }
 
@@ -30,6 +31,11 @@ export function trackGaEvent(
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;
 
   window.gtag("event", name, params);
+}
+
+export function trackPosthogEvent(name: string, properties: Record<string, unknown> = {}) {
+  if (typeof window === "undefined") return;
+  window.posthog?.capture(name, properties);
 }
 
 export function toGaItem(item: AnalyticsItem, index = 0) {
@@ -67,9 +73,11 @@ export function trackEcommerceEvent(
   if (!items.length) return;
 
   const value = ecommerceValueRial(items);
-  trackGaEvent(name, {
+  const properties = {
     currency: "IRR",
     ...(value > 0 ? { value } : {}),
     items: items.map((item, index) => toGaItem(item, index)),
-  });
+  };
+  trackGaEvent(name, properties);
+  trackPosthogEvent(name, properties);
 }
