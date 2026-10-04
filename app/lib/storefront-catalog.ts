@@ -27,10 +27,7 @@ import {
   isPublicStaticProduct,
   isPublicVariantImageSrc,
 } from "./public-product";
-import {
-  getStorefrontProductSnapshots,
-  hydrateStorefrontSnapshotsFromCms,
-} from "./storefront-product-snapshots";
+import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
@@ -392,25 +389,13 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   const fallbackBySlug = new Map(
     approvedCatalogProducts.map((product) => [product.slug, product]),
   );
-  let snapshots = await getStorefrontProductSnapshots();
-  const needsCmsHydration = approvedCatalogProducts.some(
-    (product) => !snapshots[product.slug]?.images?.length,
-  );
 
-  const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+  // Public rendering is snapshot-only. Missing media/content must never turn a
+  // shopper or crawler request into a live WordPress catalogue read. Confirmed
+  // CMS writes populate the runtime/persisted snapshot and invalidate this
+  // catalogue tag; until then the checked-in migration fallback remains valid.
+  const snapshots = await getStorefrontProductSnapshots();
 
-  if (needsCmsHydration && !isProductionBuild) {
-    try {
-      const hydratedSnapshots = await hydrateStorefrontSnapshotsFromCms();
-      // Consume the confirmed CMS response in this request. Hydration may run
-      // during render, where revalidateTag/other cache writes are unsupported.
-      snapshots = { ...snapshots, ...hydratedSnapshots };
-    } catch (error) {
-      console.warn("[storefront-catalog] CMS snapshot hydration failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
   const mappedSnapshots = Object.values(snapshots)
     .filter((product) => {
       const fallback = publicFallbackForProduct(product, fallbackBySlug);
@@ -453,13 +438,9 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
   };
 }
 
-// Public rendering intentionally performs no live commerce-origin request.
-// Product media comes from the CMS snapshot and is normalized to same-origin
-// CMS proxy URLs. Checked-in product photos are retained for migration/reference
-// but are never emitted by this catalogue fallback.
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v8-cms-media-authoritative"],
+  ["storefront-catalog-v9-snapshot-only-public-render"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
