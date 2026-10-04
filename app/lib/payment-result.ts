@@ -5,6 +5,8 @@ type WooOrder = {
   id: number;
   number: string;
   status: string;
+  total?: string;
+  currency?: string;
   transaction_id?: string;
   meta_data?: WooMeta[];
 };
@@ -95,5 +97,7 @@ export async function verifyPaymentResultView(input: {
     orderId: order.id,
     orderNumber: order.number || String(order.id),
     transid,
+    total: order.total,
+    currency: order.currency,
   };
 }
