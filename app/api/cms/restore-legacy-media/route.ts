@@ -38,6 +38,22 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 };
 
+// Keep filesystem tracing bounded to the two legacy media folders this route
+// is allowed to read. A path rooted at `public/${dynamic}` makes Turbopack trace
+// the whole project into this server function.
+const PRODUCT_IMAGES_ROOT = path.join(
+  process.cwd(),
+  "public",
+  "images",
+  "products",
+);
+const DRIVE_IMAGES_ROOT = path.join(
+  process.cwd(),
+  "public",
+  "images",
+  "drive",
+);
+
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -45,8 +61,7 @@ function text(value: unknown): string {
 function localAssetPath(value: string): string | null {
   const clean = value.trim();
   if (
-    (!clean.startsWith("/images/products/") &&
-      !clean.startsWith("/images/drive/product-")) ||
+    !clean ||
     clean.includes("..") ||
     clean.includes("?") ||
     clean.includes("#")
@@ -54,8 +69,19 @@ function localAssetPath(value: string): string | null {
     return null;
   }
 
-  const relative = clean.slice(1);
-  return path.join(process.cwd(), "public", relative);
+  if (clean.startsWith("/images/products/")) {
+    const relative = clean.slice("/images/products/".length);
+    return relative ? path.join(PRODUCT_IMAGES_ROOT, relative) : null;
+  }
+
+  if (clean.startsWith("/images/drive/product-")) {
+    const relative = clean.slice("/images/drive/".length);
+    return relative.startsWith("product-")
+      ? path.join(DRIVE_IMAGES_ROOT, relative)
+      : null;
+  }
+
+  return null;
 }
 
 function legacyAsset(value: string): { filePath: string; fileName: string; mimeType: string } | null {
