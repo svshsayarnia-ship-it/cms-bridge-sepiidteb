@@ -9,6 +9,7 @@ import {
   type CartItem,
 } from "../lib/cart";
 import styles from "./checkout.module.css";
+import { trackPosthogEvent } from "../lib/analytics";
 
 const DRAFT_KEY = "sepiid-beauty-checkout-draft-v2";
 const IDEMPOTENCY_KEY = "sepiid-beauty-checkout-idempotency-v1";
@@ -168,7 +169,10 @@ export function TransactionalCheckoutClient() {
     const nextErrors = validate(form);
     setErrors(nextErrors);
     setSubmitError("");
-    if (Object.keys(nextErrors).length) return;
+    if (Object.keys(nextErrors).length) {
+      trackPosthogEvent("checkout_validation_failed", { fields: Object.keys(nextErrors) });
+      return;
+    }
 
     try {
       window.sessionStorage.setItem(
@@ -218,12 +222,14 @@ export function TransactionalCheckoutClient() {
       }
 
       if (payload.payment?.url) {
+        trackPosthogEvent("payment_started", { order_id: String(payload.order.id), payment_provider: "aban" });
         goToGateway(payload.payment);
         return;
       }
 
       setOrder(payload.order);
     } catch (error) {
+      trackPosthogEvent("checkout_failed", { stage: "order_or_gateway" });
       setSubmitError(
         error instanceof Error
           ? error.message
@@ -293,7 +299,7 @@ export function TransactionalCheckoutClient() {
           <h1>اطلاعات تماس و پرداخت امن</h1>
         </div>
 
-        <form className={styles.layout} onSubmit={handleSubmit} noValidate>
+        <form className={styles.layout} onSubmit={handleSubmit} noValidate data-ph-mask>
           <div className={styles.formColumn}>
             <section className={styles.card}>
               <div className={styles.sectionHeading}>
