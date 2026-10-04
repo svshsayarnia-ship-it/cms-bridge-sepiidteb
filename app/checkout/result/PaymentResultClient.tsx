@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import styles from "../checkout.module.css";
+import { trackPosthogEvent } from "../../lib/analytics";
 
 const CART_KEY = "sepiid-beauty-cart-v2";
 const CART_EVENT = "sepiid-cart-updated";
@@ -13,16 +14,32 @@ export function PaymentResultClient({
   status,
   order,
   transaction,
+  total,
+  currency,
 }: {
   status: "success" | "failed" | "error";
   order: string;
   transaction?: string;
+  total?: string;
+  currency?: string;
 }) {
   const success = status === "success";
 
   useEffect(() => {
-    if (!success) return;
+    if (!success || !order) return;
     try {
+      const trackedKey = `sepiid-posthog-purchase-${order}`;
+      if (window.localStorage.getItem(trackedKey) !== "1") {
+        const amount = Number(total);
+        const value = currency === "IRT" ? amount * 10 : amount;
+        trackPosthogEvent("purchase", {
+          order_id: order,
+          currency: "IRR",
+          ...(Number.isFinite(value) && value > 0 ? { value } : {}),
+          payment_provider: "aban",
+        });
+        window.localStorage.setItem(trackedKey, "1");
+      }
       window.localStorage.removeItem(CART_KEY);
       window.sessionStorage.removeItem(IDEMPOTENCY_KEY);
       window.sessionStorage.removeItem(DRAFT_KEY);
@@ -30,7 +47,7 @@ export function PaymentResultClient({
     } catch {
       // Payment is already verified server-side; browser cleanup is best effort only.
     }
-  }, [success]);
+  }, [success, order, total, currency]);
 
   return (
     <main className={styles.page}>
