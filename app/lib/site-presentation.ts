@@ -8,6 +8,8 @@ import { decodeArticleHtml, normalizeArticleHtml } from "./article-html";
 import { getSitePresentation as getRemotePresentation } from "./woocommerce";
 
 const articles: Article[] = [...baseArticles, inovosenseVsNeuramisArticle];
+const PUBLIC_PRESENTATION_TIMEOUT_MS = 350;
+const REMOTE_FAILURE_BACKOFF_MS = 10 * 60 * 1000;
 
 export type NavItem = { label: string; href: string };
 export type ArticlePresentation = Article;
@@ -250,11 +252,10 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
 async function loadRemoteSitePresentation() {
   return normalizeSitePresentation(
     await getRemotePresentation({
-      // This runs in the public layout. The application already ships a
-      // complete fallback, and CMS writes explicitly invalidate this cache.
-      // Keep the origin timeout short so WordPress can never hold the public
-      // storefront open when it is slow or temporarily unavailable.
-      requestTimeoutMs: 1_500,
+      // Public pages ship a complete fallback and CMS writes explicitly
+      // invalidate this cache. Keep the origin probe fail-fast so a slow
+      // WordPress response cannot dominate TTFB on a cache refresh.
+      requestTimeoutMs: PUBLIC_PRESENTATION_TIMEOUT_MS,
       requestMaxAttempts: 1,
     }),
   );
@@ -262,18 +263,17 @@ async function loadRemoteSitePresentation() {
 
 const getCachedSitePresentation = unstable_cache(
   loadRemoteSitePresentation,
-  ["site-presentation-v6-low-origin-pressure"],
+  ["site-presentation-v7-fast-public-fallback"],
   {
-    // CMS writes explicitly invalidate this tag, so hourly polling was doing
-    // unnecessary WordPress work. Keep one daily safety refresh for changes
-    // made outside the CMS without tying ordinary traffic to WordPress health.
+    // CMS writes explicitly invalidate this tag. A daily safety refresh still
+    // captures direct WordPress edits without coupling normal traffic to the
+    // health of the remote origin.
     revalidate: 86_400,
     tags: ["site-presentation"],
   },
 );
 
 let remoteFailureBackoffUntil = 0;
-const REMOTE_FAILURE_BACKOFF_MS = 2 * 60 * 1000;
 
 export const getSitePresentation = cache(async () => {
   if (Date.now() < remoteFailureBackoffUntil) {
@@ -285,9 +285,9 @@ export const getSitePresentation = cache(async () => {
     remoteFailureBackoffUntil = 0;
     return presentation;
   } catch (error) {
-    // A failed refresh is an expected degraded mode because the storefront has
-    // a complete local fallback. Back off briefly so one slow WordPress period
-    // cannot turn every page/RSC render into another origin request.
+    // The storefront already has a complete local fallback. Back off long
+    // enough that a WordPress outage cannot make a wave of cold instances all
+    // repeat the same origin wait.
     remoteFailureBackoffUntil = Date.now() + REMOTE_FAILURE_BACKOFF_MS;
     console.warn("[site-presentation] Remote presentation unavailable; using fallback", {
       error: error instanceof Error ? error.message : String(error),
