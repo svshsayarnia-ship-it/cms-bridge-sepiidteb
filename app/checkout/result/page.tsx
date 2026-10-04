@@ -27,6 +27,8 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
     rawStatus === "failed" ? "failed" : "error";
   let order = rawOrder;
   let transaction: string | undefined;
+  let total: string | undefined;
+  let currency: string | undefined;
 
   if (rawStatus === "success" && rawOrder && rawTransaction) {
     try {
@@ -39,6 +41,8 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
         status = "success";
         order = verified.orderNumber;
         transaction = verified.transid;
+        total = verified.total;
+        currency = verified.currency;
       }
     } catch (error) {
       console.error("[payment-result] verification lookup failed", {
@@ -53,6 +57,8 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
       status={status}
       order={order}
       transaction={transaction}
+      total={total}
+      currency={currency}
     />
   );
 }
