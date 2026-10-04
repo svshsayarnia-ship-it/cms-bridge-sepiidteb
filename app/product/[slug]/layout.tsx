@@ -272,15 +272,16 @@ export default async function ProductDetailLayout({
             <div>
               <h2 id="product-provenance-title">منبع و بازبینی اطلاعات محصول</h2>
               <p>
-                این بخش فقط منبع رسمی یا اطلاعات بازبینی ثبت‌شده برای همین محصول
-                را نمایش می‌دهد و جایگزین نظر پزشک یا دستور مصرف حرفه‌ای نیست.
+                این بخش منبعی را که برای بررسی اطلاعات همین محصول ثبت شده نمایش
+                می‌دهد؛ نوع منبع می‌تواند سازنده، نماینده یا مرجع ثانویه باشد و
+                جایگزین نظر پزشک یا دستور مصرف حرفه‌ای نیست.
               </p>
             </div>
 
             <dl className="sb-spec-table">
               {hasSource ? (
                 <div>
-                  <dt>منبع رسمی اطلاعات</dt>
+                  <dt>منبع بررسی اطلاعات</dt>
                   <dd>
                     <a href={sourceUrl} rel="noreferrer" target="_blank">
                       {sourceName || new URL(sourceUrl).hostname.replace(/^www\./u, "")}
@@ -291,7 +292,7 @@ export default async function ProductDetailLayout({
 
               {hasSourceCheckDate ? (
                 <div>
-                  <dt>تاریخ بررسی منبع رسمی</dt>
+                  <dt>تاریخ بررسی منبع</dt>
                   <dd>{sourceCheckedAt}</dd>
                 </div>
               ) : null}
