@@ -337,10 +337,10 @@ export function FeaturedProductCarousel({
         <div className={styles.head}>
           <div>
             <span className={styles.eyebrow}>BEAUTY E-COMMERCE</span>
-            <h2 id="featured-products-title">
+            <h1 id="featured-products-title">
               انتخاب محصول،
               <em>روان‌تر و زنده‌تر.</em>
-            </h2>
+            </h1>
           </div>
           <div className={styles.headAside}>
             <p>
