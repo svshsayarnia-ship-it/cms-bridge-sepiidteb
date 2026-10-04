@@ -9,7 +9,6 @@ import { getSitePresentation as getRemotePresentation } from "./woocommerce";
 
 const articles: Article[] = [...baseArticles, inovosenseVsNeuramisArticle];
 const PUBLIC_PRESENTATION_TIMEOUT_MS = 350;
-const REMOTE_FAILURE_BACKOFF_MS = 10 * 60 * 1000;
 
 export type NavItem = { label: string; href: string };
 export type ArticlePresentation = Article;
@@ -250,52 +249,40 @@ export function normalizeSitePresentation(rawValue: Partial<SitePresentation> | 
 }
 
 async function loadRemoteSitePresentation() {
-  return normalizeSitePresentation(
-    await getRemotePresentation({
-      // Public pages ship a complete fallback and CMS writes explicitly
-      // invalidate this cache. Keep the origin probe fail-fast so a slow
-      // WordPress response cannot dominate TTFB on a cache refresh.
-      requestTimeoutMs: PUBLIC_PRESENTATION_TIMEOUT_MS,
-      requestMaxAttempts: 1,
-    }),
-  );
+  try {
+    return normalizeSitePresentation(
+      await getRemotePresentation({
+        // Public pages ship a complete fallback and CMS writes explicitly
+        // invalidate this cache. Keep the origin probe fail-fast so a slow
+        // WordPress response cannot dominate TTFB on a cache refresh.
+        requestTimeoutMs: PUBLIC_PRESENTATION_TIMEOUT_MS,
+        requestMaxAttempts: 1,
+      }),
+    );
+  } catch (error) {
+    // The checked-in presentation is a valid degraded state. Returning it from
+    // inside unstable_cache makes the result shared by cold serverless
+    // instances; a confirmed CMS write invalidates the tag immediately.
+    console.warn("[site-presentation] Remote presentation unavailable; caching fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return DEFAULT_SITE_PRESENTATION;
+  }
 }
 
 const getCachedSitePresentation = unstable_cache(
   loadRemoteSitePresentation,
-  ["site-presentation-v7-fast-public-fallback"],
+  ["site-presentation-v8-cache-valid-fallback"],
   {
     // CMS writes explicitly invalidate this tag. A daily safety refresh still
-    // captures direct WordPress edits without coupling normal traffic to the
-    // health of the remote origin.
+    // captures direct WordPress edits; an unavailable origin no longer causes
+    // every cold public instance to repeat the same timeout.
     revalidate: 86_400,
     tags: ["site-presentation"],
   },
 );
 
-let remoteFailureBackoffUntil = 0;
-
-export const getSitePresentation = cache(async () => {
-  if (Date.now() < remoteFailureBackoffUntil) {
-    return DEFAULT_SITE_PRESENTATION;
-  }
-
-  try {
-    const presentation = await getCachedSitePresentation();
-    remoteFailureBackoffUntil = 0;
-    return presentation;
-  } catch (error) {
-    // The storefront already has a complete local fallback. Back off long
-    // enough that a WordPress outage cannot make a wave of cold instances all
-    // repeat the same origin wait.
-    remoteFailureBackoffUntil = Date.now() + REMOTE_FAILURE_BACKOFF_MS;
-    console.warn("[site-presentation] Remote presentation unavailable; using fallback", {
-      error: error instanceof Error ? error.message : String(error),
-      retryAfterMs: REMOTE_FAILURE_BACKOFF_MS,
-    });
-    return DEFAULT_SITE_PRESENTATION;
-  }
-});
+export const getSitePresentation = cache(getCachedSitePresentation);
 
 export function applyArticlePresentation<T extends { slug: string }>(items: T[], presentation: SitePresentation) {
   const overrides = new Map(presentation.articles.map((item) => [item.slug, item]));
