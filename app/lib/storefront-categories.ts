@@ -13,8 +13,6 @@ export const STOREFRONT_CATEGORIES_TAG =
 // already have a complete checked-in fallback, so a slow WordPress origin must
 // never dominate storefront TTFB just to refresh category labels/images.
 const PUBLIC_WOO_TIMEOUT_MS = 350;
-const REMOTE_FAILURE_BACKOFF_MS = 10 * 60 * 1000;
-let remoteFailureBackoffUntil = 0;
 
 export type StorefrontCategory =
   Category & {
@@ -41,11 +39,21 @@ function fallbackCategories(): StorefrontCategory[] {
 async function loadStorefrontCategories(): Promise<
   StorefrontCategory[]
 > {
-  const wooCategories =
-    await listCategories({
+  let wooCategories;
+  try {
+    wooCategories = await listCategories({
       requestTimeoutMs: PUBLIC_WOO_TIMEOUT_MS,
       requestMaxAttempts: 1,
     });
+  } catch (error) {
+    // The fallback is a valid storefront state, not an exceptional response.
+    // Return it from inside unstable_cache so one failed origin probe is shared
+    // across cold serverless instances instead of repeated per request.
+    console.warn("[storefront-categories] WooCommerce unavailable; caching fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return fallbackCategories();
+  }
 
   const wooBySlug = new Map(
     wooCategories.map((category) => [
@@ -90,11 +98,12 @@ async function loadStorefrontCategories(): Promise<
 const getCachedStorefrontCategories =
   unstable_cache(
     loadStorefrontCategories,
-    ["storefront-categories-v5-fast-public-fallback"],
+    ["storefront-categories-v6-cache-valid-fallback"],
     {
       // CMS category writes explicitly invalidate this tag. A daily safety
-      // refresh still captures direct WooCommerce edits without making a slow
-      // origin a 1.5s blocking dependency for the public homepage.
+      // refresh still captures direct WooCommerce edits. If WordPress is down,
+      // the complete fallback itself is cached rather than turning every cold
+      // instance into another origin timeout.
       revalidate: 86_400,
       tags: [
         STOREFRONT_CATEGORIES_TAG,
@@ -103,27 +112,7 @@ const getCachedStorefrontCategories =
   );
 
 export const getStorefrontCategories =
-  cache(async () => {
-    if (Date.now() < remoteFailureBackoffUntil) {
-      return fallbackCategories();
-    }
-
-    try {
-      const categories = await getCachedStorefrontCategories();
-      remoteFailureBackoffUntil = 0;
-      return categories;
-    } catch (error) {
-      // Keep serving the complete checked-in categories immediately while the
-      // commerce origin is unhealthy. The longer backoff prevents a burst of
-      // cold serverless instances from repeatedly waiting on the same outage.
-      remoteFailureBackoffUntil = Date.now() + REMOTE_FAILURE_BACKOFF_MS;
-      console.warn("[storefront-categories] WooCommerce unavailable; using fallback", {
-        error: error instanceof Error ? error.message : String(error),
-        retryAfterMs: REMOTE_FAILURE_BACKOFF_MS,
-      });
-      return fallbackCategories();
-    }
-  });
+  cache(getCachedStorefrontCategories);
 
 export async function getStorefrontCategoryBySlug(
   slug: string,
