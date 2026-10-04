@@ -9,7 +9,7 @@ import "./product-visual.css";
 import "./account-responsive.css";
 import "./uiux-critical-fixes.css";
 import "./global-contact-bar.css";
-import { catalogProducts } from "./catalog";
+import { catalogCategories, catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
 import { ProductCardVariantIntentBridge } from "./components/ProductCardVariantIntentBridge";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
@@ -24,8 +24,7 @@ import {
   merchantOrganizationId,
   merchantReturnPolicy,
 } from "./lib/merchant-policy";
-import { getStorefrontCategories } from "./lib/storefront-categories";
-import { getSitePresentation } from "./lib/site-presentation";
+import { DEFAULT_SITE_PRESENTATION } from "./lib/site-presentation";
 import { isPublicStaticProduct, toPublicProduct } from "./lib/public-product";
 
 export const viewport: Viewport = {
@@ -93,16 +92,22 @@ const headerProducts = catalogProducts
   .filter(isPublicStaticProduct)
   .map(toPublicProduct);
 
-export default async function RootLayout({
+// The global shell must never wait on WordPress. These category labels/images
+// and the editorial shell presentation are complete checked-in fallbacks. Live
+// commerce/product data keeps its own snapshot-backed paths, while CMS writes
+// can continue to invalidate and refresh the page-specific data caches.
+const headerCategories = catalogCategories.map((category) => ({
+  ...category,
+  wooId: null,
+  live: false,
+}));
+const shellPresentation = DEFAULT_SITE_PRESENTATION;
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [categories, presentation] = await Promise.all([
-    getStorefrontCategories(),
-    getSitePresentation(),
-  ]);
-
   return (
     <html lang="fa" dir="rtl">
       <body>
@@ -111,16 +116,16 @@ export default async function RootLayout({
         <ProductCardVariantIntentBridge />
         <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
         <SiteHeaderServer
-          categories={categories}
+          categories={headerCategories}
           products={headerProducts}
-          presentation={presentation.header}
+          presentation={shellPresentation.header}
         />
         <GlobalContactBar />
         {children}
         <SiteFooter
           presentation={{
-            ...presentation.footer,
-            brandTagline: presentation.header.brandTagline,
+            ...shellPresentation.footer,
+            brandTagline: shellPresentation.header.brandTagline,
           }}
         />
         <DeferredSmartAssistant />
