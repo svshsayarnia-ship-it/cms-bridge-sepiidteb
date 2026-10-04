@@ -9,11 +9,11 @@ import { listCategories } from "./woocommerce";
 
 export const STOREFRONT_CATEGORIES_TAG =
   "storefront-categories";
-// Category edits are tag-invalidated after a confirmed CMS write. On the
-// storefront, prefer the complete checked-in category data to holding up the
-// entire page while WordPress is slow or temporarily unavailable.
-const PUBLIC_WOO_TIMEOUT_MS = 1_500;
-const REMOTE_FAILURE_BACKOFF_MS = 2 * 60 * 1000;
+// Category edits are tag-invalidated after a confirmed CMS write. Public pages
+// already have a complete checked-in fallback, so a slow WordPress origin must
+// never dominate storefront TTFB just to refresh category labels/images.
+const PUBLIC_WOO_TIMEOUT_MS = 350;
+const REMOTE_FAILURE_BACKOFF_MS = 10 * 60 * 1000;
 let remoteFailureBackoffUntil = 0;
 
 export type StorefrontCategory =
@@ -90,11 +90,11 @@ async function loadStorefrontCategories(): Promise<
 const getCachedStorefrontCategories =
   unstable_cache(
     loadStorefrontCategories,
-    ["storefront-categories-v4-low-origin-pressure"],
+    ["storefront-categories-v5-fast-public-fallback"],
     {
       // CMS category writes explicitly invalidate this tag. A daily safety
-      // refresh still captures direct WooCommerce edits while removing the
-      // old hourly origin polling from ordinary storefront traffic.
+      // refresh still captures direct WooCommerce edits without making a slow
+      // origin a 1.5s blocking dependency for the public homepage.
       revalidate: 86_400,
       tags: [
         STOREFRONT_CATEGORIES_TAG,
@@ -113,9 +113,9 @@ export const getStorefrontCategories =
       remoteFailureBackoffUntil = 0;
       return categories;
     } catch (error) {
-      // Do not cache the fallback for a full day: retain the last successful
-      // Data Cache entry when possible and only dampen repeated origin retries
-      // during a short WordPress outage.
+      // Keep serving the complete checked-in categories immediately while the
+      // commerce origin is unhealthy. The longer backoff prevents a burst of
+      // cold serverless instances from repeatedly waiting on the same outage.
       remoteFailureBackoffUntil = Date.now() + REMOTE_FAILURE_BACKOFF_MS;
       console.warn("[storefront-categories] WooCommerce unavailable; using fallback", {
         error: error instanceof Error ? error.message : String(error),
