@@ -13,6 +13,7 @@ import { catalogCategories, catalogProducts } from "./catalog";
 import { AiReferralTracker } from "./components/AiReferralTracker";
 import { ProductCardVariantIntentBridge } from "./components/ProductCardVariantIntentBridge";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
+import { PostHogTracker } from "./components/PostHogTracker";
 import { GlobalContactBar } from "./components/GlobalContactBar";
 import { JsonLd } from "./components/JsonLd";
 import { SiteFooter } from "./components/SiteFooter";
@@ -112,6 +113,7 @@ export default function RootLayout({
     <html lang="fa" dir="rtl">
       <body>
         <GoogleAnalytics />
+        <PostHogTracker />
         <AiReferralTracker />
         <ProductCardVariantIntentBridge />
         <Script async src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
