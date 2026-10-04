@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "../components/Breadcrumbs";
 import { ArrowIcon } from "../components/Icons";
 import { ProductCard } from "../components/ProductCard";
-import { getBrandPageForLabel } from "../content-architecture";
+import { getBrandPageForLabel } from "../lib/brand-pages";
 import { getStorefrontCatalog } from "../lib/storefront-catalog";
 import { getCompactBrandLabel } from "../lib/public-copy";
 import { buildSeoMetadata } from "../lib/seo";

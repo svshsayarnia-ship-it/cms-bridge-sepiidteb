@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { catalogGroups } from "./catalog";
 import {
-  brandPages,
   concerns,
   guides,
 } from "./content-architecture";
 import { categories } from "./data";
+import { brandPages } from "./lib/brand-pages";
 import { getManagedArticles, getSitePresentation } from "./lib/site-presentation";
 import { getCompactBrandLabel } from "./lib/public-copy";
 import { articlePath } from "./lib/article-url";
@@ -14,7 +14,7 @@ import { siteOrigin } from "./lib/site-url";
 
 // Keep static sitemap URLs fresh when a release changes their indexable content.
 // Product and editorial URLs retain their own source dates below.
-const staticContentLastModified = new Date("2026-09-19T00:00:00.000Z");
+const staticContentLastModified = new Date("2026-10-04T00:00:00.000Z");
 
 function getProductLastModified(
   dateModifiedGmt: string,

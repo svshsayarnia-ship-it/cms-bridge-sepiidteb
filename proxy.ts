@@ -56,6 +56,7 @@ const publicArticleSlugs = new Set(
     "neuramis-10ml-pack-guide",
     "revofil-10ml-vs-1ml-guide",
     "jalupro-classic-hmw-super-hydro-guide",
+    "inovosense-vs-neuramis-guide",
   ],
 );
 
@@ -78,6 +79,7 @@ const publicGroupSlugs = new Set(
 const publicBrandSlugs = new Set([
   "neuramis",
   "fusion",
+  "inovosense",
 ]);
 
 const publicGuideSlugs = new Set([
