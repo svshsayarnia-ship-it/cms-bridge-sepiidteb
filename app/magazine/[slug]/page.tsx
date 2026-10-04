@@ -157,7 +157,6 @@ const getEditableArticle = cache(async (slug: string) => {
     return undefined;
   }
 });
-
 export const dynamicParams = true;
 
 export function generateStaticParams() {
@@ -505,6 +504,11 @@ export default async function ArticlePage({
           author: {
             "@type": "Organization",
             name: article.authorName || "تحریریه سپید بیوتی",
+            url: siteOrigin,
+            logo: {
+              "@type": "ImageObject",
+              url: `${siteOrigin}/images/sepiid-logo.webp`,
+            },
           },
           publisher: {
             "@type": "OnlineStore",
