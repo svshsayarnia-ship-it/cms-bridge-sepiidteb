@@ -35,6 +35,7 @@ const restore = await fs.readFile("app/api/cms/restore-legacy-media/route.ts","u
 assert.ok(restore.includes("normalizeCmsProductImage(file)"));
 assert.ok(restore.includes("!normalized.validatedCutout"));
 const visual = await fs.readFile("app/components/product/ProductVisual.tsx","utf8");
+assert.ok(visual.includes('failedSrc === cmsSrc ? "" : cmsSrc'), "A failed image must not hide a different variant");
 assert.ok(!visual.includes("product.fallbackImage"), "Rendering must honor the current CMS image; derivative recovery belongs in the media proxy");
 assert.ok(!visual.includes('className="product-visual__glass"'));
 console.log("Storefront regressions passed: search variants/RTL, CMS authority, transparent legacy media and import gate.");

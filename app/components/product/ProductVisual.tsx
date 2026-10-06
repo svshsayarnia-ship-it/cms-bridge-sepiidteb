@@ -125,15 +125,9 @@ export function ProductVisual({
   const cmsSrc =
     getProductCutoutSrc(product.masterImage?.trim(), product.slug) ||
     getProductCutoutSrc(product.image?.trim(), product.slug);
-  const primarySrc = cmsSrc;
-  const fallbackSrc = "";
-  const requestedSrc = primarySrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const src = failedSrc
-    ? failedSrc === primarySrc
-      ? fallbackSrc
-      : ""
-    : requestedSrc;
+  // A failed image must not suppress another variant or a newer CMS upload.
+  const src = failedSrc === cmsSrc ? "" : cmsSrc;
 
   const categoryConfig = getProductVisualCategoryConfig(product.category);
   const profile = resolveVisualProfile(
