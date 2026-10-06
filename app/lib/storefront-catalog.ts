@@ -195,6 +195,11 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
     ? versionCmsImage(cmsPrimaryImage.src, product.dateModifiedGmt)
     : "";
   const variants = fallback?.variants?.map((variant) => {
+    const confirmedPrice = product.variantPrices?.[variant.id];
+    if (confirmedPrice) {
+      const price = Number(confirmedPrice.salePrice || confirmedPrice.regularPrice);
+      variant = { ...variant, priceToman: Number.isSafeInteger(price) && price > 0 ? price : 0 };
+    }
     const cmsVariantImage = findVariantRoleImage(
       product.images ?? [],
       roleSlugs,
@@ -440,14 +445,21 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v9-snapshot-only-public-render"],
+  ["storefront-catalog-v10-confirmed-model-prices"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
   },
 );
 
-export const getStorefrontCatalog = cache(getCachedStorefrontCatalog);
+export const getStorefrontCatalog = cache(async () => {
+  const catalog = await getCachedStorefrontCatalog();
+  // A transient cache-region miss must not pin missing media/old prices for
+  // the full catalog TTL. Retry the confirmed snapshot without origin reads.
+  return catalog.products.some((product) => !product.live)
+    ? loadStorefrontCatalog()
+    : catalog;
+});
 
 export async function getStorefrontProducts(): Promise<StorefrontProduct[]> {
   const catalog = await getStorefrontCatalog();

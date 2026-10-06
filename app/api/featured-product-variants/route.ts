@@ -1,3 +1,5 @@
+import { getStorefrontProductSnapshots } from "@/app/lib/storefront-product-snapshots";
+import { findVariantRoleImage } from "@/app/lib/product-image-roles";
 import { getStorefrontCatalog } from "@/app/lib/storefront-catalog";
 import { toPublicProduct } from "@/app/lib/public-product";
 import { getCatalogVariantPriceOverrides } from "@/app/lib/variant-pricing";
@@ -24,7 +26,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const { products } = await getStorefrontCatalog();
+  const [{ products }, snapshots] = await Promise.all([getStorefrontCatalog(), getStorefrontProductSnapshots()]);
   const allowed = new Set(slugs);
   const matches = products.filter((product) => allowed.has(product.slug));
 
@@ -45,8 +47,15 @@ export async function GET(request: Request) {
         const override = priceOverrides[variant.id];
         const cataloguePrice = variant.priceToman ? String(variant.priceToman) : "";
 
+        const snapshot = snapshots[product.slug];
+        const confirmedImage = snapshot
+          ? findVariantRoleImage(snapshot.images, [product.slug, snapshot.slug], variant.id)
+          : null;
         return {
           ...variant,
+          image: confirmedImage?.src || variant.image,
+          imageAlt: confirmedImage?.alt || variant.imageAlt,
+          priceToman: Number(override?.salePrice || override?.regularPrice || variant.priceToman) || undefined,
           regularPrice: override?.regularPrice || cataloguePrice,
           salePrice: override?.salePrice || "",
         };

@@ -641,56 +641,11 @@ export async function saveQuickPrice(input: {
   );
 }
 
-function slugCandidates(slug: string): string[] {
-  const clean = slug.trim();
-  if (!clean) return [];
-  const candidates = [clean];
-  if (!/-\d+$/u.test(clean)) {
-    for (let suffix = 2; suffix <= 9; suffix += 1) {
-      candidates.push(`${clean}-${suffix}`);
-    }
-  }
-  return candidates;
-}
-
+/** Public renders use confirmed CMS snapshots; they must never fan out to WooCommerce. */
 export async function getCatalogVariantPriceOverrides(
   slug: string,
 ): Promise<VariantPriceOverrideMap> {
   const { getStorefrontProductSnapshots } = await import("./storefront-product-snapshots");
   const snapshots = await getStorefrontProductSnapshots();
-  const cached = snapshots[slug];
-  if (cached?.variantPrices) return cached.variantPrices;
-
-  const candidates = slugCandidates(slug);
-  if (!candidates.length) return {};
-
-  const results = await Promise.all(
-    candidates.map(async (candidate) => {
-      try {
-        const response = await wooRequest<WooPricingProduct[]>(
-          "products",
-          {},
-          new URLSearchParams({
-            slug: candidate,
-            status: "any",
-            per_page: "10",
-            _fields: "id,slug,meta_data,date_modified_gmt",
-          }),
-          12_000,
-        );
-        return Array.isArray(response.data) ? response.data : [];
-      } catch {
-        return [];
-      }
-    }),
-  );
-
-  const products = results.flat();
-  const newest = products.sort((a, b) => {
-    const aTime = Date.parse(safeString(a.date_modified_gmt));
-    const bTime = Date.parse(safeString(b.date_modified_gmt));
-    return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
-  })[0];
-
-  return newest ? variantPriceMeta(newest).prices : {};
+  return snapshots[slug]?.variantPrices ?? {};
 }
