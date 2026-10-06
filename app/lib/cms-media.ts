@@ -10,7 +10,15 @@ export function cmsMediaSrc(id: number): string {
 }
 
 export function isCmsMediaSrc(value?: string | null): boolean {
-  return Boolean(value?.trim().startsWith("/api/cms/public-media"));
+  const source = value?.trim();
+  if (!source) return false;
+  try {
+    const url = new URL(source, "https://sepiidbeauty.ir");
+    return ["sepiidbeauty.ir", "www.sepiidbeauty.ir", "cms.sepiidbeauty.ir"].includes(url.hostname)
+      && url.pathname === "/api/cms/public-media";
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeCmsImage(image: CmsImage): CmsImage {

@@ -42,3 +42,9 @@ console.log("Storefront regressions passed: search variants/RTL, CMS authority, 
 
 const mediaRoute = await fs.readFile("app/api/cms/public-media/route.ts", "utf8");
 assert.ok(mediaRoute.includes("new Response(new Uint8Array(bytes)"), "The image optimizer requires bytes, not a local-source redirect");
+
+const { isCmsMediaSrc } = await load("app/lib/cms-media.ts");
+assert.equal(isCmsMediaSrc("/api/cms/public-media?id=30213"), true);
+assert.equal(isCmsMediaSrc("https://sepiidbeauty.ir/api/cms/public-media?id=30213"), true);
+assert.equal(isCmsMediaSrc("https://untrusted.example/api/cms/public-media?id=30213"), false);
+assert.equal(isCmsMediaSrc("/api/cms/public-media-other"), false);
