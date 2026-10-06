@@ -118,16 +118,14 @@ export function getProductCutoutSrc(
   const cleanSrc = src?.trim() ?? "";
   if (!isCmsManagedProductImageSrc(cleanSrc)) return "";
 
-  if (isRemoteImage(cleanSrc)) {
-    try {
-      const url = new URL(cleanSrc);
-      if (url.pathname === "/api/cms/public-media") {
-        url.searchParams.set("cutout", "3");
-        return `${url.pathname}${url.search}`;
-      }
-    } catch { /* Preserve non-proxy remote media below. */ }
-    return withRemoteImageCacheVersion(cleanSrc);
-  }
+  try {
+    const url = new URL(cleanSrc, "https://sepiidbeauty.ir");
+    if (url.pathname === "/api/cms/public-media") {
+      url.searchParams.set("cutout", "3");
+      return `${url.pathname}${url.search}`;
+    }
+  } catch { /* Preserve non-proxy role media below. */ }
+  if (isRemoteImage(cleanSrc)) return withRemoteImageCacheVersion(cleanSrc);
 
   // A future CMS storage adapter may return a same-origin role URL. Preserve it
   // as-is; the embedded role token is the authority check.
