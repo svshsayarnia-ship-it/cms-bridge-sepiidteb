@@ -38,3 +38,6 @@ const visual = await fs.readFile("app/components/product/ProductVisual.tsx","utf
 assert.ok(!visual.includes("product.fallbackImage"), "Rendering must honor the current CMS image; derivative recovery belongs in the media proxy");
 assert.ok(!visual.includes('className="product-visual__glass"'));
 console.log("Storefront regressions passed: search variants/RTL, CMS authority, transparent legacy media and import gate.");
+
+const mediaRoute = await fs.readFile("app/api/cms/public-media/route.ts", "utf8");
+assert.ok(mediaRoute.includes("new Response(new Uint8Array(bytes)"), "The image optimizer requires bytes, not a local-source redirect");

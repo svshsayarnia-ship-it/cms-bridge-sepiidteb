@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { getCmsMediaAsset, WooCommerceError } from "@/app/lib/woocommerce";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +23,14 @@ export async function GET(request: Request) {
   try {
     const asset = await getCmsMediaAsset(id);
     if (asset.redirect) {
-      return new Response(null, {
-        status: 307,
+      // Vercel's image optimizer requires image bytes from local sources;
+      // redirects from a local API source cannot be optimized reliably.
+      const bytes = await readFile(path.join(process.cwd(), "public", asset.redirect));
+      return new Response(new Uint8Array(bytes), {
         headers: {
-          location: new URL(asset.redirect, request.url).toString(),
+          "content-type": asset.contentType,
           "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          "x-content-type-options": "nosniff",
         },
       });
     }

@@ -6,7 +6,7 @@ import type { CmsImage } from "./cms-types";
  * browser HTML, client payloads, carts, metadata, or image requests.
  */
 export function cmsMediaSrc(id: number): string {
-  return `/api/cms/public-media?id=${encodeURIComponent(String(id))}&cutout=2`;
+  return `/api/cms/public-media?id=${encodeURIComponent(String(id))}&cutout=3`;
 }
 
 export function isCmsMediaSrc(value?: string | null): boolean {

@@ -27,7 +27,7 @@ Product images are maintained once per product or verified variant. Homepage car
 - Search eligibility is independent of image eligibility; header reads the same snapshot catalogue, with approved inventory fallback. Persian/Arabic letters, spacing, digits and variant names share one matcher with Shop.
 - Legacy restoration must use the same cutout normalization/validation gate as manual upload.
 - Exact legacy role filenames resolve to checked-in, alpha-audited transparent derivatives at the public media boundary. New uniquely named normalized CMS uploads are never replaced by that mapping.
-- Public media metadata and bytes are cached, and ProductVisual requests responsive sizes. The `cutout=2` URL version evicts the previously cached opaque legacy responses.
+- Public media metadata and bytes are cached, and ProductVisual requests responsive sizes. The `cutout=3` URL version evicts the previously cached opaque legacy responses.
 - Category artwork is the only decorative background; no extra glass/radial overlay is drawn.
 - The prebuild regression audit validates real transparency and searches before every deployment.
 
