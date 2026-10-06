@@ -1,5 +1,7 @@
 "use client";
 
+import { matchesProductSearch } from "../lib/product-search";
+
 import {
   useEffect,
   useMemo,
@@ -114,21 +116,8 @@ export function ShopCatalog({
   }, [items]);
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("fa");
     const result = items.filter((item) => {
-      const matchesQuery =
-        !normalized ||
-        [
-          item.nameFa,
-          item.nameEn,
-          getCompactBrandLabel(item.brand),
-          item.shortBenefit,
-          item.volume ?? "",
-          item.categoryTitle,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("fa")
-          .includes(normalized);
+      const matchesQuery = matchesProductSearch(item, query);
       const matchesBrand =
         brand === "all" ||
         getCompactBrandLabel(item.brand) === brand;

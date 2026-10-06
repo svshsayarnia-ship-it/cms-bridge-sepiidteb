@@ -17,8 +17,6 @@ import {
 } from "../../config/visualProfiles";
 import {
   getProductCutoutSrc,
-  getTransparentProductCutoutSrc,
-  isCmsManagedProductImageSrc,
 } from "../../lib/product-image";
 
 const MAX_OFFSET = 5;
@@ -127,12 +125,8 @@ export function ProductVisual({
   const cmsSrc =
     getProductCutoutSrc(product.masterImage?.trim(), product.slug) ||
     getProductCutoutSrc(product.image?.trim(), product.slug);
-  const transparentCutoutSrc = getTransparentProductCutoutSrc(
-    product.fallbackImage?.trim(),
-    product.slug,
-  );
-  const primarySrc = transparentCutoutSrc || cmsSrc;
-  const fallbackSrc = transparentCutoutSrc ? cmsSrc : "";
+  const primarySrc = cmsSrc;
+  const fallbackSrc = "";
   const requestedSrc = primarySrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const src = failedSrc
@@ -180,7 +174,6 @@ export function ProductVisual({
     : product.imageAlt?.trim() || `تصویر ${product.nameFa}`;
   const imageClassName = "product-visual__image";
   const imageSizes = sizes ?? getVariantSizes(variant);
-  const isCmsMedia = Boolean(src && isCmsManagedProductImageSrc(src));
   const handleImageError = () => {
     if (src) setFailedSrc(src);
   };
@@ -196,10 +189,9 @@ export function ProductVisual({
       priority={priority}
       sizes={imageSizes}
       src={src}
-      // The CMS endpoint already returns the optimized role asset. Bypassing
-      // Next's second optimizer also keeps the browser on the CMS authority
-      // and avoids an optimizer request being mistaken for a missing image.
-      unoptimized={unoptimized || isCmsMedia}
+      // CMS authority resolves first; Next serves the transparent asset at
+      // the requested display size instead of downloading the full master.
+      unoptimized={unoptimized}
     />
   ) : (
     <img
@@ -226,9 +218,6 @@ export function ProductVisual({
       style={visualStyle}
     >
       <span className="product-visual__background" aria-hidden="true" />
-      {showBackground && variant !== "hero" ? (
-        <span className="product-visual__glass" aria-hidden="true" />
-      ) : null}
       {image ? <span className="product-visual__stage">{image}</span> : null}
     </span>
   );

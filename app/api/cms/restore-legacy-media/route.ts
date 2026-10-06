@@ -1,4 +1,6 @@
 import "server-only";
+import { approvedProductCutouts } from "../../../lib/approved-product-cutouts";
+import { normalizeCmsProductImage } from "../../../lib/product-image-normalizer";
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -137,7 +139,8 @@ async function uploadLegacyImage(
   token: string,
   alt: string,
 ): Promise<CmsImage | null> {
-  const asset = legacyAsset(value);
+  const stem = path.basename(value, path.extname(value));
+  const asset = legacyAsset(approvedProductCutouts[stem] ?? value);
   if (!asset) return null;
 
   let bytes: Buffer;
@@ -156,7 +159,10 @@ async function uploadLegacyImage(
     roleUploadFileName(asset.fileName, token),
     { type: asset.mimeType },
   );
-  return uploadMedia(file, alt, crypto.randomUUID());
+  const normalized = await normalizeCmsProductImage(file);
+  if (!normalized.validatedCutout) return null;
+  // Every import uses the same normalization gate as a manual role upload.
+  return uploadMedia(normalized.file, alt, crypto.randomUUID());
 }
 
 export async function POST(request: Request) {

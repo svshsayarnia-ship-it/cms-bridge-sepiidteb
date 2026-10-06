@@ -1,4 +1,6 @@
 import type { Category } from "../data";
+import { getStorefrontProducts } from "../lib/storefront-catalog";
+import { toPublicProduct } from "../lib/public-product";
 import type { PublicProduct } from "../lib/public-product";
 import type { SitePresentation } from "../lib/site-presentation";
 import { SiteHeader } from "./SiteHeader";
@@ -23,6 +25,7 @@ type HeaderProduct = Pick<
   | "visualScale"
   | "visualOffsetX"
   | "visualOffsetY"
+  | "variants"
 >;
 
 /**
@@ -40,12 +43,17 @@ export async function SiteHeaderServer({
   products: PublicProduct[];
   presentation: SitePresentation["header"];
 }) {
-  const initialUser = await getCustomerUser().catch(() => null);
+  const [initialUser, storefrontProducts] = await Promise.all([
+    getCustomerUser().catch(() => null),
+    getStorefrontProducts()
+      .then((items) => items.length ? items.map(toPublicProduct) : products)
+      .catch(() => products),
+  ]);
   const headerCategories: HeaderCategory[] = categories.map(
     ({ slug, title, en }) => ({ slug, title, en }),
   );
 
-  const headerProducts: HeaderProduct[] = products.map(
+  const headerProducts: HeaderProduct[] = storefrontProducts.map(
     ({
       slug,
       nameFa,
@@ -62,6 +70,7 @@ export async function SiteHeaderServer({
       visualScale,
       visualOffsetX,
       visualOffsetY,
+      variants,
     }) => ({
       slug,
       nameFa,
@@ -78,6 +87,7 @@ export async function SiteHeaderServer({
       visualScale,
       visualOffsetX,
       visualOffsetY,
+      variants,
     }),
   );
 

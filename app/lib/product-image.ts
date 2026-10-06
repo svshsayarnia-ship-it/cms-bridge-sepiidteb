@@ -1,3 +1,4 @@
+import { approvedProductCutouts } from "./approved-product-cutouts";
 import { isCmsMediaSrc } from "./cms-media";
 
 const PRODUCT_ROOT = "/images/products/";
@@ -118,6 +119,13 @@ export function getProductCutoutSrc(
   if (!isCmsManagedProductImageSrc(cleanSrc)) return "";
 
   if (isRemoteImage(cleanSrc)) {
+    try {
+      const url = new URL(cleanSrc);
+      if (url.pathname === "/api/cms/public-media") {
+        url.searchParams.set("cutout", "2");
+        return `${url.pathname}${url.search}`;
+      }
+    } catch { /* Preserve non-proxy remote media below. */ }
     return withRemoteImageCacheVersion(cleanSrc);
   }
 
@@ -145,7 +153,7 @@ export function getTransparentProductCutoutSrc(
   const relative = cleanSrc.slice(PRODUCT_ROOT.length);
   if (!relative || relative.includes("..")) return "";
 
-  return `${CUTOUT_ROOT}${relative.replace(/^cutouts\//u, "")}`;
+  return approvedProductCutouts[filenameFromSrc(cleanSrc).replace(/\.webp$/u, "")] ?? "";
 }
 
 export function hasLocalProductCutout(

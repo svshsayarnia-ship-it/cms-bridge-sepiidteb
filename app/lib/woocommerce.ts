@@ -1,3 +1,4 @@
+import { approvedLegacyCutout } from "./approved-product-cutouts";
 import type {
   CmsCategory,
   CmsCategoryInput,
@@ -1232,7 +1233,8 @@ type WordPressMediaResponse = {
 };
 
 export async function getCmsMediaAsset(id: number): Promise<{
-  body: ArrayBuffer;
+  body?: ArrayBuffer;
+  redirect?: string;
   contentType: string;
 }> {
   if (!Number.isSafeInteger(id) || id <= 0) {
@@ -1246,7 +1248,7 @@ export async function getCmsMediaAsset(id: number): Promise<{
   try {
     const mediaUrl = new URL(`${storeUrl}/wp-json/wp/v2/media/${id}`);
     const response = await fetch(mediaUrl, {
-      cache: "no-store",
+      next: { revalidate: 86400 },
       headers: {
         accept: "application/json",
         authorization: `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`,
@@ -1271,8 +1273,13 @@ export async function getCmsMediaAsset(id: number): Promise<{
       );
     }
 
+    const approvedCutout = approvedLegacyCutout(media.source_url);
+    if (approvedCutout) {
+      return { redirect: approvedCutout, contentType: "image/webp" };
+    }
+
     const imageResponse = await fetch(media.source_url, {
-      cache: "no-store",
+      next: { revalidate: 86400 },
       headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,*/*" },
       signal: controller.signal,
     });

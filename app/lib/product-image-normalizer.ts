@@ -320,7 +320,7 @@ export async function normalizeCmsProductImage(
   const initialBounds = visibleBounds(image);
   const alreadyCutout = isExistingProductCutout(image, initialBounds);
   const removalRatio = alreadyCutout ? 0 : removeConnectedBackground(image);
-  const validatedCutout = alreadyCutout || removalRatio > 0.02;
+  const validatedCutout = isExistingProductCutout(image, visibleBounds(image));
   const bounds = visibleBounds(image);
   const padding = Math.max(
     18,

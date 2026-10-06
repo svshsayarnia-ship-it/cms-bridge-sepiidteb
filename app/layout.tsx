@@ -26,7 +26,7 @@ import {
   merchantReturnPolicy,
 } from "./lib/merchant-policy";
 import { DEFAULT_SITE_PRESENTATION } from "./lib/site-presentation";
-import { isPublicStaticProduct, toPublicProduct } from "./lib/public-product";
+import { isCatalogFallbackProduct, toPublicProduct } from "./lib/public-product";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -90,7 +90,7 @@ catalogProducts.splice(
 );
 
 const headerProducts = catalogProducts
-  .filter(isPublicStaticProduct)
+  .filter(isCatalogFallbackProduct)
   .map(toPublicProduct);
 
 // The global shell must never wait on WordPress. These category labels/images

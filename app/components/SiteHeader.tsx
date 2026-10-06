@@ -1,4 +1,6 @@
 "use client";
+
+import { matchesProductSearch } from "../lib/product-search";
 /* eslint-disable @next/next/no-img-element -- local non-product compressed assets */
 
 import Link from "next/link";
@@ -100,17 +102,7 @@ export function SiteHeader({
     if (!normalized) return products.slice(0, 5);
 
     return products
-      .filter((product) =>
-        [
-          product.nameFa,
-          product.nameEn,
-          product.brand,
-          product.categoryTitle,
-        ]
-          .join(" ")
-          .toLocaleLowerCase("fa")
-          .includes(normalized),
-      )
+      .filter((product) => matchesProductSearch(product, query))
       .slice(0, 7);
   }, [products, query]);
 

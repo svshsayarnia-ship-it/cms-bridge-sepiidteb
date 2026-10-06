@@ -20,6 +20,15 @@ export async function GET(request: Request) {
 
   try {
     const asset = await getCmsMediaAsset(id);
+    if (asset.redirect) {
+      return new Response(null, {
+        status: 307,
+        headers: {
+          location: new URL(asset.redirect, request.url).toString(),
+          "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      });
+    }
     return new Response(asset.body, {
       headers: {
         "content-type": asset.contentType,
