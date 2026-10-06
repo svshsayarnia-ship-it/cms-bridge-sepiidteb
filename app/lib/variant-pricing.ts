@@ -656,6 +656,11 @@ function slugCandidates(slug: string): string[] {
 export async function getCatalogVariantPriceOverrides(
   slug: string,
 ): Promise<VariantPriceOverrideMap> {
+  const { getStorefrontProductSnapshots } = await import("./storefront-product-snapshots");
+  const snapshots = await getStorefrontProductSnapshots();
+  const cached = snapshots[slug];
+  if (cached?.variantPrices) return cached.variantPrices;
+
   const candidates = slugCandidates(slug);
   if (!candidates.length) return {};
 

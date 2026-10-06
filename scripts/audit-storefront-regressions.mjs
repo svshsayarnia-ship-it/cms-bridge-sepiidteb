@@ -48,3 +48,20 @@ assert.equal(isCmsMediaSrc("/api/cms/public-media?id=30213"), true);
 assert.equal(isCmsMediaSrc("https://sepiidbeauty.ir/api/cms/public-media?id=30213"), true);
 assert.equal(isCmsMediaSrc("https://untrusted.example/api/cms/public-media?id=30213"), false);
 assert.equal(isCmsMediaSrc("/api/cms/public-media-other"), false);
+
+// Confirmed model prices must survive an unavailable WooCommerce origin.
+let pricingJs = ts.transpileModule(await fs.readFile("app/lib/variant-pricing.ts", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.ESNext },
+}).outputText;
+const moduleUrl = (code) => `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
+pricingJs = pricingJs.replace('import "server-only";', "")
+  .replace('"../catalog"', JSON.stringify(moduleUrl('export const catalogProducts = [];')))
+  .replace('"./woocommerce"', JSON.stringify(moduleUrl('export class WooCommerceError extends Error {}')))
+  .replace('"./storefront-product-snapshots"', JSON.stringify(moduleUrl(
+    'export async function getStorefrontProductSnapshots() { return {"inovosense-family": {variantPrices: {style: {regularPrice: "8800000", salePrice: ""}}}}; }'
+  )));
+const { getCatalogVariantPriceOverrides } = await import(moduleUrl(pricingJs));
+assert.deepEqual(await getCatalogVariantPriceOverrides("inovosense-family"), {
+  style: {regularPrice: "8800000", salePrice: ""},
+});
+console.log("Confirmed variant price survives an unavailable origin.");

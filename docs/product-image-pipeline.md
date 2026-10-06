@@ -85,3 +85,5 @@ The image problem is considered closed only when all of the following are true:
 After these conditions pass, future work should treat image regressions as pipeline failures, not page-design tasks.
 
 The older Neurafill Lido staged payload cannot be decoded and is excluded from the approved derivative map. It must be replaced with a verified source before it can be restored through the normalized import path.
+
+CMS-confirmed role names in shared snapshots resolve approved legacy derivatives without per-image WordPress metadata reads. Variant price overrides also travel with these snapshots so an origin timeout cannot revert a confirmed model price.

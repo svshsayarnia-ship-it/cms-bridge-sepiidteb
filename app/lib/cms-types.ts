@@ -71,6 +71,8 @@ export type CmsProduct = {
   permalink: string;
   dateModifiedGmt: string;
   pricing: CmsPricingState;
+  /** Confirmed CMS model prices travel with the shared product snapshot. */
+  variantPrices?: Record<string, { regularPrice: string; salePrice: string; updatedAt?: string }>;
 };
 
 export type CmsProductInput = Omit<
@@ -83,6 +85,7 @@ export type CmsProductInput = Omit<
   | "categories"
   | "brands"
   | "pricing"
+  | "variantPrices"
   | "visualProfile"
   | "visualScale"
   | "visualOffsetX"

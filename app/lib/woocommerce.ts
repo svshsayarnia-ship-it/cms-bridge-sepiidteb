@@ -1,3 +1,4 @@
+import { parseVariantPriceOverrides, VARIANT_PRICE_META_KEY } from "./variant-pricing";
 import { approvedLegacyCutout } from "./approved-product-cutouts";
 import type {
   CmsCategory,
@@ -515,6 +516,7 @@ function mapProduct(product: WooProduct): CmsProduct {
     images: arrayValue<WooImage>(product.images).map(mapImage),
     permalink: product.permalink,
     dateModifiedGmt: product.date_modified_gmt,
+    variantPrices: parseVariantPriceOverrides(arrayValue<WooMetaData>(product.meta_data).find((item) => item.key === VARIANT_PRICE_META_KEY)?.value),
     pricing: parsePricingState(
       getProductMeta(product, "sepiid_market_pricing"),
     ),
@@ -1242,6 +1244,20 @@ export async function getCmsMediaAsset(id: number): Promise<{
   }
 
   const { storeUrl, consumerKey, consumerSecret } = config();
+  // Role records already confirmed by CMS are shared with the page. Avoid a
+  // separate slow WordPress metadata request for every legacy foreground.
+  const { getStorefrontProductSnapshots } = await import("./storefront-product-snapshots");
+  const snapshots = await getStorefrontProductSnapshots().catch(() => ({}));
+  const knownImage = Object.values(snapshots)
+    .flatMap((product) => product.images)
+    .find((image) => image.id === id);
+  if (knownImage?.name) {
+    const name = /\.(webp|png|jpe?g)$/iu.test(knownImage.name)
+      ? knownImage.name : `${knownImage.name}.webp`;
+    const approved = approvedLegacyCutout(`${storeUrl}/${encodeURIComponent(name)}`);
+    if (approved) return { redirect: approved, contentType: "image/webp" };
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
 
