@@ -129,7 +129,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((guide) => guide.indexable)
       .map((guide) => ({
         url: `${siteOrigin}/guides/${guide.slug}`,
-        lastModified: staticContentLastModified,
+        lastModified: ["dermal-fillers", "mesogels-skin-boosters", "product-authenticity"].includes(guide.slug)
+          ? new Date("2026-10-07T22:05:00.000Z")
+          : staticContentLastModified,
       })),
 
     ...concerns
