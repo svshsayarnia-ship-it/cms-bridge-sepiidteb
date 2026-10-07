@@ -1,4 +1,5 @@
 import { fillerInventorySeeds } from "./inventory/fillers";
+import { posterAdditionSeeds } from "./inventory/poster-additions";
 import { skinAndSupportInventorySeeds } from "./inventory/skin-support";
 import type { ProductSeed } from "./product-seed";
 
@@ -302,6 +303,7 @@ export const currentInventorySeeds: ProductSeed[] = [
   perleuxSeed,
   audreySeed,
   inovosense,
+  ...posterAdditionSeeds,
   dimono,
   luxiva,
   hyaron,
