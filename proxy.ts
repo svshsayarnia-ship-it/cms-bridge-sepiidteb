@@ -35,6 +35,8 @@ type StaticRouteRule = {
   label: string;
 };
 
+type AiCrawlerName = "OAI-SearchBot" | "ChatGPT-User";
+
 const staticProducts = new Map(
   catalogProducts.map((product) => [product.slug, product]),
 );
@@ -176,6 +178,36 @@ function staticRouteFromPath(pathname: string) {
   }
 
   return null;
+}
+
+function aiCrawlerName(userAgent: string): AiCrawlerName | null {
+  if (/OAI-SearchBot/i.test(userAgent)) return "OAI-SearchBot";
+  if (/ChatGPT-User/i.test(userAgent)) return "ChatGPT-User";
+  return null;
+}
+
+function logAiCrawlerVisit(request: NextRequest) {
+  const userAgent = request.headers.get("user-agent") ?? "";
+  const crawler = aiCrawlerName(userAgent);
+  if (!crawler) return;
+
+  // Keep this deliberately privacy-minimal: no IP, cookies, referrer, or query
+  // parameters. The path and crawler identity are enough to measure which
+  // public Sepiid Beauty pages OpenAI is requesting.
+  console.info(
+    "SEPIID_AI_CRAWLER",
+    JSON.stringify({
+      crawler,
+      method: request.method,
+      pathname: request.nextUrl.pathname,
+      host:
+        request.headers.get("x-forwarded-host") ??
+        request.headers.get("host") ??
+        "",
+      userAgent,
+      observedAt: new Date().toISOString(),
+    }),
+  );
 }
 
 function missingProductResponse(request: NextRequest) {
@@ -408,6 +440,8 @@ export async function proxy(request: NextRequest) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return;
   }
+
+  logAiCrawlerVisit(request);
 
   const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
     .split(",")[0]
