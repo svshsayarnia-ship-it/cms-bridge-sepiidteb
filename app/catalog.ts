@@ -5,6 +5,7 @@ import {
 } from "./current-inventory";
 import { fillerCopyOverrides } from "./lib/filler-copy";
 import type { ProductSeed } from "./product-seed";
+import { withConfirmedPosterPrices } from "./inventory/confirmed-poster-prices";
 
 export type CatalogGroup = {
   slug: "injectables" | "mesotherapy-cocktails" | "professional-support";
@@ -1254,7 +1255,7 @@ const productContentOverrides: Record<string, Partial<ProductSeed>> = {
 };
 
 function makeProduct(seed: ProductSeed): Product {
-  seed = { ...seed, ...productContentOverrides[seed.slug] };
+  seed = withConfirmedPosterPrices({ ...seed, ...productContentOverrides[seed.slug] });
   const category = catalogCategories.find((item) => item.slug === seed.category)!;
   const copyOverride =
     seed.category === "fillers" ? fillerCopyOverrides[seed.slug] : undefined;
