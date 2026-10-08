@@ -236,8 +236,9 @@ export function ProductCard({
         imageKind: previewImage ? previewVariant.imageKind : undefined,
       }
     : displayProduct;
-  const parentUnavailable =
-    product.live === false || product.stockStatus === "outofstock";
+  // A cached catalogue is a data source, not evidence that an item is sold out.
+  // Checkout verifies current CMS stock and price before creating an order.
+  const parentUnavailable = product.stockStatus === "outofstock";
   const cartProduct = {
     slug: product.slug,
     nameFa: product.nameFa,
@@ -612,7 +613,7 @@ export function ProductCard({
             aria-haspopup={hasVariants ? "dialog" : undefined}
           >
             {parentUnavailable
-              ? "فعلاً قابل سفارش نیست"
+              ? "ناموجود"
               : added
                 ? "به لیست اضافه شد"
                 : hasVariants
