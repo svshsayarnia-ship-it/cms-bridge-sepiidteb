@@ -98,13 +98,16 @@ export default async function BrandPage({
     notFound();
   }
 
+  const showModelPricing = ["neuramis", "inovosense"].includes(brand.slug);
   const modelRows = brandProducts.flatMap((product) =>
     product.variants?.length
       ? product.variants.map((variant) => ({
           name: variant.nameFa,
           englishName: variant.nameEn,
           volume: variant.volume,
-          href: `/product/${product.slug}`,
+          href: `/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`,
+          priceToman: variant.priceToman,
+          stockStatus: product.stockStatus,
         }))
       : [
           {
@@ -112,6 +115,8 @@ export default async function BrandPage({
             englishName: product.nameEn,
             volume: product.volume ?? "جزئیات در صفحه محصول",
             href: `/product/${product.slug}`,
+            priceToman: product.priceToman,
+            stockStatus: product.stockStatus,
           },
         ],
   );
@@ -185,6 +190,7 @@ export default async function BrandPage({
                 <tr>
                   <th scope="col">مدل</th>
                   <th scope="col">حجم یا بسته</th>
+                  {showModelPricing && <th scope="col">قیمت ثبت‌شده</th>}
                   <th scope="col">جزئیات</th>
                 </tr>
               </thead>
@@ -196,13 +202,21 @@ export default async function BrandPage({
                       <small>{model.englishName}</small>
                     </td>
                     <td>{toPublicCopy(model.volume)}</td>
+                    {showModelPricing && (
+                      <td>{model.stockStatus === "outofstock"
+                        ? "ناموجود"
+                        : model.priceToman && model.priceToman > 0
+                          ? `${new Intl.NumberFormat("fa-IR").format(model.priceToman)} تومان`
+                          : "قیمت را بپرسید"}</td>
+                    )}
                     <td>
-                      <Link href={model.href}>مشاهده محصول</Link>
+                      <Link href={model.href}>مشاهده {model.name}</Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {showModelPricing && <p>قیمت برای حجم و بسته درج‌شده در همان ردیف است. موجودی هر مدل و قیمت نهایی هنگام سفارش بررسی می‌شود.</p>}
           </div>
         </div>
       </section>

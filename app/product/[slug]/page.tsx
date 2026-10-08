@@ -12,7 +12,7 @@ import {
 } from "../../components/ProductVariantExperience";
 import type { ProductExperienceProduct } from "../../components/ProductVariantExperience";
 import { getGroupForCategory } from "../../catalog";
-import { getBrandPageForLabel } from "../../content-architecture";
+import { getBrandPageForLabel } from "../../lib/brand-pages";
 import {
   getProduct,
   products,
@@ -787,6 +787,7 @@ export default async function ProductPage({
       </div>
 
       <ProductVariantExperience
+        key={`${product.slug}-${initialVariantId ?? "default"}`}
         product={productExperience}
         liveImage={liveImage}
         catalogImage={catalogImage}
@@ -800,6 +801,28 @@ export default async function ProductPage({
         brandHref={brandHref}
         initialVariantId={initialVariantId}
       />
+
+      {["Neuramis", "Inovosense"].includes(compactBrand) && variants.length > 1 && (
+        <section className="sb-section sb-brand-page__models" aria-labelledby="product-models-title">
+          <div className="sb-shell">
+            <h2 id="product-models-title">مقایسه مدل‌ها و بسته‌های {compactBrand === "Neuramis" ? "نورامیس" : "اینووسنس"}</h2>
+            <p>نام کامل و حجم هر مدل را پیش از سفارش بررسی کنید. برای دیدن قیمت و انتخاب همان مدل، روی نام آن بزنید.</p>
+            <div className="sb-brand-page__table" role="region" aria-label="مشخصات مدل‌ها">
+              <table>
+                <thead><tr><th scope="col">مدل</th><th scope="col">حجم یا بسته</th><th scope="col">مشخصات بسته</th></tr></thead>
+                <tbody>{variants.map((variant) => (
+                  <tr key={variant.id}>
+                    <td><Link href={`/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`}><strong>{variant.nameFa}</strong></Link><small lang="en" dir="ltr">{variant.nameEn}</small></td>
+                    <td>{toPublicCopy(variant.volume)}</td>
+                    <td>{variant.specs.filter(([label]) => label !== "مدل" && label !== "حجم").map(([label, value]) => `${label}: ${value}`).join("؛ ") || "حجم بسته در همین ردیف درج شده است."}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+            {brandHref && <Link className="sb-text-link" href={brandHref}>قیمت و مدل‌های {compactBrand === "Neuramis" ? "نورامیس" : "اینووسنس"}</Link>}
+          </div>
+        </section>
+      )}
 
       {customerFaqs.length > 0 && (
         <section className="sb-section sb-product-faq" id="questions">
