@@ -12,7 +12,7 @@ import styles from "./checkout.module.css";
 import { trackPosthogEvent } from "../lib/analytics";
 
 const DRAFT_KEY = "sepiid-beauty-checkout-draft-v2";
-const IDEMPOTENCY_KEY = "sepiid-beauty-checkout-idempotency-v1";
+const IDEMPOTENCY_KEY = "sepiid-beauty-checkout-idempotency-v2";
 const priceFormatter = new Intl.NumberFormat("fa-IR");
 
 type CheckoutForm = {
@@ -124,6 +124,8 @@ function goToGateway(payment: PaymentStart) {
 
 export function TransactionalCheckoutClient() {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [freshPrices, setFreshPrices] = useState<Record<string, number>>({});
+  const [quoteError, setQuoteError] = useState("");
   const [form, setForm] = useState<CheckoutForm>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -131,7 +133,11 @@ export function TransactionalCheckoutClient() {
   const [order, setOrder] = useState<CreatedOrder | null>(null);
 
   useEffect(() => {
-    const syncCart = () => setItems(readCart());
+    const syncCart = () => {
+      setFreshPrices({});
+      setQuoteError("");
+      setItems(readCart());
+    };
     const cartTimer = window.setTimeout(syncCart, 0);
     const unsubscribe = onCartUpdated(syncCart);
 
@@ -157,14 +163,32 @@ export function TransactionalCheckoutClient() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!items.length) return;
+    const controller = new AbortController();
+    fetch("/api/checkout/quote", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ lines: items.map(({ slug, quantity, volume }) => ({ slug, quantity, volume })) }),
+      signal: controller.signal,
+    }).then(async (response) => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "دریافت قیمت تازه کامل نشد.");
+      setFreshPrices(Object.fromEntries(data.prices.map((p: { slug: string; priceToman: number }) => [p.slug, p.priceToman])));
+    }).catch((error) => {
+      if (!controller.signal.aborted) setQuoteError(error.message);
+    });
+    return () => controller.abort();
+  }, [items]);
+
   const browserSubtotal = useMemo(
-    () => items.reduce((total, item) => total + (item.priceToman ?? 0) * item.quantity, 0),
-    [items],
+    () => items.reduce((total, item) => total + (freshPrices[item.slug] ?? 0) * item.quantity, 0),
+    [items, freshPrices],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!items.length || submitting || order) return;
+    if (!items.length || submitting || order || quoteError || items.some((item) => !freshPrices[item.slug])) return;
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
@@ -194,6 +218,7 @@ export function TransactionalCheckoutClient() {
         body: JSON.stringify({
           idempotencyKey,
           retry: checkoutAttempt.retry,
+          expectedSubtotal: browserSubtotal,
           fullName: form.fullName,
           phone: form.phone,
           customerType: form.customerType,
@@ -211,10 +236,16 @@ export function TransactionalCheckoutClient() {
         order?: CreatedOrder;
         payment?: PaymentStart | null;
         paymentConfigured?: boolean;
-        error?: { message?: string };
+        error?: { message?: string; code?: string };
       };
 
       if (!response.ok || !payload.ok || !payload.order) {
+        if (["price_changed", "order_price_changed"].includes(payload.error?.code || "")) {
+          window.sessionStorage.removeItem(IDEMPOTENCY_KEY);
+          setFreshPrices({});
+          setQuoteError("");
+          setItems(readCart());
+        }
         throw new Error(
           payload.error?.message ||
             "ثبت سفارش یا شروع پرداخت کامل نشد. لطفاً دوباره تلاش کنید.",
@@ -400,10 +431,10 @@ export function TransactionalCheckoutClient() {
               <button
                 className="sb-btn sb-btn--dark"
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !!quoteError || items.some((item) => !freshPrices[item.slug])}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال آماده‌سازی پرداخت…" : "ادامه و پرداخت"}
+                {submitting ? "در حال آماده‌سازی پرداخت…" : items.some((item) => !freshPrices[item.slug]) ? "در حال بررسی قیمت…" : "ادامه و پرداخت"}
               </button>
             </section>
           </div>
@@ -418,13 +449,14 @@ export function TransactionalCheckoutClient() {
                 <div key={`${item.slug}:${item.volume ?? "default"}`}>
                   <span>{item.nameFa}{item.volume ? ` — ${item.volume}` : ""} × {priceFormatter.format(item.quantity)}</span>
                   <strong>
-                    {item.priceToman
-                      ? `${priceFormatter.format(item.priceToman * item.quantity)} تومان`
-                      : "قیمت هنگام پرداخت"}
+                    {freshPrices[item.slug]
+                      ? `${priceFormatter.format(freshPrices[item.slug] * item.quantity)} تومان`
+                      : "در حال بررسی قیمت…"}
                   </strong>
                 </div>
               ))}
             </div>
+            {quoteError && <div role="alert"><p>{quoteError}</p><button type="button" onClick={() => { setFreshPrices({}); setQuoteError(""); setItems(readCart()); }}>بررسی دوباره قیمت</button></div>}
             <div className={styles.summaryRow}>
               <span>جمع سبد</span>
               <strong>{browserSubtotal > 0 ? `${priceFormatter.format(browserSubtotal)} تومان` : "محاسبه هنگام پرداخت"}</strong>

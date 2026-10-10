@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     const checkoutOrder = await createPendingWooOrder({
       idempotencyKey,
       retry: body?.retry === true,
+      expectedSubtotal: body?.expectedSubtotal,
       fullName: body?.fullName,
       phone: body?.phone,
       customerType: body?.customerType,

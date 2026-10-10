@@ -485,6 +485,7 @@ export async function createAbanPayment(input: {
     );
   }
 
+  const amountRial = amountInRial(order);
   const existingInvoice = firstMetaString(order, ABAN_INVOICE_META_KEY);
   if (/^inv_[A-Za-z0-9_-]+$/.test(existingInvoice)) {
     try {
@@ -496,11 +497,16 @@ export async function createAbanPayment(input: {
       const existingUrl = String(existing?.payment_url ?? "");
       const existingPayable = Number(existing?.payable_rial);
 
+      if (Number(existing?.amount_rial) !== amountRial) {
+        throw new AbanGatewayError("مبلغ فاکتور قبلی با سفارش مطابقت ندارد. با پشتیبانی تماس بگیرید.", 409, "invoice_amount_mismatch");
+      }
+
       if (
         ["pending", "partially_paid"].includes(existingStatus) &&
         existingUrl &&
         Number.isSafeInteger(existingPayable) &&
-        existingPayable > 0
+        existingPayable >= amountRial &&
+        Number(existing?.amount_rial) === amountRial
       ) {
         return {
           invoiceId: existingInvoice,
@@ -542,7 +548,6 @@ export async function createAbanPayment(input: {
   const { callback } = gatewayConfig();
   const callbackUrl = new URL(callback);
   callbackUrl.searchParams.set("order", String(order.id));
-  const amountRial = amountInRial(order);
   const { data } = await abanRequest<AbanInvoice>("invoices", {
     method: "POST",
     body: JSON.stringify({
@@ -566,7 +571,8 @@ export async function createAbanPayment(input: {
   if (
     !/^inv_[A-Za-z0-9_-]+$/.test(invoiceId) ||
     !Number.isSafeInteger(payableRial) ||
-    payableRial <= 0 ||
+    payableRial < amountRial ||
+    Number(invoice?.amount_rial) !== amountRial ||
     !paymentUrl
   ) {
     throw new AbanGatewayError(
@@ -638,6 +644,11 @@ export async function verifyAbanInvoice(input: {
       );
     }
 
+    const { data: invoiceData } = await abanRequest<AbanInvoice>("invoices/" + encodeURIComponent(invoiceId));
+    const paidInvoice = invoiceData as AbanInvoice | null;
+    if (paidInvoice?.status !== "paid" || Number(paidInvoice.amount_rial) !== amountInRial(order)) {
+      throw new AbanGatewayError("مبلغ پرداخت تأییدشده با سفارش مطابقت ندارد.", 409, "verify_amount_mismatch");
+    }
     await markOrderPaid(order, invoiceId);
     return {
       ok: true as const,
@@ -668,6 +679,9 @@ export async function verifyAbanInvoice(input: {
     );
   }
 
+  if (Number(verified.amount_rial) !== amountInRial(order)) {
+    throw new AbanGatewayError("مبلغ پرداخت‌شده با سفارش مطابقت ندارد.", 409, "verify_amount_mismatch");
+  }
   await markOrderPaid(order, invoiceId, verified.paid_at);
 
   return {

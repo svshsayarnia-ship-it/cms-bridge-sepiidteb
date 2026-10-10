@@ -22,7 +22,8 @@
     "audit:cms-images": "node scripts/audit-cms-image-authority.mjs",
     "audit:account-auth": "node scripts/audit-account-auth-contract.mjs",
     "audit:commerce-live": "node scripts/commerce-live-smoke.mjs",
-    "validate:artifact": "bash scripts/validate-artifact.sh"
+    "validate:artifact": "bash scripts/validate-artifact.sh",
+    "audit:payment-pricing": "node scripts/payment-pricing-regression.cjs"
   },
   "dependencies": {
     "@fontsource-variable/estedad": "^5.3.0",
