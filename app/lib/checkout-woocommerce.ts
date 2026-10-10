@@ -1,6 +1,6 @@
 import "server-only";
 import { isApprovedInventorySlug } from "../current-inventory";
-import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
+import { getRuntimeStorefrontProduct } from "./storefront-runtime-cache";
 
 
 
@@ -220,7 +220,7 @@ async function getProductsBySlugs(slugs: string[]) {
   const uniqueSlugs = [...new Set(slugs)];
   // Snapshots identify the same CMS record shown in the storefront. Prices
   // and stock are always read again from authenticated WooCommerce REST.
-  const snapshots = await getStorefrontProductSnapshots().catch(() => ({}));
+  const snapshots = Object.fromEntries(await Promise.all(uniqueSlugs.map(async (slug) => [slug, await getRuntimeStorefrontProduct(slug)] as const)));
   const ids = new Map<string, number>();
   for (const slug of uniqueSlugs) {
     const id = Number((snapshots as Record<string, { id?: number }>)[slug]?.id);
@@ -273,6 +273,7 @@ async function findExistingOrder(idempotencyKey: string) {
       orderby: "date",
       order: "desc",
       after,
+      _fields: "id,number,status,total,currency,meta_data",
     }),
   );
 
@@ -418,7 +419,7 @@ export async function createPendingWooOrder(input: {
         { key: "_sepiid_customer_type", value: customerType },
       ],
     }),
-  });
+  }, new URLSearchParams({ _fields: "id,number,status,total,currency,meta_data" }));
 
   return toResult(order, false);
 }

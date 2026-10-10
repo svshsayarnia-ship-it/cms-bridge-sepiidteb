@@ -264,7 +264,7 @@ async function getOrder(orderId: number) {
     throw new AbanGatewayError("شناسه سفارش معتبر نیست.", 400, "invalid_order_id");
   }
 
-  const order = await wooRequest<WooOrder>("orders/" + orderId);
+  const order = await wooRequest<WooOrder>("orders/" + orderId + "?_fields=id,number,status,total,currency,meta_data");
   if (firstMetaString(order, CHECKOUT_SOURCE_META_KEY) !== "nextjs_storefront") {
     throw new AbanGatewayError(
       "این سفارش متعلق به مسیر پرداخت سایت نیست.",
@@ -400,7 +400,7 @@ function validatePaymentUrl(value: string) {
 }
 
 async function storeInvoice(order: WooOrder, invoiceId: string, payableRial: number) {
-  await wooRequest<WooOrder>("orders/" + order.id, {
+  await wooRequest<{ id: number }>("orders/" + order.id + "?_fields=id", {
     method: "PUT",
     body: JSON.stringify({
       meta_data: [

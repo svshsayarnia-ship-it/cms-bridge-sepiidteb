@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const startedAt = performance.now();
   try {
     const body = await request.json();
     const idempotencyKey = body?.idempotencyKey;
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
       note: body?.note,
       lines: body?.lines,
     });
+    const commerceMs = Math.round(performance.now() - startedAt);
     const { __wooOrder, ...order } = checkoutOrder;
 
     // Aban is the only transactional gateway for the storefront.
@@ -61,6 +63,9 @@ export async function POST(request: Request) {
         orderSnapshot: __wooOrder,
       });
 
+      const totalMs = Math.round(performance.now() - startedAt);
+      const gatewayMs = totalMs - commerceMs;
+      console.info("[checkout-order] timings", { commerceMs, gatewayMs, totalMs });
       return NextResponse.json(
         {
           ok: true,
@@ -75,7 +80,7 @@ export async function POST(request: Request) {
         },
         {
           status: order.existing ? 200 : 201,
-          headers: { "cache-control": "no-store" },
+          headers: { "cache-control": "no-store", "server-timing": `commerce;dur=${commerceMs}, gateway;dur=${gatewayMs}` },
         },
       );
     } catch (error) {
