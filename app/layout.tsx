@@ -111,6 +111,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
+      <head>
+        <script
+          src="https://cdn.webinesh.ir/static/script.js"
+          data-site-id="9c222be6c3ea"
+          defer
+        />
+      </head>
       <body>
         <GoogleAnalytics />
         <PostHogTracker />
