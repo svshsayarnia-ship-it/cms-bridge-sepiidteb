@@ -1,5 +1,6 @@
 import "server-only";
 import { isApprovedInventorySlug } from "../current-inventory";
+import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
 
 
 
@@ -217,24 +218,28 @@ function candidateSlugs(slug: string) {
 
 async function getProductsBySlugs(slugs: string[]) {
   const uniqueSlugs = [...new Set(slugs)];
-  const groups: string[][] = [];
-  for (let index = 0; index < uniqueSlugs.length; index += 5) {
-    groups.push(uniqueSlugs.slice(index, index + 5));
+  // Snapshots identify the same CMS record shown in the storefront. Prices
+  // and stock are always read again from authenticated WooCommerce REST.
+  const snapshots = await getStorefrontProductSnapshots().catch(() => ({}));
+  const ids = new Map<string, number>();
+  for (const slug of uniqueSlugs) {
+    const id = Number((snapshots as Record<string, { id?: number }>)[slug]?.id);
+    if (Number.isSafeInteger(id) && id > 0) ids.set(slug, id);
   }
-  const batches = await Promise.all(groups.map((group) => wooRequest<WooProduct[]>(
-    "products", {}, new URLSearchParams({
-      slug: group.flatMap(candidateSlugs).join(","),
-      per_page: "100", status: "publish",
-      _fields: "id,name,slug,status,price,regular_price,sale_price,date_modified_gmt,manage_stock,stock_quantity,stock_status",
-    }),
-  )));
-  const products = batches.flat();
-  return new Map(uniqueSlugs.map((slug) => {
+  const fields = "id,name,slug,status,price,regular_price,sale_price,date_modified_gmt,manage_stock,stock_quantity,stock_status";
+  const [included, exact] = await Promise.all([
+    ids.size ? wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ include: [...new Set(ids.values())].join(","), per_page: "100", status: "publish", _fields: fields })) : Promise.resolve([] as WooProduct[]),
+    Promise.all(uniqueSlugs.filter((slug) => !ids.has(slug)).map(async (slug) => {
+      const products = await wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ slug, per_page: "1", status: "publish", _fields: fields }));
+      return [slug, products[0] ?? null] as const;
+    })),
+  ]);
+  const result = new Map<string, WooProduct | null>(exact);
+  for (const [slug, id] of ids) {
     const allowed = new Set(candidateSlugs(slug));
-    const candidates = products.filter((product) => allowed.has(product.slug));
-    candidates.sort((a, b) => Date.parse(b.date_modified_gmt || "1970-01-01") - Date.parse(a.date_modified_gmt || "1970-01-01"));
-    return [slug, candidates[0] ?? null] as const;
-  }));
+    result.set(slug, included.find((product) => product.id === id && allowed.has(product.slug)) ?? null);
+  }
+  return result;
 }
 
 async function resolveCheckoutLines(lines: CheckoutLineInput[]) {
