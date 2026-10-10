@@ -10,7 +10,6 @@ const prices: Record<string, { base: number; variants?: Record<string, number> }
   "audrey-m": { base: 3_900_000, variants: { m: 3_900_000, h: 4_100_000 } },
   "inovosense-family": { base: 8_450_000, variants: { smile: 8_450_000, style: 8_600_000, shape: 8_750_000, scalp: 4_900_000 } },
   "revofil-ultra": { base: 7_400_000, variants: { "1ml": 7_400_000, "10ml": 7_700_000 } },
-  "fusion-f-mesomatrix": { base: 12_890_000 },
   rabianca: { base: 20_450_000 },
   "hyamax-contour": { base: 7_400_000 },
   masport: { base: 1_200_000 },
