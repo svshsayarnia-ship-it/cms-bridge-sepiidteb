@@ -2,7 +2,7 @@ import "server-only";
 
 import { getCache } from "@vercel/functions";
 import type { CmsProduct } from "./cms-types";
-import { canonicalizeStorefrontProduct } from "./storefront-canonical-product";
+import { canonicalizeStorefrontProduct, canonicalStorefrontProductSlug } from "./storefront-canonical-product";
 
 const CACHE_NAMESPACE = "sepiid-storefront";
 const PRODUCT_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -161,6 +161,15 @@ export async function getRuntimeStorefrontProduct(
     });
     return null;
   }
+}
+
+/** Resolve only requested product families, including real CMS duplicate keys. */
+export async function getRuntimeCheckoutProducts(slugs: string[]): Promise<CmsProduct[]> {
+  const requested = new Set(slugs.map(canonicalStorefrontProductSlug));
+  const indexed = await getPublicRuntimeStorefrontProductSlugs();
+  const keys = normalizeSlugs([...slugs, ...indexed.filter((slug) => requested.has(canonicalStorefrontProductSlug(slug)))]);
+  const products = await Promise.all(keys.map(getRuntimeStorefrontProduct));
+  return products.filter((product): product is CmsProduct => Boolean(product));
 }
 
 /**

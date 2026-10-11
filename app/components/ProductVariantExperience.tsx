@@ -395,6 +395,8 @@ export function ProductVariantExperience({
     image: displayImage,
     volume: displayVolume,
     priceToman: selectedPriceToman,
+    variantId: selectedVariant?.id,
+    variantLabel: selectedVariant?.label,
   };
 
   function selectVariant(id: string) {

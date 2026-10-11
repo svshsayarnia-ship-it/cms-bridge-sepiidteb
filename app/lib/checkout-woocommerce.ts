@@ -1,6 +1,8 @@
 import "server-only";
-import { isApprovedInventorySlug } from "../current-inventory";
-import { getRuntimeStorefrontProduct } from "./storefront-runtime-cache";
+import { catalogProducts } from "../catalog";
+import { parseVariantPriceOverrides, VARIANT_PRICE_META_KEY } from "./variant-pricing";
+import { canonicalInventorySlug, currentInventoryLegacyAliases, isApprovedInventorySlug } from "../current-inventory";
+import { getRuntimeCheckoutProducts } from "./storefront-runtime-cache";
 
 
 
@@ -8,6 +10,7 @@ export type CheckoutLineInput = {
   slug: string;
   quantity: number;
   volume?: string;
+  variantId?: string;
 };
 
 export type PendingWooOrder = {
@@ -36,6 +39,7 @@ type WooProduct = {
   price: string;
   regular_price: string;
   sale_price: string;
+  meta_data?: WooMeta[];
   date_modified_gmt?: string;
   manage_stock: boolean;
   stock_quantity: number | null;
@@ -195,70 +199,111 @@ function sanitizeLines(lines: CheckoutLineInput[]) {
   for (const raw of lines) {
     const slug = String(raw.slug ?? "").trim();
     const volume = String(raw.volume ?? "").trim().slice(0, 120);
+    const variantId = String(raw.variantId ?? "").trim().slice(0, 120);
     const quantity = Math.trunc(Number(raw.quantity));
     if (!/^[a-z0-9-]{2,160}$/.test(slug) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_QTY) {
       throw new CheckoutOrderError("یکی از اقلام سبد خرید معتبر نیست.", 400, "invalid_cart_line");
     }
-    const key = `${slug}::${volume}`;
+    const key = `${slug}::${variantId || volume || "default"}`;
     const current = combined.get(key);
     const nextQuantity = (current?.quantity ?? 0) + quantity;
     if (nextQuantity > MAX_QTY) {
       throw new CheckoutOrderError("تعداد یکی از محصولات بیش از حد مجاز است.", 400, "invalid_quantity");
     }
-    combined.set(key, { slug, volume: volume || undefined, quantity: nextQuantity });
+    combined.set(key, { slug, volume: volume || undefined, variantId: variantId || undefined, quantity: nextQuantity });
   }
   return [...combined.values()];
 }
 
 function candidateSlugs(slug: string) {
-  return isApprovedInventorySlug(slug)
-    ? [slug, ...Array.from({ length: 19 }, (_, index) => `${slug}-${index + 2}`)]
+  const canonical = canonicalInventorySlug(slug);
+  const bases = [canonical, ...Object.entries(currentInventoryLegacyAliases)
+    .filter(([, target]) => target === canonical).map(([alias]) => alias)];
+  return isApprovedInventorySlug(canonical)
+    ? bases.flatMap((base) => [base, ...Array.from({ length: 19 }, (_, index) => `${base}-${index + 2}`)])
     : [slug];
 }
 
 async function getProductsBySlugs(slugs: string[]) {
   const uniqueSlugs = [...new Set(slugs)];
-  // Snapshots identify the same CMS record shown in the storefront. Prices
-  // and stock are always read again from authenticated WooCommerce REST.
-  const snapshots = Object.fromEntries(await Promise.all(uniqueSlugs.map(async (slug) => [slug, await getRuntimeStorefrontProduct(slug)] as const)));
+  // CMS stores duplicate records under their real Woo slug (e.g. -2).
+  // Resolve all accepted keys before reading fresh prices from WooCommerce.
+  const snapshots = await getRuntimeCheckoutProducts(uniqueSlugs);
   const ids = new Map<string, number>();
   for (const slug of uniqueSlugs) {
-    const id = Number((snapshots as Record<string, { id?: number }>)[slug]?.id);
+    const allowed = new Set(candidateSlugs(slug));
+    const candidates = snapshots.filter((product) => product && (
+      allowed.has(product.slug) || canonicalInventorySlug(product.slug) === canonicalInventorySlug(slug)
+    ));
+    candidates.sort((a, b) => (Date.parse(b!.dateModifiedGmt || "") || 0) - (Date.parse(a!.dateModifiedGmt || "") || 0));
+    const id = Number(candidates[0]?.id);
     if (Number.isSafeInteger(id) && id > 0) ids.set(slug, id);
   }
-  const fields = "id,name,slug,status,price,regular_price,sale_price,date_modified_gmt,manage_stock,stock_quantity,stock_status";
-  const [included, exact] = await Promise.all([
-    ids.size ? wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ include: [...new Set(ids.values())].join(","), per_page: "100", status: "publish", _fields: fields })) : Promise.resolve([] as WooProduct[]),
-    Promise.all(uniqueSlugs.filter((slug) => !ids.has(slug)).map(async (slug) => {
-      const products = await wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ slug, per_page: "1", status: "publish", _fields: fields }));
-      return [slug, products[0] ?? null] as const;
-    })),
-  ]);
-  const result = new Map<string, WooProduct | null>(exact);
+  const fields = "id,name,slug,status,price,regular_price,sale_price,meta_data,date_modified_gmt,manage_stock,stock_quantity,stock_status";
+  const included = ids.size ? await wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ include: [...new Set(ids.values())].join(","), per_page: "100", status: "publish", _fields: fields })) : [];
+  const result = new Map<string, WooProduct | null>();
   for (const [slug, id] of ids) {
     const allowed = new Set(candidateSlugs(slug));
     result.set(slug, included.find((product) => product.id === id && allowed.has(product.slug)) ?? null);
   }
+  const missing = uniqueSlugs.filter((slug) => !result.get(slug));
+  if (missing.length) {
+    // A cold/missing cache must still find canonical aliases and duplicate
+    // Woo slugs. Scan paginated, narrow REST records without mutating products.
+    const products: WooProduct[] = [];
+    for (let page = 1; page <= 20; page++) {
+      const batch = await wooRequest<WooProduct[]>("products", {}, new URLSearchParams({ page: String(page), per_page: "100", status: "publish", _fields: fields }));
+      products.push(...batch);
+      if (batch.length < 100) break;
+      if (page === 20) throw new CheckoutOrderError("فهرست محصولات کامل دریافت نشد؛ دوباره تلاش کنید.", 502, "catalog_incomplete");
+    }
+    for (const slug of missing) {
+      const allowed = new Set(candidateSlugs(slug));
+      const candidates = products.filter((product) => allowed.has(product.slug));
+      candidates.sort((a, b) => (Date.parse(b.date_modified_gmt || "") || 0) - (Date.parse(a.date_modified_gmt || "") || 0));
+      result.set(slug, candidates[0] ?? null);
+    }
+  }
   return result;
+}
+
+function linePriceToman(line: CheckoutLineInput, product: WooProduct) {
+  const catalog = catalogProducts.find((item) => item.slug === canonicalInventorySlug(line.slug));
+  const variants = catalog?.variants ?? [];
+  if (!line.variantId) {
+    if (variants.length && line.volume) {
+      const matching = variants.filter((variant) => variant.volume === line.volume);
+      if (matching.length !== 1) throw new CheckoutOrderError("مدل کالا را دوباره از صفحه محصول انتخاب کنید.", 409, "variant_required");
+      line.variantId = matching[0].id;
+    } else {
+      return Number(product.price || product.regular_price);
+    }
+  }
+  const variant = variants.find((item) => item.id === line.variantId);
+  if (!variant) throw new CheckoutOrderError("مدل انتخابی کالا معتبر نیست؛ دوباره آن را انتخاب کنید.", 409, "invalid_variant");
+  const overrides = parseVariantPriceOverrides(product.meta_data?.find((meta) => meta.key === VARIANT_PRICE_META_KEY)?.value);
+  const saved = overrides[variant.id];
+  return saved ? Number(saved.salePrice || saved.regularPrice) : Number(variant.priceToman);
 }
 
 async function resolveCheckoutLines(lines: CheckoutLineInput[]) {
   const productBySlug = await getProductsBySlugs(lines.map((line) => line.slug));
-  return lines.map((line) => ({
-    line,
-    product: productBySlug.get(line.slug) ?? null,
-  }));
+  return lines.map((line) => {
+    const product = productBySlug.get(line.slug) ?? null;
+    const key = `${line.slug}::${line.variantId || line.volume || "default"}`;
+    const priceToman = product ? linePriceToman(line, product) : NaN;
+    return { line, product, key, priceToman };
+  });
 }
 
 export async function getCheckoutQuote(rawLines: CheckoutLineInput[]) {
   const lines = sanitizeLines(rawLines);
   const resolved = await resolveCheckoutLines(lines);
-  return resolved.map(({ line, product }) => {
-    const priceToman = Number(product?.price || product?.regular_price);
+  return resolved.map(({ line, product, key, priceToman }) => {
     if (!product || product.status !== "publish" || product.stock_status === "outofstock" || !Number.isSafeInteger(priceToman) || priceToman <= 0) {
       throw new CheckoutOrderError("قیمت یا موجودی یکی از کالاها تغییر کرده است. سبد خرید را بررسی کنید.", 409, "quote_unavailable");
     }
-    return { slug: line.slug, priceToman };
+    return { slug: line.slug, key, priceToman };
   });
 }
 
@@ -355,7 +400,7 @@ export async function createPendingWooOrder(input: {
     }
   }
 
-  for (const { line, product } of resolved) {
+  for (const { line, product, priceToman } of resolved) {
     if (!product || product.status !== "publish") {
       throw new CheckoutOrderError(
         `محصول «${line.slug}» دیگر قابل سفارش نیست. سبد خرید را تازه کنید.`,
@@ -363,8 +408,8 @@ export async function createPendingWooOrder(input: {
         "product_unavailable",
       );
     }
-    const price = Number(product.price || product.regular_price);
-    if (!Number.isFinite(price) || price <= 0) {
+    const price = priceToman;
+    if (!Number.isSafeInteger(price) || price <= 0) {
       throw new CheckoutOrderError(
         `قیمت «${product.name}» هنوز قطعی نشده است.`,
         409,
@@ -376,7 +421,7 @@ export async function createPendingWooOrder(input: {
     }
   }
 
-  const subtotal = resolved.reduce((sum, { line, product }) => sum + Number(product!.price || product!.regular_price) * line.quantity, 0);
+  const subtotal = resolved.reduce((sum, { line, priceToman }) => sum + priceToman * line.quantity, 0);
   if (input.expectedSubtotal !== undefined && input.expectedSubtotal !== subtotal) {
     throw new CheckoutOrderError("قیمت سبد تغییر کرده است؛ قیمت تازه را بررسی کنید و دوباره پرداخت را بزنید.", 409, "price_changed");
   }
@@ -404,14 +449,15 @@ export async function createPendingWooOrder(input: {
         phone,
       },
       customer_note: note,
-      line_items: resolved.map(({ line, product }) => ({
+      line_items: resolved.map(({ line, product, priceToman }) => ({
         product_id: product!.id,
         quantity: line.quantity,
-        subtotal: String(Number(product!.price || product!.regular_price) * line.quantity * 10),
-        total: String(Number(product!.price || product!.regular_price) * line.quantity * 10),
-        meta_data: line.volume
-          ? [{ key: "مدل / حجم انتخابی", value: line.volume }]
-          : [],
+        subtotal: String(priceToman * line.quantity * 10),
+        total: String(priceToman * line.quantity * 10),
+        meta_data: [
+          ...(line.volume ? [{ key: "مدل / حجم انتخابی", value: line.volume }] : []),
+          ...(line.variantId ? [{ key: "_sepiid_variant_id", value: line.variantId }] : []),
+        ],
       })),
       meta_data: [
         { key: IDEMPOTENCY_META_KEY, value: idempotencyKey },

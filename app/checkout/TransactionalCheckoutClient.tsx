@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
   cartCount,
+  cartItemKey,
   onCartUpdated,
   readCart,
   type CartItem,
@@ -77,7 +78,7 @@ function validate(form: CheckoutForm): Errors {
 
 function cartFingerprint(items: CartItem[]) {
   return items
-    .map((item) => `${item.slug}::${item.volume ?? ""}::${item.quantity}`)
+    .map((item) => `${cartItemKey(item)}::${item.quantity}`)
     .sort()
     .join("|");
 }
@@ -169,12 +170,12 @@ export function TransactionalCheckoutClient() {
     fetch("/api/checkout/quote", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ lines: items.map(({ slug, quantity, volume }) => ({ slug, quantity, volume })) }),
+      body: JSON.stringify({ lines: items.map(({ slug, quantity, volume, variantId }) => ({ slug, quantity, volume, variantId })) }),
       signal: controller.signal,
     }).then(async (response) => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "دریافت قیمت تازه کامل نشد.");
-      setFreshPrices(Object.fromEntries(data.prices.map((p: { slug: string; priceToman: number }) => [p.slug, p.priceToman])));
+      setFreshPrices(Object.fromEntries(data.prices.map((p: { key: string; priceToman: number }) => [p.key, p.priceToman])));
     }).catch((error) => {
       if (!controller.signal.aborted) setQuoteError(error.message);
     });
@@ -182,13 +183,13 @@ export function TransactionalCheckoutClient() {
   }, [items]);
 
   const browserSubtotal = useMemo(
-    () => items.reduce((total, item) => total + (freshPrices[item.slug] ?? 0) * item.quantity, 0),
+    () => items.reduce((total, item) => total + (freshPrices[cartItemKey(item)] ?? 0) * item.quantity, 0),
     [items, freshPrices],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!items.length || submitting || order || quoteError || items.some((item) => !freshPrices[item.slug])) return;
+    if (!items.length || submitting || order || quoteError || items.some((item) => !freshPrices[cartItemKey(item)])) return;
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
@@ -227,6 +228,7 @@ export function TransactionalCheckoutClient() {
             slug: item.slug,
             quantity: item.quantity,
             volume: item.volume,
+            variantId: item.variantId,
           })),
         }),
       });
@@ -431,10 +433,10 @@ export function TransactionalCheckoutClient() {
               <button
                 className="sb-btn sb-btn--dark"
                 type="submit"
-                disabled={submitting || !!quoteError || items.some((item) => !freshPrices[item.slug])}
+                disabled={submitting || !!quoteError || items.some((item) => !freshPrices[cartItemKey(item)])}
                 style={{ width: "100%", marginTop: 18 }}
               >
-                {submitting ? "در حال آماده‌سازی پرداخت…" : items.some((item) => !freshPrices[item.slug]) ? "در حال بررسی قیمت…" : "ادامه و پرداخت"}
+                {submitting ? "در حال آماده‌سازی پرداخت…" : items.some((item) => !freshPrices[cartItemKey(item)]) ? "در حال بررسی قیمت…" : "ادامه و پرداخت"}
               </button>
             </section>
           </div>
@@ -446,11 +448,11 @@ export function TransactionalCheckoutClient() {
             </div>
             <div className={styles.compactItems}>
               {items.map((item) => (
-                <div key={`${item.slug}:${item.volume ?? "default"}`}>
+                <div key={cartItemKey(item)}>
                   <span>{item.nameFa}{item.volume ? ` — ${item.volume}` : ""} × {priceFormatter.format(item.quantity)}</span>
                   <strong>
-                    {freshPrices[item.slug]
-                      ? `${priceFormatter.format(freshPrices[item.slug] * item.quantity)} تومان`
+                    {freshPrices[cartItemKey(item)]
+                      ? `${priceFormatter.format(freshPrices[cartItemKey(item)] * item.quantity)} تومان`
                       : "در حال بررسی قیمت…"}
                   </strong>
                 </div>
