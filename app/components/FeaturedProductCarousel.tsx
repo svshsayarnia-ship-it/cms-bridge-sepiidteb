@@ -336,15 +336,15 @@ export function FeaturedProductCarousel({
       <div className={styles.shell}>
         <div className={styles.head}>
           <div>
-            <span className={styles.eyebrow}>BEAUTY E-COMMERCE</span>
+            <span className={styles.eyebrow}>سپید بیوتی؛ محصولات حرفه‌ای زیبایی</span>
             <h1 id="featured-products-title">
-              انتخاب محصول،
-              <em>روان‌تر و زنده‌تر.</em>
+              محصولات حرفه‌ای زیبایی؛
+              <em>مقایسه مدل، بسته‌بندی و قیمت</em>
             </h1>
           </div>
           <div className={styles.headAside}>
             <p>
-              قیمت، تخفیف و مدل‌های هر محصول را همان‌جا ببینید؛ مدل را عوض کنید و بدون خروج از کاروسل به سبد اضافه کنید.
+              فیلر، مزوژل، اسکین‌بوستر و محصولات تخصصی زیبایی را ببینید؛ مدل و بسته موردنظر را انتخاب کنید و برای بررسی قیمت و موجودی به لیست استعلام اضافه کنید.
             </p>
             <Link className={styles.shopLink} href="/shop">
               دیدن همه محصولات
@@ -369,7 +369,7 @@ export function FeaturedProductCarousel({
               const selectedVariantId = selectedVariantIds[product.slug];
               const selectedVariant =
                 variants.find((variant) => variant.id === selectedVariantId) ?? variants[0] ?? null;
-              const href = `/product/${product.slug}`;
+              const href = `/product/${product.slug}${selectedVariant ? `?variant=${encodeURIComponent(selectedVariant.id)}` : ""}`;
               const displayName = selectedVariant?.nameFa || product.nameFa;
               const displayNameEn = selectedVariant?.nameEn || product.nameEn;
               const displayVolume = cleanVolume(selectedVariant?.volume || product.volume);
@@ -570,9 +570,9 @@ export function FeaturedProductCarousel({
                       ) : cartItem ? (
                         <>
                           <Link className={styles.addedButton} href="/cart">
-                            در سبد خرید ✓
+                            در لیست استعلام ✓
                           </Link>
-                          <div className={styles.stepper} aria-label={`تعداد ${displayName} در سبد`}>
+                          <div className={styles.stepper} aria-label={`تعداد ${displayName} در لیست استعلام`}>
                             <button
                               type="button"
                               aria-label="کم کردن تعداد"
@@ -592,7 +592,7 @@ export function FeaturedProductCarousel({
                         </>
                       ) : (
                         <button className={styles.cta} type="button" onClick={handleAdd}>
-                          افزودن به سبد
+                          افزودن به لیست استعلام
                           <ArrowIcon />
                         </button>
                       )}

@@ -270,7 +270,7 @@ export default function JaluproModelsGuidePage() {
               اگر دنبال HMW هستید، مشخصات و قیمت همان مدل را در صفحه محصول ببینید؛
               برای مقایسه گروه هم می‌توانید به دسته مزوژل و اسکین‌بوستر برگردید.
             </p>
-            <Link href="/product/jalupro-hmw">
+            <Link href="/product/jalupro-hmw?variant=hmw">
               مشاهده جالپرو HMW
               <ArrowIcon />
             </Link>

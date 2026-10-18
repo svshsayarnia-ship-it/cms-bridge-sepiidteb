@@ -303,7 +303,12 @@ export function ProductVariantExperience({
       : product.specs;
   const displaySpecs = selectedVariant
     ? [
-        ...currentProductSpecs.filter(([label]) => !selectedSpecLabels.has(label)),
+        ...currentProductSpecs
+          .filter(([label]) => !selectedSpecLabels.has(label))
+          .map(([label, value]): [string, string] => [
+            label,
+            label === "حجم" && selectedVariant.volume ? selectedVariant.volume : value,
+          ]),
         ...selectedVariant.specs,
       ]
     : currentProductSpecs;
