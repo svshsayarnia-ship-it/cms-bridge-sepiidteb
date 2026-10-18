@@ -28,6 +28,7 @@ import {
   isPublicVariantImageSrc,
 } from "./public-product";
 import { getStorefrontProductSnapshots } from "./storefront-product-snapshots";
+import { getConfirmedCmsImageProduct } from "./cms-image-snapshot";
 
 export const STOREFRONT_CATALOG_TAG = "storefront-catalog";
 
@@ -296,18 +297,23 @@ function mapWooProduct(product: CmsProduct, fallback?: Product): StorefrontProdu
 }
 
 function mapFallbackProduct(product: Product): StorefrontProduct {
+  const confirmed = getConfirmedCmsImageProduct(product.slug);
+  const primary = findPrimaryProductRoleImage(confirmed?.images ?? [], product.slug);
   return {
     ...product,
-    image: "",
-    imageAlt: `تصویر اصلی ${product.nameFa} هنوز در CMS ثبت نشده است`,
-    imageVerified: false,
-    imageKind: undefined,
-    imageApproved: false,
-    variants: product.variants?.map((variant) =>
-      isPublicVariantImageSrc(variant.image, variant.imageVerified)
+    image: primary?.src ?? "",
+    imageAlt: primary?.alt || `تصویر ${product.nameFa}`,
+    imageVerified: Boolean(primary),
+    imageKind: primary ? "official" : undefined,
+    imageApproved: Boolean(primary),
+    variants: product.variants?.map((variant) => {
+      const image = findVariantRoleImage(confirmed?.images ?? [], product.slug, variant.id);
+      if (image) return { ...variant, image: image.src, imageAlt: image.alt || variant.imageAlt,
+        imageVerified: true, imageApproved: true, imageKind: "official" as const };
+      return isPublicVariantImageSrc(variant.image, variant.imageVerified)
         ? { ...variant, imageApproved: true }
-        : blankVariantMedia(variant),
-    ),
+        : blankVariantMedia(variant);
+    }),
     wooId: null,
     sku: "",
     price: "",
@@ -445,7 +451,7 @@ async function loadStorefrontCatalog(): Promise<StorefrontCatalog> {
 
 const getCachedStorefrontCatalog = unstable_cache(
   loadStorefrontCatalog,
-  ["storefront-catalog-v10-confirmed-model-prices"],
+  ["storefront-catalog-v11-confirmed-cms-media"],
   {
     revalidate: 300,
     tags: [STOREFRONT_CATALOG_TAG],
