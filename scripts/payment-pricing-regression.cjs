@@ -1,9 +1,11 @@
-const ts=require(process.cwd()+'/node_modules/typescript');
-const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
-process.env.WORDPRESS_URL='https://woo.test';process.env.WOOCOMMERCE_CONSUMER_KEY='test';process.env.WOOCOMMERCE_CONSUMER_SECRET='test';process.env.ABAN_API_TOKEN='test';
-function load(file,fetch,snapshots=[{id:2,slug:'fusion-f-mesomatrix'}],catalog=[],overrides={}){const module={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module,exports:module.exports,require:n=>n==='server-only'?{}:n==='../catalog'?{catalogProducts:catalog}:n==='./variant-pricing'?{VARIANT_PRICE_META_KEY:'sepiid_variant_prices',parseVariantPriceOverrides:()=>overrides}:n.includes('current-inventory')?{isApprovedInventorySlug:()=>true,canonicalInventorySlug:s=>s,currentInventoryLegacyAliases:{}}:n.includes('storefront-runtime-cache')?{getRuntimeCheckoutProducts:async()=>snapshots}:require(n),process,fetch,Headers,URL,URLSearchParams,AbortController,setTimeout,clearTimeout,Buffer,console});return module.exports;}
-const reply=x=>new Response(JSON.stringify(x),{status:200});
 (async()=>{
+const [{ default: ts }, fs, vm, { default: assert }, { createRequire }] = await Promise.all([
+  import('typescript'), import('node:fs'), import('node:vm'), import('node:assert/strict'), import('node:module'),
+]);
+const nodeRequire = createRequire(__filename);
+process.env.WORDPRESS_URL='https://woo.test';process.env.WOOCOMMERCE_CONSUMER_KEY='test';process.env.WOOCOMMERCE_CONSUMER_SECRET='test';process.env.ABAN_API_TOKEN='test';
+function load(file,fetch,snapshots=[{id:2,slug:'fusion-f-mesomatrix'}],catalog=[],overrides={}){const testModule={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:testModule,exports:testModule.exports,require:n=>n==='server-only'?{}:n==='../catalog'?{catalogProducts:catalog}:n==='./variant-pricing'?{VARIANT_PRICE_META_KEY:'sepiid_variant_prices',parseVariantPriceOverrides:()=>overrides}:n.includes('current-inventory')?{isApprovedInventorySlug:()=>true,canonicalInventorySlug:s=>s,currentInventoryLegacyAliases:{}}:n.includes('storefront-runtime-cache')?{getRuntimeCheckoutProducts:async()=>snapshots}:nodeRequire(n),process,fetch,Headers,URL,URLSearchParams,AbortController,setTimeout,clearTimeout,Buffer,console});return testModule.exports;}
+const reply=x=>new Response(JSON.stringify(x),{status:200});
 const calls=[]; let savedOrder = null;
 const product={id:1,name:'Fusion',slug:'fusion-f-mesomatrix',status:'publish',price:'6700000',regular_price:'6700000',sale_price:'',stock_status:'instock',manage_stock:false,date_modified_gmt:'2026-10-01T00:00:00'};
 const newest={...product,id:2,slug:'fusion-f-mesomatrix-2',price:'12880000',regular_price:'12950000',sale_price:'12880000',date_modified_gmt:'2026-10-10T00:00:00'};
