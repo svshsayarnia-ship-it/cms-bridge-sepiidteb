@@ -468,7 +468,7 @@ export function FeaturedProductCarousel({
 
                     {toastSlug === product.slug && (
                       <span className={styles.toast} role="status">
-                        به سبد خرید اضافه شد
+                        به لیست استعلام اضافه شد
                       </span>
                     )}
                   </div>
