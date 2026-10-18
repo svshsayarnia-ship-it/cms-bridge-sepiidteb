@@ -81,7 +81,11 @@ export async function GET(request: NextRequest) {
 
   pushRow(rows, seen, "برند", product.brand);
   pushRow(rows, seen, "دسته محصول", product.categoryTitle);
-  pushRow(rows, seen, "حجم / بسته", product.volume);
+  if (product.variants?.length) {
+    pushRow(rows, seen, "مدل‌های موجود", product.variants.map((variant) => variant.label).join("، "));
+  } else {
+    pushRow(rows, seen, "حجم / بسته", product.volume);
+  }
 
   for (const [rawLabel, rawValue] of product.specs) {
     const label = SAFE_SPEC_LABELS.get(rawLabel);
