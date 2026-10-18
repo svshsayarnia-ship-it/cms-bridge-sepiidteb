@@ -13,6 +13,7 @@ import type { SitePresentation } from "./site-presentation";
 import type { CmsPricingState } from "./pricing-types";
 import { parsePricingState } from "./pricing-types";
 import { cmsMediaSrc } from "./cms-media";
+import { getConfirmedCmsImageAsset } from "./cms-image-snapshot";
 
 type WooImage = { id: number; src: string; name?: string; alt?: string };
 type WooCategoryRef = { id: number; name: string; slug: string };
@@ -1243,11 +1244,12 @@ export async function getCmsMediaAsset(id: number): Promise<{
     throw new WooCommerceError("شناسه تصویر معتبر نیست.", 400, "invalid_media_id");
   }
 
-  const { storeUrl, consumerKey, consumerSecret } = config();
+  const { storeUrl } = config();
+  const confirmedAsset = getConfirmedCmsImageAsset(id);
   // Role records already confirmed by CMS are shared with the page. Avoid a
   // separate slow WordPress metadata request for every legacy foreground.
   const { getStorefrontProductSnapshots } = await import("./storefront-product-snapshots");
-  const snapshots = await getStorefrontProductSnapshots().catch(() => ({}));
+  const snapshots = confirmedAsset ? {} : await getStorefrontProductSnapshots().catch(() => ({}));
   const knownImage = Object.values(snapshots)
     .flatMap((product) => product.images)
     .find((image) => image.id === id);
@@ -1262,25 +1264,30 @@ export async function getCmsMediaAsset(id: number): Promise<{
   const timeout = setTimeout(() => controller.abort(), 20_000);
 
   try {
-    const mediaUrl = new URL(`${storeUrl}/wp-json/wp/v2/media/${id}`);
-    const response = await fetch(mediaUrl, {
-      next: { revalidate: 86400 },
-      headers: {
-        accept: "application/json",
-        authorization: `Basic ${btoa(`${consumerKey}:${consumerSecret}`)}`,
-      },
-      signal: controller.signal,
-    });
+    let media: WordPressMediaResponse = confirmedAsset
+      ? { source_url: confirmedAsset.sourceUrl, mime_type: confirmedAsset.contentType }
+      : {};
+    if (!confirmedAsset) {
+      const mediaUrl = new URL(`${storeUrl}/wp-json/wp/v2/media/${id}`);
+      const response = await fetch(mediaUrl, {
+        next: { revalidate: 86400 },
+        // Published attachment metadata is public. WooCommerce consumer keys
+        // are not WordPress application passwords: sending them here makes
+        // WordPress reject an otherwise public read with HTTP 401.
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      throw new WooCommerceError(
-        `تصویر CMS با خطای ${response.status} پاسخ داد.`,
-        response.status === 404 ? 404 : 502,
-        "cms_media_metadata_failed",
-      );
+      if (!response.ok) {
+        throw new WooCommerceError(
+          `تصویر CMS با خطای ${response.status} پاسخ داد.`,
+          response.status === 404 ? 404 : 502,
+          "cms_media_metadata_failed",
+        );
+      }
+      media = await response.json() as WordPressMediaResponse;
     }
 
-    const media = await response.json() as WordPressMediaResponse;
     if (!media.source_url) {
       throw new WooCommerceError(
         "آدرس فایل تصویر CMS پیدا نشد.",

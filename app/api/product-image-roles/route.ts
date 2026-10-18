@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { catalogProducts } from "../../catalog";
 import type { CmsImage, CmsProduct } from "../../lib/cms-types";
 import {
@@ -10,6 +11,7 @@ import {
 } from "../../lib/storefront-canonical-product";
 import { getStorefrontProductSnapshots } from "../../lib/storefront-product-snapshots";
 import { listProducts } from "../../lib/woocommerce";
+import { getConfirmedCmsImageProduct } from "../../lib/cms-image-snapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,15 @@ type PublicRoleImage = {
 };
 
 type ProductSnapshots = Awaited<ReturnType<typeof getStorefrontProductSnapshots>>;
+
+// A cold/missing Vercel Runtime Cache must not trigger a complete uncached
+// WooCommerce catalogue request on every visit (including on other hosts).
+const readCmsImageProducts = unstable_cache(
+  () => listProducts({ page: 1, perPage: 100, status: "publish",
+    requestTimeoutMs: 12_000, requestMaxAttempts: 1 }),
+  ["cms-product-image-roles-v1"],
+  { revalidate: 300, tags: ["storefront-catalog", "storefront-product-snapshots"] },
+);
 
 async function hydrateMissingCmsProducts(
   snapshots: ProductSnapshots,
@@ -32,20 +43,16 @@ async function hydrateMissingCmsProducts(
   if (!missingMedia) return snapshots;
 
   try {
-    const result = await listProducts({
-      page: 1,
-      perPage: 100,
-      status: "publish",
-      requestTimeoutMs: 12_000,
-      requestMaxAttempts: 1,
-    });
+    const result = await readCmsImageProducts();
     const directProducts = Object.fromEntries(
       result.products.map((product) => {
         const normalized = canonicalizeStorefrontProduct(product);
         return [normalized.slug, normalized] as const;
       }),
     );
-    return { ...snapshots, ...directProducts };
+    // Cached catalogue recovery fills missing records only. A confirmed CMS
+    // write (including cleared media) must win in a mixed batch.
+    return { ...directProducts, ...snapshots };
   } catch (error) {
     console.warn("[product-image-roles] direct CMS media read failed", {
       requestedSlugs,
@@ -80,7 +87,7 @@ function variantIdsFor(slug: string, requestedVariantIds: string[]): string[] {
   ).map((variant) => variant.id);
 }
 
-function roleSlugs(requestedSlug: string, product: CmsProduct): string[] {
+function roleSlugs(requestedSlug: string, product: Pick<CmsProduct, "slug">): string[] {
   return Array.from(
     new Set(
       [
@@ -99,7 +106,10 @@ function getRolePayload(
   requestedSlug: string,
   requestedVariantIds: string[],
 ) {
-  const product = resolveSnapshot(snapshots, requestedSlug);
+  // A current record, even one with intentionally cleared images, wins over
+  // the deployment's confirmed CMS media snapshot.
+  const product = resolveSnapshot(snapshots, requestedSlug)
+    ?? getConfirmedCmsImageProduct(requestedSlug);
   if (!product) {
     return {
       cardImage: null,
