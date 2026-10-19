@@ -14,6 +14,7 @@ import {
   isLegacyArticleSlug,
 } from "./app/lib/article-url";
 import { isCatalogFallbackProduct } from "./app/lib/public-product";
+import { brandPages } from "./app/lib/brand-pages";
 
 type WooProductProbe = {
   slug?: string;
@@ -78,11 +79,9 @@ const publicGroupSlugs = new Set(
 // arbitrary slug is rejected before App Router streaming can turn it into a
 // soft 404. Adding a new public brand/guide/concern therefore remains an
 // explicit publishing decision in code.
-const publicBrandSlugs = new Set([
-  "neuramis",
-  "fusion",
-  "inovosense",
-]);
+const publicBrandSlugs = new Set(
+  brandPages.filter((brand) => brand.indexable).map((brand) => brand.slug),
+);
 
 const publicGuideSlugs = new Set([
   "botulinum-toxin",
