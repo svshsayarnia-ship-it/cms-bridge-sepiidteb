@@ -287,7 +287,7 @@ export function ProductVariantExperience({
     ? toPublicCopy(displaySummary)
     : "";
   const selectedSpecLabels = new Set(
-    selectedVariant?.specs.map(([label]) => label) ?? [],
+    selectedVariant?.specs.map(([label]) => visibleSpecLabels.get(label) ?? label) ?? [],
   );
   const hasModelListSpec = product.specs.some(([label]) => label === "مدل‌های موجود");
   const currentVariantList = product.variants
@@ -304,10 +304,10 @@ export function ProductVariantExperience({
   const displaySpecs = selectedVariant
     ? [
         ...currentProductSpecs
-          .filter(([label]) => !selectedSpecLabels.has(label))
+          .filter(([label]) => !selectedSpecLabels.has(visibleSpecLabels.get(label) ?? label))
           .map(([label, value]): [string, string] => [
             label,
-            label === "حجم" && selectedVariant.volume ? selectedVariant.volume : value,
+            visibleSpecLabels.get(label) === "حجم" && selectedVariant.volume ? selectedVariant.volume : value,
           ]),
         ...selectedVariant.specs,
       ]
