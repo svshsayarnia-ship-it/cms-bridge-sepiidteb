@@ -27,6 +27,7 @@ import {
   isCatalogFallbackProduct,
   isPublicCmsProduct,
   isPublicImageSrc,
+  isPublicVariantImageSrc,
 } from "../../lib/public-product";
 import {
   getCompactBrandLabel,
@@ -737,40 +738,27 @@ export default async function ProductPage({
   const productGroupId = `${siteOrigin}/product/${product.slug}#product-group`;
   const absoluteImage = (value: string) =>
     value.startsWith("http") ? value : `${siteOrigin}${value}`;
-  const variantSchemas = variants
-    .filter((variant) => variant.priceToman > 0)
-    .map((variant) => {
-      const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
-      const variantPrice =
-        variant.priceToman > 0
-          ? String(Math.round(variant.priceToman * 10))
-          : null;
+  const variantSchemas = variants.map((variant) => {
+    const variantUrl = `${siteOrigin}/product/${product.slug}?variant=${encodeURIComponent(variant.id)}`;
+    const variantImage = isPublicVariantImageSrc(
+      variant.image,
+      variant.imageVerified,
+    )
+      ? variant.image
+      : "";
 
-      return {
-        "@type": "Product",
-        "@id": `${variantUrl}#product`,
-        name: variant.nameFa,
-        alternateName: variant.nameEn,
-        url: variantUrl,
-        sku: `${product.slug}-${variant.id}`,
-        image: absoluteImage(variant.image),
-        description: variant.summary || variant.nameFa,
-        isVariantOf: { "@id": productGroupId },
-        ...(variantPrice
-          ? {
-              offers: {
-                "@type": "Offer",
-                url: variantUrl,
-                price: variantPrice,
-                priceCurrency: "IRR",
-                ...(schemaAvailability ? { availability: schemaAvailability } : {}),
-                itemCondition: "https://schema.org/NewCondition",
-                ...merchantReturnPolicyReference,
-              },
-            }
-          : {}),
-      };
-    });
+    return {
+      "@type": "Product",
+      "@id": `${variantUrl}#product`,
+      name: variant.nameFa,
+      alternateName: variant.nameEn,
+      url: variantUrl,
+      sku: `${product.slug}-${variant.id}`,
+      ...(variantImage ? { image: absoluteImage(variantImage) } : {}),
+      description: variant.summary || variant.nameFa,
+      isVariantOf: { "@id": productGroupId },
+    };
+  });
   return (
     <main id="main-content">
       <div className="sb-shell">
