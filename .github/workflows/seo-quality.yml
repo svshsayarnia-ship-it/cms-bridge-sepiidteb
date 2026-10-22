@@ -1,0 +1,81 @@
+name: SEO Quality
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Technical SEO and Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production app
+        run: npm run build
+
+      - name: Run site-wide technical SEO audits
+        shell: bash
+        env:
+          SEO_BASE_URL: http://127.0.0.1:3000
+          SEO_CANONICAL_ORIGIN: https://sepiidbeauty.ir
+        run: |
+          set -euo pipefail
+          npm run start > /tmp/sepiid-next.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+
+          ready=0
+          for attempt in {1..45}; do
+            if curl -fsS http://127.0.0.1:3000/sitemap.xml > /dev/null; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              cat /tmp/sepiid-next.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/sepiid-next.log
+            echo "Next.js server did not become ready for SEO audit." >&2
+            exit 1
+          fi
+
+          npm run audit:seo
+          node scripts/seo-private-route-audit.mjs
+
+      - name: Run Lighthouse CI budget
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=.lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-seo-report
+          path: .lighthouseci
+          if-no-files-found: ignore
+          retention-days: 14
